@@ -107,26 +107,8 @@ effect ::
   Params -> m Result
 effect params = do
   conn <- ask
-  res <- liftIO $ Pq.prepare conn "" (to params.query) Nothing
-  res <- case res of
-    Nothing -> throwError (to ConnectionError)
-    Just res -> return res
-  status <- liftIO $ Pq.resultStatus res
-  case status of
-    Pq.CommandOk -> return ()
-    Pq.FatalError -> liftIO (readResultErrorDetails res) >>= throwError . to . ResultError
-    _ -> error ("Bug. Unexpected status: " <> show status)
-
-  res <- liftIO $ Pq.describePrepared conn ""
-  res <- case res of
-    Nothing -> throwError (to ConnectionError)
-    Just res -> return res
-  status <- liftIO $ Pq.resultStatus res
-  case status of
-    Pq.CommandOk -> return ()
-    _ -> error ("Bug. Unexpected status: " <> show status)
-
-  liftIO (Result <$> readParamTypeOids res <*> readResultColumns res)
+  res <- liftIO $ io conn params
+  liftEither $ first to res
 
 -- * Helpers
 

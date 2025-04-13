@@ -4,7 +4,6 @@ module Base.Prelude
 where
 
 import Control.Applicative as Exports hiding (WrappedArrow (..))
-import Control.Arrow as Exports
 import Control.Category as Exports
 import Control.Concurrent as Exports
 import Control.Exception as Exports
@@ -15,6 +14,7 @@ import Control.Monad.Reader as Exports
 import Control.Monad.ST as Exports
 import Control.Monad.ST.Unsafe as Exports
 import Control.Monad.State.Strict as Exports
+import Data.Bifunctor as Exports
 import Data.Bits as Exports
 import Data.Bool as Exports
 import Data.ByteString as Exports (ByteString)

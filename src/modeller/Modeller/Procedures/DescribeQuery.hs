@@ -16,8 +16,9 @@ module Modeller.Procedures.DescribeQuery
     Result (..),
     ResultColumn (..),
 
-    -- * IO
-    run,
+    -- * Execution
+    io,
+    effect,
   )
 where
 
@@ -70,8 +71,9 @@ data ResultColumn = ResultColumn
 
 -- * IO
 
-run :: Pq.Connection -> Params -> IO (Either Error Result)
-run conn params = runExceptT do
+-- | Specific execution.
+io :: Pq.Connection -> Params -> IO (Either Error Result)
+io conn params = runExceptT do
   res <- lift $ Pq.prepare conn "" (to params.query) Nothing
   res <- case res of
     Nothing -> throwError ConnectionError
@@ -92,6 +94,41 @@ run conn params = runExceptT do
     _ -> error ("Bug. Unexpected status: " <> show status)
 
   lift (Result <$> readParamTypeOids res <*> readResultColumns res)
+
+-- | Execution with all things lifted.
+--
+-- Supposed to make it easier to insert into other monads.
+effect ::
+  ( MonadIO m,
+    MonadReader Pq.Connection m,
+    MonadError err m,
+    IsSome err Error
+  ) =>
+  Params -> m Result
+effect params = do
+  conn <- ask
+  res <- liftIO $ Pq.prepare conn "" (to params.query) Nothing
+  res <- case res of
+    Nothing -> throwError (to ConnectionError)
+    Just res -> return res
+  status <- liftIO $ Pq.resultStatus res
+  case status of
+    Pq.CommandOk -> return ()
+    Pq.FatalError -> liftIO (readResultErrorDetails res) >>= throwError . to . ResultError
+    _ -> error ("Bug. Unexpected status: " <> show status)
+
+  res <- liftIO $ Pq.describePrepared conn ""
+  res <- case res of
+    Nothing -> throwError (to ConnectionError)
+    Just res -> return res
+  status <- liftIO $ Pq.resultStatus res
+  case status of
+    Pq.CommandOk -> return ()
+    _ -> error ("Bug. Unexpected status: " <> show status)
+
+  liftIO (Result <$> readParamTypeOids res <*> readResultColumns res)
+
+-- * Helpers
 
 readParamTypeOids :: Pq.Result -> IO (Vector Word32)
 readParamTypeOids res = do

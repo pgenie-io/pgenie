@@ -91,6 +91,7 @@ library base
     text >=1.2 && <3,
     time >=1.12 && <2,
     transformers >=0.5 && <0.7,
+    tuple ^>=0.3.0.2,
     vector >=0.12 && <0.14,
 
 library modeller

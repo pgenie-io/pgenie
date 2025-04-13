@@ -32,4 +32,4 @@ instance IsStatementParams SelectTypeParams where
       where oid = $1 :: int4
     |]
       & lmap (.oid)
-      & (rmap . fmap) (\(name, type_, relId, elemTypeId) -> SelectTypeResultRow {..})
+      & (rmap . fmap) (uncurryN SelectTypeResultRow)

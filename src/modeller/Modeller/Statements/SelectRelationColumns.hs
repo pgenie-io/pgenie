@@ -31,4 +31,4 @@ instance IsStatementParams SelectRelationColumnsParams where
       order by attnum
     |]
       & lmap (.name)
-      & (rmap . fmap) (\(name, typeId, nDims, notNull) -> SelectRelationColumnsResultRow {..})
+      & (rmap . fmap) (uncurryN SelectRelationColumnsResultRow)

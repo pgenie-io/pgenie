@@ -31,6 +31,7 @@ import Data.Functor as Exports hiding (unzip)
 import Data.Functor.Compose as Exports
 import Data.Functor.Contravariant as Exports
 import Data.Functor.Identity as Exports
+import Data.Has as Exports
 import Data.IORef as Exports
 import Data.Int as Exports
 import Data.Ix as Exports

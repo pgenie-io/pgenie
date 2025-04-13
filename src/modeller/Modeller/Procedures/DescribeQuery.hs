@@ -80,13 +80,14 @@ data ResultColumn = ResultColumn
 -- Supposed to make it easier to embed in other monads.
 effect ::
   ( MonadIO m,
-    MonadReader Pq.Connection m,
-    MonadError err m,
-    IsSome err Error
+    MonadReader context m,
+    MonadError error m,
+    Has Pq.Connection context,
+    IsSome error Error
   ) =>
   Params -> m Result
 effect params = do
-  conn <- ask
+  conn <- asks getter
   res <- liftIO $ io conn params
   liftEither $ first to res
 

@@ -102,6 +102,7 @@ library modeller
   hs-source-dirs: src/modeller/
   exposed-modules:
   other-modules:
+    Modeller.Models.Domain
     Modeller.Procedures.DescribeQuery
     Modeller.Statements.SelectRelationColumns
     Modeller.Statements.SelectType

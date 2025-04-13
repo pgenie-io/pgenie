@@ -97,7 +97,7 @@ io conn params = runExceptT do
 
 -- | Execution with all things lifted.
 --
--- Supposed to make it easier to insert into other monads.
+-- Supposed to make it easier to embed in other monads.
 effect ::
   ( MonadIO m,
     MonadReader Pq.Connection m,

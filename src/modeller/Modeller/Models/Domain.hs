@@ -2,6 +2,14 @@ module Modeller.Models.Domain where
 
 import Base.Prelude hiding (Enum)
 
+-- * Errors
+
+data Error
+  = ConnectionError
+  deriving stock (Show, Eq)
+
+-- * Types
+
 data Type
   = PrimitiveType Primitive
   | ArrayType Array

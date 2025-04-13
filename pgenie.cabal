@@ -104,6 +104,7 @@ library modeller
   other-modules:
     Modeller.Models.Domain
     Modeller.Procedures.DescribeQuery
+    Modeller.Procedures.ResolveTypeByOid
     Modeller.Statements.SelectRelationColumns
     Modeller.Statements.SelectType
 

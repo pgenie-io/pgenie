@@ -43,6 +43,10 @@ data Error
   | ResultError ErrorResult
   deriving stock (Show, Eq)
 
+instance IsSome Error Error where
+  to = id
+  maybeFrom = Just
+
 data ErrorResult = ErrorResult
   { code :: Text,
     message :: Text,

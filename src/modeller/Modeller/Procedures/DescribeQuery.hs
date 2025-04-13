@@ -17,8 +17,8 @@ module Modeller.Procedures.DescribeQuery
     ResultColumn (..),
 
     -- * Execution
-    io,
     effect,
+    io,
   )
 where
 
@@ -73,6 +73,23 @@ data ResultColumn = ResultColumn
   }
   deriving stock (Show, Eq)
 
+-- * Effect
+
+-- | Execution with all things lifted.
+--
+-- Supposed to make it easier to embed in other monads.
+effect ::
+  ( MonadIO m,
+    MonadReader Pq.Connection m,
+    MonadError err m,
+    IsSome err Error
+  ) =>
+  Params -> m Result
+effect params = do
+  conn <- ask
+  res <- liftIO $ io conn params
+  liftEither $ first to res
+
 -- * IO
 
 -- | Specific execution.
@@ -98,21 +115,6 @@ io conn params = runExceptT do
     _ -> error ("Bug. Unexpected status: " <> show status)
 
   lift (Result <$> readParamTypeOids res <*> readResultColumns res)
-
--- | Execution with all things lifted.
---
--- Supposed to make it easier to embed in other monads.
-effect ::
-  ( MonadIO m,
-    MonadReader Pq.Connection m,
-    MonadError err m,
-    IsSome err Error
-  ) =>
-  Params -> m Result
-effect params = do
-  conn <- ask
-  res <- liftIO $ io conn params
-  liftEither $ first to res
 
 -- * Helpers
 

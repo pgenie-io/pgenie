@@ -9,16 +9,12 @@ import Control.Category as Exports
 import Control.Concurrent as Exports
 import Control.Exception as Exports
 import Control.Monad as Exports hiding (forM, forM_, mapM, mapM_, msum, sequence, sequence_)
-import Control.Monad.Error.Class as Exports
+import Control.Monad.Except as Exports
 import Control.Monad.Fix as Exports hiding (fix)
-import Control.Monad.IO.Class as Exports
+import Control.Monad.Reader as Exports
 import Control.Monad.ST as Exports
 import Control.Monad.ST.Unsafe as Exports
-import Control.Monad.Trans.Class as Exports
-import Control.Monad.Trans.Except as Exports (Except, ExceptT (ExceptT), catchE, except, finallyE, mapExcept, mapExceptT, runExcept, runExceptT, throwE, withExcept, withExceptT)
-import Control.Monad.Trans.Maybe as Exports hiding (liftListen, liftPass)
-import Control.Monad.Trans.Reader as Exports hiding (liftCallCC, liftCatch)
-import Control.Monad.Trans.State.Strict as Exports hiding (liftCallCC, liftCatch, liftListen, liftPass)
+import Control.Monad.State.Strict as Exports
 import Data.Bits as Exports
 import Data.Bool as Exports
 import Data.ByteString as Exports (ByteString)

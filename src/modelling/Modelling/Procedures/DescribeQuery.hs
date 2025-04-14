@@ -17,7 +17,7 @@ module Modelling.Procedures.DescribeQuery
     ResultColumn (..),
 
     -- * Execution
-    effect,
+    lifted,
     io,
   )
 where
@@ -73,12 +73,12 @@ data ResultColumn = ResultColumn
   }
   deriving stock (Show, Eq)
 
--- * Effect
+-- * Lifted
 
 -- | Execution with all things lifted.
 --
 -- Supposed to make it easier to embed in other monads.
-effect ::
+lifted ::
   ( MonadIO m,
     MonadReader context m,
     MonadError error m,
@@ -86,7 +86,7 @@ effect ::
     IsSome error Error
   ) =>
   Params -> m Result
-effect params = do
+lifted params = do
   conn <- asks getter
   res <- liftIO $ io conn params
   liftEither $ first to res

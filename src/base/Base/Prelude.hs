@@ -14,6 +14,7 @@ import Control.Monad.Reader as Exports
 import Control.Monad.ST as Exports
 import Control.Monad.ST.Unsafe as Exports
 import Control.Monad.State.Strict as Exports
+import Control.Monad.Writer.Strict as Exports
 import Data.Bifunctor as Exports
 import Data.Bits as Exports
 import Data.Bool as Exports
@@ -67,6 +68,7 @@ import GHC.IO.Exception as Exports
 import LawfulConversions as Exports (Is, IsMany (..), IsSome (..))
 import Numeric as Exports
 import Numeric.Natural as Exports (Natural)
+import SyntacticClass as Exports (Syntactic)
 import System.Environment as Exports
 import System.Exit as Exports
 import System.IO as Exports
@@ -77,6 +79,7 @@ import System.Mem.StableName as Exports
 import System.Timeout as Exports
 import Text.Printf as Exports (hPrintf, printf)
 import Text.Read as Exports (Read (..), readEither, readMaybe)
+import TextBuilder as Exports (TextBuilder)
 import Unsafe.Coerce as Exports
 import Witherable as Exports
 import Prelude as Exports hiding (all, and, any, concat, concatMap, elem, filter, foldl, foldl1, foldr, foldr1, id, mapM, mapM_, maximum, minimum, notElem, or, product, sequence, sequence_, sum, (.))

@@ -1,18 +1,10 @@
-module Modelling.Procedures.ResolveTypeByOid.Logic where
+module Modelling.Procedures.ResolveTypeByOid.Algebras.Type where
 
 import Base.Prelude
-import Modelling.Domain
+import Modelling.Procedures.ResolveTypeByOid.Domain
 
-liftTypeToArrayType :: Type -> Type
-liftTypeToArrayType =
-  ArrayType . \case
-    ArrayType a -> Array (succ a.dimensions) a.element
-    PrimitiveType a -> Array 1 (PrimitiveArrayElement a)
-    CompositeType a -> Array 1 (CompositeArrayElement a)
-    EnumType a -> Array 1 (EnumArrayElement a)
-
-maybeTypeFromStandardOid :: Word32 -> Maybe Type
-maybeTypeFromStandardOid = \case
+maybeFromStandardOid :: Word32 -> Maybe Type
+maybeFromStandardOid = \case
   17 -> scalar ByteaPrimitive
   18 -> scalar CharPrimitive
   20 -> scalar Int8Primitive
@@ -89,5 +81,5 @@ maybeTypeFromStandardOid = \case
   6157 -> array Int8multirangePrimitive
   _ -> Nothing
   where
-    scalar = Just . PrimitiveType
-    array = Just . ArrayType . Array 1 . PrimitiveArrayElement
+    scalar = Just . Type 0 . PrimitiveScalar
+    array = Just . Type 1 . PrimitiveScalar

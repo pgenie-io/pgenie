@@ -87,27 +87,29 @@ library base
 
   other-modules:
   build-depends:
-    base >=4.11 && <5,
-    bytestring >=0.10 && <0.13,
-    data-has ^>=0.4,
-    lawful-conversions ^>=0.1.6.1,
-    mtl >=2.3.1 && <3,
-    profunctors >=5.6 && <6,
-    text >=1.2 && <3,
-    time >=1.12 && <2,
-    tuple ^>=0.3.0.2,
-    vector >=0.12 && <0.14,
-    witherable ^>=0.5,
+    base,
+    bytestring,
+    data-has,
+    lawful-conversions,
+    syntactic-class,
+    mtl,
+    profunctors,
+    text-builder,
+    text,
+    time,
+    tuple,
+    vector,
+    witherable,
 
 library modelling
   import: base
   hs-source-dirs: src/modelling/
   exposed-modules:
   other-modules:
-    Modelling.Domain
     Modelling.Procedures.DescribeQuery
     Modelling.Procedures.ResolveTypeByOid
-    Modelling.Procedures.ResolveTypeByOid.Logic
+    Modelling.Procedures.ResolveTypeByOid.Algebras.Type
+    Modelling.Procedures.ResolveTypeByOid.Domain
     Modelling.Procedures.ResolveTypeByOid.Statements
     Modelling.Procedures.ResolveTypeByOid.Statements.SelectAttributes
     Modelling.Procedures.ResolveTypeByOid.Statements.SelectEnumLabels
@@ -117,11 +119,13 @@ library modelling
   build-depends:
     attoparsec,
     hasql-dev,
+    syntactic-class,
     hasql-th,
     pgenie:base,
     pgenie:libpq-extras,
+    text-builder,
     postgresql-libpq,
-    vector >=0.12,
+    vector,
 
 library libpq-extras
   import: base

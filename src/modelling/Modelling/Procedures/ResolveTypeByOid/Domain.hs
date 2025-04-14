@@ -1,25 +1,19 @@
-module Modelling.Domain where
+module Modelling.Procedures.ResolveTypeByOid.Domain where
 
 import Base.Prelude hiding (Enum)
 
--- * Errors
-
-data Error
-  = ConnectionError
-  | UnsupportedFeature
-      -- | Feature.
-      Text
-      -- | Input.
-      Text
-  deriving stock (Show, Eq)
-
 -- * Types
 
-data Type
-  = PrimitiveType Primitive
-  | ArrayType Array
-  | CompositeType Composite
-  | EnumType Enum
+data Type = Type
+  { dimensionality :: Int,
+    element :: Scalar
+  }
+  deriving stock (Show, Eq)
+
+data Scalar
+  = PrimitiveScalar Primitive
+  | CompositeScalar Composite
+  | EnumScalar Enum
   deriving stock (Show, Eq)
 
 data Primitive
@@ -60,18 +54,6 @@ data Primitive
   | TstzrangePrimitive
   | UuidPrimitive
   | XmlPrimitive
-  deriving stock (Show, Eq)
-
-data Array = Array
-  { dimensions :: Int,
-    element :: ArrayElement
-  }
-  deriving stock (Show, Eq)
-
-data ArrayElement
-  = PrimitiveArrayElement Primitive
-  | CompositeArrayElement Composite
-  | EnumArrayElement Enum
   deriving stock (Show, Eq)
 
 data Composite = Composite

@@ -109,6 +109,7 @@ library modeller
     Modeller.Procedures.ResolveTypeByOid
     Modeller.Procedures.ResolveTypeByOid.Statements
     Modeller.Procedures.ResolveTypeByOid.Statements.SelectAttributes
+    Modeller.Procedures.ResolveTypeByOid.Statements.SelectEnumLabels
     Modeller.Procedures.ResolveTypeByOid.Statements.SelectRelationColumns
     Modeller.Procedures.ResolveTypeByOid.Statements.SelectType
 

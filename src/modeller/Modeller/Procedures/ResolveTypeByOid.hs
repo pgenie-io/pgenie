@@ -5,7 +5,7 @@ module Modeller.Procedures.ResolveTypeByOid where
 import Base.Prelude hiding (Enum)
 import HasqlDev
 import Modeller.Models.Domain
-import Modeller.Statements qualified as Statements
+import Modeller.Procedures.ResolveTypeByOid.Statements qualified as Statements
 
 effect ::
   ( RunsStatement m,

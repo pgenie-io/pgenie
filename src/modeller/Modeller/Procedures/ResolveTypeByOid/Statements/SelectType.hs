@@ -1,4 +1,4 @@
-module Modeller.Statements.SelectType where
+module Modeller.Procedures.ResolveTypeByOid.Statements.SelectType where
 
 import Base.Prelude
 import Hasql.TH

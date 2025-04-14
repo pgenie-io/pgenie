@@ -1,4 +1,4 @@
-module Modeller.Statements.SelectRelationColumns where
+module Modeller.Procedures.ResolveTypeByOid.Statements.SelectRelationColumns where
 
 import Base.Prelude
 import Hasql.TH

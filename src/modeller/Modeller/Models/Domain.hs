@@ -6,6 +6,11 @@ import Base.Prelude hiding (Enum)
 
 data Error
   = ConnectionError
+  | UnsupportedFeature
+      -- | Feature.
+      Text
+      -- | Input.
+      Text
   deriving stock (Show, Eq)
 
 -- * Types

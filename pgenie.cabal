@@ -43,6 +43,7 @@ common base
     MagicHash
     MultiParamTypeClasses
     MultiWayIf
+    NamedFieldPuns
     NoFieldSelectors
     NoImplicitPrelude
     NoMonomorphismRestriction
@@ -106,6 +107,7 @@ library modeller
     Modeller.Models.Domain
     Modeller.Procedures.DescribeQuery
     Modeller.Procedures.ResolveTypeByOid
+    Modeller.Statements
     Modeller.Statements.SelectRelationColumns
     Modeller.Statements.SelectType
 

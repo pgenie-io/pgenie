@@ -108,6 +108,7 @@ library modeller
     Modeller.Procedures.DescribeQuery
     Modeller.Procedures.ResolveTypeByOid
     Modeller.Procedures.ResolveTypeByOid.Statements
+    Modeller.Procedures.ResolveTypeByOid.Statements.SelectAttributes
     Modeller.Procedures.ResolveTypeByOid.Statements.SelectRelationColumns
     Modeller.Procedures.ResolveTypeByOid.Statements.SelectType
 

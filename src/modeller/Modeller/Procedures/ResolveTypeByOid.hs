@@ -25,13 +25,15 @@ effect oid = do
             0 -> case type_.type_ of
               "b" -> throwError $ UnsupportedFeature "Base type" ""
               _ -> error "TODO"
-            _ -> do
-              elementType <- effect (fromIntegral type_.elementTypeOid)
-              pure $ ArrayType $ case elementType of
-                ArrayType a -> Array (succ a.dimensions) a.element
-                PrimitiveType a -> Array 1 (PrimitiveArrayElement a)
-                CompositeType a -> Array 1 (CompositeArrayElement a)
-                EnumType a -> Array 1 (EnumArrayElement a)
+            _ -> arrayTypeByElementType <$> effect (fromIntegral type_.elementTypeOid)
+
+arrayTypeByElementType :: Type -> Type
+arrayTypeByElementType =
+  ArrayType . \case
+    ArrayType a -> Array (succ a.dimensions) a.element
+    PrimitiveType a -> Array 1 (PrimitiveArrayElement a)
+    CompositeType a -> Array 1 (CompositeArrayElement a)
+    EnumType a -> Array 1 (EnumArrayElement a)
 
 staticOidType :: Word32 -> Maybe Type
 staticOidType = \case

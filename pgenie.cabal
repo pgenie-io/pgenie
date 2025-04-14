@@ -1,4 +1,4 @@
-cabal-version: 3.4
+cabal-version: 3.12
 name: pgenie
 version: 0
 category:
@@ -118,15 +118,15 @@ library modelling
     hasql-dev,
     hasql-th,
     pgenie:base,
-    pgenie:libpq-lawful-conversions,
+    pgenie:libpq-extras,
     postgresql-libpq,
     vector >=0.12,
 
-library libpq-lawful-conversions
+library libpq-extras
   import: base
-  hs-source-dirs: src/libpq-lawful-conversions/
+  hs-source-dirs: src/libpq-extras/
   exposed-modules:
-    LibpqLawfulConversions
+    LibpqExtras.LawfulConversions
 
   build-depends:
     base,

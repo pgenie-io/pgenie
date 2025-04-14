@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module LibpqLawfulConversions where
+module LibpqExtras.LawfulConversions where
 
 import Data.Int
 import Data.Word

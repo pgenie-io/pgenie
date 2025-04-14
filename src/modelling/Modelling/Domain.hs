@@ -1,4 +1,4 @@
-module Modelling.Models.Domain where
+module Modelling.Domain where
 
 import Base.Prelude hiding (Enum)
 
@@ -82,8 +82,7 @@ data Composite = Composite
 
 data CompositeField = CompositeField
   { name :: Text,
-    type_ :: Type,
-    nullable :: Bool
+    type_ :: Type
   }
   deriving stock (Show, Eq)
 

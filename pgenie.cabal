@@ -104,9 +104,10 @@ library modelling
   hs-source-dirs: src/modelling/
   exposed-modules:
   other-modules:
-    Modelling.Models.Domain
+    Modelling.Domain
     Modelling.Procedures.DescribeQuery
     Modelling.Procedures.ResolveTypeByOid
+    Modelling.Procedures.ResolveTypeByOid.Logic
     Modelling.Procedures.ResolveTypeByOid.Statements
     Modelling.Procedures.ResolveTypeByOid.Statements.SelectAttributes
     Modelling.Procedures.ResolveTypeByOid.Statements.SelectEnumLabels

@@ -1,4 +1,4 @@
-module Modeller.Models.Domain where
+module Modelling.Models.Domain where
 
 import Base.Prelude hiding (Enum)
 

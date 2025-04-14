@@ -99,19 +99,19 @@ library base
     vector >=0.12 && <0.14,
     witherable ^>=0.5,
 
-library modeller
+library modelling
   import: base
-  hs-source-dirs: src/modeller/
+  hs-source-dirs: src/modelling/
   exposed-modules:
   other-modules:
-    Modeller.Models.Domain
-    Modeller.Procedures.DescribeQuery
-    Modeller.Procedures.ResolveTypeByOid
-    Modeller.Procedures.ResolveTypeByOid.Statements
-    Modeller.Procedures.ResolveTypeByOid.Statements.SelectAttributes
-    Modeller.Procedures.ResolveTypeByOid.Statements.SelectEnumLabels
-    Modeller.Procedures.ResolveTypeByOid.Statements.SelectRelationColumns
-    Modeller.Procedures.ResolveTypeByOid.Statements.SelectType
+    Modelling.Models.Domain
+    Modelling.Procedures.DescribeQuery
+    Modelling.Procedures.ResolveTypeByOid
+    Modelling.Procedures.ResolveTypeByOid.Statements
+    Modelling.Procedures.ResolveTypeByOid.Statements.SelectAttributes
+    Modelling.Procedures.ResolveTypeByOid.Statements.SelectEnumLabels
+    Modelling.Procedures.ResolveTypeByOid.Statements.SelectRelationColumns
+    Modelling.Procedures.ResolveTypeByOid.Statements.SelectType
 
   build-depends:
     attoparsec,

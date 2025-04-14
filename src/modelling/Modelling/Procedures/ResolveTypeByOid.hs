@@ -1,11 +1,11 @@
 {-# OPTIONS_GHC -Wno-unused-binds -Wno-unused-imports -Wno-name-shadowing -Wno-incomplete-patterns -Wno-unused-matches -Wno-missing-methods -Wno-unused-record-wildcards -Wno-redundant-constraints #-}
 
-module Modeller.Procedures.ResolveTypeByOid where
+module Modelling.Procedures.ResolveTypeByOid where
 
 import Base.Prelude hiding (Enum)
 import HasqlDev
-import Modeller.Models.Domain
-import Modeller.Procedures.ResolveTypeByOid.Statements qualified as Statements
+import Modelling.Models.Domain
+import Modelling.Procedures.ResolveTypeByOid.Statements qualified as Statements
 
 effect ::
   ( RunsStatement m,

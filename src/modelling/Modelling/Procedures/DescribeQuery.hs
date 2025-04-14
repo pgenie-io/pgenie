@@ -1,6 +1,6 @@
 -- |
 -- Use LibPQ to extract the information about the query parameters and result.
-module Modeller.Procedures.DescribeQuery
+module Modelling.Procedures.DescribeQuery
   ( Context,
 
     -- * Domain

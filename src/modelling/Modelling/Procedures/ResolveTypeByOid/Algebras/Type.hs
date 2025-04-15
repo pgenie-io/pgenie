@@ -3,7 +3,7 @@ module Modelling.Procedures.ResolveTypeByOid.Algebras.Type where
 import Base.Prelude
 import Modelling.Procedures.ResolveTypeByOid.Domain
 
-maybeFromStandardOid :: Word32 -> Maybe Type
+maybeFromStandardOid :: Int32 -> Maybe Type
 maybeFromStandardOid = \case
   17 -> scalar ByteaPrimitive
   18 -> scalar CharPrimitive

@@ -106,7 +106,11 @@ library modelling
   hs-source-dirs: src/modelling/
   exposed-modules:
   other-modules:
+    Modelling.Frameworks.Procedure
     Modelling.Procedures.DescribeQuery
+    Modelling.Procedures.ResolveColumn
+    Modelling.Procedures.ResolveColumn.Statements
+    Modelling.Procedures.ResolveColumn.Statements.GetAttributeByRelationAndOffset
     Modelling.Procedures.ResolveTypeByOid
     Modelling.Procedures.ResolveTypeByOid.Algebras.Type
     Modelling.Procedures.ResolveTypeByOid.Domain

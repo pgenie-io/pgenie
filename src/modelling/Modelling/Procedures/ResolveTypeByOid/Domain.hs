@@ -6,7 +6,7 @@ import Base.Prelude hiding (Enum)
 
 data Type = Type
   { dimensionality :: Int,
-    element :: Scalar
+    scalar :: Scalar
   }
   deriving stock (Show, Eq)
 

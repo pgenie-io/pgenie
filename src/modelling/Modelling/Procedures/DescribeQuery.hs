@@ -17,7 +17,6 @@ module Modelling.Procedures.DescribeQuery
     ResultColumn (..),
 
     -- * Execution
-    lifted,
     io,
   )
 where
@@ -50,7 +49,7 @@ instance IsSome Error Error where
 data ErrorResult = ErrorResult
   { code :: Text,
     message :: Text,
-    -- \* Associated offset in the associated query string
+    -- | Offset in the associated query string.
     position :: Maybe Int
   }
   deriving stock (Show, Eq)
@@ -72,24 +71,6 @@ data ResultColumn = ResultColumn
     tableColumnIndex :: Int32
   }
   deriving stock (Show, Eq)
-
--- * Lifted
-
--- | Execution with all things lifted.
---
--- Supposed to make it easier to embed in other monads.
-lifted ::
-  ( MonadIO m,
-    MonadReader context m,
-    MonadError error m,
-    Has Pq.Connection context,
-    IsSome error Error
-  ) =>
-  Params -> m Result
-lifted params = do
-  conn <- asks getter
-  res <- liftIO $ io conn params
-  liftEither $ first to res
 
 -- * IO
 

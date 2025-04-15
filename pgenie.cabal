@@ -107,7 +107,6 @@ library modelling
   exposed-modules:
   other-modules:
     Modelling.Frameworks.Procedure
-    Modelling.Procedures.DescribeQuery
     Modelling.Procedures.ResolveColumn
     Modelling.Procedures.ResolveColumn.Statements
     Modelling.Procedures.ResolveColumn.Statements.GetAttributeByRelationAndOffset
@@ -121,23 +120,23 @@ library modelling
     Modelling.Procedures.ResolveTypeByOid.Statements.SelectType
 
   build-depends:
-    attoparsec,
     hasql-dev,
     syntactic-class,
     hasql-th,
     pgenie:base,
-    pgenie:libpq-extras,
     text-builder,
-    postgresql-libpq,
-    vector,
 
 library libpq-extras
   import: base
   hs-source-dirs: src/libpq-extras/
   exposed-modules:
     LibpqExtras.LawfulConversions
+    LibpqExtras.Procedures.DescribeQuery
 
   build-depends:
+    pgenie:base,
     base,
     lawful-conversions,
+    attoparsec,
+    vector,
     postgresql-libpq,

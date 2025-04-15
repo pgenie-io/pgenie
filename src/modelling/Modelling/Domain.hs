@@ -1,8 +1,13 @@
-module Modelling.Procedures.ResolveTypeByOid.Domain where
+module Modelling.Domain where
 
 import Base.Prelude hiding (Enum)
 
--- * Types
+data Param = Param
+  { name :: Text,
+    nullable :: Bool,
+    type_ :: Type
+  }
+  deriving stock (Show, Eq)
 
 data Type = Type
   { dimensionality :: Int,

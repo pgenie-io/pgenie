@@ -1,4 +1,4 @@
-cabal-version: 3.12
+cabal-version: 3.4
 name: pgenie
 version: 0
 category:
@@ -91,11 +91,11 @@ library base
     bytestring,
     data-has,
     lawful-conversions,
-    syntactic-class,
     mtl,
     profunctors,
-    text-builder,
+    syntactic-class,
     text,
+    text-builder,
     time,
     tuple,
     vector,
@@ -106,13 +106,16 @@ library modelling
   hs-source-dirs: src/modelling/
   exposed-modules:
   other-modules:
+    Modelling.Domain
     Modelling.Frameworks.Procedure
     Modelling.Procedures.ResolveColumn
     Modelling.Procedures.ResolveColumn.Statements
     Modelling.Procedures.ResolveColumn.Statements.GetAttributeByRelationAndOffset
+    Modelling.Procedures.ResolveParamNullabilities
+    Modelling.Procedures.ResolveParamNullabilities.DefaultEncoder
+    Modelling.Procedures.ResolveParamNullabilities.DefaultEncoder.DefaultValues
     Modelling.Procedures.ResolveTypeByOid
     Modelling.Procedures.ResolveTypeByOid.Algebras.Type
-    Modelling.Procedures.ResolveTypeByOid.Domain
     Modelling.Procedures.ResolveTypeByOid.Statements
     Modelling.Procedures.ResolveTypeByOid.Statements.SelectAttributes
     Modelling.Procedures.ResolveTypeByOid.Statements.SelectEnumLabels
@@ -120,11 +123,15 @@ library modelling
     Modelling.Procedures.ResolveTypeByOid.Statements.SelectType
 
   build-depends:
+    aeson,
+    hasql,
     hasql-dev,
-    syntactic-class,
     hasql-th,
+    iproute,
     pgenie:base,
+    syntactic-class,
     text-builder,
+    vector,
 
 library libpq-extras
   import: base
@@ -134,9 +141,9 @@ library libpq-extras
     LibpqExtras.Procedures.DescribeQuery
 
   build-depends:
-    pgenie:base,
+    attoparsec,
     base,
     lawful-conversions,
-    attoparsec,
-    vector,
+    pgenie:base,
     postgresql-libpq,
+    vector,

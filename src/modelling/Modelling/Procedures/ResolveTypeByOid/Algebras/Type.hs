@@ -1,7 +1,7 @@
 module Modelling.Procedures.ResolveTypeByOid.Algebras.Type where
 
 import Base.Prelude
-import Modelling.Procedures.ResolveTypeByOid.Domain
+import Modelling.Domain
 
 maybeFromStandardOid :: Int32 -> Maybe Type
 maybeFromStandardOid = \case

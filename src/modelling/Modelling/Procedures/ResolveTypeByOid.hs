@@ -2,15 +2,14 @@ module Modelling.Procedures.ResolveTypeByOid
   ( Params (..),
     Result,
     lifted,
-    module Domain,
   )
 where
 
 import Base.Prelude hiding (Enum)
 import HasqlDev
+import Modelling.Domain as Domain
 import Modelling.Frameworks.Procedure
 import Modelling.Procedures.ResolveTypeByOid.Algebras.Type qualified as Algebras.Type
-import Modelling.Procedures.ResolveTypeByOid.Domain as Domain
 import Modelling.Procedures.ResolveTypeByOid.Statements qualified as Statements
 import SyntacticClass qualified as Syntactic
 import TextBuilder qualified

@@ -38,7 +38,7 @@ lifted params = do
   nullabilities <- Hasql.runSession (go mempty encoders [])
   return
     ( zipWith
-        (\param nullability -> param {nullable = nullability})
+        (\Param {..} nullability -> Param {nullable = nullability, ..})
         params.params
         nullabilities
     )

@@ -2,6 +2,19 @@ module Modelling.Domain where
 
 import Base.Prelude hiding (Enum)
 
+data Query = Query
+  { params :: Vector Param,
+    result :: Vector ResultColumn
+  }
+  deriving stock (Show, Eq)
+
+data ResultColumn = ResultColumn
+  { name :: Text,
+    nullable :: Bool,
+    type_ :: Type
+  }
+  deriving stock (Show, Eq)
+
 data Param = Param
   { name :: Text,
     nullable :: Bool,

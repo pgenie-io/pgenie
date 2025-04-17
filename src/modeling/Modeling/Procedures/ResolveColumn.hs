@@ -1,4 +1,4 @@
-module Modelling.Procedures.ResolveColumn
+module Modeling.Procedures.ResolveColumn
   ( Params (..),
     Result,
     lifted,
@@ -7,8 +7,8 @@ where
 
 import Base.Prelude
 import HasqlDev qualified as Hasql
-import Modelling.Frameworks.Procedure
-import Modelling.Procedures.ResolveColumn.Statements qualified as Statements
+import Modeling.Frameworks.Procedure
+import Modeling.Procedures.ResolveColumn.Statements qualified as Statements
 import SyntacticClass qualified as Syntactic
 
 data Params = Params

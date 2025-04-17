@@ -1,4 +1,4 @@
-module Modelling.Procedures.ResolveTypeByOid.Statements.SelectAttributes where
+module Modeling.Procedures.ResolveTypeByOid.Statements.SelectAttributes where
 
 import Base.Prelude
 import Hasql.TH

@@ -4,10 +4,10 @@
 ```mermaid
 graph TD
 
-modelling --> catalog-pg-statements
-modelling --> libpq-lawful-conversions
+modeling --> catalog-pg-statements
+modeling --> libpq-lawful-conversions
 
-modelling --> base
+modeling --> base
 catalog-pg-statements --> base
 libpq-lawful-conversions --> base
 ```

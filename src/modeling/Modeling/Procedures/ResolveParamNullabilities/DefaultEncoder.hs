@@ -1,4 +1,4 @@
-module Modelling.Procedures.ResolveParamNullabilities.DefaultEncoder
+module Modeling.Procedures.ResolveParamNullabilities.DefaultEncoder
   ( fromType,
   )
 where
@@ -6,8 +6,8 @@ where
 import Base.Prelude hiding (Enum, fromEnum)
 import Data.Vector qualified as Vector
 import Hasql.Encoders qualified as Encoders
-import Modelling.Domain
-import Modelling.Procedures.ResolveParamNullabilities.DefaultEncoder.DefaultValues qualified as DefaultValues
+import Modeling.Domain
+import Modeling.Procedures.ResolveParamNullabilities.DefaultEncoder.DefaultValues qualified as DefaultValues
 
 fromType :: Type -> Maybe (Encoders.Value ())
 fromType (Type dimensionality scalar) = do

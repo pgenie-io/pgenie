@@ -1,4 +1,4 @@
-module Modelling.Frameworks.Procedure where
+module Modeling.Frameworks.Procedure where
 
 import Base.Prelude
 import TextBuilder qualified

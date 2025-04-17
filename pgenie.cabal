@@ -101,26 +101,26 @@ library base
     vector,
     witherable,
 
-library modelling
+library modeling
   import: base
-  hs-source-dirs: src/modelling/
+  hs-source-dirs: src/modeling/
   exposed-modules:
   other-modules:
-    Modelling.Domain
-    Modelling.Frameworks.Procedure
-    Modelling.Procedures.ResolveColumn
-    Modelling.Procedures.ResolveColumn.Statements
-    Modelling.Procedures.ResolveColumn.Statements.GetAttributeByRelationAndOffset
-    Modelling.Procedures.ResolveParamNullabilities
-    Modelling.Procedures.ResolveParamNullabilities.DefaultEncoder
-    Modelling.Procedures.ResolveParamNullabilities.DefaultEncoder.DefaultValues
-    Modelling.Procedures.ResolveTypeByOid
-    Modelling.Procedures.ResolveTypeByOid.Algebras.Type
-    Modelling.Procedures.ResolveTypeByOid.Statements
-    Modelling.Procedures.ResolveTypeByOid.Statements.SelectAttributes
-    Modelling.Procedures.ResolveTypeByOid.Statements.SelectEnumLabels
-    Modelling.Procedures.ResolveTypeByOid.Statements.SelectRelationColumns
-    Modelling.Procedures.ResolveTypeByOid.Statements.SelectType
+    Modeling.Domain
+    Modeling.Frameworks.Procedure
+    Modeling.Procedures.ResolveColumn
+    Modeling.Procedures.ResolveColumn.Statements
+    Modeling.Procedures.ResolveColumn.Statements.GetAttributeByRelationAndOffset
+    Modeling.Procedures.ResolveParamNullabilities
+    Modeling.Procedures.ResolveParamNullabilities.DefaultEncoder
+    Modeling.Procedures.ResolveParamNullabilities.DefaultEncoder.DefaultValues
+    Modeling.Procedures.ResolveTypeByOid
+    Modeling.Procedures.ResolveTypeByOid.Algebras.Type
+    Modeling.Procedures.ResolveTypeByOid.Statements
+    Modeling.Procedures.ResolveTypeByOid.Statements.SelectAttributes
+    Modeling.Procedures.ResolveTypeByOid.Statements.SelectEnumLabels
+    Modeling.Procedures.ResolveTypeByOid.Statements.SelectRelationColumns
+    Modeling.Procedures.ResolveTypeByOid.Statements.SelectType
 
   build-depends:
     aeson,

@@ -1,4 +1,4 @@
-module Modelling.Procedures.ResolveParamNullabilities.DefaultEncoder.DefaultValues where
+module Modeling.Procedures.ResolveParamNullabilities.DefaultEncoder.DefaultValues where
 
 import Base.Prelude
 import Data.Aeson qualified as Aeson

@@ -1,4 +1,4 @@
-module Modelling.Procedures.ResolveParamNullabilities where
+module Modeling.Procedures.ResolveParamNullabilities where
 
 import Base.Prelude
 import Hasql.Decoders qualified as Decoders
@@ -6,9 +6,9 @@ import Hasql.Encoders qualified as Encoders
 import Hasql.Session qualified as Session
 import Hasql.Statement qualified as Statement
 import HasqlDev qualified as Hasql
-import Modelling.Domain
-import Modelling.Frameworks.Procedure
-import Modelling.Procedures.ResolveParamNullabilities.DefaultEncoder qualified as DefaultEncoder
+import Modeling.Domain
+import Modeling.Frameworks.Procedure
+import Modeling.Procedures.ResolveParamNullabilities.DefaultEncoder qualified as DefaultEncoder
 import SyntacticClass qualified as Syntactic
 
 data Params = Params

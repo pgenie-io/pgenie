@@ -1,7 +1,7 @@
-module Modelling where
+module Modeling where
 
 import Base.Prelude hiding (Enum)
-import Modelling.Domain
+import Modeling.Domain
 
 analyse :: Text -> m Query
 analyse =

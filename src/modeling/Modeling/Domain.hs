@@ -8,14 +8,13 @@ data Query = Query
   }
   deriving stock (Show, Eq)
 
-data ResultColumn = ResultColumn
-  { name :: Text,
-    nullable :: Bool,
+data Param = Param
+  { nullable :: Bool,
     type_ :: Type
   }
   deriving stock (Show, Eq)
 
-data Param = Param
+data ResultColumn = ResultColumn
   { name :: Text,
     nullable :: Bool,
     type_ :: Type

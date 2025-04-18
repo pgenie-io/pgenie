@@ -4,6 +4,7 @@ module Modeling.Procedures.ResolveParamNullabilities
 where
 
 import Base.Prelude
+import Data.Vector qualified as Vector
 import Hasql.Decoders qualified as Decoders
 import Hasql.Encoders qualified as Encoders
 import Hasql.Session qualified as Session
@@ -16,24 +17,24 @@ import SyntacticClass qualified as Syntactic
 
 data ResolveParamNullabilities = ResolveParamNullabilities
   { query :: Text,
-    params :: [Param]
+    paramTypes :: Vector Type
   }
   deriving stock (Show, Eq)
 
 instance Procedure ResolveParamNullabilities where
-  type ProcedureResult ResolveParamNullabilities = [Param]
+  type ProcedureResult ResolveParamNullabilities = Vector Param
   runProcedure params = do
-    encoders <- forM params.params \param ->
+    encoders <- Vector.iforM params.paramTypes \index type_ ->
       inContext
-        ["param:", Syntactic.toTextBuilder param.name]
-        case DefaultEncoder.fromType param.type_ of
-          Nothing -> crash ["Unsupported type: ", Syntactic.toTextBuilder (show param.type_)]
+        ["param:", Syntactic.toTextBuilder (show index)]
+        case DefaultEncoder.fromType type_ of
+          Nothing -> crash ["Unsupported type: ", Syntactic.toTextBuilder (show type_)]
           Just encoder -> pure encoder
-    nullabilities <- Hasql.runSession (go mempty encoders [])
+    nullabilities <- Vector.fromList <$> Hasql.runSession (go mempty (Vector.toList encoders) [])
     return
-      ( zipWith
-          (\Param {..} nullability -> Param {nullable = nullability, ..})
-          params.params
+      ( Vector.zipWith
+          (\type_ nullable -> Param {nullable, type_})
+          params.paramTypes
           nullabilities
       )
     where

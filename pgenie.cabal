@@ -105,6 +105,8 @@ library modeling
   import: base
   hs-source-dirs: src/modeling/
   exposed-modules:
+    Modeling
+
   other-modules:
     Modeling.Domain
     Modeling.Frameworks.Procedure

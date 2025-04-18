@@ -58,6 +58,8 @@ data ResultColumn = ResultColumn
     name :: Maybe Text,
     -- | Type OID.
     typeOid :: Word32,
+    -- | Type modifier. The interpretation of modifier values is type-specific; they typically indicate precision or size limits. The value -1 is used to indicate "no information available". Most data types do not use modifiers, in which case the value is always -1.
+    typeMod :: Int,
     -- | Table OID. Absent when 0.
     tableOid :: Word32,
     -- | Index within the table. Absent when 0.
@@ -110,9 +112,10 @@ readResultColumns res = do
       Just "?column?" -> Nothing
       Just name -> maybeFrom name
     typeOid <- fmap to $ Pq.ftype res col
+    typeMod <- Pq.fmod res col
     tableOid <- fmap to $ Pq.ftable res col
     tableCol <- fmap to $ Pq.ftablecol res col
-    return $ ResultColumn name typeOid tableOid tableCol
+    return $ ResultColumn name typeOid typeMod tableOid tableCol
 
 readResultErrorDetails :: Pq.Result -> IO Error
 readResultErrorDetails res = do

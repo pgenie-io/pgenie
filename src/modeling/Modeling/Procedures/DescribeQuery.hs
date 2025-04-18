@@ -29,6 +29,8 @@ data DescribeQueryResultColumn = DescribeQueryResultColumn
     name :: Maybe Text,
     -- | Type OID.
     typeOid :: Word32,
+    -- | Type modifier. The interpretation of modifier values is type-specific; they typically indicate precision or size limits. The value -1 is used to indicate "no information available". Most data types do not use modifiers, in which case the value is always -1.
+    typeMod :: Int,
     -- | Table OID. Absent when 0.
     tableOid :: Word32,
     -- | Index within the table. Absent when 0.
@@ -53,8 +55,8 @@ instance Procedure DescribeQuery where
             { paramTypeOids,
               resultColumns =
                 Vector.map
-                  ( \(LibpqExtras.Procedures.DescribeQuery.ResultColumn name typeOid tableOid tableColumnIndex) ->
-                      DescribeQueryResultColumn {name, typeOid, tableOid, tableColumnIndex}
+                  ( \(LibpqExtras.Procedures.DescribeQuery.ResultColumn name typeOid typeMod tableOid tableColumnIndex) ->
+                      DescribeQueryResultColumn {name, typeOid, typeMod, tableOid, tableColumnIndex}
                   )
                   resultColumns
             }

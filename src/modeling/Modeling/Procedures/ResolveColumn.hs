@@ -1,6 +1,6 @@
 module Modeling.Procedures.ResolveColumn
   ( ResolveColumn (..),
-    ResolveColumnResult (..),
+    ResolveColumnResultRow (..),
   )
 where
 
@@ -15,11 +15,11 @@ data ResolveColumn = ResolveColumn
   }
   deriving stock (Show, Eq)
 
-data ResolveColumnResult = ResolveColumnResult
+data ResolveColumnResultRow = ResolveColumnResultRow
   { -- | The name of the attribute.
     name :: Text,
     -- | OID of the type of the attribute.
-    typeId :: Int32,
+    typeOid :: Int32,
     -- | Number of dimensions of the type.
     nDims :: Int32,
     -- | Whether it's not nullable.
@@ -27,25 +27,22 @@ data ResolveColumnResult = ResolveColumnResult
   }
 
 instance Procedure ResolveColumn where
-  type ProcedureResult ResolveColumn = ResolveColumnResult
+  type ProcedureResult ResolveColumn = Maybe ResolveColumnResultRow
   runProcedure (ResolveColumn relationOid attributeNum) =
     inContext ["relation:", Syntactic.toTextBuilder relationOid] do
       inContext ["attribute:", Syntactic.toTextBuilder attributeNum] do
-        case relationOid of
-          0 -> crash ["Column does not have a relation associated"]
-          _ -> do
-            runStatementByParams
-              Statements.GetAttributeByRelationAndOffsetParams
-                { relationOid,
-                  attributeNum
-                }
-              >>= \case
-                Nothing -> crash ["Column not found"]
-                Just (Statements.GetAttributeByRelationAndOffsetResultRow name typeId nDims notNull) ->
-                  pure
-                    ResolveColumnResult
-                      { name,
-                        typeId,
-                        nDims,
-                        notNull
-                      }
+        runStatementByParams
+          Statements.GetAttributeByRelationAndOffsetParams
+            { relationOid,
+              attributeNum
+            }
+          >>= traverse
+            ( \(Statements.GetAttributeByRelationAndOffsetResultRow name typeOid nDims notNull) ->
+                pure
+                  ResolveColumnResultRow
+                    { name,
+                      typeOid,
+                      nDims,
+                      notNull
+                    }
+            )

@@ -30,7 +30,41 @@ analyse query = do
   params <-
     Procedure.runProcedure Procedures.ResolveParamNullabilities {query, paramTypes}
 
-  result <-
-    error "TODO"
+  resultColumns <-
+    Vector.iforM queryDescription.resultColumns \index resultColumn -> do
+      Procedure.inContext ["column:", Syntactic.toTextBuilder (show index)] do
+        name <- case resultColumn.name of
+          Nothing -> do
+            Procedure.crash ["Column name missing. Specify one using the AS clause."]
+          Just name -> pure name
+        Procedure.inContext ["name:", Syntactic.toTextBuilder name] do
+          type_ <-
+            Procedure.runProcedure
+              Procedures.ResolveTypeByOid
+                { oid = fromIntegral resultColumn.typeOid
+                }
+          Procedure.runProcedure
+            Procedures.ResolveColumn
+              { relationOid = fromIntegral resultColumn.tableOid,
+                attributeNum = resultColumn.tableColumnIndex
+              }
+            >>= \case
+              Nothing -> do
+                pure (ResultColumn name True type_)
+              Just tableColumn -> do
+                when (tableColumn.typeOid /= fromIntegral resultColumn.typeOid) do
+                  Procedure.warn
+                    [ "Column type OID mismatch. From query description: ",
+                      Syntactic.toTextBuilder resultColumn.typeOid,
+                      ", from referred table column: ",
+                      Syntactic.toTextBuilder tableColumn.typeOid,
+                      ". Using the first one."
+                    ]
+                pure
+                  ResultColumn
+                    { name,
+                      nullable = not tableColumn.notNull,
+                      type_
+                    }
 
-  pure Query {params, result}
+  pure Query {params, resultColumns}

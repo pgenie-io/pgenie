@@ -4,7 +4,7 @@ import Base.Prelude hiding (Enum)
 
 data Query = Query
   { params :: Vector Param,
-    result :: Vector ResultColumn
+    resultColumns :: Vector ResultColumn
   }
   deriving stock (Show, Eq)
 

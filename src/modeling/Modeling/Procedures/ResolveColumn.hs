@@ -1,23 +1,21 @@
 module Modeling.Procedures.ResolveColumn
-  ( Params (..),
-    Result,
-    lifted,
+  ( ResolveColumn (..),
+    ResolveColumnResult (..),
   )
 where
 
 import Base.Prelude
-import HasqlDev qualified as Hasql
 import Modeling.Frameworks.Procedure
 import Modeling.Procedures.ResolveColumn.Statements qualified as Statements
 import SyntacticClass qualified as Syntactic
 
-data Params = Params
+data ResolveColumn = ResolveColumn
   { relationOid :: Int32,
     attributeNum :: Int32
   }
   deriving stock (Show, Eq)
 
-data Result = Result
+data ResolveColumnResult = ResolveColumnResult
   { -- | The name of the attribute.
     name :: Text,
     -- | OID of the type of the attribute.
@@ -28,32 +26,26 @@ data Result = Result
     notNull :: Bool
   }
 
-lifted ::
-  ( Hasql.RunsStatement m,
-    MonadReader Location m,
-    MonadError Error m,
-    MonadWriter [Error] m
-  ) =>
-  Params ->
-  m Result
-lifted (Params relationOid attributeNum) =
-  inContext ["relation:", Syntactic.toTextBuilder relationOid] do
-    inContext ["attribute:", Syntactic.toTextBuilder attributeNum] do
-      case relationOid of
-        0 -> crash ["Column does not have a relation associated"]
-        _ -> do
-          Hasql.runStatementByParams
-            Statements.GetAttributeByRelationAndOffsetParams
-              { relationOid,
-                attributeNum
-              }
-            >>= \case
-              Nothing -> crash ["Column not found"]
-              Just (Statements.GetAttributeByRelationAndOffsetResultRow name typeId nDims notNull) ->
-                pure
-                  Result
-                    { name,
-                      typeId,
-                      nDims,
-                      notNull
-                    }
+instance Procedure ResolveColumn where
+  type ProcedureResult ResolveColumn = ResolveColumnResult
+  runProcedure (ResolveColumn relationOid attributeNum) =
+    inContext ["relation:", Syntactic.toTextBuilder relationOid] do
+      inContext ["attribute:", Syntactic.toTextBuilder attributeNum] do
+        case relationOid of
+          0 -> crash ["Column does not have a relation associated"]
+          _ -> do
+            runStatementByParams
+              Statements.GetAttributeByRelationAndOffsetParams
+                { relationOid,
+                  attributeNum
+                }
+              >>= \case
+                Nothing -> crash ["Column not found"]
+                Just (Statements.GetAttributeByRelationAndOffsetResultRow name typeId nDims notNull) ->
+                  pure
+                    ResolveColumnResult
+                      { name,
+                        typeId,
+                        nDims,
+                        notNull
+                      }

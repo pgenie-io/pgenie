@@ -108,6 +108,7 @@ library modeling
   other-modules:
     Modeling.Domain
     Modeling.Frameworks.Procedure
+    Modeling.Procedures
     Modeling.Procedures.ResolveColumn
     Modeling.Procedures.ResolveColumn.Statements
     Modeling.Procedures.ResolveColumn.Statements.GetAttributeByRelationAndOffset
@@ -121,6 +122,9 @@ library modeling
     Modeling.Procedures.ResolveTypeByOid.Statements.SelectEnumLabels
     Modeling.Procedures.ResolveTypeByOid.Statements.SelectRelationColumns
     Modeling.Procedures.ResolveTypeByOid.Statements.SelectType
+
+  build-tool-depends:
+    autoexporter:autoexporter >=2.0.0.13 && <3
 
   build-depends:
     aeson,

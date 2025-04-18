@@ -109,6 +109,7 @@ library modeling
     Modeling.Domain
     Modeling.Frameworks.Procedure
     Modeling.Procedures
+    Modeling.Procedures.DescribeQuery
     Modeling.Procedures.ResolveColumn
     Modeling.Procedures.ResolveColumn.Statements
     Modeling.Procedures.ResolveColumn.Statements.GetAttributeByRelationAndOffset
@@ -133,6 +134,7 @@ library modeling
     hasql-th,
     iproute,
     pgenie:base,
+    pgenie:libpq-extras,
     syntactic-class,
     text-builder,
     vector,

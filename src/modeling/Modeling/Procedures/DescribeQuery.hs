@@ -1,0 +1,74 @@
+module Modeling.Procedures.DescribeQuery
+  ( DescribeQuery (..),
+    DescribeQueryResult (..),
+    DescribeQueryResultColumn (..),
+  )
+where
+
+import Base.Prelude
+import Data.Vector qualified as Vector
+import Hasql.Connection qualified
+import HasqlDev qualified
+import LibpqExtras.Procedures.DescribeQuery qualified
+import Modeling.Frameworks.Procedure
+import SyntacticClass qualified as Syntactic
+
+data DescribeQuery = DescribeQuery
+  { query :: Text
+  }
+  deriving stock (Show, Eq)
+
+data DescribeQueryResult = DescribeQueryResult
+  { paramTypeOids :: Vector Word32,
+    resultColumns :: Vector DescribeQueryResultColumn
+  }
+  deriving stock (Show, Eq)
+
+data DescribeQueryResultColumn = DescribeQueryResultColumn
+  { -- | Name if it's present and makes valid UTF-8.
+    name :: Maybe Text,
+    -- | Type OID.
+    typeOid :: Word32,
+    -- | Table OID. Absent when 0.
+    tableOid :: Word32,
+    -- | Index within the table. Absent when 0.
+    tableColumnIndex :: Int32
+  }
+  deriving stock (Show, Eq)
+
+instance Procedure DescribeQuery where
+  type ProcedureResult DescribeQuery = DescribeQueryResult
+  runProcedure (DescribeQuery query) = do
+    result <- HasqlDev.runSession do
+      hasqlConnection <- ask
+      liftIO do
+        Hasql.Connection.withLibPQConnection hasqlConnection \libpqConnection ->
+          LibpqExtras.Procedures.DescribeQuery.io
+            libpqConnection
+            LibpqExtras.Procedures.DescribeQuery.Params {query}
+    case result of
+      Right (LibpqExtras.Procedures.DescribeQuery.Result paramTypeOids resultColumns) ->
+        pure
+          DescribeQueryResult
+            { paramTypeOids,
+              resultColumns =
+                Vector.map
+                  ( \(LibpqExtras.Procedures.DescribeQuery.ResultColumn name typeOid tableOid tableColumnIndex) ->
+                      DescribeQueryResultColumn {name, typeOid, tableOid, tableColumnIndex}
+                  )
+                  resultColumns
+            }
+      Left error -> case error of
+        LibpqExtras.Procedures.DescribeQuery.ConnectionError ->
+          crash ["Connection error"]
+        LibpqExtras.Procedures.DescribeQuery.ResultError code message position ->
+          crash
+            [ "Broken query. SQLSTATE code: ",
+              Syntactic.toTextBuilder code,
+              ", message: ",
+              Syntactic.toTextBuilder message,
+              maybe
+                ""
+                (\pos -> ", position: " <> Syntactic.toTextBuilder pos)
+                position
+            ]

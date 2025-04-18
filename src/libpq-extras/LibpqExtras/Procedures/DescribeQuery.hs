@@ -6,11 +6,10 @@ module LibpqExtras.Procedures.DescribeQuery
     -- * Domain
 
     -- ** Params
-    Params,
+    Params (..),
 
     -- ** Error
     Error (..),
-    ErrorResult (..),
 
     -- ** Result
     Result (..),
@@ -39,19 +38,13 @@ data Params = Params
 
 data Error
   = ConnectionError
-  | ResultError ErrorResult
-  deriving stock (Show, Eq)
-
-instance IsSome Error Error where
-  to = id
-  maybeFrom = Just
-
-data ErrorResult = ErrorResult
-  { code :: Text,
-    message :: Text,
-    -- | Offset in the associated query string.
-    position :: Maybe Int
-  }
+  | ResultError
+      -- | SQLSTATE code.
+      Text
+      -- | Message.
+      Text
+      -- | Offset in the associated query string.
+      (Maybe Int)
   deriving stock (Show, Eq)
 
 data Result = Result
@@ -84,7 +77,7 @@ io conn params = runExceptT do
   status <- lift $ Pq.resultStatus res
   case status of
     Pq.CommandOk -> return ()
-    Pq.FatalError -> lift (readResultErrorDetails res) >>= throwError . ResultError
+    Pq.FatalError -> lift (readResultErrorDetails res) >>= throwError
     _ -> error ("Bug. Unexpected status: " <> show status)
 
   res <- lift $ Pq.describePrepared conn ""
@@ -121,12 +114,12 @@ readResultColumns res = do
     tableCol <- fmap to $ Pq.ftablecol res col
     return $ ResultColumn name typeOid tableOid tableCol
 
-readResultErrorDetails :: Pq.Result -> IO ErrorResult
+readResultErrorDetails :: Pq.Result -> IO Error
 readResultErrorDetails res = do
   code <- foldMap from <$> Pq.resultErrorField res Pq.DiagSqlstate
   message <- foldMap from <$> Pq.resultErrorField res Pq.DiagMessagePrimary
   position <- mapMaybe parseInt <$> Pq.resultErrorField res Pq.DiagStatementPosition
-  pure ErrorResult {..}
+  pure (ResultError code message position)
   where
     parseInt :: ByteString -> Maybe Int
     parseInt byteString =

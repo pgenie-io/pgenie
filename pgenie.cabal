@@ -79,6 +79,13 @@ common test
     -threaded
     "-with-rtsopts=-N -I0 -qg"
 
+executable pgn
+  import: executable
+  hs-source-dirs: src/pgn/
+  main-is: Main.hs
+  build-depends:
+    pgenie:app
+
 library base
   import: base
   hs-source-dirs: src/base/
@@ -155,3 +162,19 @@ library libpq-extras
     pgenie:base,
     postgresql-libpq,
     vector,
+
+library app
+  import: base
+  hs-source-dirs: src/app/
+  exposed-modules:
+    App
+    App.Commands
+    App.Commands.Compile
+    App.Commands.GenerateSignatures
+    App.Frameworks.CommandCliApp
+    App.Services.Analyser
+
+  build-depends:
+    optparse-applicative,
+    pgenie:base,
+    text,

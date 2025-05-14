@@ -172,6 +172,7 @@ library app
     App.Commands.Compile
     App.Commands.GenerateSignatures
     App.Frameworks.CommandCliApp
+    App.Frameworks.Procedure
     App.Frameworks.Service
     App.Services.Analyser.Domain
     App.Services.PqConnection.Context
@@ -179,7 +180,9 @@ library app
     App.Services.PqConnection.Utils.LawfulConversions
 
   build-depends:
+    attoparsec,
     optparse-applicative,
     pgenie:base,
     postgresql-libpq,
     text,
+    vector,

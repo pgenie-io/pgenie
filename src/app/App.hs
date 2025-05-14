@@ -17,6 +17,6 @@ main =
 
 commands :: [Command]
 commands =
-  [ modelCommand (Proxy @Commands.Compile),
-    modelCommand (Proxy @Commands.GenerateSignatures)
+  [ Commands.compile,
+    Commands.generateSignatures
   ]

@@ -173,6 +173,7 @@ library app
     App.Commands.GenerateSignatures
     App.Frameworks.CommandCliApp
     App.Services.Analyser
+    App.Services.Analyser.Domain
 
   build-depends:
     optparse-applicative,

@@ -175,14 +175,18 @@ library app
     App.Frameworks.Procedure
     App.Frameworks.Service
     App.Services.Analyser.Domain
+    App.Services.DbAdmin.Context
     App.Services.PqConnection.Context
     App.Services.PqConnection.Procedures.DescribeQuery
     App.Services.PqConnection.Utils.LawfulConversions
 
   build-depends:
     attoparsec,
+    hasql,
+    hasql-pool,
     optparse-applicative,
     pgenie:base,
     postgresql-libpq,
     text,
+    uuid,
     vector,

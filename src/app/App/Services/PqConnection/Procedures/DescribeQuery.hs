@@ -1,10 +1,10 @@
 module App.Services.PqConnection.Procedures.DescribeQuery
   ( -- * Params
-    Params (..),
+    DescribeQuery (..),
 
     -- * Result
-    Result (..),
-    ResultColumn (..),
+    DescribeQueryResult (..),
+    DescribeQueryResultColumn (..),
   )
 where
 
@@ -16,18 +16,18 @@ import Data.Attoparsec.ByteString.Char8 qualified as AttoparsecBs
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.LibPQ qualified as Pq
 
-data Params = Params
+data DescribeQuery = DescribeQuery
   { query :: Text
   }
   deriving stock (Show, Eq)
 
-data Result = Result
+data DescribeQueryResult = DescribeQueryResult
   { paramTypeOids :: Vector Word32,
-    resultColumns :: Vector ResultColumn
+    resultColumns :: Vector DescribeQueryResultColumn
   }
   deriving stock (Show, Eq)
 
-data ResultColumn = ResultColumn
+data DescribeQueryResultColumn = DescribeQueryResultColumn
   { -- | Name if it's present and makes valid UTF-8.
     name :: Maybe Text,
     -- | Type OID.
@@ -41,9 +41,9 @@ data ResultColumn = ResultColumn
   }
   deriving stock (Show, Eq)
 
-instance IsProcedure Params where
-  type ProcedureContext Params = Context.Context
-  type ProcedureResult Params = Result
+instance IsProcedure DescribeQuery where
+  type ProcedureContext DescribeQuery = Context.Context
+  type ProcedureResult DescribeQuery = DescribeQueryResult
   proceed (Context.Context conn) _ params = runExceptT do
     res <- lift $ Pq.prepare conn "" (to params.query) Nothing
     res <- case res of
@@ -64,7 +64,7 @@ instance IsProcedure Params where
       Pq.CommandOk -> return ()
       _ -> error ("Bug. Unexpected status: " <> show status)
 
-    lift (Result <$> readParamTypeOids res <*> readResultColumns res)
+    lift (DescribeQueryResult <$> readParamTypeOids res <*> readResultColumns res)
 
 -- * Helpers
 
@@ -74,7 +74,7 @@ readParamTypeOids res = do
   Vector.generateM amount $ \i -> do
     fmap to $ Pq.paramtype res i
 
-readResultColumns :: Pq.Result -> IO (Vector ResultColumn)
+readResultColumns :: Pq.Result -> IO (Vector DescribeQueryResultColumn)
 readResultColumns res = do
   amount <- fromIntegral . to @Int32 <$> Pq.nfields res
   Vector.generateM amount $ \i -> do
@@ -88,7 +88,7 @@ readResultColumns res = do
     typeMod <- Pq.fmod res col
     tableOid <- fmap to $ Pq.ftable res col
     tableCol <- fmap to $ Pq.ftablecol res col
-    return $ ResultColumn name typeOid typeMod tableOid tableCol
+    return $ DescribeQueryResultColumn name typeOid typeMod tableOid tableCol
 
 readResultErrorDetails :: Pq.Result -> IO (Context.Error Context.Context)
 readResultErrorDetails res = do

@@ -1,7 +1,13 @@
 {-# OPTIONS_GHC -Wno-unused-binds -Wno-unused-imports -Wno-name-shadowing -Wno-incomplete-patterns -Wno-unused-matches -Wno-missing-methods -Wno-unused-record-wildcards -Wno-redundant-constraints #-}
 
 -- | Adaptation of the `LibPQ` library to the `Service` framework.
-module App.Services.PqConnection.Context where
+module App.Services.PqConnection.Context
+  ( Context (..),
+    Config (..),
+    Error (..),
+    Event,
+  )
+where
 
 import App.Frameworks.Service
 import Base.Prelude

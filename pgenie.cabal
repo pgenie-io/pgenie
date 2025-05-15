@@ -175,7 +175,9 @@ library app
     App.Frameworks.Service
     App.Services.Analyser.Domain
     App.Services.DbAdmin.Context
+    App.Services.PqConnection
     App.Services.PqConnection.Context
+    App.Services.PqConnection.Procedures
     App.Services.PqConnection.Procedures.DescribeQuery
     App.Services.PqConnection.Utils.LawfulConversions
 

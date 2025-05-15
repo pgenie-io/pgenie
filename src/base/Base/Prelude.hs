@@ -51,6 +51,7 @@ import Data.Time as Exports
 import Data.Traversable as Exports
 import Data.Tuple as Exports
 import Data.Tuple.Curry as Exports
+import Data.UUID as Exports (UUID)
 import Data.Unique as Exports
 import Data.Vector as Exports (Vector)
 import Data.Version as Exports

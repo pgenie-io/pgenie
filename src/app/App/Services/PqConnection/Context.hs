@@ -34,10 +34,24 @@ data instance Error Context
 data instance Event Context
 
 instance IsService Context where
-  start (Config connectionString) _ = do
+  start (Config connectionString) _ _ = do
     connection <- Pq.connectdb (to connectionString)
     result <- Pq.status connection
     case result of
       Pq.ConnectionBad -> pure (NotStarted 0 0 "Can't connect")
       _ -> pure (Started (Context connection))
   stop (Context conn) = Pq.finish conn
+
+instance IsSome Pq.Connection Context where
+  to (Context conn) = conn
+
+instance IsSome Context Pq.Connection where
+  to = Context
+
+instance IsMany Pq.Connection Context
+
+instance IsMany Context Pq.Connection
+
+instance Is Pq.Connection Context
+
+instance Is Context Pq.Connection

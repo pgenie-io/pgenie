@@ -14,6 +14,8 @@ type ServiceIO service a =
 class IsService service where
   start ::
     Config service ->
+    -- | Notify function.
+    (Event service -> IO ()) ->
     -- | Attempt count.
     Int ->
     IO (Started service)
@@ -29,9 +31,11 @@ data Started service
       Text
   | Started service
 
+class ContainsConfig sub super where
+  extractConfig :: super -> sub
+
 class (IsService contained, IsService container) => ContainsService contained container where
-  projectConfig :: Config container -> Config contained
-  onContained ::
+  embedProcedure ::
     (contained -> (Event contained -> IO ()) -> IO (Either (Error contained) a)) ->
     (container -> (Event container -> IO ()) -> IO (Either (Error container) a))
 
@@ -44,3 +48,15 @@ class IsProcedure procedure where
     (Event (ProcedureContext procedure) -> IO ()) ->
     procedure ->
     IO (Either (Error (ProcedureContext procedure)) (ProcedureResult procedure))
+
+runSubprocedure ::
+  (ContainsService subservice service, IsProcedure subprocedure, ProcedureContext subprocedure ~ subservice) =>
+  service ->
+  (Event service -> IO ()) ->
+  subprocedure ->
+  IO (Either (Error service) (ProcedureResult subprocedure))
+runSubprocedure service notify subprocedure = do
+  embedProcedure
+    (\contained notifyContained -> proceed contained notifyContained subprocedure)
+    service
+    notify

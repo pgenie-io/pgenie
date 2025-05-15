@@ -105,6 +105,7 @@ library base
     text-builder,
     time,
     tuple,
+    uuid,
     vector,
     witherable,
 
@@ -174,7 +175,12 @@ library app
     App.Frameworks.CommandCliApp
     App.Frameworks.Service
     App.Services.Analyser.Domain
+    App.Services.DbAdmin
     App.Services.DbAdmin.Context
+    App.Services.DbAdmin.Domain
+    App.Services.DbAdmin.Procedures
+    App.Services.DbAdmin.Procedures.CreateTempDb
+    App.Services.DbAdmin.Procedures.DropTempDb
     App.Services.PqConnection
     App.Services.PqConnection.Context
     App.Services.PqConnection.Procedures

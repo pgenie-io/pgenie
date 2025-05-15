@@ -44,7 +44,7 @@ data DescribeQueryResultColumn = DescribeQueryResultColumn
 instance IsProcedure DescribeQuery where
   type ProcedureContext DescribeQuery = Context.Context
   type ProcedureResult DescribeQuery = DescribeQueryResult
-  proceed (Context.Context conn) _ params = runExceptT do
+  proceed params (Context.Context conn) _ = runExceptT do
     res <- lift $ Pq.prepare conn "" (to params.query) Nothing
     res <- case res of
       Nothing -> throwError Context.ConnectionError

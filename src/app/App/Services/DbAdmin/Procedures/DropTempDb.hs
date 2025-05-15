@@ -22,7 +22,7 @@ instance IsProcedure DropTempDb where
   type ProcedureContext DropTempDb = Context
   type ProcedureResult DropTempDb = DropTempDbResult
 
-  proceed context _ params =
+  proceed params context _ =
     fmap (first Error) do
       Hasql.Pool.use context.pool do
         let name = params.handle.userAndDbName

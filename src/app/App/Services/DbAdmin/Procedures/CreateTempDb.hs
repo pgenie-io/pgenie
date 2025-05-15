@@ -22,7 +22,7 @@ instance IsProcedure CreateTempDb where
   type ProcedureContext CreateTempDb = Context
   type ProcedureResult CreateTempDb = CreateTempDbResult
 
-  proceed context _ _ = do
+  proceed _ context _ = do
     dbName <- dbName <$> Uuid.nextRandom
     fmap (first Error) do
       Hasql.Pool.use context.pool do

@@ -35,28 +35,18 @@ class ContainsConfig sub super where
   extractConfig :: super -> sub
 
 class (IsService contained, IsService container) => ContainsService contained container where
-  embedProcedure ::
-    (contained -> (Event contained -> IO ()) -> IO (Either (Error contained) a)) ->
-    (container -> (Event container -> IO ()) -> IO (Either (Error container) a))
+  embedProcedure :: ServiceIO contained a -> ServiceIO container a
 
 class IsProcedure procedure where
   type ProcedureContext procedure
   type ProcedureResult procedure
 
   proceed ::
-    ProcedureContext procedure ->
-    (Event (ProcedureContext procedure) -> IO ()) ->
     procedure ->
-    IO (Either (Error (ProcedureContext procedure)) (ProcedureResult procedure))
+    ServiceIO (ProcedureContext procedure) (ProcedureResult procedure)
 
 runSubprocedure ::
   (ContainsService subservice service, IsProcedure subprocedure, ProcedureContext subprocedure ~ subservice) =>
-  service ->
-  (Event service -> IO ()) ->
   subprocedure ->
-  IO (Either (Error service) (ProcedureResult subprocedure))
-runSubprocedure service notify subprocedure = do
-  embedProcedure
-    (\contained notifyContained -> proceed contained notifyContained subprocedure)
-    service
-    notify
+  ServiceIO service (ProcedureResult subprocedure)
+runSubprocedure subprocedure = embedProcedure (proceed subprocedure)

@@ -40,5 +40,7 @@ class IsProcedure procedure where
   type ProcedureResult procedure
 
   proceed ::
+    ProcedureContext procedure ->
+    (Event (ProcedureContext procedure) -> IO ()) ->
     procedure ->
-    ServiceIO (ProcedureContext procedure) (ProcedureResult procedure)
+    IO (Either (Error (ProcedureContext procedure)) (ProcedureResult procedure))

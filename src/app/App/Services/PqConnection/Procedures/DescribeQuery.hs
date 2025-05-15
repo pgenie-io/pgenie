@@ -44,7 +44,7 @@ data ResultColumn = ResultColumn
 instance IsProcedure Params where
   type ProcedureContext Params = Context.Context
   type ProcedureResult Params = Result
-  proceed params (Context.Context conn) _ = runExceptT do
+  proceed (Context.Context conn) _ params = runExceptT do
     res <- lift $ Pq.prepare conn "" (to params.query) Nothing
     res <- case res of
       Nothing -> throwError Context.ConnectionError

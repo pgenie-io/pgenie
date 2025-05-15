@@ -8,6 +8,9 @@ data family Event service
 
 data family Error service
 
+type ServiceIO service a =
+  service -> (Event service -> IO ()) -> IO (Either (Error service) a)
+
 class IsService service where
   start ::
     Config service ->
@@ -26,11 +29,16 @@ data Started service
       Text
   | Started service
 
-type ServiceIO service a =
-  service -> (Event service -> IO ()) -> IO (Either (Error service) a)
-
 class (IsService contained, IsService container) => ContainsService contained container where
   projectConfig :: Config container -> Config contained
   onContained ::
     (contained -> (Event contained -> IO ()) -> IO (Either (Error contained) a)) ->
     (container -> (Event container -> IO ()) -> IO (Either (Error container) a))
+
+class IsProcedure procedure where
+  type ProcedureContext procedure
+  type ProcedureResult procedure
+
+  proceed ::
+    procedure ->
+    ServiceIO (ProcedureContext procedure) (ProcedureResult procedure)

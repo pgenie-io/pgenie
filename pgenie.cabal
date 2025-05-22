@@ -164,6 +164,15 @@ library libpq-extras
     postgresql-libpq,
     vector,
 
+library state-machine
+  import: base
+  hs-source-dirs: src/state-machine/
+  exposed-modules:
+    StateMachine
+
+  build-depends:
+    pgenie:base
+
 library app
   import: base
   hs-source-dirs: src/app/

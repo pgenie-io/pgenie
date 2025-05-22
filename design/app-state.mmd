@@ -1,0 +1,34 @@
+stateDiagram-v2
+
+%% The root of the app is a state machine defining the data interfaces between various procedures in the app. It is to be depended on by all the procedural code in the app. Procedures become the implementations of the arrows in the state machine. So actually they are transitions.
+%% 
+%% This defines the logic of the app and the data structures used in it.
+%% 
+%% You can think of it as defining dispatch.
+
+
+
+state FilesWrittenOrFailed <<choice>>
+state CodeGeneratedJoin <<join>>
+state QueryAnalysisParams <<join>>
+[*] --> ProjectFileLoaded
+ProjectFileLoaded --> MigrationsLoaded: Load migrations
+ProjectFileLoaded --> QueriesMetadataLoaded: Load queries metadata
+ProjectFileLoaded --> TemporaryDbCreated: Create temporary database
+MigrationsLoaded --> MigrationsExecuted: Execute migrations
+TemporaryDbCreated --> MigrationsExecuted: Execute migrations
+ProjectFileLoaded --> QueriesLoaded
+QueriesLoaded --> QueryAnalysisParams
+MigrationsExecuted --> QueryAnalysisParams
+QueriesAnalyzed --> CodeGeneratedJoin
+QueriesMetadataLoaded --> CodeGeneratedJoin
+CodeGeneratedJoin --> CodeGenerated: Tune the query metadata with user input
+CodeGenerated --> FilesWrittenOrFailed: Output to file system
+TemporaryDbDropped --> [*]
+QueryAnalysisParams --> QueriesAnalyzed: Analyze queries in the DB
+
+FilesWrittenOrFailed --> FilesWritten
+FilesWritten --> TemporaryDbDropped
+Failed --> TemporaryDbDropped: Print error message
+
+

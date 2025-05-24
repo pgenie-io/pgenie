@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-unused-binds -Wno-unused-imports -Wno-name-shadowing -Wno-incomplete-patterns -Wno-unused-matches -Wno-missing-methods -Wno-unused-record-wildcards -Wno-redundant-constraints #-}
+
 module StateMachine where
 
 import Base.Prelude
@@ -7,13 +9,11 @@ data Error
 
 data ProjectFileLoaded
 
-data MigrationsLoaded
-
 data TemporaryDbCreated
 
 data QueriesLoaded
 
-type QueriesAnalyzed = [QueryAnalyzed]
+type QueriesIntrospected = [QueryIntrospected]
 
 data QueriesMetadataLoaded
 
@@ -21,41 +21,71 @@ type QueriesListed = [QueryListed]
 
 data QueryListed
 
-data QueryLoaded = QueryLoaded
+data QuerySqlLoaded = QuerySqlLoaded
   { sql :: Text
   }
 
-data QueryParsed = QueryParsed
+data QuerySqlParsed = QuerySqlParsed
   {
   }
 
-data QueryAnalyzed
+data QueryIntrospected
+
+data ArgsLoaded
+
+data CodeGenerated
+
+data QuerySignatureLoaded
+
+data QueriesMetadataMerged
+
+type MigrationsListed = [MigrationListed]
+
+data MigrationListed
+
+data MigrationLoaded
+
+data MigrationExecuted
 
 class (MonadError Error m) => Algebra m where
-  runParallelly :: (forall f. (Applicative f) => (m a -> f a) -> f a) -> m a
-  loadProjectFile :: m ProjectFileLoaded
-  loadMigrations :: ProjectFileLoaded -> m MigrationsLoaded
-  executeMigrations :: MigrationsLoaded -> m ()
+  runParallelly :: (forall f. (Applicative f) => (forall a. m a -> f a) -> f a) -> m a
+  loadArgs :: m ArgsLoaded
+  loadProjectFile :: ArgsLoaded -> m ProjectFileLoaded
   createTemporaryDb :: ProjectFileLoaded -> m TemporaryDbCreated
   dropTemporaryDb :: TemporaryDbCreated -> m ()
+  listMigrations :: ProjectFileLoaded -> m MigrationsListed
+  loadMigration :: MigrationListed -> m MigrationLoaded
+  executeMigration :: TemporaryDbCreated -> MigrationLoaded -> m MigrationExecuted
   listQueries :: ProjectFileLoaded -> m QueriesListed
-  loadQuery :: QueryListed -> m QueryLoaded
-  parseQuery :: QueryLoaded -> m QueryParsed
-  analyzeQuery :: QueryLoaded -> QueryParsed -> m QueryAnalyzed
+  loadQuerySql :: QueryListed -> m QuerySqlLoaded
+  loadQuerySignature :: ProjectFileLoaded -> QueryListed -> m QuerySignatureLoaded
+  parseQuerySql :: QuerySqlLoaded -> m QuerySqlParsed
+  introspectQuery :: TemporaryDbCreated -> QuerySqlParsed -> m QueryIntrospected
+  mergeQueryMetadata :: QueryIntrospected -> QuerySignatureLoaded -> m QueriesMetadataMerged
 
-analyze :: (Algebra m) => m QueriesAnalyzed
-analyze = do
-  projectFile <- loadProjectFile
-  migrationsLoaded <- runParallelly \parallelly -> do
-    migrationsLoaded <- parallelly do
-      loadMigrations projectFile
+runIntrospectApp :: (Algebra m) => m [QueriesMetadataMerged]
+runIntrospectApp = do
+  args <- loadArgs
+  projectFileLoaded <- loadProjectFile args
+  (temporaryDbCreated, queriesListed) <- runParallelly \parallelly -> do
     temporaryDbCreated <- parallelly do
-      createTemporaryDb projectFile
-    pure migrationsLoaded
-  executeMigrations migrationsLoaded
-  queriesListed <- listQueries projectFile
-  runParallelly \parallelly ->
-    forM queriesListed \queryListed -> parallelly do
-      queryLoaded <- loadQuery queryListed
-      queryParsed <- parseQuery queryLoaded
-      analyzeQuery queryLoaded queryParsed
+      (temporaryDbCreated, migrationsListed) <- runParallelly \parallelly ->
+        (,)
+          <$> parallelly (createTemporaryDb projectFileLoaded)
+          <*> parallelly (listMigrations projectFileLoaded)
+      forM_ migrationsListed \migrationListed -> do
+        migrationLoaded <- loadMigration migrationListed
+        executeMigration temporaryDbCreated migrationLoaded
+      pure temporaryDbCreated
+    queriesListed <- parallelly (listQueries projectFileLoaded)
+    pure (temporaryDbCreated, queriesListed)
+  runParallelly \parallelly -> for queriesListed \queryListed -> parallelly do
+    (queryIntrospected, querySignatureLoaded) <- runParallelly \parallelly ->
+      (,)
+        <$> parallelly do
+          querySqlLoaded <- loadQuerySql queryListed
+          querySqlParsed <- parseQuerySql querySqlLoaded
+          introspectQuery temporaryDbCreated querySqlParsed
+        <*> parallelly do
+          loadQuerySignature projectFileLoaded queryListed
+    mergeQueryMetadata queryIntrospected querySignatureLoaded

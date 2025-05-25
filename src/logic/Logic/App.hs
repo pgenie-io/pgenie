@@ -18,9 +18,10 @@ data Command = Command
 -- Parses the arguments.
 main ::
   [Command] ->
+  [Codegen] ->
   -- | Execute an effect.
   (forall m. (Effect m) => m () -> IO ()) ->
   -- | Application.
   IO ()
-main _ _ =
+main _ _ _ =
   error "TODO"

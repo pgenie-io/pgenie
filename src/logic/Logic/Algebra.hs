@@ -16,6 +16,9 @@ data Artifact = Artifact
 
 -- | Application error.
 data Error
+  = CodegenError Text CodegenErrorReason
+
+data CodegenErrorReason
 
 -- * States
 
@@ -99,3 +102,19 @@ class (MonadError Error m) => Effect m where
 
   -- | Create or replace the signature file for the query.
   generateSignature :: ProjectFileLoaded -> QueryMetadataMerged -> m SignatureGenerated
+
+-- * Codegen
+
+data Codegen
+  = forall configSection.
+  Codegen
+  { -- | Name of the config section.
+    configSectionKey :: Text,
+    -- | Major version of the codegen.
+    version :: Int,
+    -- | Specification of the parser of a section of the config file, where the section is identified by name.
+    --
+    -- TODO: Correct the signature.
+    configSectionParser :: configSection,
+    generate :: configSection -> QueryMetadataMerged -> Either CodegenErrorReason [(FilePath, Text)]
+  }

@@ -170,6 +170,7 @@ library logic
   hs-source-dirs: src/logic/
   exposed-modules:
     Logic.Algebra
+    Logic.App
     Logic.Commands.Generate
 
   build-depends:

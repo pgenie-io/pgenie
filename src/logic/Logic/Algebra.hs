@@ -3,7 +3,6 @@
 module Logic.Algebra where
 
 import Base.Prelude
-import Options.Applicative qualified as Opt
 
 -- * Vocabulary
 
@@ -75,6 +74,8 @@ data MigrationLoaded
 
 data MigrationExecuted
 
+-- * Effect
+
 class (MonadError Error m) => Effect m where
   runParallelly :: (forall f. (Applicative f) => (forall a. m a -> f a) -> f a) -> m a
   loadProjectFile :: m ProjectFileLoaded
@@ -98,9 +99,3 @@ class (MonadError Error m) => Effect m where
 
   -- | Create or replace the signature file for the query.
   generateSignature :: ProjectFileLoaded -> QueryMetadataMerged -> m SignatureGenerated
-
-class ModelsCommand model where
-  commandName :: Proxy model -> Text
-  commandDescription :: Proxy model -> Text
-  commandArgParser :: Opt.Parser model
-  commandProcedure :: (Effect m) => model -> m ()

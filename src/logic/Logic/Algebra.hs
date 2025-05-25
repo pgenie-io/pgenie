@@ -3,9 +3,22 @@
 module Logic.Algebra where
 
 import Base.Prelude
+import Options.Applicative qualified as Opt
+
+-- * Vocabulary
+
+data QuerySignature
+
+data Artifact = Artifact
+  { files :: [(FilePath, Text)]
+  }
+
+-- * Error
 
 -- | Application error.
 data Error
+
+-- * States
 
 data ProjectFileLoaded
 
@@ -31,13 +44,28 @@ data QuerySqlParsed = QuerySqlParsed
 
 data QueryIntrospected
 
-data ArgsLoaded
+data CodeGenerated = CodeGenerated
+  { artifacts :: [CodeGeneratedArtifact]
+  }
 
-data CodeGenerated
+data CodeGeneratedArtifact = CodeGeneratedArtifact
+  { name :: Text,
+    filePaths :: [FilePath],
+    replaced :: Bool
+  }
+
+data SignatureGenerated = SignatureGenerated
+  { filePath :: FilePath,
+    replaced :: Bool
+  }
 
 data QuerySignatureLoaded
+  = NotFoundQuerySignatureLoaded
+  | QuerySignatureLoaded QuerySignature
 
-data QueriesMetadataMerged
+type QueriesMetadataMerged = [QueryMetadataMerged]
+
+data QueryMetadataMerged
 
 type MigrationsListed = [MigrationListed]
 
@@ -49,8 +77,7 @@ data MigrationExecuted
 
 class (MonadError Error m) => Effect m where
   runParallelly :: (forall f. (Applicative f) => (forall a. m a -> f a) -> f a) -> m a
-  loadArgs :: m ArgsLoaded
-  loadProjectFile :: ArgsLoaded -> m ProjectFileLoaded
+  loadProjectFile :: m ProjectFileLoaded
   createTemporaryDb :: ProjectFileLoaded -> m TemporaryDbCreated
   dropTemporaryDb :: TemporaryDbCreated -> m ()
   listMigrations :: ProjectFileLoaded -> m MigrationsListed
@@ -58,7 +85,22 @@ class (MonadError Error m) => Effect m where
   executeMigration :: TemporaryDbCreated -> MigrationLoaded -> m MigrationExecuted
   listQueries :: ProjectFileLoaded -> m QueriesListed
   loadQuerySql :: QueryListed -> m QuerySqlLoaded
+
+  -- | Attempt to load the query signature file.
+  --
+  -- Missing file is not an error. Parsing failure of an existing file however is.
   loadQuerySignature :: ProjectFileLoaded -> QueryListed -> m QuerySignatureLoaded
+
   parseQuerySql :: QuerySqlLoaded -> m QuerySqlParsed
   introspectQuery :: TemporaryDbCreated -> QuerySqlParsed -> m QueryIntrospected
-  mergeQueryMetadata :: QueryIntrospected -> QuerySignatureLoaded -> m QueriesMetadataMerged
+  mergeQueryMetadata :: QueryIntrospected -> QuerySignatureLoaded -> m QueryMetadataMerged
+  generateCode :: ProjectFileLoaded -> QueriesMetadataMerged -> m CodeGenerated
+
+  -- | Create or replace the signature file for the query.
+  generateSignature :: ProjectFileLoaded -> QueryMetadataMerged -> m SignatureGenerated
+
+class ModelsCommand model where
+  commandName :: Proxy model -> Text
+  commandDescription :: Proxy model -> Text
+  commandArgParser :: Opt.Parser model
+  commandProcedure :: (Effect m) => model -> m ()

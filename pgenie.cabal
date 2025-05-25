@@ -170,10 +170,11 @@ library logic
   hs-source-dirs: src/logic/
   exposed-modules:
     Logic.Algebra
-    Logic.Commands.Introspect
+    Logic.Commands.Generate
 
   build-depends:
-    pgenie:base
+    optparse-applicative,
+    pgenie:base,
 
 library app
   import: base

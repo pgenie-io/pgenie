@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-unused-binds -Wno-unused-imports -Wno-name-shadowing -Wno-incomplete-patterns -Wno-unused-matches -Wno-missing-methods -Wno-unused-record-wildcards -Wno-redundant-constraints #-}
 
-module StateMachine where
+module Logic.Algebra where
 
 import Base.Prelude
 
@@ -62,30 +62,3 @@ class (MonadError Error m) => Algebra m where
   parseQuerySql :: QuerySqlLoaded -> m QuerySqlParsed
   introspectQuery :: TemporaryDbCreated -> QuerySqlParsed -> m QueryIntrospected
   mergeQueryMetadata :: QueryIntrospected -> QuerySignatureLoaded -> m QueriesMetadataMerged
-
-runIntrospectApp :: (Algebra m) => m [QueriesMetadataMerged]
-runIntrospectApp = do
-  args <- loadArgs
-  projectFileLoaded <- loadProjectFile args
-  (temporaryDbCreated, queriesListed) <- runParallelly \parallelly -> do
-    temporaryDbCreated <- parallelly do
-      (temporaryDbCreated, migrationsListed) <- runParallelly \parallelly ->
-        (,)
-          <$> parallelly (createTemporaryDb projectFileLoaded)
-          <*> parallelly (listMigrations projectFileLoaded)
-      forM_ migrationsListed \migrationListed -> do
-        migrationLoaded <- loadMigration migrationListed
-        executeMigration temporaryDbCreated migrationLoaded
-      pure temporaryDbCreated
-    queriesListed <- parallelly (listQueries projectFileLoaded)
-    pure (temporaryDbCreated, queriesListed)
-  runParallelly \parallelly -> for queriesListed \queryListed -> parallelly do
-    (queryIntrospected, querySignatureLoaded) <- runParallelly \parallelly ->
-      (,)
-        <$> parallelly do
-          querySqlLoaded <- loadQuerySql queryListed
-          querySqlParsed <- parseQuerySql querySqlLoaded
-          introspectQuery temporaryDbCreated querySqlParsed
-        <*> parallelly do
-          loadQuerySignature projectFileLoaded queryListed
-    mergeQueryMetadata queryIntrospected querySignatureLoaded

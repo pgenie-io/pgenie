@@ -165,11 +165,12 @@ library libpq-extras
     postgresql-libpq,
     vector,
 
-library state-machine
+library logic
   import: base
-  hs-source-dirs: src/state-machine/
+  hs-source-dirs: src/logic/
   exposed-modules:
-    StateMachine
+    Logic.Algebra
+    Logic.Commands.Introspect
 
   build-depends:
     pgenie:base

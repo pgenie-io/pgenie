@@ -47,7 +47,7 @@ data MigrationLoaded
 
 data MigrationExecuted
 
-class (MonadError Error m) => Algebra m where
+class (MonadError Error m) => Effect m where
   runParallelly :: (forall f. (Applicative f) => (forall a. m a -> f a) -> f a) -> m a
   loadArgs :: m ArgsLoaded
   loadProjectFile :: ArgsLoaded -> m ProjectFileLoaded

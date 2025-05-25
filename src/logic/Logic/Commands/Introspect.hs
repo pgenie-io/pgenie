@@ -3,7 +3,7 @@ module Logic.Commands.Introspect where
 import Base.Prelude
 import Logic.Algebra
 
-runIntrospectApp :: (Algebra m) => m [QueriesMetadataMerged]
+runIntrospectApp :: (Effect m) => m [QueriesMetadataMerged]
 runIntrospectApp = do
   args <- loadArgs
   projectFileLoaded <- loadProjectFile args

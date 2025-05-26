@@ -6,16 +6,14 @@ import Data.Aeson.Types qualified as Aeson
 
 -- * Interfaces
 
-data Codegen = forall configSection. Codegen
+data Codegen = forall config. Codegen
   { -- | Name of the config section.
     configSectionKey :: Text,
     -- | Major version of the codegen.
     version :: Int,
-    -- | Specification of the parser of a section of the config file, where the section is identified by name.
-    --
-    -- TODO: Correct the signature.
-    configSectionParser :: Aeson.Value -> Aeson.Parser configSection,
-    generate :: configSection -> [QuerySignature] -> Either Error Artifact
+    -- | Specification of the parser of a section of the config file, where the section is identified by key and version.
+    configSectionParser :: Aeson.Value -> Aeson.Parser config,
+    generate :: config -> [QuerySignature] -> Either Error Artifact
   }
 
 -- * Domain
@@ -27,3 +25,9 @@ data Artifact = Artifact
 data Error
 
 data QuerySignature
+
+-- * Ops
+
+mergeSignatures :: QuerySignature -> QuerySignature -> Either Text QuerySignature
+mergeSignatures =
+  error "TODO"

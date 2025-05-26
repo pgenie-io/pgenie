@@ -175,6 +175,7 @@ library logic
     Logic.Commands.Generate
 
   build-depends:
+    aeson,
     optparse-applicative,
     pgenie:base,
     pgenie:codegen-algebra,

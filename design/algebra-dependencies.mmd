@@ -1,0 +1,29 @@
+stateDiagram-v2
+
+%% The root of the app is a state machine defining the data interfaces between various procedures in the app. It is to be depended on by all the procedural code in the app. Procedures become the implementations of the arrows in the state machine. So actually they are transitions.
+%% 
+%% This defines the logic of the app and the data structures used in it.
+%% 
+%% You can think of it as defining dispatch.
+
+
+
+createTemporaryDb --> loadProjectFile
+dropTemporaryDb --> createTemporaryDb
+listMigrations --> loadProjectFile
+loadMigration --> listMigrations
+executeMigration --> loadProjectFile
+executeMigration --> loadMigration
+listQueries --> loadProjectFile
+loadQuerySql --> listQueries
+loadQuerySignature --> loadProjectFile
+loadQuerySignature --> listQueries
+parseQuerySql --> loadQuerySql
+introspectQuery --> createTemporaryDb
+introspectQuery --> parseQuerySql
+mergeQueryMetadata --> loadQuerySignature
+mergeQueryMetadata --> introspectQuery
+generateCode --> loadProjectFile
+generateCode --> mergeQueryMetadata
+generateSignature --> loadProjectFile
+generateSignature --> mergeQueryMetadata

@@ -4,6 +4,7 @@ module Logic.Algebra where
 
 import Base.Prelude
 import CodegenAlgebra qualified as Codegen
+import Data.Aeson qualified as Aeson
 
 -- * Error
 
@@ -15,7 +16,8 @@ data Error
 
 data ProjectFileLoaded = ProjectFileLoaded
   { configFilePath :: FilePath,
-    codegens :: [[Codegen.QuerySignature] -> Either Codegen.Error Codegen.Artifact]
+    -- | List of codegen configurations.
+    artifacts :: [(Text, Int, Aeson.Value)]
   }
 
 data TemporaryDbCreated
@@ -79,7 +81,7 @@ data MigrationExecuted
 
 class (MonadError Error m) => Effect m where
   runParallelly :: (forall f. (Applicative f) => (forall a. m a -> f a) -> f a) -> m a
-  loadProjectFile :: [Codegen.Codegen] -> m ProjectFileLoaded
+  loadProjectFile :: m ProjectFileLoaded
   createTemporaryDb :: ProjectFileLoaded -> m TemporaryDbCreated
   dropTemporaryDb :: TemporaryDbCreated -> m ()
   listMigrations :: ProjectFileLoaded -> m MigrationsListed
@@ -96,7 +98,54 @@ class (MonadError Error m) => Effect m where
   parseQuerySql :: QuerySqlLoaded -> m QuerySqlParsed
   introspectQuery :: TemporaryDbCreated -> QuerySqlParsed -> m QueryIntrospected
   mergeQueryMetadata :: QueryIntrospected -> QuerySignatureLoaded -> m QueryMetadataMerged
-  generateCode :: ProjectFileLoaded -> QueriesMetadataMerged -> m CodeGenerated
+  generateCode :: [Codegen.Codegen] -> ProjectFileLoaded -> QueriesMetadataMerged -> m CodeGenerated
 
   -- | Create or replace the signature file for the query.
   generateSignature :: ProjectFileLoaded -> QueryMetadataMerged -> m SignatureGenerated
+
+-- * Ops
+
+check :: (Effect m) => m ()
+check = do
+  projectFileLoaded <- loadProjectFile
+  analyse projectFileLoaded
+  pure ()
+
+generate :: (Effect m) => [Codegen.Codegen] -> m ()
+generate codegens = do
+  projectFileLoaded <- loadProjectFile
+  queriesMetadataMerged <- analyse projectFileLoaded
+  generateCode codegens projectFileLoaded queriesMetadataMerged
+  pure ()
+
+withTemporaryDb :: (Effect m) => ProjectFileLoaded -> (TemporaryDbCreated -> m a) -> m a
+withTemporaryDb projectFileLoaded action = do
+  temporaryDbCreated <- createTemporaryDb projectFileLoaded
+  catchError
+    (action temporaryDbCreated <* dropTemporaryDb temporaryDbCreated)
+    (\err -> dropTemporaryDb temporaryDbCreated *> throwError err)
+
+analyse :: (Effect m) => ProjectFileLoaded -> m QueriesMetadataMerged
+analyse projectFileLoaded = do
+  (migrationsListed, queriesListed) <-
+    runParallelly \parallelly ->
+      (,)
+        <$> parallelly (listMigrations projectFileLoaded)
+        <*> parallelly (listQueries projectFileLoaded)
+
+  withTemporaryDb projectFileLoaded \temporaryDbCreated -> do
+    forM_ migrationsListed \migrationListed -> do
+      migrationLoaded <- loadMigration migrationListed
+      executeMigration temporaryDbCreated migrationLoaded
+
+    runParallelly \parallelly ->
+      for queriesListed \queryListed -> parallelly do
+        (queryIntrospected, querySignatureLoaded) <- runParallelly \parallelly ->
+          (,)
+            <$> parallelly do
+              querySqlLoaded <- loadQuerySql queryListed
+              querySqlParsed <- parseQuerySql querySqlLoaded
+              introspectQuery temporaryDbCreated querySqlParsed
+            <*> parallelly do
+              loadQuerySignature projectFileLoaded queryListed
+        mergeQueryMetadata queryIntrospected querySignatureLoaded

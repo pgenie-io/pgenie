@@ -3,13 +3,14 @@
 module Logic.App where
 
 import Base.Prelude
+import CodegenAlgebra qualified as Codegen
 import Logic.Algebra
 import Options.Applicative qualified as Opt
 
 data Command = Command
   { name :: Text,
     description :: Text,
-    procedureArgParser :: forall m. (Effect m) => Opt.Parser (m ())
+    procedureArgParser :: forall m. (Effect m) => Opt.Parser ([Codegen.Codegen] -> m ())
   }
 
 -- |
@@ -18,7 +19,7 @@ data Command = Command
 -- Parses the arguments.
 main ::
   [Command] ->
-  [Codegen] ->
+  [Codegen.Codegen] ->
   -- | Execute an effect.
   (forall m. (Effect m) => m () -> IO ()) ->
   -- | Application.

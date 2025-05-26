@@ -4,6 +4,7 @@
 module Logic.Commands.Generate (generate) where
 
 import Base.Prelude
+import CodegenAlgebra qualified as Codegen
 import Logic.Algebra
 import Logic.App
 import Options.Applicative qualified as Opt
@@ -16,12 +17,12 @@ generate =
       procedureArgParser
     }
 
-procedureArgParser :: (Effect m) => Opt.Parser (m ())
+procedureArgParser :: (Effect m) => Opt.Parser ([Codegen.Codegen] -> m ())
 procedureArgParser = pure procedure
 
-procedure :: (Effect m) => m ()
-procedure = do
-  projectFileLoaded <- loadProjectFile
+procedure :: (Effect m) => [Codegen.Codegen] -> m ()
+procedure codegens = do
+  projectFileLoaded <- loadProjectFile codegens
   (temporaryDbCreated, queriesListed) <- runParallelly \parallelly -> do
     temporaryDbCreated <- parallelly do
       (temporaryDbCreated, migrationsListed) <- runParallelly \parallelly ->

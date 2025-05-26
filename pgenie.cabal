@@ -165,6 +165,7 @@ library libpq-extras
     postgresql-libpq,
     vector,
 
+-- TODO: Extract app-algebra and app, replacing the other app hierarchy
 library logic
   import: base
   hs-source-dirs: src/logic/
@@ -175,6 +176,17 @@ library logic
 
   build-depends:
     optparse-applicative,
+    pgenie:base,
+    pgenie:codegen-algebra,
+
+library codegen-algebra
+  import: base
+  hs-source-dirs: src/codegen-algebra/
+  exposed-modules:
+    CodegenAlgebra
+
+  build-depends:
+    aeson,
     pgenie:base,
 
 library app

@@ -3,26 +3,20 @@
 module Logic.Algebra where
 
 import Base.Prelude
-
--- * Vocabulary
-
-data QuerySignature
-
-data Artifact = Artifact
-  { files :: [(FilePath, Text)]
-  }
+import CodegenAlgebra qualified as Codegen
 
 -- * Error
 
 -- | Application error.
 data Error
-  = CodegenError Text CodegenErrorReason
-
-data CodegenErrorReason
+  = CodegenError Text Codegen.Error
 
 -- * States
 
-data ProjectFileLoaded
+data ProjectFileLoaded = ProjectFileLoaded
+  { configFilePath :: FilePath,
+    codegens :: [[Codegen.QuerySignature] -> Either Codegen.Error Codegen.Artifact]
+  }
 
 data TemporaryDbCreated
 
@@ -67,11 +61,11 @@ data SignatureGenerated = SignatureGenerated
 
 data QuerySignatureLoaded
   = NotFoundQuerySignatureLoaded
-  | QuerySignatureLoaded QuerySignature
+  | QuerySignatureLoaded Codegen.QuerySignature
 
 type QueriesMetadataMerged = [QueryMetadataMerged]
 
-data QueryMetadataMerged
+type QueryMetadataMerged = Codegen.QuerySignature
 
 type MigrationsListed = [MigrationListed]
 
@@ -85,7 +79,7 @@ data MigrationExecuted
 
 class (MonadError Error m) => Effect m where
   runParallelly :: (forall f. (Applicative f) => (forall a. m a -> f a) -> f a) -> m a
-  loadProjectFile :: m ProjectFileLoaded
+  loadProjectFile :: [Codegen.Codegen] -> m ProjectFileLoaded
   createTemporaryDb :: ProjectFileLoaded -> m TemporaryDbCreated
   dropTemporaryDb :: TemporaryDbCreated -> m ()
   listMigrations :: ProjectFileLoaded -> m MigrationsListed
@@ -106,19 +100,3 @@ class (MonadError Error m) => Effect m where
 
   -- | Create or replace the signature file for the query.
   generateSignature :: ProjectFileLoaded -> QueryMetadataMerged -> m SignatureGenerated
-
--- * Codegen
-
-data Codegen
-  = forall configSection.
-  Codegen
-  { -- | Name of the config section.
-    configSectionKey :: Text,
-    -- | Major version of the codegen.
-    version :: Int,
-    -- | Specification of the parser of a section of the config file, where the section is identified by name.
-    --
-    -- TODO: Correct the signature.
-    configSectionParser :: configSection,
-    generate :: configSection -> QueryMetadataMerged -> Either CodegenErrorReason [(FilePath, Text)]
-  }

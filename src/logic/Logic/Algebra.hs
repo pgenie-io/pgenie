@@ -34,7 +34,11 @@ data QueriesMetadataLoaded
 
 type QueriesListed = [QueryListed]
 
-data QueryListed
+data QueryListed = QueryListed
+  { name :: Text,
+    filePath :: FilePath,
+    signatureFilePath :: Maybe FilePath
+  }
 
 data QuerySqlLoaded = QuerySqlLoaded
   { sql :: Text

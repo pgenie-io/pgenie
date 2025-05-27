@@ -190,6 +190,16 @@ library codegen-algebra
     aeson,
     pgenie:base,
 
+library project-file
+  import: base
+  hs-source-dirs: src/project-file
+  exposed-modules:
+    ProjectFile
+
+  build-depends:
+    aeson,
+    pgenie:base,
+
 library app
   import: base
   hs-source-dirs: src/app/

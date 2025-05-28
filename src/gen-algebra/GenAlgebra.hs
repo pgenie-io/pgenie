@@ -1,4 +1,4 @@
-module CodegenAlgebra where
+module GenAlgebra where
 
 import Base.Prelude
 import Data.Aeson qualified as Aeson
@@ -6,7 +6,7 @@ import Data.Aeson.Types qualified as Aeson
 
 -- * Interfaces
 
-data Codegen = forall config. Codegen
+data Gen = forall config. Gen
   { -- | Name of the config section.
     configSectionKey :: Text,
     -- | Major version of the codegen.

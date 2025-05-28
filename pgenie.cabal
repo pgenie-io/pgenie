@@ -178,13 +178,13 @@ library logic
     aeson,
     optparse-applicative,
     pgenie:base,
-    pgenie:codegen-algebra,
+    pgenie:gen-algebra,
 
-library codegen-algebra
+library gen-algebra
   import: base
-  hs-source-dirs: src/codegen-algebra/
+  hs-source-dirs: src/gen-algebra/
   exposed-modules:
-    CodegenAlgebra
+    GenAlgebra
 
   build-depends:
     aeson,

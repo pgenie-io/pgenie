@@ -3,14 +3,14 @@
 module Logic.Algebra where
 
 import Base.Prelude
-import CodegenAlgebra qualified as Codegen
 import Data.Aeson qualified as Aeson
+import GenAlgebra qualified as Gen
 
 -- * Error
 
 -- | Application error.
 data Error
-  = CodegenError Text Codegen.Error
+  = GenError Text Gen.Error
 
 -- * States
 
@@ -63,11 +63,11 @@ data SignatureGenerated = SignatureGenerated
 
 data QuerySignatureLoaded
   = NotFoundQuerySignatureLoaded
-  | QuerySignatureLoaded Codegen.QuerySignature
+  | QuerySignatureLoaded Gen.QuerySignature
 
 type QueriesMetadataMerged = [QueryMetadataMerged]
 
-type QueryMetadataMerged = Codegen.QuerySignature
+type QueryMetadataMerged = Gen.QuerySignature
 
 type MigrationsListed = [MigrationListed]
 
@@ -98,7 +98,7 @@ class (MonadError Error m) => Effect m where
   parseQuerySql :: QuerySqlLoaded -> m QuerySqlParsed
   introspectQuery :: TemporaryDbCreated -> QuerySqlParsed -> m QueryIntrospected
   mergeQueryMetadata :: QueryIntrospected -> QuerySignatureLoaded -> m QueryMetadataMerged
-  generateCode :: [Codegen.Codegen] -> ProjectFileLoaded -> QueriesMetadataMerged -> m CodeGenerated
+  generateCode :: [Gen.Gen] -> ProjectFileLoaded -> QueriesMetadataMerged -> m CodeGenerated
 
   -- | Create or replace the signature file for the query.
   generateSignature :: ProjectFileLoaded -> QueryMetadataMerged -> m SignatureGenerated
@@ -111,7 +111,7 @@ check = do
   analyse projectFileLoaded
   pure ()
 
-generate :: (Effect m) => [Codegen.Codegen] -> m ()
+generate :: (Effect m) => [Gen.Gen] -> m ()
 generate codegens = do
   projectFileLoaded <- loadProjectFile
   queriesMetadataMerged <- analyse projectFileLoaded

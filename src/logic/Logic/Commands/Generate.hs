@@ -4,7 +4,7 @@
 module Logic.Commands.Generate (generate) where
 
 import Base.Prelude
-import CodegenAlgebra qualified as CodegenAlgebra
+import GenAlgebra qualified as GenAlgebra
 import Logic.Algebra qualified as AppAlgebra
 import Logic.App
 import Options.Applicative qualified as Opt
@@ -17,5 +17,5 @@ generate =
       procedureArgParser
     }
 
-procedureArgParser :: (AppAlgebra.Effect m) => Opt.Parser ([CodegenAlgebra.Codegen] -> m ())
+procedureArgParser :: (AppAlgebra.Effect m) => Opt.Parser ([GenAlgebra.Gen] -> m ())
 procedureArgParser = pure AppAlgebra.generate

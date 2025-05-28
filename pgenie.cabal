@@ -97,6 +97,7 @@ library base
   build-depends:
     base,
     bytestring,
+    containers,
     data-has,
     lawful-conversions,
     mtl,
@@ -189,6 +190,7 @@ library gen-algebra
   build-depends:
     aeson,
     pgenie:base,
+    pgenie:project-file,
 
 library project-file
   import: base

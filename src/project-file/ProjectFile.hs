@@ -8,5 +8,6 @@ import Data.Aeson.Types qualified as Aeson
 
 -- | Project file format interface.
 data ProjectFile = ProjectFile
-  {
+  { projectName :: Text,
+    generators :: Map Text Aeson.Value
   }

@@ -63,11 +63,11 @@ data SignatureGenerated = SignatureGenerated
 
 data QuerySignatureLoaded
   = NotFoundQuerySignatureLoaded
-  | QuerySignatureLoaded Gen.QuerySignature
+  | QuerySignatureLoaded Gen.Query
 
 type QueriesMetadataMerged = [QueryMetadataMerged]
 
-type QueryMetadataMerged = Gen.QuerySignature
+type QueryMetadataMerged = Gen.Query
 
 type MigrationsListed = [MigrationListed]
 

@@ -190,7 +190,6 @@ library gen-algebra
   build-depends:
     aeson,
     pgenie:base,
-    pgenie:project-file,
 
 library project-file
   import: base

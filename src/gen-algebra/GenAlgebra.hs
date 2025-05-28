@@ -3,18 +3,18 @@ module GenAlgebra where
 import Base.Prelude
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
-import ProjectFile qualified
 
 -- * Interfaces
 
-data Gen = forall specificConfig. Gen
+data Gen = forall generatorConfig. Gen
   { -- | Name of the config section.
     configSectionKey :: Text,
     -- | Major version of the codegen.
     version :: Int,
     -- | Specification of the parser of a section of the config file, where the section is identified by key and version.
-    configSectionParser :: Aeson.Value -> Aeson.Parser specificConfig,
-    generate :: ProjectFile.ProjectFile -> specificConfig -> [QuerySignature] -> Either Error Artifact
+    generatorConfigParser :: Aeson.Value -> Aeson.Parser generatorConfig,
+    defaultGeneratorConfig :: generatorConfig,
+    generate :: generatorConfig -> Project -> Either Error Artifact
   }
 
 -- * Domain
@@ -25,10 +25,27 @@ data Artifact = Artifact
 
 data Error
 
-data QuerySignature
+data Project = Project
+  { name :: Text,
+    version :: NonEmpty Word,
+    queries :: [Query]
+  }
+
+data Query = Query
+  { name :: Text
+  }
+
+data QueryTemplate = QueryTemplate
+  { parts :: [QueryTemplatePart],
+    vars :: [Text]
+  }
+
+data QueryTemplatePart
+  = SqlQueryTemplatePart Text
+  | VarQueryTemplatePart Text
 
 -- * Ops
 
-mergeSignatures :: QuerySignature -> QuerySignature -> Either Text QuerySignature
-mergeSignatures =
+mergeQueries :: Query -> Query -> Either Text Query
+mergeQueries =
   error "TODO"

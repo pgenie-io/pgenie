@@ -1,18 +1,22 @@
 flowchart TD
 
-
-v1-project-file -- parses into --> project-file
-generator --> project-file
-v1-hasql-hs-generator --> generator
-v1-java-jdbc-generator --> generator
+cli-app --> v1-project-file
 cli-app --> v1-hasql-hs-generator
 cli-app --> v1-java-jdbc-generator
-app-algebra --> project-file
-app-algebra --> generator
 cli-app --> app-algebra
 cli-app --> introspector
-cli-app --> v1-project-file
+cli-app--> v1-sig-file
 cli-app --> command-cli-app-framework
+v1-project-file -- parses into --> project-file
+generator --> project-file
+generator --> query-model
+v1-hasql-hs-generator --> generator
+v1-java-jdbc-generator --> generator
+app-algebra --> generator
+app-algebra --> project-file
+v1-sig-file --> sig-file
+app-algebra --> sig-file
+sig-file --> query-model
 introspector --> app-algebra
 
 
@@ -27,3 +31,4 @@ subgraph integrations
   introspector
 
 end
+

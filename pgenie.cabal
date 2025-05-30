@@ -91,24 +91,31 @@ library base
   import: base
   hs-source-dirs: src/base/
   exposed-modules:
+    Base.Name
     Base.Prelude
 
   other-modules:
+    Base.Name.Megaparsec
+
   build-depends:
     base,
     bytestring,
     containers,
     data-has,
+    hashable,
     lawful-conversions,
+    megaparsec,
     mtl,
     profunctors,
     syntactic-class,
     text,
     text-builder,
+    text-builder-lawful-conversions,
     time,
     tuple,
     uuid,
     vector,
+    vector-instances,
     witherable,
 
 library modeling

@@ -33,6 +33,7 @@ import Data.Functor.Compose as Exports
 import Data.Functor.Contravariant as Exports
 import Data.Functor.Identity as Exports
 import Data.Has as Exports
+import Data.Hashable as Exports (Hashable (..))
 import Data.IORef as Exports
 import Data.Int as Exports
 import Data.Ix as Exports
@@ -49,6 +50,7 @@ import Data.STRef as Exports
 import Data.Semigroup as Exports
 import Data.String as Exports
 import Data.Text as Exports (Text)
+import Data.Text.Lazy as Exports (LazyText)
 import Data.Time as Exports
 import Data.Traversable as Exports
 import Data.Tuple as Exports
@@ -56,7 +58,9 @@ import Data.Tuple.Curry as Exports
 import Data.UUID as Exports (UUID)
 import Data.Unique as Exports
 import Data.Vector as Exports (Vector)
+import Data.Vector.Instances ()
 import Data.Version as Exports
+import Data.Void as Exports
 import Data.Word as Exports
 import Debug.Trace as Exports
 import Foreign.ForeignPtr as Exports
@@ -83,6 +87,7 @@ import System.Timeout as Exports
 import Text.Printf as Exports (hPrintf, printf)
 import Text.Read as Exports (Read (..), readEither, readMaybe)
 import TextBuilder as Exports (TextBuilder)
+import TextBuilderLawfulConversions as Exports ()
 import Unsafe.Coerce as Exports
 import Witherable as Exports
 import Prelude as Exports hiding (all, and, any, concat, concatMap, elem, filter, foldl, foldl1, foldr, foldr1, id, mapM, mapM_, maximum, minimum, notElem, or, product, sequence, sequence_, sum, (.))

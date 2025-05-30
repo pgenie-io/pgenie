@@ -32,17 +32,21 @@ data Project = Project
   }
 
 data Query = Query
-  { name :: Text
+  { name :: Name,
+    queryTemplate :: QueryTemplate
   }
 
 data QueryTemplate = QueryTemplate
   { parts :: [QueryTemplatePart],
-    vars :: [Text]
+    -- | Variables used in the query template in the order they appear.
+    vars :: [Name]
   }
 
 data QueryTemplatePart
   = SqlQueryTemplatePart Text
-  | VarQueryTemplatePart Text
+  | VarQueryTemplatePart Name
+
+type Name = [Text]
 
 -- * Ops
 

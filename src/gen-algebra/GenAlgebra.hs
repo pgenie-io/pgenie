@@ -1,6 +1,6 @@
 module GenAlgebra where
 
-import Base.Prelude
+import Base.Prelude hiding (Enum)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
 
@@ -26,30 +26,100 @@ data Artifact = Artifact
 data Error
 
 data Project = Project
-  { name :: Text,
+  { name :: Name,
     version :: NonEmpty Word,
-    queries :: [Query]
+    customTypes :: Map Name CustomType,
+    queries :: Map Name Query
   }
+  deriving stock (Show, Eq)
 
 data Query = Query
-  { name :: Name,
-    queryTemplate :: QueryTemplate
+  { params :: NonEmpty (Name, Type),
+    result :: QueryResult,
+    fragments :: [QueryFragment]
   }
+  deriving stock (Show, Eq)
 
-data QueryTemplate = QueryTemplate
-  { parts :: [QueryTemplatePart],
-    -- | Variables used in the query template in the order they appear.
-    vars :: [Name]
+data QueryResult
+  = MaybeRowQueryResult RowSig
+  | SingleRowQueryResult RowSig
+  | MultiRowQueryResult RowSig
+  | NoQueryResult
+  deriving stock (Show, Eq)
+
+type RowSig = NonEmpty (Name, Type)
+
+data QueryFragment
+  = SqlQueryFragment Text
+  | VarQueryFragment Name
+  deriving stock (Show, Eq)
+
+-- | Name of a variable, parameter, or field.
+--
+-- Non-empty list of words in lower case, where word is a latin letter followed by any number of latin letters and digits.
+type Name = NonEmpty Text
+
+data Type = Type
+  { isNullable :: Bool,
+    dimensional :: Dimensional
   }
+  deriving stock (Show, Eq)
 
-data QueryTemplatePart
-  = SqlQueryTemplatePart Text
-  | VarQueryTemplatePart Name
+data Dimensional = Dimensional
+  { dimensionality :: Int,
+    scalar :: Scalar
+  }
+  deriving stock (Show, Eq)
 
-type Name = [Text]
+data Scalar
+  = PrimitiveScalar Primitive
+  | -- | Custom type reference.
+    -- Use the name to look up the definition in the array of custom types provided in 'Project'.
+    CustomScalar Name
+  deriving stock (Show, Eq)
 
--- * Ops
+data Primitive
+  = BoolPrimitive
+  | ByteaPrimitive
+  | CharPrimitive
+  | CidrPrimitive
+  | DatePrimitive
+  | DatemultirangePrimitive
+  | DaterangePrimitive
+  | Float4Primitive
+  | Float8Primitive
+  | InetPrimitive
+  | Int2Primitive
+  | Int4Primitive
+  | Int4multirangePrimitive
+  | Int4rangePrimitive
+  | Int8Primitive
+  | Int8multirangePrimitive
+  | Int8rangePrimitive
+  | IntervalPrimitive
+  | JsonPrimitive
+  | JsonbPrimitive
+  | MacaddrPrimitive
+  | Macaddr8Primitive
+  | MoneyPrimitive
+  | NumericPrimitive
+  | NummultirangePrimitive
+  | NumrangePrimitive
+  | TextPrimitive
+  | TimePrimitive
+  | TimestampPrimitive
+  | TimestamptzPrimitive
+  | TimetzPrimitive
+  | TsmultirangePrimitive
+  | TsrangePrimitive
+  | TstzmultirangePrimitive
+  | TstzrangePrimitive
+  | UuidPrimitive
+  | XmlPrimitive
+  deriving stock (Show, Eq)
 
-mergeQueries :: Query -> Query -> Either Text Query
-mergeQueries =
-  error "TODO"
+data CustomType
+  = CompositeCustomType (Map Text Type)
+  | EnumCustomType (Vector Text)
+  | DomainCustomType Dimensional
+  deriving stock (Show, Eq)

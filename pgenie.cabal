@@ -177,13 +177,23 @@ library app-algebra
   import: base
   hs-source-dirs: src/app-algebra/
   exposed-modules:
-    AppAlgebra.Algebra
-    AppAlgebra.CliApp
-    AppAlgebra.Commands.Generate
+    AppAlgebra
 
   build-depends:
     aeson,
+    pgenie:base,
+    pgenie:gen-algebra,
+
+library cli-algebra
+  import: base
+  hs-source-dirs: src/cli-algebra/
+  exposed-modules:
+    CliAlgebra.Algebra
+    CliAlgebra.Commands.Generate
+
+  build-depends:
     optparse-applicative,
+    pgenie:app-algebra,
     pgenie:base,
     pgenie:gen-algebra,
 

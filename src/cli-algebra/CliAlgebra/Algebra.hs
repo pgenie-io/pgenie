@@ -1,8 +1,8 @@
 {-# OPTIONS_GHC -Wno-unused-binds -Wno-unused-imports -Wno-name-shadowing -Wno-incomplete-patterns -Wno-unused-matches -Wno-missing-methods -Wno-unused-record-wildcards -Wno-redundant-constraints #-}
 
-module AppAlgebra.CliApp where
+module CliAlgebra.Algebra where
 
-import AppAlgebra.Algebra
+import AppAlgebra
 import Base.Prelude
 import GenAlgebra qualified as Gen
 import Options.Applicative qualified as Opt

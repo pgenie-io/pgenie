@@ -1,23 +1,23 @@
 flowchart LR
 
-cli-app --> integrations
-generator --> v1-hasql-hs-generator
-generator --> v1-jdbc-java-generator
+cli-app ---> engine
+generator --> generators
 generator --> app-algebra
-cli-app --> command-cli-app-framework
 v1-project-file --> app-algebra
 v1-hasql-hs-generator --> gen-algebra
 v1-jdbc-java-generator --> gen-algebra
 app-algebra --> gen-algebra
 v1-sig-file --> app-algebra
 introspector --> app-algebra
+cli-algebra --> app-algebra
+cli-app --> cli-algebra
 
 subgraph generators
   v1-hasql-hs-generator
   v1-jdbc-java-generator
 end
 
-subgraph integrations[Implementation of procedures required for algebra exposing a single program]
+subgraph engine[Implementation of services required for algebra exposing a single program]
   generator
   introspector
   v1-sig-file

@@ -98,7 +98,7 @@ class (MonadError Error m) => Effect m where
   parseQuerySql :: QuerySqlLoaded -> m QuerySqlParsed
   introspectQuery :: TemporaryDbCreated -> QuerySqlParsed -> m QueryIntrospected
   mergeQueryMetadata :: QueryIntrospected -> QuerySignatureLoaded -> m QueryMetadataMerged
-  generateCode :: [Gen.Gen] -> ProjectFileLoaded -> QueriesMetadataMerged -> m CodeGenerated
+  generateCode :: ProjectFileLoaded -> QueriesMetadataMerged -> m CodeGenerated
 
   -- | Create or replace the signature file for the query.
   generateSignature :: ProjectFileLoaded -> QueryMetadataMerged -> m SignatureGenerated
@@ -111,11 +111,11 @@ check = do
   analyse projectFileLoaded
   pure ()
 
-generate :: (Effect m) => [Gen.Gen] -> m ()
-generate codegens = do
+generate :: (Effect m) => m ()
+generate = do
   projectFileLoaded <- loadProjectFile
   queriesMetadataMerged <- analyse projectFileLoaded
-  generateCode codegens projectFileLoaded queriesMetadataMerged
+  generateCode projectFileLoaded queriesMetadataMerged
   pure ()
 
 withTemporaryDb :: (Effect m) => ProjectFileLoaded -> (TemporaryDbCreated -> m a) -> m a

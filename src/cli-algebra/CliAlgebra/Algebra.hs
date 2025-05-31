@@ -4,13 +4,13 @@ module CliAlgebra.Algebra where
 
 import AppAlgebra
 import Base.Prelude
-import GenAlgebra qualified as Gen
 import Options.Applicative qualified as Opt
 
-data Command = Command
+data Command = forall params. Command
   { name :: Text,
     description :: Text,
-    procedureArgParser :: forall m. (Effect m) => Opt.Parser ([Gen.Gen] -> m ())
+    parser :: Opt.Parser params,
+    execute :: forall m. (Effect m) => params -> m ()
   }
 
 -- |
@@ -20,11 +20,9 @@ data Command = Command
 main ::
   -- | List of supported commands.
   [Command] ->
-  -- | Supported generators.
-  [Gen.Gen] ->
   -- | Execute an effect.
   (forall m. (Effect m) => m () -> IO ()) ->
   -- | Application.
   IO ()
-main _ _ _ =
+main _ _ =
   error "TODO"

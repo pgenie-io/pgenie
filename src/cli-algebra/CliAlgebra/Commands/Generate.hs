@@ -6,7 +6,6 @@ module CliAlgebra.Commands.Generate (generate) where
 import AppAlgebra qualified as AppAlgebra
 import Base.Prelude
 import CliAlgebra.Algebra
-import GenAlgebra qualified as GenAlgebra
 import Options.Applicative qualified as Opt
 
 generate :: Command
@@ -14,8 +13,15 @@ generate =
   Command
     { name = "generate",
       description = "Generate code and missing signature files for the project",
-      procedureArgParser
+      parser,
+      execute
     }
 
-procedureArgParser :: (AppAlgebra.Effect m) => Opt.Parser ([GenAlgebra.Gen] -> m ())
-procedureArgParser = pure AppAlgebra.generate
+data Params = Params
+
+parser :: Opt.Parser Params
+parser =
+  pure Params
+
+execute :: (AppAlgebra.Effect m) => Params -> m ()
+execute _params = AppAlgebra.generate

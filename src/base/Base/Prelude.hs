@@ -48,6 +48,7 @@ import Data.Proxy as Exports
 import Data.Ratio as Exports
 import Data.STRef as Exports
 import Data.Semigroup as Exports
+import Data.Set as Exports (Set)
 import Data.String as Exports
 import Data.Text as Exports (Text)
 import Data.Text.Lazy as Exports (LazyText)
@@ -72,7 +73,7 @@ import GHC.Conc as Exports hiding (threadWaitRead, threadWaitReadSTM, threadWait
 import GHC.Exts as Exports (groupWith, inline, lazy, sortWith)
 import GHC.Generics as Exports (Generic)
 import GHC.IO.Exception as Exports
-import LawfulConversions as Exports (Is, IsMany (..), IsSome (..))
+import LawfulConversions as Exports (Is, IsMany (..), IsSome (..), onto)
 import Numeric as Exports
 import Numeric.Natural as Exports (Natural)
 import SyntacticClass as Exports (Syntactic)

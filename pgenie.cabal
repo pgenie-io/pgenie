@@ -181,6 +181,8 @@ library app-algebra
 
   build-depends:
     aeson,
+    containers,
+    filepath,
     pgenie:base,
     pgenie:gen-algebra,
 

@@ -2,22 +2,51 @@
 
 module AppAlgebra where
 
-import Base.Prelude
+import Base.Prelude hiding (writeFile)
 import Data.Aeson qualified as Aeson
+import Data.Aeson.Types qualified as Aeson
+import Data.Map.Strict qualified as Map
 import GenAlgebra qualified as Gen
+import System.FilePath qualified as FilePath
 
 -- * Error
 
 -- | Application error.
 data Error
-  = GenError Text Gen.Error
+  = GenError
+      -- | Name of the artifact.
+      Text
+      -- | Name of the generator.
+      Text
+      -- | Version of the generator.
+      Int
+      -- | Details.
+      Gen.Error
+  | UnknownGenError
+      -- | Name of the artifact.
+      Text
+      -- | Name of the generator.
+      Text
+      -- | Version of the generator.
+      Int
+  | GenConfigParsingError
+      -- | Name of the artifact.
+      Text
+      -- | Name of the generator.
+      Text
+      -- | Version of the generator.
+      Int
+      -- | Error message.
+      Text
 
 -- * States
 
 data ProjectFileLoaded = ProjectFileLoaded
   { configFilePath :: FilePath,
-    -- | List of codegen configurations.
-    artifacts :: [(Text, Int, Aeson.Value)]
+    name :: Gen.Name,
+    version :: NonEmpty Int,
+    -- | List of codegen configurations by their versions and names.
+    artifacts :: [(Text, Text, Int, Aeson.Value)]
   }
 
 data TemporaryDbCreated
@@ -31,7 +60,7 @@ data QueriesMetadataLoaded
 type QueriesListed = [QueryListed]
 
 data QueryListed = QueryListed
-  { name :: Text,
+  { name :: Gen.Name,
     filePath :: FilePath,
     signatureFilePath :: Maybe FilePath
   }
@@ -44,7 +73,10 @@ data QuerySqlParsed = QuerySqlParsed
   {
   }
 
-data QueryIntrospected
+data QueryIntrospected = QueryIntrospected
+  { query :: Gen.Query,
+    mentionedCustomTypes :: Map Gen.Name Gen.CustomType
+  }
 
 data CodeGenerated = CodeGenerated
   { artifacts :: [CodeGeneratedArtifact]
@@ -63,11 +95,13 @@ data SignatureGenerated = SignatureGenerated
 
 data QuerySignatureLoaded
   = NotFoundQuerySignatureLoaded
-  | QuerySignatureLoaded Gen.Query
+  | QuerySignatureLoaded
+      -- | Parameters of the query.
+      (NonEmpty (Gen.Name, Gen.Type))
+      -- | Result of the query.
+      Gen.QueryResult
 
-type QueriesMetadataMerged = [QueryMetadataMerged]
-
-type QueryMetadataMerged = Gen.Query
+type QueriesMetadataMerged = Map Gen.Name QueryIntrospected
 
 type MigrationsListed = [MigrationListed]
 
@@ -79,7 +113,7 @@ data MigrationExecuted
 
 -- * Effect
 
-class (MonadError Error m) => Effect m where
+class (MonadError Error m, MonadReader [Gen.Gen] m) => Effect m where
   runParallelly :: (forall f. (Applicative f) => (forall a. m a -> f a) -> f a) -> m a
   loadProjectFile :: m ProjectFileLoaded
   createTemporaryDb :: ProjectFileLoaded -> m TemporaryDbCreated
@@ -97,11 +131,12 @@ class (MonadError Error m) => Effect m where
 
   parseQuerySql :: QuerySqlLoaded -> m QuerySqlParsed
   introspectQuery :: TemporaryDbCreated -> QuerySqlParsed -> m QueryIntrospected
-  mergeQueryMetadata :: QueryIntrospected -> QuerySignatureLoaded -> m QueryMetadataMerged
-  generateCode :: ProjectFileLoaded -> QueriesMetadataMerged -> m CodeGenerated
+  mergeQueryMetadata :: QueryIntrospected -> QuerySignatureLoaded -> m QueryIntrospected
 
   -- | Create or replace the signature file for the query.
-  generateSignature :: ProjectFileLoaded -> QueryMetadataMerged -> m SignatureGenerated
+  generateSignature :: ProjectFileLoaded -> QueryIntrospected -> m SignatureGenerated
+
+  writeFile :: FilePath -> Text -> m ()
 
 -- * Ops
 
@@ -115,8 +150,64 @@ generate :: (Effect m) => m ()
 generate = do
   projectFileLoaded <- loadProjectFile
   queriesMetadataMerged <- analyse projectFileLoaded
-  generateCode projectFileLoaded queriesMetadataMerged
+  genProject <- assembleGenProject projectFileLoaded queriesMetadataMerged
+  generateCode projectFileLoaded genProject
   pure ()
+
+extractAllMentionedCustomTypes :: (Effect m) => QueriesMetadataMerged -> m (Map Gen.Name Gen.CustomType)
+extractAllMentionedCustomTypes = foldM step Map.empty . Map.toList
+  where
+    step map (queryName, queryIntrospected) =
+      foldM step' map (Map.toList queryIntrospected.mentionedCustomTypes)
+      where
+        step' map (name, customType) =
+          case Map.lookup name map of
+            Just _ -> error "TODO: handle duplicate custom types"
+            Nothing -> do
+              pure (Map.insert name customType map)
+
+assembleGenProject :: (Effect m) => ProjectFileLoaded -> QueriesMetadataMerged -> m Gen.Project
+assembleGenProject projectFileLoaded queriesMetadataMerged = do
+  mentionedCustomTypes <- extractAllMentionedCustomTypes queriesMetadataMerged
+  pure
+    Gen.Project
+      { Gen.name = projectFileLoaded.name,
+        Gen.version = projectFileLoaded.version,
+        Gen.customTypes = mentionedCustomTypes,
+        Gen.queries = Map.map (.query) queriesMetadataMerged
+      }
+
+generateCode :: (Effect m) => ProjectFileLoaded -> Gen.Project -> m CodeGenerated
+generateCode projectFileLoaded genProject = do
+  gensAvail <- ask
+  let gensAvailMap =
+        gensAvail
+          & fmap (\gen -> ((gen.configSectionKey, gen.version), gen))
+          & Map.fromList
+  artifacts <- forM projectFileLoaded.artifacts \(artifactName, genName, genVersion, genConfigJson) -> do
+    Gen.Gen configSectionKey version generatorConfigParser generate <- case Map.lookup (genName, genVersion) gensAvailMap of
+      Nothing ->
+        throwError (UnknownGenError artifactName genName genVersion)
+      Just gen ->
+        pure gen
+    genConfig <- case Aeson.parse generatorConfigParser genConfigJson of
+      Aeson.Error errString ->
+        throwError (GenConfigParsingError artifactName genName genVersion (onto errString))
+      Aeson.Success genConfigParsed ->
+        pure genConfigParsed
+    case generate genConfig genProject of
+      Left err ->
+        throwError (GenError artifactName genName genVersion err)
+      Right generatedFiles -> do
+        let artifactPath = to @FilePath artifactName
+        -- TODO: check if the artifact path exists, create it if not
+        overwriting <- pure False
+        generatedFilePaths <- for generatedFiles \(path, content) -> do
+          let modifiedPath = FilePath.combine artifactPath path
+          writeFile modifiedPath content
+          pure modifiedPath
+        pure (CodeGeneratedArtifact artifactName generatedFilePaths overwriting)
+  pure (CodeGenerated artifacts)
 
 withTemporaryDb :: (Effect m) => ProjectFileLoaded -> (TemporaryDbCreated -> m a) -> m a
 withTemporaryDb projectFileLoaded action = do
@@ -139,13 +230,15 @@ analyse projectFileLoaded = do
       executeMigration temporaryDbCreated migrationLoaded
 
     runParallelly \parallelly ->
-      for queriesListed \queryListed -> parallelly do
-        (queryIntrospected, querySignatureLoaded) <- runParallelly \parallelly ->
-          (,)
-            <$> parallelly do
-              querySqlLoaded <- loadQuerySql queryListed
-              querySqlParsed <- parseQuerySql querySqlLoaded
-              introspectQuery temporaryDbCreated querySqlParsed
-            <*> parallelly do
-              loadQuerySignature projectFileLoaded queryListed
-        mergeQueryMetadata queryIntrospected querySignatureLoaded
+      Map.fromList
+        <$> for queriesListed \queryListed -> parallelly do
+          (queryIntrospected, querySignatureLoaded) <- runParallelly \parallelly ->
+            (,)
+              <$> parallelly do
+                querySqlLoaded <- loadQuerySql queryListed
+                querySqlParsed <- parseQuerySql querySqlLoaded
+                introspectQuery temporaryDbCreated querySqlParsed
+              <*> parallelly do
+                loadQuerySignature projectFileLoaded queryListed
+          merged <- mergeQueryMetadata queryIntrospected querySignatureLoaded
+          pure (queryListed.name, merged)

@@ -114,8 +114,14 @@ data Primitive
   | XmlPrimitive
   deriving stock (Show, Eq)
 
-data CustomType
-  = CompositeCustomType (Map Text Type)
-  | EnumCustomType (Vector Text)
-  | DomainCustomType Dimensional
+data CustomType = CustomType
+  { pgName :: Text,
+    definition :: CustomTypeDefinition
+  }
+  deriving stock (Show, Eq)
+
+data CustomTypeDefinition
+  = CompositeCustomTypeDefinition (Map Text Type)
+  | EnumCustomTypeDefinition (Vector Text)
+  | DomainCustomTypeDefinition Dimensional
   deriving stock (Show, Eq)

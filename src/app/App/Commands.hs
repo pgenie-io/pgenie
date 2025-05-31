@@ -1,12 +1,8 @@
-module App.Commands where
+module App.Commands
+  ( compile,
+    generateSignatures,
+  )
+where
 
-import App.Commands.Compile (Compile)
-import App.Commands.GenerateSignatures (GenerateSignatures)
-import App.Frameworks.CommandCliApp
-import Base.Prelude
-
-compile :: Command
-compile = modelCommand @Compile Proxy
-
-generateSignatures :: Command
-generateSignatures = modelCommand @GenerateSignatures Proxy
+import App.Commands.Compile (compile)
+import App.Commands.GenerateSignatures (generateSignatures)

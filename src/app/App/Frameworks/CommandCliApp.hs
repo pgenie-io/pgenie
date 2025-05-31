@@ -3,11 +3,7 @@ module App.Frameworks.CommandCliApp
     runApp,
 
     -- * Command
-    Command,
-    modelCommand,
-
-    -- * Model
-    ModelsCommand (..),
+    Command (..),
   )
 where
 
@@ -29,7 +25,7 @@ runApp appName description commands = Opt.execParser parserInfo >>= id
     parserInfo :: Opt.ParserInfo (IO ())
     parserInfo =
       Opt.info
-        (Opt.helper <*> Opt.hsubparser (foldMap coerce commands))
+        (Opt.helper <*> Opt.hsubparser (foldMap runCommand commands))
         ( mconcat
             [ Opt.fullDesc,
               Opt.progDesc (Text.unpack description),
@@ -39,35 +35,19 @@ runApp appName description commands = Opt.execParser parserInfo >>= id
 
 -- * Command
 
-newtype Command = Command (Opt.Mod Opt.CommandFields (IO ()))
-
--- | Construct a command by its model type.
-modelCommand :: (ModelsCommand model) => Proxy model -> Command
-modelCommand proxy =
-  Command
-    ( Opt.command
-        ( Text.unpack
-            (modelCommandName proxy)
-        )
-        ( Opt.info
-            ( modelIO
-                <$> flip asProxyTypeOf proxy
-                <$> modelParser
-            )
-            ( Opt.progDesc
-                ( Text.unpack
-                    (modelCommandDescription proxy)
-                )
-            )
-        )
+runCommand :: Command -> Opt.Mod Opt.CommandFields (IO ())
+runCommand (Command name description parser execute) =
+  Opt.command
+    (Text.unpack name)
+    ( Opt.info
+        (execute <$> parser)
+        (Opt.progDesc (Text.unpack description))
     )
 
--- * Model
-
-class ModelsCommand model where
-  modelCommandName :: Proxy model -> Text
-  modelCommandDescription :: Proxy model -> Text
-  modelParser :: Opt.Parser model
-
-  -- | Manage resources and execute a procedure, which outputs via `stdout` and `stderr`.
-  modelIO :: model -> IO ()
+data Command = forall params. Command
+  { name :: Text,
+    description :: Text,
+    parser :: Opt.Parser params,
+    -- | Manage resources and execute a procedure, which outputs via `stdout` and `stderr`.
+    execute :: params -> IO ()
+  }

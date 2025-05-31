@@ -1,12 +1,9 @@
-flowchart TD
+flowchart LR
 
-cli-app --> v1-project-file
-cli-app --> generator
+cli-app --> integrations
 generator --> v1-hasql-hs-generator
 generator --> v1-jdbc-java-generator
 generator --> app-algebra
-cli-app --> introspector
-cli-app--> v1-sig-file
 cli-app --> command-cli-app-framework
 v1-project-file --> app-algebra
 v1-hasql-hs-generator --> gen-algebra
@@ -14,20 +11,15 @@ v1-jdbc-java-generator --> gen-algebra
 app-algebra --> gen-algebra
 v1-sig-file --> app-algebra
 introspector --> app-algebra
-cli-app --> app-algebra
 
 subgraph generators
-  direction TB
   v1-hasql-hs-generator
   v1-jdbc-java-generator
 end
 
-subgraph integrations
-  direction TB
+subgraph integrations[Implementation of procedures required for algebra exposing a single program]
   generator
   introspector
   v1-sig-file
   v1-project-file
-
 end
-

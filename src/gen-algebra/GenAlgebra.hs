@@ -6,6 +6,7 @@ import Data.Aeson.Types qualified as Aeson
 
 -- * Interfaces
 
+-- | Interface for code generator adapters.
 data Gen = forall generatorConfig. Gen
   { -- | Name of the config section.
     configSectionKey :: Text,
@@ -13,21 +14,18 @@ data Gen = forall generatorConfig. Gen
     version :: Int,
     -- | Specification of the parser of a section of the config file, where the section is identified by key and version.
     generatorConfigParser :: Aeson.Value -> Aeson.Parser generatorConfig,
-    defaultGeneratorConfig :: generatorConfig,
-    generate :: generatorConfig -> Project -> Either Error Artifact
+    -- | Generate code for a project.
+    generate :: generatorConfig -> Project -> Either Error [(FilePath, Text)]
   }
 
 -- * Domain
 
-data Artifact = Artifact
-  { files :: [(FilePath, Text)]
-  }
-
 data Error
 
+-- | Model of a project with all the data needed to generate code.
 data Project = Project
   { name :: Name,
-    version :: NonEmpty Word,
+    version :: NonEmpty Int,
     customTypes :: Map Name CustomType,
     queries :: Map Name Query
   }
@@ -41,13 +39,11 @@ data Query = Query
   deriving stock (Show, Eq)
 
 data QueryResult
-  = MaybeRowQueryResult RowSig
-  | SingleRowQueryResult RowSig
-  | MultiRowQueryResult RowSig
+  = OptionalRowQueryResult (NonEmpty (Name, Type))
+  | SingleRowQueryResult (NonEmpty (Name, Type))
+  | MultiRowQueryResult (NonEmpty (Name, Type))
   | NoQueryResult
   deriving stock (Show, Eq)
-
-type RowSig = NonEmpty (Name, Type)
 
 data QueryFragment
   = SqlQueryFragment Text

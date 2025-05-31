@@ -1,6 +1,6 @@
 flowchart LR
 
-cli-app ---> engine
+cli-app --> integrations
 generator --> generators
 generator --> app-algebra
 v1-project-file --> app-algebra
@@ -11,15 +11,22 @@ v1-sig-file --> app-algebra
 introspector --> app-algebra
 cli-algebra --> app-algebra
 cli-app --> cli-algebra
+query-benchmarker --> query-check-algebra
+introspector --> query-checkers
 
 subgraph generators
   v1-hasql-hs-generator
   v1-jdbc-java-generator
 end
 
-subgraph engine[Implementation of services required for algebra exposing a single program]
+subgraph integrations
   generator
   introspector
   v1-sig-file
   v1-project-file
+end
+
+subgraph query-checkers
+  query-check-algebra
+  query-benchmarker
 end

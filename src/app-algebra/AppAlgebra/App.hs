@@ -1,10 +1,10 @@
 {-# OPTIONS_GHC -Wno-unused-binds -Wno-unused-imports -Wno-name-shadowing -Wno-incomplete-patterns -Wno-unused-matches -Wno-missing-methods -Wno-unused-record-wildcards -Wno-redundant-constraints #-}
 
-module Logic.App where
+module AppAlgebra.App where
 
+import AppAlgebra.Algebra
 import Base.Prelude
 import GenAlgebra qualified as Gen
-import Logic.Algebra
 import Options.Applicative qualified as Opt
 
 data Command = Command

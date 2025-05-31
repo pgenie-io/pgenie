@@ -1,12 +1,12 @@
 -- | Command that generates code and missing signature files for the project.
 --
 -- Forces the intended use of the application. The user has no option not to generate the signature files.
-module Logic.Commands.Generate (generate) where
+module AppAlgebra.Commands.Generate (generate) where
 
+import AppAlgebra.Algebra qualified as AppAlgebra
+import AppAlgebra.App
 import Base.Prelude
 import GenAlgebra qualified as GenAlgebra
-import Logic.Algebra qualified as AppAlgebra
-import Logic.App
 import Options.Applicative qualified as Opt
 
 generate :: Command

@@ -173,14 +173,13 @@ library libpq-extras
     postgresql-libpq,
     vector,
 
--- TODO: Extract app-algebra and app, replacing the other app hierarchy
-library logic
+library app-algebra
   import: base
-  hs-source-dirs: src/logic/
+  hs-source-dirs: src/app-algebra/
   exposed-modules:
-    Logic.Algebra
-    Logic.App
-    Logic.Commands.Generate
+    AppAlgebra.Algebra
+    AppAlgebra.App
+    AppAlgebra.Commands.Generate
 
   build-depends:
     aeson,

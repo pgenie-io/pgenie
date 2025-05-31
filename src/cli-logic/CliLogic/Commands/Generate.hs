@@ -1,11 +1,11 @@
 -- | Command that generates code and missing signature files for the project.
 --
 -- Forces the intended use of the application. The user has no option not to generate the signature files.
-module CliAlgebra.Commands.Generate (generate) where
+module CliLogic.Commands.Generate (generate) where
 
 import AppAlgebra qualified as AppAlgebra
 import Base.Prelude
-import CliAlgebra.Algebra
+import CliLogic.Algebra
 import Options.Applicative qualified as Opt
 
 generate :: Command

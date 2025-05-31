@@ -1,4 +1,4 @@
-module CliAlgebra.Algebra where
+module CliLogic.Algebra where
 
 import AppAlgebra
 import Base.Prelude

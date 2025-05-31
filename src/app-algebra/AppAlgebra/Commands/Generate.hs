@@ -4,7 +4,7 @@
 module AppAlgebra.Commands.Generate (generate) where
 
 import AppAlgebra.Algebra qualified as AppAlgebra
-import AppAlgebra.App
+import AppAlgebra.CliApp
 import Base.Prelude
 import GenAlgebra qualified as GenAlgebra
 import Options.Applicative qualified as Opt

@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-unused-binds -Wno-unused-imports -Wno-name-shadowing -Wno-incomplete-patterns -Wno-unused-matches -Wno-missing-methods -Wno-unused-record-wildcards -Wno-redundant-constraints #-}
 
-module AppAlgebra.App where
+module AppAlgebra.CliApp where
 
 import AppAlgebra.Algebra
 import Base.Prelude
@@ -18,7 +18,9 @@ data Command = Command
 --
 -- Parses the arguments.
 main ::
+  -- | List of supported commands.
   [Command] ->
+  -- | Supported generators.
   [Gen.Gen] ->
   -- | Execute an effect.
   (forall m. (Effect m) => m () -> IO ()) ->

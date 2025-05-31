@@ -178,7 +178,7 @@ library app-algebra
   hs-source-dirs: src/app-algebra/
   exposed-modules:
     AppAlgebra.Algebra
-    AppAlgebra.App
+    AppAlgebra.CliApp
     AppAlgebra.Commands.Generate
 
   build-depends:

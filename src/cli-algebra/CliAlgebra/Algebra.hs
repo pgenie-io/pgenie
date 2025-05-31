@@ -1,9 +1,8 @@
-{-# OPTIONS_GHC -Wno-unused-binds -Wno-unused-imports -Wno-name-shadowing -Wno-incomplete-patterns -Wno-unused-matches -Wno-missing-methods -Wno-unused-record-wildcards -Wno-redundant-constraints #-}
-
 module CliAlgebra.Algebra where
 
 import AppAlgebra
 import Base.Prelude
+import Data.Text qualified as Text
 import Options.Applicative qualified as Opt
 
 data Command = forall params. Command
@@ -18,11 +17,36 @@ data Command = forall params. Command
 --
 -- Parses the arguments.
 main ::
+  (Effect m) =>
+  -- | Name of the application.
+  Text ->
+  -- | Description of the application.
+  Text ->
   -- | List of supported commands.
   [Command] ->
   -- | Execute an effect.
-  (forall m. (Effect m) => m () -> IO ()) ->
+  (m () -> IO ()) ->
   -- | Application.
   IO ()
-main _ _ =
-  error "TODO"
+main appName description commands runEffect =
+  join (Opt.execParser parserInfo)
+  where
+    parserInfo :: Opt.ParserInfo (IO ())
+    parserInfo =
+      Opt.info
+        (Opt.helper <*> Opt.hsubparser (foldMap runCommand commands))
+        ( mconcat
+            [ Opt.fullDesc,
+              Opt.progDesc (Text.unpack description),
+              Opt.header (Text.unpack appName)
+            ]
+        )
+
+    runCommand :: Command -> Opt.Mod Opt.CommandFields (IO ())
+    runCommand Command {..} =
+      Opt.command
+        (Text.unpack name)
+        ( Opt.info
+            (runEffect . execute <$> parser)
+            (Opt.progDesc (Text.unpack description))
+        )

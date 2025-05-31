@@ -195,6 +195,7 @@ library cli-algebra
     optparse-applicative,
     pgenie:app-algebra,
     pgenie:base,
+    text,
 
 library gen-algebra
   import: base

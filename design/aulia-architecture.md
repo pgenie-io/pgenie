@@ -26,10 +26,10 @@ logic --> algebra
 ```mermaid
 flowchart TD
 
-app-integrations ---> app-algebra
 app-logic --> app-algebra
-app-logic --> v1-hasql-haskell-gen
-app-logic --> v1-jdbc-java-gen
+app-integrations ---> app-algebra
+app-integrations --> v1-hasql-haskell-gen
+app-integrations --> v1-jdbc-java-gen
 cli-ui --> app-logic
 cli-app --> app-integrations
 cli-app --> cli-ui
@@ -41,3 +41,5 @@ gen-ui --> gen-algebra
 custom-gen-app --> custom-gen
 custom-gen --> gen-algebra
 ```
+
+- Specific gens are under integrations because the Effects get executed there and currently we've abstracted the gens in the app-algebra via MonadReader providing a list of gens

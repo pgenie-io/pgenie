@@ -1,6 +1,7 @@
 module Base.Name
   ( Name,
-    toParts,
+    toPartsVector,
+    toPartsNonEmpty,
     toText,
     tryFromText,
     inKebabCase,
@@ -8,6 +9,7 @@ module Base.Name
     inCamelCase,
     inPascalCase,
     inScreamCase,
+    megaparsecOf,
   )
 where
 
@@ -44,37 +46,46 @@ instance IsSome TextBuilder Name where
   to = toTextBuilder
   maybeFrom = either (const Nothing) Just . tryFromText . to
 
-toParts :: Name -> Vector Text
-toParts (Name parts) = parts
+toPartsVector :: Name -> Vector Text
+toPartsVector (Name parts) = parts
+
+toPartsNonEmpty :: Name -> NonEmpty Text
+toPartsNonEmpty (Name parts) =
+  case Vector.toList parts of
+    [] -> error "Name.toPartsNonEmpty: empty name"
+    x : xs -> x :| xs
 
 toText :: Name -> Text
 toText = to @Text . toTextBuilder
 
 toTextBuilder :: Name -> TextBuilder
-toTextBuilder = TextBuilder.intercalateMap "-" to . toParts
+toTextBuilder = TextBuilder.intercalateMap "-" to . toPartsVector
 
 toTextBuilderInKebabCase :: Name -> TextBuilder
-toTextBuilderInKebabCase = TextBuilder.intercalateMap "-" to . toParts
+toTextBuilderInKebabCase = TextBuilder.intercalateMap "-" to . toPartsVector
 
 toTextBuilderInCamelCase :: Name -> TextBuilder
-toTextBuilderInCamelCase = fromList . Vector.toList . toParts
+toTextBuilderInCamelCase = fromList . Vector.toList . toPartsVector
   where
     fromList = \case
       [] -> mempty
       x : xs -> to x <> foldMap (to . Text.toTitle) xs
 
 toTextBuilderInPascalCase :: Name -> TextBuilder
-toTextBuilderInPascalCase = foldMap (to . Text.toTitle) . Vector.toList . toParts
+toTextBuilderInPascalCase = foldMap (to . Text.toTitle) . Vector.toList . toPartsVector
 
 toTextBuilderInSnakeCase :: Name -> TextBuilder
-toTextBuilderInSnakeCase = TextBuilder.intercalateMap "_" to . toParts
+toTextBuilderInSnakeCase = TextBuilder.intercalateMap "_" to . toPartsVector
 
 toTextBuilderInScreamCase :: Name -> TextBuilder
-toTextBuilderInScreamCase = TextBuilder.intercalateMap "_" (to . Text.toUpper) . toParts
+toTextBuilderInScreamCase = TextBuilder.intercalateMap "_" (to . Text.toUpper) . toPartsVector
 
 tryFromText :: Text -> Either Text Name
 tryFromText =
   fmap Name . fmap Vector.fromList . Megaparsec.toTextParser (Megaparsec.complete Megaparsec.parts)
+
+megaparsecOf :: Megaparsec.Parser Name
+megaparsecOf = fmap (Name . Vector.fromList) Megaparsec.parts
 
 -- * Rendering
 

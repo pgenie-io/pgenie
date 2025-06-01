@@ -187,16 +187,16 @@ library app-algebra
     pgenie:base,
     pgenie:gen-algebra,
 
-library cli-logic
+library cli-ui
   import: base
-  hs-source-dirs: src/cli-logic/
+  hs-source-dirs: src/cli-ui/
   exposed-modules:
-    CliLogic
+    CliUi
 
   other-modules:
-    CliLogic.Algebra
-    CliLogic.Commands
-    CliLogic.Commands.Generate
+    CliUi.Algebra
+    CliUi.Commands
+    CliUi.Commands.Generate
 
   build-depends:
     optparse-applicative,

@@ -1,12 +1,12 @@
-module CliLogic
+module CliUi
   ( main,
   )
 where
 
 import AppAlgebra qualified
 import Base.Prelude
-import CliLogic.Algebra qualified as Algebra
-import CliLogic.Commands qualified as Commands
+import CliUi.Algebra qualified as Algebra
+import CliUi.Commands qualified as Commands
 
 -- |
 -- Construct an application by specifying the abstract commands and the effect to execute them.

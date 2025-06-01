@@ -182,8 +182,20 @@ library app-algebra
 
   build-depends:
     aeson,
+    pgenie:base,
+    pgenie:gen-algebra,
+
+library app-logic
+  import: base
+  hs-source-dirs: src/app-logic/
+  exposed-modules:
+    AppLogic
+
+  build-depends:
+    aeson,
     containers,
     filepath,
+    pgenie:app-algebra,
     pgenie:base,
     pgenie:gen-algebra,
 
@@ -201,6 +213,7 @@ library cli-ui
   build-depends:
     optparse-applicative,
     pgenie:app-algebra,
+    pgenie:app-logic,
     pgenie:base,
     text,
 

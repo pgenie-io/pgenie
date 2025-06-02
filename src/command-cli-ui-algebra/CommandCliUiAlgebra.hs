@@ -1,15 +1,17 @@
-module CliUi.Algebra where
+module CommandCliUiAlgebra where
 
-import AppAlgebra
 import Base.Prelude
 import Data.Text qualified as Text
 import Options.Applicative qualified as Opt
 
-data Command = forall params. Command
+-- |
+-- Command with procedure that may be implemented in terms of abstract algebra,
+-- allowing to delegate the execution of effects out to the main function.
+data Command m = forall params. Command
   { name :: Text,
     description :: Text,
     parser :: Opt.Parser params,
-    execute :: forall m. (Effect m) => params -> m ()
+    execute :: params -> m ()
   }
 
 -- |
@@ -17,13 +19,12 @@ data Command = forall params. Command
 --
 -- Parses the arguments.
 main ::
-  (Effect m) =>
   -- | Name of the application.
   Text ->
   -- | Description of the application.
   Text ->
   -- | List of supported commands.
-  [Command] ->
+  [Command m] ->
   -- | Execute an effect.
   (m () -> IO ()) ->
   -- | Application.
@@ -31,7 +32,6 @@ main ::
 main appName description commands runEffect =
   join (Opt.execParser parserInfo)
   where
-    parserInfo :: Opt.ParserInfo (IO ())
     parserInfo =
       Opt.info
         (Opt.helper <*> Opt.hsubparser (foldMap runCommand commands))
@@ -42,7 +42,6 @@ main appName description commands runEffect =
             ]
         )
 
-    runCommand :: Command -> Opt.Mod Opt.CommandFields (IO ())
     runCommand Command {..} =
       Opt.command
         (Text.unpack name)

@@ -5,8 +5,8 @@ where
 
 import AppAlgebra qualified
 import Base.Prelude
-import CliUi.Algebra qualified as Algebra
 import CliUi.Commands qualified as Commands
+import CommandCliUiAlgebra qualified as Algebra
 
 -- |
 -- Construct an application by specifying the abstract commands and the effect to execute them.

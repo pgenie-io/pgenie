@@ -37,9 +37,24 @@ custom-gen-app --> gen-ui
 app-algebra --> gen-algebra
 v1-hasql-haskell-gen --> gen-algebra
 v1-jdbc-java-gen --> gen-algebra
-gen-ui --> gen-algebra
+gen-ui ----> gen-algebra
 custom-gen-app --> custom-gen
 custom-gen --> gen-algebra
+cli-ui -----> command-cli-ui-algebra
+
+infrastructure(DDD Infrastructure) -..- app-integrations
+application(DDD Application) -...- app-logic
+domain(DDD Domain) -....- app-algebra
+
+subgraph cli-ui
+  generate-command
+  analyse-command
+end
+
+subgraph app-integrations
+  temp-db
+  file-system
+end
 ```
 
 - Specific gens are under integrations because the Effects get executed there and currently we've abstracted the gens in the app-algebra via MonadReader providing a list of gens

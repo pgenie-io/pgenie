@@ -206,7 +206,6 @@ library cli-ui
     CliUi
 
   other-modules:
-    CliUi.Algebra
     CliUi.Commands
     CliUi.Commands.Generate
 
@@ -214,6 +213,17 @@ library cli-ui
     optparse-applicative,
     pgenie:app-algebra,
     pgenie:app-logic,
+    pgenie:base,
+    pgenie:command-cli-ui-algebra,
+
+library command-cli-ui-algebra
+  import: base
+  hs-source-dirs: src/command-cli-ui-algebra/
+  exposed-modules:
+    CommandCliUiAlgebra
+
+  build-depends:
+    optparse-applicative,
     pgenie:base,
     text,
 

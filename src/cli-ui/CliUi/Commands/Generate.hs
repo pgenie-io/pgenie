@@ -6,10 +6,10 @@ module CliUi.Commands.Generate (generate) where
 import AppAlgebra qualified
 import AppLogic qualified
 import Base.Prelude
-import CliUi.Algebra
+import CommandCliUiAlgebra
 import Options.Applicative qualified as Opt
 
-generate :: Command
+generate :: (AppAlgebra.Effect m) => Command m
 generate =
   Command
     { name = "generate",

@@ -3,6 +3,7 @@ module AppAlgebra where
 import Base.Prelude hiding (writeFile)
 import Data.Aeson qualified as Aeson
 import GenAlgebra qualified as Gen
+import ParallelismLogic.Algebra qualified as Parallelism
 
 -- * Error
 
@@ -108,8 +109,7 @@ data MigrationExecuted
 
 -- * Effect
 
-class (MonadError Error m, MonadReader [Gen.Gen] m) => Effect m where
-  runParallelly :: (forall f. (Applicative f) => (forall a. m a -> f a) -> f a) -> m a
+class (MonadError Error m, MonadReader [Gen.Gen] m, Parallelism.Parallelism m) => Effect m where
   loadProjectFile :: m ProjectFileLoaded
   createTemporaryDb :: ProjectFileLoaded -> m TemporaryDbCreated
   dropTemporaryDb :: TemporaryDbCreated -> m ()

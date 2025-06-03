@@ -188,6 +188,7 @@ library app-algebra
     aeson,
     pgenie:base,
     pgenie:gen-algebra,
+    pgenie:parallelism-logic,
 
 library app-logic
   import: base
@@ -202,6 +203,7 @@ library app-logic
     pgenie:app-algebra,
     pgenie:base,
     pgenie:gen-algebra,
+    pgenie:parallelism-logic,
 
 library reporting-logic
   import: base
@@ -229,6 +231,15 @@ test-suite reporting-logic-test
     hspec >=2.11 && <3,
     pgenie:base,
     pgenie:reporting-logic,
+
+library parallelism-logic
+  import: base
+  hs-source-dirs: src/parallelism-logic/
+  exposed-modules:
+    ParallelismLogic.Algebra
+
+  build-depends:
+    pgenie:base
 
 library cli-ui
   import: base

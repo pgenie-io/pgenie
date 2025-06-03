@@ -8,6 +8,7 @@ import Data.Aeson qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
 import Data.Map.Strict qualified as Map
 import GenAlgebra qualified as Gen
+import ParallelismLogic.Algebra
 import System.FilePath qualified as FilePath
 
 check :: (Effect m) => m ()
@@ -89,7 +90,7 @@ withTemporaryDb projectFileLoaded action = do
 analyse :: (Effect m) => ProjectFileLoaded -> m QueriesMetadataMerged
 analyse projectFileLoaded = do
   (migrationsListed, queriesListed) <-
-    runParallelly \parallelly ->
+    runApPar \parallelly ->
       (,)
         <$> parallelly (listMigrations projectFileLoaded)
         <*> parallelly (listQueries projectFileLoaded)
@@ -99,10 +100,10 @@ analyse projectFileLoaded = do
       migrationLoaded <- loadMigration migrationListed
       executeMigration temporaryDbCreated migrationLoaded
 
-    runParallelly \parallelly ->
+    runApPar \parallelly ->
       Map.fromList
         <$> for queriesListed \queryListed -> parallelly do
-          (queryIntrospected, querySignatureLoaded) <- runParallelly \parallelly ->
+          (queryIntrospected, querySignatureLoaded) <- runApPar \parallelly ->
             (,)
               <$> parallelly do
                 querySqlLoaded <- loadQuerySql queryListed

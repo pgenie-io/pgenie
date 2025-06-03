@@ -56,6 +56,7 @@ instance (Monad m) => ArrowChoice (Scenario m) where
         pure (Left output)
       Right rightInput -> pure (Right rightInput)
 
+-- | Declare a stage in a scenario.
 runStage :: (Reports m) => Text -> (i -> m o) -> Scenario m i o
 runStage name action =
   Scenario 1 \actualTotal offset input -> do
@@ -70,6 +71,9 @@ runStage name action =
     reportStageExit name (fromIntegral (offset + 1) / fromIntegral actualTotal)
     pure output
 
+-- | Run a scenario with the given input, automatically reporting upon the progress of the action.
+--
+-- You can nest scenarios to create a hierarchy of stages, allowing for fine-grained progress reporting.
 runScenario ::
   -- | Action to run.
   Scenario m i o ->

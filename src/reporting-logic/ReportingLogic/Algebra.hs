@@ -1,4 +1,4 @@
-module ProgressLogic.Algebra
+module ReportingLogic.Algebra
   ( -- * Ports
     Reports (..),
 

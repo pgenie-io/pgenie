@@ -203,24 +203,24 @@ library app-logic
     pgenie:base,
     pgenie:gen-algebra,
 
-library progress-logic
+library reporting-logic
   import: base
-  hs-source-dirs: src/progress-logic/
+  hs-source-dirs: src/reporting-logic/
   exposed-modules:
-    ProgressLogic.Adapters.RecordEvents
-    ProgressLogic.Algebra
+    ReportingLogic.Adapters.RecordEvents
+    ReportingLogic.Algebra
 
   build-depends:
     base,
     pgenie:base,
 
-test-suite progress-logic-test
+test-suite reporting-logic-test
   import: test
   type: exitcode-stdio-1.0
-  hs-source-dirs: src/progress-logic-test
+  hs-source-dirs: src/reporting-logic-test
   main-is: Main.hs
   other-modules:
-    ProgressLogic.AlgebraSpec
+    ReportingLogic.AlgebraSpec
 
   build-tool-depends:
     hspec-discover:hspec-discover >=2 && <3
@@ -228,7 +228,7 @@ test-suite progress-logic-test
   build-depends:
     hspec >=2.11 && <3,
     pgenie:base,
-    pgenie:progress-logic,
+    pgenie:reporting-logic,
 
 library cli-ui
   import: base

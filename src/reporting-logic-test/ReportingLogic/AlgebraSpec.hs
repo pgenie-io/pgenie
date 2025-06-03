@@ -1,15 +1,15 @@
-module ProgressLogic.AlgebraSpec where
+module ReportingLogic.AlgebraSpec where
 
 import Base.Prelude
-import ProgressLogic.Adapters.RecordEvents qualified
-import ProgressLogic.Algebra
+import ReportingLogic.Adapters.RecordEvents qualified
+import ReportingLogic.Algebra
 import Test.Hspec
 
 spec :: Spec
 spec = do
   describe "Simulation 1" do
     let (events, result) =
-          ProgressLogic.Adapters.RecordEvents.run
+          ReportingLogic.Adapters.RecordEvents.run
             let scenario1 = proc a -> do
                   a <- runStage "1" (pure . succ) -< a
                   a <- runStage "2" (pure . succ) -< a
@@ -32,7 +32,7 @@ spec = do
         let progresses =
               events
                 & mapMaybe \case
-                  ProgressLogic.Adapters.RecordEvents.StageExit _ p -> Just p
+                  ReportingLogic.Adapters.RecordEvents.StageExit _ p -> Just p
                   _ -> Nothing
         it "Should be ascending" do
           shouldBe progresses (sort progresses)

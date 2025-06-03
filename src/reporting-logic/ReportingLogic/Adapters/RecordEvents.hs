@@ -1,4 +1,4 @@
-module ProgressLogic.Adapters.RecordEvents
+module ReportingLogic.Adapters.RecordEvents
   ( RecordEvents,
     Event (..),
     run,
@@ -6,7 +6,7 @@ module ProgressLogic.Adapters.RecordEvents
 where
 
 import Base.Prelude
-import ProgressLogic.Algebra
+import ReportingLogic.Algebra
 
 -- | Collects events into a list.
 newtype RecordEvents a

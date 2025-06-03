@@ -3,7 +3,7 @@ module AppAlgebra where
 import Base.Prelude hiding (writeFile)
 import Data.Aeson qualified as Aeson
 import GenAlgebra qualified as Gen
-import ParallelismLogic.Algebra qualified as Parallelism
+import ParallelismLogic qualified as Parallelism
 
 -- * Error
 

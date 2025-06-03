@@ -236,6 +236,10 @@ library parallelism-logic
   import: base
   hs-source-dirs: src/parallelism-logic/
   exposed-modules:
+    ParallelismLogic
+
+  other-modules:
+    ParallelismLogic.Adapters.IO
     ParallelismLogic.Algebra
 
   build-depends:

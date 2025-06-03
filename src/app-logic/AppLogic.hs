@@ -8,7 +8,7 @@ import Data.Aeson qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
 import Data.Map.Strict qualified as Map
 import GenAlgebra qualified as Gen
-import ParallelismLogic.Algebra
+import ParallelismLogic
 import System.FilePath qualified as FilePath
 
 check :: (Effect m) => m ()

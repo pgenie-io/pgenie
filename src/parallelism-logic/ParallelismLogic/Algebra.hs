@@ -9,7 +9,7 @@ where
 import Base.Prelude
 
 class (Monad m) => Parallelism m where
-  liftA2Par :: (a -> b -> c) -> m a -> m b -> m c
+  apPar :: m (a -> b) -> m a -> m b
 
 newtype Parallelly m a = Parallelly (m a)
 
@@ -18,7 +18,7 @@ instance (Functor m) => Functor (Parallelly m) where
 
 instance (Parallelism m) => Applicative (Parallelly m) where
   pure x = Parallelly (pure x)
-  Parallelly f <*> Parallelly g = Parallelly (liftA2Par id f g)
+  Parallelly f <*> Parallelly g = Parallelly (apPar f g)
 
 parallelly :: m a -> Parallelly m a
 parallelly = Parallelly

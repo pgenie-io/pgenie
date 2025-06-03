@@ -205,11 +205,8 @@ library progress-logic
   import: base
   hs-source-dirs: src/progress-logic/
   exposed-modules:
-    ProgressLogic
     ProgressLogic.Adapters.RecordEvents
-    ProgressLogic.Algebras.Progress
-    ProgressLogic.Algebras.RegRun
-    ProgressLogic.Algebras.Reports
+    ProgressLogic.Algebra
 
   build-depends:
     base,
@@ -221,7 +218,7 @@ test-suite progress-logic-test
   hs-source-dirs: src/progress-logic-test
   main-is: Main.hs
   other-modules:
-    ProgressLogic.Algebras.ProgressSpec
+    ProgressLogic.AlgebraSpec
 
   build-tool-depends:
     hspec-discover:hspec-discover >=2 && <3

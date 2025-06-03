@@ -1,5 +1,9 @@
-module ProgressLogic.Algebras.Progress
-  ( runScenario,
+module ProgressLogic.Algebra
+  ( -- * Ports
+    Reports (..),
+
+    -- * Algebra
+    runScenario,
     Scenario,
     runStage,
   )
@@ -7,7 +11,19 @@ where
 
 import Base.Prelude
 import Control.Arrow
-import ProgressLogic.Algebras.Reports
+
+-- |
+-- - Reports progress.
+-- - Reports stage enter and exit for logging.
+-- - Reports parallellism as @enters - exits@. Amount of actively running stages.
+class (Monad m) => Reports m where
+  reportStageEnter :: Text -> m ()
+  reportStageExit ::
+    Text ->
+    -- | Overall progress of the scope, from 0 to 1.
+    Double ->
+    m ()
+  mapReports :: (Double -> Double) -> m a -> m a
 
 -- |
 -- Statically structured execution scenario, which lets you observe progress.

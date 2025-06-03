@@ -1,8 +1,8 @@
-module ProgressLogic.Algebras.ProgressSpec where
+module ProgressLogic.AlgebraSpec where
 
 import Base.Prelude
 import ProgressLogic.Adapters.RecordEvents qualified
-import ProgressLogic.Algebras.Progress
+import ProgressLogic.Algebra
 import Test.Hspec
 
 spec :: Spec

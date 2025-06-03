@@ -1,5 +1,3 @@
-{-# LANGUAGE RequiredTypeArguments #-}
-
 module ProgressLogic.Algebras.ProgressSpec where
 
 import Base.Prelude
@@ -10,30 +8,19 @@ import Test.Hspec
 spec :: Spec
 spec = do
   it "" do
-    let (events, result) =
+    let scenario1 = proc a -> do
+          a <- runStage "1" (pure . succ) -< a
+          a <- runStage "2" (pure . succ) -< a
+          a <- runStage "3" (runScenario scenario2) -< a
+          a <- runStage "4" (pure . succ) -< a
+          returnA -< a
+        scenario2 = proc a -> do
+          a <- runStage "3.1" (pure . succ) -< a
+          a <- runStage "3.2" (pure . succ) -< a
+          a <- runStage "3.3" (pure . succ) -< a
+          returnA -< a
+        (events, result) =
           ProgressLogic.Adapters.RecordEvents.run do
-            scenario
-              ( proc a -> do
-                  a <- stage "1" (pure . succ) -< a
-                  a <- stage "2" (pure . succ) -< a
-                  a <-
-                    stage
-                      "3"
-                      ( \a ->
-                          scenario
-                            ( proc b -> do
-                                b <- stage "3.1" (pure . succ) -< b
-                                b <- stage "3.2" (pure . succ) -< b
-                                b <- stage "3.3" (pure . succ) -< b
-                                returnA -< b
-                            )
-                            a
-                      )
-                      -<
-                        a
-                  a <- stage "4" (pure . succ) -< a
-                  returnA -< a
-              )
-              (0 :: Int)
+            runScenario scenario1 (0 :: Int)
     shouldBe result 6
     shouldBe events []

@@ -1,7 +1,7 @@
 module ProgressLogic.Algebras.Progress
-  ( scenario,
+  ( runScenario,
     Scenario,
-    stage,
+    runStage,
   )
 where
 
@@ -40,8 +40,8 @@ instance (Monad m) => ArrowChoice (Scenario m) where
         pure (Left output)
       Right rightInput -> pure (Right rightInput)
 
-stage :: (Reports m) => Text -> (i -> m o) -> Scenario m i o
-stage name action =
+runStage :: (Reports m) => Text -> (i -> m o) -> Scenario m i o
+runStage name action =
   Scenario 1 \actualTotal offset input -> do
     reportStageEnter name
     output <-
@@ -54,12 +54,12 @@ stage name action =
     reportStageExit name (fromIntegral (offset + 1) / fromIntegral actualTotal)
     pure output
 
-scenario ::
+runScenario ::
   -- | Action to run.
   Scenario m i o ->
   -- | Input to the action.
   i ->
   -- | Result of the action.
   m o
-scenario (Scenario total action) input = do
+runScenario (Scenario total action) input = do
   action total 0 input

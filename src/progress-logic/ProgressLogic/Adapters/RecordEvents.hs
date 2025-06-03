@@ -1,4 +1,9 @@
-module ProgressLogic.Adapters.RecordEvents where
+module ProgressLogic.Adapters.RecordEvents
+  ( RecordEvents,
+    Event (..),
+    run,
+  )
+where
 
 import Base.Prelude
 import ProgressLogic.Algebras.Reports

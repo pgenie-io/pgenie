@@ -90,7 +90,7 @@ withTemporaryDb projectFileLoaded action = do
 analyse :: (Effect m) => ProjectFileLoaded -> m QueriesMetadataMerged
 analyse projectFileLoaded = do
   (migrationsListed, queriesListed) <-
-    runApPar \parallelly ->
+    runParallelly do
       (,)
         <$> parallelly (listMigrations projectFileLoaded)
         <*> parallelly (listQueries projectFileLoaded)
@@ -100,10 +100,10 @@ analyse projectFileLoaded = do
       migrationLoaded <- loadMigration migrationListed
       executeMigration temporaryDbCreated migrationLoaded
 
-    runApPar \parallelly ->
+    runParallelly do
       Map.fromList
         <$> for queriesListed \queryListed -> parallelly do
-          (queryIntrospected, querySignatureLoaded) <- runApPar \parallelly ->
+          (queryIntrospected, querySignatureLoaded) <- runParallelly do
             (,)
               <$> parallelly do
                 querySqlLoaded <- loadQuerySql queryListed

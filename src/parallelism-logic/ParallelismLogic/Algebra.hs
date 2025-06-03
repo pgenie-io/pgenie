@@ -3,7 +3,6 @@ module ParallelismLogic.Algebra
     Parallelly,
     parallelly,
     runParallelly,
-    runApPar,
   )
 where
 
@@ -27,10 +26,3 @@ parallelly = Parallelly
 -- | Unlift a 'Parallelly' action to the underlying monad.
 runParallelly :: (Parallelism m) => Parallelly m a -> m a
 runParallelly (Parallelly m) = m
-
-runApPar ::
-  (Parallelism m) =>
-  (forall f. (Applicative f) => (forall a. m a -> f a) -> f a) ->
-  m a
-runApPar f =
-  runParallelly (f parallelly)

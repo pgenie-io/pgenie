@@ -41,10 +41,11 @@ gen-ui ----> gen-algebra
 custom-gen-app --> custom-gen
 custom-gen --> gen-algebra
 cli-ui -----> command-cli-ui-algebra
+app-algebra --> fs-logic
 
 infrastructure(DDD Infrastructure) -..- app-integrations
-application(DDD Application) -...- app-logic
 domain(DDD Domain) -....- app-algebra
+application(DDD Application) -...- app-logic
 
 subgraph cli-ui
   generate-command

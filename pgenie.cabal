@@ -101,6 +101,7 @@ library base
     Base.Name.Megaparsec
 
   build-depends:
+    QuickCheck,
     base,
     bytestring,
     containers,
@@ -110,6 +111,7 @@ library base
     megaparsec,
     mtl,
     profunctors,
+    quickcheck-instances,
     syntactic-class,
     text,
     text-builder,
@@ -264,6 +266,17 @@ library gen-algebra
 
   build-depends:
     aeson,
+    pgenie:base,
+
+library fs-logic
+  import: base
+  hs-source-dirs: src/fs-logic/
+  exposed-modules:
+    FsLogic.Algebra
+    FsLogic.Properties
+
+  build-depends:
+    QuickCheck,
     pgenie:base,
 
 library project-file

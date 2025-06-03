@@ -28,12 +28,12 @@ spec = do
         shouldBe result 6
 
     describe "events" do
-      let progresses =
-            events
-              & mapMaybe \case
-                ProgressLogic.Adapters.RecordEvents.StageExit _ p -> Just p
-                _ -> Nothing
       describe "progresses" do
+        let progresses =
+              events
+                & mapMaybe \case
+                  ProgressLogic.Adapters.RecordEvents.StageExit _ p -> Just p
+                  _ -> Nothing
         it "Should be ascending" do
           shouldBe progresses (sort progresses)
         it "Should be larger than 0" do

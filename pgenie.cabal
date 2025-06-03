@@ -20,6 +20,7 @@ common base
   default-language: Haskell2010
   default-extensions:
     ApplicativeDo
+    Arrows
     BangPatterns
     BlockArguments
     ConstraintKinds
@@ -32,6 +33,7 @@ common base
     DeriveGeneric
     DeriveTraversable
     DerivingStrategies
+    DerivingVia
     DuplicateRecordFields
     EmptyDataDecls
     FlexibleContexts
@@ -198,6 +200,33 @@ library app-logic
     pgenie:app-algebra,
     pgenie:base,
     pgenie:gen-algebra,
+
+library progress-logic
+  import: base
+  hs-source-dirs: src/progress-logic/
+  exposed-modules:
+    ProgressLogic.Adapters.RecordEvents
+    ProgressLogic.Algebra
+
+  build-depends:
+    base,
+    pgenie:base,
+
+test-suite progress-logic-test
+  import: test
+  type: exitcode-stdio-1.0
+  hs-source-dirs: src/progress-logic-test
+  main-is: Main.hs
+  other-modules:
+    ProgressLogic.AlgebraSpec
+
+  build-tool-depends:
+    hspec-discover:hspec-discover >=2 && <3
+
+  build-depends:
+    hspec >=2.11 && <3,
+    pgenie:base,
+    pgenie:progress-logic,
 
 library cli-ui
   import: base

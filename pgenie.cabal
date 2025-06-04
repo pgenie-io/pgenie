@@ -204,6 +204,7 @@ library app-logic
     pgenie:base,
     pgenie:gen-algebra,
     pgenie:parallelism-logic,
+    pgenie:reporting-logic,
 
 library reporting-logic
   import: base

@@ -4,6 +4,7 @@ import Base.Prelude hiding (writeFile)
 import Data.Aeson qualified as Aeson
 import GenAlgebra qualified as Gen
 import ParallelismLogic qualified as Parallelism
+import ReportingLogic.Algebra qualified as ReportingLogic
 
 -- * Error
 
@@ -109,7 +110,14 @@ data MigrationExecuted
 
 -- * Effect
 
-class (MonadError Error m, MonadReader [Gen.Gen] m, Parallelism.Parallelism m) => Effect m where
+class
+  ( MonadError Error m,
+    MonadReader [Gen.Gen] m,
+    Parallelism.Parallelism m,
+    ReportingLogic.Reports m
+  ) =>
+  Effect m
+  where
   loadProjectFile :: m ProjectFileLoaded
   createTemporaryDb :: ProjectFileLoaded -> m TemporaryDbCreated
   dropTemporaryDb :: TemporaryDbCreated -> m ()

@@ -10,6 +10,7 @@ import Base.Prelude
 
 class (Monad m) => Parallelism m where
   apPar :: m (a -> b) -> m a -> m b
+  apPar = ap
 
 newtype Parallelly m a = Parallelly (m a)
 

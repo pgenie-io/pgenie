@@ -7,7 +7,7 @@ import Test.QuickCheck.Monadic
 
 readingAWrittenFileProducesTheSameContent ::
   forall m.
-  (DealsWithFiles m) =>
+  (ControlsFiles m) =>
   (forall a. m a -> IO a) ->
   Property
 readingAWrittenFileProducesTheSameContent execute = monadicIO do
@@ -20,7 +20,7 @@ readingAWrittenFileProducesTheSameContent execute = monadicIO do
 
 createdDirectoriesGetListed ::
   forall m.
-  (DealsWithFiles m) =>
+  (ControlsFiles m) =>
   (forall a. m a -> IO a) ->
   Property
 createdDirectoriesGetListed execute = monadicIO do
@@ -35,7 +35,7 @@ createdDirectoriesGetListed execute = monadicIO do
 
 listedDirectoriesExist ::
   forall m.
-  (DealsWithFiles m) =>
+  (ControlsFiles m) =>
   (forall a. m a -> IO a) ->
   Property
 listedDirectoriesExist execute = monadicIO do

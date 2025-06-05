@@ -46,7 +46,7 @@ instance Monoid Path where
 
 -- * Operations
 
-class (MonadError Error m) => DealsWithFiles m where
+class (MonadError Error m) => ControlsFiles m where
   readFile :: Path -> m Text
   writeFile :: Path -> Text -> m ()
   deleteFile :: Path -> m ()
@@ -56,7 +56,7 @@ class (MonadError Error m) => DealsWithFiles m where
   createDir :: Path -> m ()
   deleteDir :: Path -> m ()
 
-overwriteFile :: (DealsWithFiles m) => Path -> Text -> m Bool
+overwriteFile :: (ControlsFiles m) => Path -> Text -> m Bool
 overwriteFile path content = do
   exists <- checkFile path
   if exists

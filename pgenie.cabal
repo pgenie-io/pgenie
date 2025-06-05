@@ -183,6 +183,7 @@ library app-algebra
   hs-source-dirs: src/app-algebra/
   exposed-modules:
     AppAlgebra
+    AppAlgebra.Migrations
 
   build-depends:
     aeson,

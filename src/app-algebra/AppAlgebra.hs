@@ -1,5 +1,6 @@
 module AppAlgebra where
 
+import AppAlgebra.Migrations qualified as Migrations
 import Base.Prelude hiding (writeFile)
 import Data.Aeson qualified as Aeson
 import GenAlgebra qualified as Gen
@@ -42,6 +43,10 @@ data ProjectFileLoaded = ProjectFileLoaded
   { configFilePath :: FilePath,
     name :: Gen.Name,
     version :: NonEmpty Int,
+    -- | Path to the directory with migrations.
+    migrationsDir :: FilePath,
+    -- | Path to the directory with queries.
+    queriesDir :: FilePath,
     -- | List of codegen configurations by their versions and names.
     artifacts :: [(Text, Text, Int, Aeson.Value)]
   }
@@ -98,28 +103,18 @@ data QuerySignatureLoaded
 
 type QueriesMetadataMerged = Map Gen.Name QueryIntrospected
 
-type MigrationsListed = [MigrationListed]
-
-data MigrationListed
-
-data MigrationLoaded
-
-data MigrationExecuted
-
 -- * Effect
 
 class
   ( MonadError Error m,
     MonadReader [Gen.Gen] m,
     Parallelism.Parallelism m,
-    ReportingLogic.Reports m
+    ReportingLogic.Reports m,
+    Migrations.ControlsMigrations m
   ) =>
   Effect m
   where
   loadProjectFile :: m ProjectFileLoaded
-  listMigrations :: ProjectFileLoaded -> m MigrationsListed
-  loadMigration :: MigrationListed -> m MigrationLoaded
-  executeMigration :: MigrationLoaded -> m MigrationExecuted
   listQueries :: ProjectFileLoaded -> m QueriesListed
   loadQuerySql :: QueryListed -> m QuerySqlLoaded
 

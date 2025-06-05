@@ -3,6 +3,7 @@
 module AppLogic where
 
 import AppAlgebra
+import AppAlgebra.Migrations
 import Base.Prelude hiding (writeFile)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
@@ -85,7 +86,7 @@ analyse projectFileLoaded = do
   (migrationsListed, queriesListed) <-
     runParallelly do
       (,)
-        <$> parallelly (listMigrations projectFileLoaded)
+        <$> parallelly (listMigrations projectFileLoaded.migrationsDir)
         <*> parallelly (listQueries projectFileLoaded)
 
   forM_ migrationsListed \migrationListed -> do

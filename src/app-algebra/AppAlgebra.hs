@@ -46,8 +46,6 @@ data ProjectFileLoaded = ProjectFileLoaded
     artifacts :: [(Text, Text, Int, Aeson.Value)]
   }
 
-data TemporaryDbCreated
-
 data QueriesLoaded
 
 type QueriesIntrospected = [QueryIntrospected]
@@ -119,11 +117,9 @@ class
   Effect m
   where
   loadProjectFile :: m ProjectFileLoaded
-  createTemporaryDb :: ProjectFileLoaded -> m TemporaryDbCreated
-  dropTemporaryDb :: TemporaryDbCreated -> m ()
   listMigrations :: ProjectFileLoaded -> m MigrationsListed
   loadMigration :: MigrationListed -> m MigrationLoaded
-  executeMigration :: TemporaryDbCreated -> MigrationLoaded -> m MigrationExecuted
+  executeMigration :: MigrationLoaded -> m MigrationExecuted
   listQueries :: ProjectFileLoaded -> m QueriesListed
   loadQuerySql :: QueryListed -> m QuerySqlLoaded
 
@@ -133,7 +129,7 @@ class
   loadQuerySignature :: ProjectFileLoaded -> QueryListed -> m QuerySignatureLoaded
 
   parseQuerySql :: QuerySqlLoaded -> m QuerySqlParsed
-  introspectQuery :: TemporaryDbCreated -> QuerySqlParsed -> m QueryIntrospected
+  introspectQuery :: QuerySqlParsed -> m QueryIntrospected
   mergeQueryMetadata :: QueryIntrospected -> QuerySignatureLoaded -> m QueryIntrospected
 
   -- | Create or replace the signature file for the query.

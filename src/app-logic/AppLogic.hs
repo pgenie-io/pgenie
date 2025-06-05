@@ -80,13 +80,6 @@ generateCode projectFileLoaded genProject = do
         pure (CodeGeneratedArtifact artifactName generatedFilePaths overwriting)
   pure (CodeGenerated artifacts)
 
-withTemporaryDb :: (Effect m) => ProjectFileLoaded -> (TemporaryDbCreated -> m a) -> m a
-withTemporaryDb projectFileLoaded action = do
-  temporaryDbCreated <- createTemporaryDb projectFileLoaded
-  catchError
-    (action temporaryDbCreated <* dropTemporaryDb temporaryDbCreated)
-    (\err -> dropTemporaryDb temporaryDbCreated *> throwError err)
-
 analyse :: (Effect m) => ProjectFileLoaded -> m QueriesMetadataMerged
 analyse projectFileLoaded = do
   (migrationsListed, queriesListed) <-
@@ -95,21 +88,20 @@ analyse projectFileLoaded = do
         <$> parallelly (listMigrations projectFileLoaded)
         <*> parallelly (listQueries projectFileLoaded)
 
-  withTemporaryDb projectFileLoaded \temporaryDbCreated -> do
-    forM_ migrationsListed \migrationListed -> do
-      migrationLoaded <- loadMigration migrationListed
-      executeMigration temporaryDbCreated migrationLoaded
+  forM_ migrationsListed \migrationListed -> do
+    migrationLoaded <- loadMigration migrationListed
+    executeMigration migrationLoaded
 
-    runParallelly do
-      Map.fromList
-        <$> for queriesListed \queryListed -> parallelly do
-          (queryIntrospected, querySignatureLoaded) <- runParallelly do
-            (,)
-              <$> parallelly do
-                querySqlLoaded <- loadQuerySql queryListed
-                querySqlParsed <- parseQuerySql querySqlLoaded
-                introspectQuery temporaryDbCreated querySqlParsed
-              <*> parallelly do
-                loadQuerySignature projectFileLoaded queryListed
-          merged <- mergeQueryMetadata queryIntrospected querySignatureLoaded
-          pure (queryListed.name, merged)
+  runParallelly do
+    Map.fromList
+      <$> for queriesListed \queryListed -> parallelly do
+        (queryIntrospected, querySignatureLoaded) <- runParallelly do
+          (,)
+            <$> parallelly do
+              querySqlLoaded <- loadQuerySql queryListed
+              querySqlParsed <- parseQuerySql querySqlLoaded
+              introspectQuery querySqlParsed
+            <*> parallelly do
+              loadQuerySignature projectFileLoaded queryListed
+        merged <- mergeQueryMetadata queryIntrospected querySignatureLoaded
+        pure (queryListed.name, merged)

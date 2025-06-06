@@ -184,6 +184,7 @@ library app-algebra
   exposed-modules:
     AppAlgebra
     AppAlgebra.Migrations
+    AppAlgebra.QuerySignatures
 
   build-depends:
     aeson,

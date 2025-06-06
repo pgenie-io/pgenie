@@ -1,0 +1,14 @@
+flowchart TD
+
+Logic --> Algebra
+Ports --> Types
+Infrastructure --> Algebra
+App --> Logic
+App --> Infrastructure
+App --> Ui
+Ui --> Logic
+
+subgraph Algebra
+  Types
+  Ports
+end

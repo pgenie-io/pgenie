@@ -47,7 +47,7 @@ listedDirectoriesExist execute = monadicIO do
       createDir path
     paths <- fmap (mappend containerPath) <$> listDir containerPath
     forM paths $ \path -> do
-      exists <- checkDir path
+      exists <- isDirectory path
       pure (path, exists)
   let missingPaths =
         result

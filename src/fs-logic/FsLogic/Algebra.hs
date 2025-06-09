@@ -22,6 +22,12 @@ data Path = Path
 data PathSegment = PathSegment
   deriving stock (Show, Eq)
 
+data PathStatus
+  = MissingPathStatus
+  | IsFilePathStatus
+  | IsDirectoryPathStatus
+  deriving stock (Show, Eq)
+
 -- ** Domain Instances
 
 instance Arbitrary.Arbitrary Path where
@@ -47,23 +53,34 @@ instance Monoid Path where
 -- * Operations
 
 class (MonadError Error m) => ControlsFiles m where
-  readFile :: Path -> m Text
-  writeFile :: Path -> Text -> m ()
+  readFile :: Path -> m ByteString
+  writeFile :: Path -> ByteString -> m ()
   deleteFile :: Path -> m ()
-  checkFile :: Path -> m Bool
   listDir :: Path -> m [Path]
-  checkDir :: Path -> m Bool
   createDir :: Path -> m ()
   deleteDir :: Path -> m ()
+  check :: Path -> m PathStatus
 
-overwriteFile :: (ControlsFiles m) => Path -> Text -> m Bool
+isFile :: (ControlsFiles m) => Path -> m Bool
+isFile path =
+  check path <&> \case
+    IsFilePathStatus -> True
+    _ -> False
+
+isDirectory :: (ControlsFiles m) => Path -> m Bool
+isDirectory path =
+  check path <&> \case
+    IsDirectoryPathStatus -> True
+    _ -> False
+
+overwriteFile :: (ControlsFiles m) => Path -> ByteString -> m Bool
 overwriteFile path content = do
-  exists <- checkFile path
-  if exists
-    then do
+  status <- check path
+  case status of
+    IsFilePathStatus -> do
       deleteFile path
       writeFile path content
       pure True
-    else do
+    _ -> do
       writeFile path content
       pure False

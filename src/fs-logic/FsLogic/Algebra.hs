@@ -16,7 +16,7 @@ data Error
   | DirectoryDeleteError Path Text
   deriving stock (Show, Eq)
 
-data Path = Path
+data Path = Path FilePath
   deriving stock (Show, Eq)
 
 data PathSegment = PathSegment
@@ -42,8 +42,12 @@ instance IsSome Path PathSegment where
   to = error "TODO"
   maybeFrom = error "TODO"
 
+instance IsSome FilePath Path where
+  to = error "TODO"
+  maybeFrom = error "TODO"
+
 instance Semigroup Path where
-  Path <> Path =
+  (<>) =
     error "TODO"
 
 instance Monoid Path where
@@ -52,7 +56,7 @@ instance Monoid Path where
 
 -- * Operations
 
-class (MonadError Error m) => ControlsFiles m where
+class (Monad m) => ControlsFiles m where
   readFile :: Path -> m ByteString
   writeFile :: Path -> ByteString -> m ()
   deleteFile :: Path -> m ()
@@ -60,6 +64,7 @@ class (MonadError Error m) => ControlsFiles m where
   createDir :: Path -> m ()
   deleteDir :: Path -> m ()
   check :: Path -> m PathStatus
+  catchSome :: m a -> (Error -> m (Maybe a)) -> m a
 
 isFile :: (ControlsFiles m) => Path -> m Bool
 isFile path =

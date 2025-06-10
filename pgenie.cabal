@@ -290,6 +290,7 @@ library fs-logic
   import: base
   hs-source-dirs: src/fs-logic/
   exposed-modules:
+    FsLogic.Adapters.IO
     FsLogic.Algebra
     FsLogic.Properties
 

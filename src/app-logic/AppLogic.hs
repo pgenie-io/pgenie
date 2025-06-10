@@ -83,15 +83,9 @@ generateCode projectFileLoaded genProject = do
 
 analyse :: (Effect m) => ProjectFileLoaded -> m QueriesMetadataMerged
 analyse projectFileLoaded = do
-  (migrationsListed, queriesListed) <-
-    runParallelly do
-      (,)
-        <$> parallelly (listMigrations projectFileLoaded.migrationsDir)
-        <*> parallelly (listQueries projectFileLoaded)
+  executeMigrationsAtPath projectFileLoaded.migrationsDir
 
-  forM_ migrationsListed \migrationListed -> do
-    migrationLoaded <- loadMigration migrationListed
-    executeMigration migrationLoaded
+  queriesListed <- listQueries projectFileLoaded
 
   runParallelly do
     Map.fromList

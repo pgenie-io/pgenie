@@ -36,6 +36,7 @@ data Error
       Int
       -- | Error message.
       Text
+  | MigrationsError Migrations.Error
 
 -- * States
 
@@ -110,7 +111,7 @@ class
     MonadReader [Gen.Gen] m,
     Parallelism.Parallelism m,
     ReportingLogic.Reports m,
-    Migrations.ControlsMigrations m
+    Migrations.ControlsMigrations Error m
   ) =>
   Effect m
   where

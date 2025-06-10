@@ -24,11 +24,12 @@ data MigrationExecuted
 -- * Effect
 
 class
-  ( MonadError Error m,
+  ( IsSome e Error,
+    MonadError e m,
     Parallelism.Parallelism m,
     ReportingLogic.Reports m
   ) =>
-  ControlsMigrations m
+  ControlsMigrations e m
   where
   listMigrations :: FilePath -> m MigrationsListed
   loadMigration :: MigrationListed -> m MigrationLoaded
@@ -37,7 +38,7 @@ class
 -- * Logic
 
 executeMigrationsAtPath ::
-  (ControlsMigrations m) =>
+  (ControlsMigrations e m) =>
   FilePath ->
   m MigrationsExecuted
 executeMigrationsAtPath path = do

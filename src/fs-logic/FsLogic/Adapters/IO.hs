@@ -4,35 +4,25 @@
 module FsLogic.Adapters.IO () where
 
 import Base.Prelude
+import Data.ByteString qualified as ByteString
 import FsLogic.Algebra qualified as Algebra
 
-instance Algebra.ControlsFiles IO where
+instance (MonadIO m) => Algebra.ControlsFiles (ExceptT Algebra.Error m) where
+  readFile path = do
+    ExceptT do
+      liftIO do
+        catch (Right <$> ByteString.readFile (to path)) \e ->
+          case ioeGetErrorType e of
+            NoSuchThing ->
+              pure (Left (Algebra.FileNotFoundError path))
+            _ ->
+              error "TODO"
   catchSome action handler =
-    catch action \ioe ->
-      case maybeFrom @IOError ioe of
-        Nothing -> do
-          -- If the error is not recognized, rethrow it.
-          throwIO ioe
-        Just err -> do
-          -- If the error is recognized, handle it.
-          result <- handler err
-          case result of
-            Nothing -> throwIO ioe
-            Just value -> pure value
-
-instance IsSome IOError Algebra.Error where
-  to = \case
-    Algebra.FileNotFoundError path ->
-      mkIOError NoSuchThing (to path) Nothing Nothing
-    _ ->
-      error "TODO"
-  maybeFrom ioe =
-    case ioeGetErrorType ioe of
-      NoSuchThing -> do
-        path <- ioeGetFileName ioe
-        path <- maybeFrom path
-        pure (Algebra.FileNotFoundError path)
-      _ ->
-        error "TODO"
-
--- FIXME: We cannot actually discern between FileNotFoundError and DirectoryNotFoundError. We need to handle in the operations instead and hence need ExceptT or similar.
+    ExceptT do
+      runExceptT action >>= \case
+        Left err ->
+          runExceptT (handler err) >>= \case
+            Left handlerErr -> pure (Left handlerErr)
+            Right Nothing -> pure (Left err)
+            Right (Just value) -> pure (Right value)
+        Right value -> pure (Right value)

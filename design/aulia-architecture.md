@@ -41,7 +41,6 @@ gen-ui ----> gen-algebra
 custom-gen-app --> custom-gen
 custom-gen --> gen-algebra
 cli-ui -----> command-cli-ui-algebra
-app-algebra --> fs-logic
 
 infrastructure(DDD Infrastructure) -..- app-integrations
 domain(DDD Domain) -....- app-algebra

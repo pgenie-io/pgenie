@@ -6,7 +6,6 @@ where
 import Base.Prelude hiding (Enum)
 import Modeling.Domain as Domain
 import Modeling.Frameworks.Procedure
-import Modeling.Procedures.ResolveTypeByOid.Algebras.Type qualified as Algebras.Type
 import Modeling.Procedures.ResolveTypeByOid.Statements qualified as Statements
 import SyntacticClass qualified as Syntactic
 import TextBuilder qualified
@@ -22,7 +21,7 @@ instance Procedure ResolveTypeByOid where
     go oid
     where
       go oid =
-        case Algebras.Type.maybeFromStandardOid oid of
+        case lookup oid typeOidTable of
           Just type_ -> pure type_
           Nothing -> do
             res <- runStatementByParams Statements.SelectTypeParams {oid}

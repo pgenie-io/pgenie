@@ -141,7 +141,6 @@ library modeling
     Modeling.Procedures.ResolveParamNullabilities.DefaultEncoder
     Modeling.Procedures.ResolveParamNullabilities.DefaultEncoder.DefaultValues
     Modeling.Procedures.ResolveTypeByOid
-    Modeling.Procedures.ResolveTypeByOid.Algebras.Type
     Modeling.Procedures.ResolveTypeByOid.Statements
     Modeling.Procedures.ResolveTypeByOid.Statements.SelectAttributes
     Modeling.Procedures.ResolveTypeByOid.Statements.SelectEnumLabels

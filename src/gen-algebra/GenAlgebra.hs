@@ -70,6 +70,7 @@ data QueryFragment
 -- Non-empty list of words in lower case, where word is a latin letter followed by any number of latin letters and digits.
 type Name = NonEmpty Text
 
+-- | Type signature.
 data Type = Type
   { isNullable :: Bool,
     dimensional :: Dimensional
@@ -136,7 +137,20 @@ data CustomType = CustomType
   deriving stock (Show, Eq)
 
 data CustomTypeDefinition
-  = CompositeCustomTypeDefinition (Map Text Type)
-  | EnumCustomTypeDefinition (Vector Text)
+  = CompositeCustomTypeDefinition (Map Name CompositeField)
+  | EnumCustomTypeDefinition (Map Name EnumVariant)
   | DomainCustomTypeDefinition Dimensional
+  deriving stock (Show, Eq)
+
+data CompositeField = CompositeField
+  { -- | Name of the field as it appears in the database.
+    pgName :: Text,
+    type_ :: Type
+  }
+  deriving stock (Show, Eq)
+
+data EnumVariant = EnumVariant
+  { pgName :: Text,
+    index :: Int
+  }
   deriving stock (Show, Eq)

@@ -46,7 +46,8 @@ assembleGenProject projectFileLoaded queriesMetadataMerged = do
       { Gen.name = projectFileLoaded.name,
         Gen.version = projectFileLoaded.version,
         Gen.customTypes = mentionedCustomTypes,
-        Gen.queries = Map.map (.query) queriesMetadataMerged
+        Gen.queries = Map.map (.query) queriesMetadataMerged,
+        Gen.generatorConfigs = error "TODO"
       }
 
 generateCode :: (Effect m) => ProjectFileLoaded -> Gen.Project -> m CodeGenerated

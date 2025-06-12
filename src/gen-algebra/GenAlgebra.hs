@@ -1,8 +1,11 @@
+{-# OPTIONS_GHC -Wno-unused-binds -Wno-unused-imports -Wno-name-shadowing -Wno-incomplete-patterns -Wno-unused-matches -Wno-missing-methods -Wno-unused-record-wildcards -Wno-redundant-constraints #-}
+
 module GenAlgebra where
 
 import Base.Prelude hiding (Enum)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
+import Data.Map.Strict qualified as Map
 
 -- * Interfaces
 
@@ -18,16 +21,28 @@ data Gen = forall generatorConfig. Gen
     generate :: generatorConfig -> Project -> Either Error [(FilePath, Text)]
   }
 
+generate :: [Gen] -> Project -> Either Error [(FilePath, Text)]
+generate adapters project = do
+  error "TODO"
+  where
+    gensAvailMap :: Map (Text, Int) Gen
+    gensAvailMap =
+      adapters
+        & fmap
+          (\gen -> ((gen.configSectionKey, gen.version), gen))
+        & Map.fromList
+
 -- * Domain
 
-data Error
+data Error = Error
 
 -- | Model of a project with all the data needed to generate code.
 data Project = Project
   { name :: Name,
     version :: NonEmpty Int,
     customTypes :: Map Name CustomType,
-    queries :: Map Name Query
+    queries :: Map Name Query,
+    generatorConfigs :: Map (Text, Int) Aeson.Value
   }
   deriving stock (Show, Eq)
 

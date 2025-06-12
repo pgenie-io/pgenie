@@ -283,6 +283,7 @@ library gen-algebra
 
   build-depends:
     aeson,
+    containers,
     pgenie:base,
 
 library fs-logic

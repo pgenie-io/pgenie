@@ -345,3 +345,13 @@ library app
     text,
     uuid,
     vector,
+
+library query-format-algebra
+  import: base
+  hs-source-dirs: src/query-format-algebra
+  exposed-modules:
+    QueryFormatAlgebra
+
+  other-modules:
+  build-depends:
+    pgenie:base

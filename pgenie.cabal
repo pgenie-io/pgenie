@@ -241,6 +241,7 @@ library parallelism-logic
     ParallelismLogic
 
   other-modules:
+    ParallelismLogic.Adapters.ExceptT
     ParallelismLogic.Adapters.IO
     ParallelismLogic.Algebra
 

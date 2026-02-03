@@ -105,7 +105,7 @@ readResultColumns :: Pq.Result -> IO (Vector ResultColumn)
 readResultColumns res = do
   amount <- fromIntegral . to @Int32 <$> Pq.nfields res
   Vector.generateM amount $ \i -> do
-    let col = from @Int32 (fromIntegral i)
+    let col = onfrom @Int32 (fromIntegral i)
     name <- Pq.fname res col
     name <- pure case name of
       Nothing -> error "Oops! Trying to access a missing column"
@@ -119,8 +119,8 @@ readResultColumns res = do
 
 readResultErrorDetails :: Pq.Result -> IO Error
 readResultErrorDetails res = do
-  code <- foldMap from <$> Pq.resultErrorField res Pq.DiagSqlstate
-  message <- foldMap from <$> Pq.resultErrorField res Pq.DiagMessagePrimary
+  code <- foldMap onto <$> Pq.resultErrorField res Pq.DiagSqlstate
+  message <- foldMap onto <$> Pq.resultErrorField res Pq.DiagMessagePrimary
   position <- mapMaybe parseInt <$> Pq.resultErrorField res Pq.DiagStatementPosition
   pure (ResultError code message position)
   where

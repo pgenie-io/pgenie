@@ -12,7 +12,7 @@ instance IsSome Word32 Pq.Oid where
   maybeFrom = Just . to
 
 instance IsMany Word32 Pq.Oid where
-  from = to
+  onfrom = to
 
 instance Is Word32 Pq.Oid
 
@@ -21,7 +21,7 @@ instance IsSome Pq.Oid Word32 where
   maybeFrom = Just . to
 
 instance IsMany Pq.Oid Word32 where
-  from = to
+  onfrom = to
 
 instance Is Pq.Oid Word32
 
@@ -32,7 +32,7 @@ instance IsSome Int32 Pq.Column where
   maybeFrom = Just . to
 
 instance IsMany Int32 Pq.Column where
-  from = to
+  onfrom = to
 
 instance Is Int32 Pq.Column
 
@@ -41,6 +41,6 @@ instance IsSome Pq.Column Int32 where
   maybeFrom = Just . to
 
 instance IsMany Pq.Column Int32 where
-  from = to
+  onfrom = to
 
 instance Is Pq.Column Int32

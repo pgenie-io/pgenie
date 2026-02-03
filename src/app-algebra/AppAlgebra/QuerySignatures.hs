@@ -13,8 +13,6 @@ data QuerySig
 
 data QueryName
 
-data Path
-
 -- * Effect
 
 class

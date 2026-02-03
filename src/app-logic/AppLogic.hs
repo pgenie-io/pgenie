@@ -2,6 +2,7 @@
 
 module AppLogic where
 
+import AlgebraicPath qualified as Path
 import AppAlgebra
 import AppAlgebra.Migrations
 import Base.Prelude hiding (writeFile)
@@ -10,7 +11,6 @@ import Data.Aeson.Types qualified as Aeson
 import Data.Map.Strict qualified as Map
 import GenAlgebra qualified as Gen
 import ParallelismLogic
-import System.FilePath qualified as FilePath
 
 check :: (Effect m) => m ()
 check = do
@@ -72,11 +72,11 @@ generateCode projectFileLoaded genProject = do
       Left err ->
         throwError (GenError artifactName genName genVersion err)
       Right generatedFiles -> do
-        let artifactPath = to @FilePath artifactName
+        let artifactPath = fold (Path.maybeFromText artifactName)
         -- TODO: check if the artifact path exists, create it if not
         overwriting <- pure False
         generatedFilePaths <- for generatedFiles \(path, content) -> do
-          let modifiedPath = FilePath.combine artifactPath path
+          let modifiedPath = artifactPath <> path
           writeFile modifiedPath content
           pure modifiedPath
         pure (CodeGeneratedArtifact artifactName generatedFilePaths overwriting)

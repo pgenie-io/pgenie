@@ -18,10 +18,10 @@ data Gen = forall generatorConfig. Gen
     -- | Specification of the parser of a section of the config file, where the section is identified by key and version.
     generatorConfigParser :: Aeson.Value -> Aeson.Parser generatorConfig,
     -- | Generate code for a project.
-    generate :: generatorConfig -> Project -> Either Error [(FilePath, Text)]
+    generate :: generatorConfig -> Project -> Either Error [(Path, Text)]
   }
 
-generate :: [Gen] -> Project -> Either Error [(FilePath, Text)]
+generate :: [Gen] -> Project -> Either Error [(Path, Text)]
 generate adapters project = do
   error "TODO"
   where

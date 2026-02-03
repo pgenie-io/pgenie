@@ -1,6 +1,7 @@
 module AppAlgebra.Migrations where
 
-import Base.Prelude hiding (writeFile)
+import AlgebraicPath qualified as Path
+import Base.Prelude
 import ParallelismLogic qualified as Parallelism
 import ReportingLogic.Algebra qualified as ReportingLogic
 
@@ -15,7 +16,9 @@ type MigrationsLoaded = [MigrationLoaded]
 
 type MigrationsExecuted = [MigrationExecuted]
 
-data MigrationListed
+data MigrationListed = MigrationListed
+  { path :: Path
+  }
 
 data MigrationLoaded
 
@@ -31,7 +34,7 @@ class
   ) =>
   ControlsMigrations e m
   where
-  listMigrations :: FilePath -> m MigrationsListed
+  listMigrations :: Path -> m MigrationsListed
   loadMigration :: MigrationListed -> m MigrationLoaded
   executeMigration :: MigrationLoaded -> m MigrationExecuted
 
@@ -39,7 +42,7 @@ class
 
 executeMigrationsAtPath ::
   (ControlsMigrations e m) =>
-  FilePath ->
+  Path ->
   m MigrationsExecuted
 executeMigrationsAtPath path = do
   migrationsListed <- listMigrations path

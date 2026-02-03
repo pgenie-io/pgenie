@@ -41,13 +41,13 @@ data Error
 -- * States
 
 data ProjectFileLoaded = ProjectFileLoaded
-  { configFilePath :: FilePath,
+  { configFilePath :: Path,
     name :: Gen.Name,
     version :: NonEmpty Int,
     -- | Path to the directory with migrations.
-    migrationsDir :: FilePath,
+    migrationsDir :: Path,
     -- | Path to the directory with queries.
-    queriesDir :: FilePath,
+    queriesDir :: Path,
     -- | List of codegen configurations by their versions and names.
     artifacts :: [(Text, Text, Int, Aeson.Value)]
   }
@@ -62,8 +62,8 @@ type QueriesListed = [QueryListed]
 
 data QueryListed = QueryListed
   { name :: Gen.Name,
-    filePath :: FilePath,
-    signatureFilePath :: Maybe FilePath
+    filePath :: Path,
+    signatureFilePath :: Maybe Path
   }
 
 data QuerySqlLoaded = QuerySqlLoaded
@@ -85,12 +85,12 @@ data CodeGenerated = CodeGenerated
 
 data CodeGeneratedArtifact = CodeGeneratedArtifact
   { name :: Text,
-    filePaths :: [FilePath],
+    filePaths :: [Path],
     replaced :: Bool
   }
 
 data SignatureGenerated = SignatureGenerated
-  { filePath :: FilePath,
+  { filePath :: Path,
     replaced :: Bool
   }
 
@@ -131,4 +131,4 @@ class
   -- | Create or replace the signature file for the query.
   generateSignature :: ProjectFileLoaded -> QueryIntrospected -> m SignatureGenerated
 
-  writeFile :: FilePath -> Text -> m ()
+  writeFile :: Path -> Text -> m ()

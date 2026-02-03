@@ -16,9 +16,6 @@ data Error
   | DirectoryDeleteError Path Text
   deriving stock (Show, Eq)
 
-data Path = Path FilePath
-  deriving stock (Show, Eq)
-
 data PathSegment = PathSegment
   deriving stock (Show, Eq)
 
@@ -29,10 +26,6 @@ data PathStatus
   deriving stock (Show, Eq)
 
 -- ** Domain Instances
-
-instance Arbitrary.Arbitrary Path where
-  arbitrary =
-    error "TODO"
 
 instance Arbitrary.Arbitrary PathSegment where
   arbitrary =
@@ -45,14 +38,6 @@ instance IsSome Path PathSegment where
 instance IsSome FilePath Path where
   to = error "TODO"
   maybeFrom = error "TODO"
-
-instance Semigroup Path where
-  (<>) =
-    error "TODO"
-
-instance Monoid Path where
-  mempty =
-    error "TODO"
 
 -- * Operations
 

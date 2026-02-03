@@ -3,6 +3,7 @@ module Base.Prelude
   )
 where
 
+import AlgebraicPath as Exports (Path)
 import Control.Applicative as Exports hiding (WrappedArrow (..))
 import Control.Arrow as Exports hiding (first, second)
 import Control.Category as Exports

@@ -102,6 +102,7 @@ library base
 
   build-depends:
     QuickCheck,
+    algebraic-path,
     base,
     bytestring,
     containers,
@@ -187,6 +188,7 @@ library app-algebra
 
   build-depends:
     aeson,
+    algebraic-path,
     pgenie:base,
     pgenie:gen-algebra,
     pgenie:parallelism-logic,
@@ -200,12 +202,14 @@ library app-logic
 
   build-depends:
     aeson,
+    algebraic-path,
     containers,
     filepath,
     pgenie:app-algebra,
     pgenie:base,
     pgenie:gen-algebra,
     pgenie:parallelism-logic,
+    syntactic-class,
 
 library reporting-logic
   import: base

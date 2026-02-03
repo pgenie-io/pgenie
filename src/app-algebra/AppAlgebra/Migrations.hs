@@ -44,11 +44,22 @@ executeMigrationsAtPath ::
   (ControlsMigrations e m) =>
   Path ->
   m MigrationsExecuted
-executeMigrationsAtPath path = do
-  migrationsListed <- listMigrations path
-  migrationsLoaded <-
-    Parallelism.runParallelly do
-      for
-        migrationsListed
-        (Parallelism.parallelly . loadMigration)
-  for migrationsLoaded executeMigration
+executeMigrationsAtPath path =
+  ReportingLogic.stage "Executing migrations" 2 do
+    migrationsListed <- listMigrations path
+
+    let migrationsCount = length migrationsListed
+
+    migrationsLoaded <-
+      ReportingLogic.stage "Loading" migrationsCount do
+        Parallelism.runParallelly do
+          for migrationsListed \migrationListed ->
+            Parallelism.parallelly do
+              ReportingLogic.stage ("Loading migration " <> Path.toText migrationListed.path) 1 do
+                migrationLoaded <- loadMigration migrationListed
+                pure (migrationListed.path, migrationLoaded)
+
+    ReportingLogic.stage "Executing" migrationsCount do
+      for migrationsLoaded \(path, migrationLoaded) -> do
+        ReportingLogic.stage ("Executing migration " <> Path.toText path) 1 do
+          executeMigration migrationLoaded

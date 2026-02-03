@@ -228,8 +228,6 @@ test-suite reporting-logic-test
   hs-source-dirs: src/reporting-logic-test
   main-is: Main.hs
   other-modules:
-    ReportingLogic.AlgebraSpec
-
   build-tool-depends:
     hspec-discover:hspec-discover >=2 && <3
 

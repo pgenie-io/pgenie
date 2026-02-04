@@ -186,10 +186,6 @@ library app-logic
     AppLogic
     AppLogic.Migrations
     AppLogic.QuerySignatures
-    Commands
-
-  other-modules:
-    Commands.Generate
 
   build-depends:
     aeson,
@@ -197,6 +193,29 @@ library app-logic
     containers,
     filepath,
     optparse-applicative,
+    pgenie:base,
+    pgenie:command-cli-ui-algebra,
+    pgenie:parallelism-algebra,
+    pgenie:staging-algebra,
+    pgenie-gen,
+    syntactic-class,
+
+library app-commands
+  import: base
+  hs-source-dirs: src/app-commands/
+  exposed-modules:
+    AppCommands
+
+  other-modules:
+    AppCommands.Generate
+
+  build-depends:
+    aeson,
+    algebraic-path,
+    containers,
+    filepath,
+    optparse-applicative,
+    pgenie:app-logic,
     pgenie:base,
     pgenie:command-cli-ui-algebra,
     pgenie:parallelism-algebra,

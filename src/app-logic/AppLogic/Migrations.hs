@@ -5,39 +5,6 @@ import Base.Prelude
 import ParallelismAlgebra
 import StagingAlgebra.Algebra
 
--- * Model
-
--- | Migrations error.
-data Error
-
-type MigrationsListed = [MigrationListed]
-
-type MigrationsLoaded = [MigrationLoaded]
-
-type MigrationsExecuted = [MigrationExecuted]
-
-data MigrationListed = MigrationListed
-  { path :: Path
-  }
-
-data MigrationLoaded
-
-data MigrationExecuted
-
--- * Effect
-
-class
-  ( IsSome e Error,
-    MonadError e m,
-    Parallelism m,
-    Reports m
-  ) =>
-  ControlsMigrations e m
-  where
-  listMigrations :: Path -> m MigrationsListed
-  loadMigration :: MigrationListed -> m MigrationLoaded
-  executeMigration :: MigrationLoaded -> m MigrationExecuted
-
 -- * Logic
 
 executeMigrationsAtPath ::
@@ -55,11 +22,38 @@ executeMigrationsAtPath path =
         runParallelly do
           for migrationsListed \migrationListed ->
             parallelly do
-              stage (Path.toText migrationListed.path) 0 do
+              stage (Path.toText migrationListed) 0 do
                 migrationLoaded <- loadMigration migrationListed
-                pure (migrationListed.path, migrationLoaded)
+                pure (migrationListed, migrationLoaded)
 
     stage "Executing" migrationsCount do
-      for migrationsLoaded \(path, migrationLoaded) -> do
-        stage (Path.toText path) 0 do
+      for migrationsLoaded \(migrationListed, migrationLoaded) -> do
+        stage (Path.toText migrationListed) 0 do
           executeMigration migrationLoaded
+
+-- * Model
+
+-- | Migrations error.
+data Error
+
+type MigrationsLoaded = [MigrationLoaded]
+
+type MigrationsExecuted = [MigrationExecuted]
+
+data MigrationLoaded
+
+data MigrationExecuted
+
+-- * Effect
+
+class
+  ( IsSome e Error,
+    MonadError e m,
+    Parallelism m,
+    Reports m
+  ) =>
+  ControlsMigrations e m
+  where
+  listMigrations :: Path -> m [Path]
+  loadMigration :: Path -> m MigrationLoaded
+  executeMigration :: MigrationLoaded -> m MigrationExecuted

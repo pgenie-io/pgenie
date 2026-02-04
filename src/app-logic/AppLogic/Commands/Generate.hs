@@ -1,7 +1,7 @@
 -- | Command that generates code and missing signature files for the project.
 --
 -- Forces the intended use of the application. The user has no option not to generate the signature files.
-module CliUi.Commands.Generate (generate) where
+module AppLogic.Commands.Generate (generate) where
 
 import AppLogic qualified
 import Base.Prelude

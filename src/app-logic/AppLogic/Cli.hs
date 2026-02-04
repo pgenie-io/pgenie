@@ -1,11 +1,11 @@
-module CliUi
+module AppLogic.Cli
   ( main,
   )
 where
 
 import AppLogic qualified
+import AppLogic.Commands qualified as Commands
 import Base.Prelude
-import CliUi.Commands qualified as Commands
 import CommandCliUiAlgebra qualified as Algebra
 
 -- |

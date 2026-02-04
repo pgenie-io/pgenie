@@ -3,13 +3,13 @@
 -- Forces the intended use of the application. The user has no option not to generate the signature files.
 module CliUi.Commands.Generate (generate) where
 
-import AppAlgebra qualified
 import AppLogic qualified
+import AppLogic.Algebra qualified
 import Base.Prelude
 import CommandCliUiAlgebra
 import Options.Applicative qualified as Opt
 
-generate :: (AppAlgebra.Effect m) => Command m
+generate :: (AppLogic.Algebra.Effect m) => Command m
 generate =
   Command
     { name = "generate",
@@ -24,5 +24,5 @@ parser :: Opt.Parser Params
 parser =
   pure Params
 
-execute :: (AppAlgebra.Effect m) => Params -> m ()
+execute :: (AppLogic.Algebra.Effect m) => Params -> m ()
 execute _params = AppLogic.generate

@@ -179,37 +179,24 @@ library libpq-extras
     postgresql-libpq,
     vector,
 
-library app-algebra
-  import: base
-  hs-source-dirs: src/app-algebra/
-  exposed-modules:
-    AppAlgebra
-    AppAlgebra.Migrations
-    AppAlgebra.QuerySignatures
-
-  build-depends:
-    aeson,
-    algebraic-path,
-    pgenie:base,
-    pgenie:gen-algebra,
-    pgenie:parallelism-logic,
-    pgenie:reporting-logic,
-
 library app-logic
   import: base
   hs-source-dirs: src/app-logic/
   exposed-modules:
     AppLogic
+    AppLogic.Algebra
+    AppLogic.Algebra.Migrations
+    AppLogic.Algebra.QuerySignatures
 
   build-depends:
     aeson,
     algebraic-path,
     containers,
     filepath,
-    pgenie:app-algebra,
     pgenie:base,
     pgenie:gen-algebra,
     pgenie:parallelism-logic,
+    pgenie:reporting-logic,
     syntactic-class,
 
 library reporting-logic
@@ -269,7 +256,6 @@ library cli-ui
 
   build-depends:
     optparse-applicative,
-    pgenie:app-algebra,
     pgenie:app-logic,
     pgenie:base,
     pgenie:command-cli-ui-algebra,

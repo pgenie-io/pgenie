@@ -1,6 +1,6 @@
-module AppAlgebra where
+module AppLogic.Algebra where
 
-import AppAlgebra.Migrations qualified as Migrations
+import AppLogic.Algebra.Migrations qualified as Migrations
 import Base.Prelude hiding (writeFile)
 import Data.Aeson qualified as Aeson
 import GenAlgebra qualified as Gen

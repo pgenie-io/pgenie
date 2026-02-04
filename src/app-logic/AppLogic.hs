@@ -3,8 +3,8 @@
 module AppLogic where
 
 import AlgebraicPath qualified as Path
-import AppAlgebra
-import AppAlgebra.Migrations
+import AppLogic.Algebra
+import AppLogic.Algebra.Migrations
 import Base.Prelude hiding (writeFile)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Types qualified as Aeson

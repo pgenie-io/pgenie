@@ -2,8 +2,8 @@ module AppLogic.Migrations where
 
 import AlgebraicPath qualified as Path
 import Base.Prelude
-import ParallelismLogic qualified as Parallelism
-import ReportingLogic.Algebra qualified as ReportingLogic
+import ParallelismAlgebra qualified as Parallelism
+import StagingAlgebra.Algebra qualified as ReportingLogic
 
 -- * Model
 

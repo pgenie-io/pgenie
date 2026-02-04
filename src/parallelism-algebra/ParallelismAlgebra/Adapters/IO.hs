@@ -1,9 +1,9 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module ParallelismLogic.Adapters.IO where
+module ParallelismAlgebra.Adapters.IO where
 
 import Base.Prelude
-import ParallelismLogic.Algebra
+import ParallelismAlgebra.Algebra
 
 instance Parallelism IO where
   apPar action1 action2 = mask \unmask -> do

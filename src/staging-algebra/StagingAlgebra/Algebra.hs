@@ -1,4 +1,4 @@
-module ReportingLogic.Algebra
+module StagingAlgebra.Algebra
   ( -- * Ports
     Reports (..),
   )

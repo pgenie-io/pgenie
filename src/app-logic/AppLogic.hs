@@ -9,8 +9,8 @@ import Data.Aeson qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
 import Data.Map.Strict qualified as Map
 import GenAlgebra qualified as Gen
-import ParallelismLogic qualified as Parallelism
-import ReportingLogic.Algebra qualified as ReportingLogic
+import ParallelismAlgebra qualified as Parallelism
+import StagingAlgebra.Algebra qualified as ReportingLogic
 
 -- * Error
 

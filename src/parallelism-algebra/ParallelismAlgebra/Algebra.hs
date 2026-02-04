@@ -1,4 +1,4 @@
-module ParallelismLogic.Algebra
+module ParallelismAlgebra.Algebra
   ( Parallelism (..),
     Parallelly,
     parallelly,

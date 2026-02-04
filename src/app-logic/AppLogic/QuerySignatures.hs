@@ -1,8 +1,8 @@
 module AppLogic.QuerySignatures where
 
 import Base.Prelude hiding (writeFile)
-import ParallelismLogic qualified as Parallelism
-import ReportingLogic.Algebra qualified as ReportingLogic
+import ParallelismAlgebra qualified as Parallelism
+import StagingAlgebra.Algebra qualified as ReportingLogic
 
 -- * Model
 

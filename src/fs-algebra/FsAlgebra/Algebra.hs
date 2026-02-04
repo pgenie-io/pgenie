@@ -1,4 +1,4 @@
-module FsLogic.Algebra where
+module FsAlgebra.Algebra where
 
 import Base.Prelude hiding (readFile, writeFile)
 import Test.QuickCheck.Arbitrary qualified as Arbitrary

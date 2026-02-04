@@ -1,11 +1,11 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 {-# OPTIONS_GHC -Wno-unused-binds -Wno-unused-imports -Wno-name-shadowing -Wno-incomplete-patterns -Wno-unused-matches -Wno-missing-methods -Wno-unused-record-wildcards -Wno-redundant-constraints #-}
 
-module FsLogic.Adapters.IO () where
+module FsAlgebra.Adapters.IO () where
 
 import Base.Prelude
 import Data.ByteString qualified as ByteString
-import FsLogic.Algebra qualified as Algebra
+import FsAlgebra.Algebra qualified as Algebra
 
 instance (MonadIO m) => Algebra.ControlsFiles (ExceptT Algebra.Error m) where
   readFile path = do

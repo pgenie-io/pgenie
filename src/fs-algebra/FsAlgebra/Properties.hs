@@ -1,7 +1,7 @@
-module FsLogic.Properties where
+module FsAlgebra.Properties where
 
 import Base.Prelude hiding (readFile, writeFile)
-import FsLogic.Algebra
+import FsAlgebra.Algebra
 import Test.QuickCheck
 import Test.QuickCheck.Monadic
 

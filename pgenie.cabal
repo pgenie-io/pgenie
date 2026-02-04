@@ -201,34 +201,34 @@ library app-logic
     pgenie:base,
     pgenie:command-cli-ui-algebra,
     pgenie:gen-algebra,
-    pgenie:parallelism-logic,
-    pgenie:reporting-logic,
+    pgenie:parallelism-algebra,
+    pgenie:staging-algebra,
     syntactic-class,
 
-library reporting-logic
+library staging-algebra
   import: base
-  hs-source-dirs: src/reporting-logic/
+  hs-source-dirs: src/staging-algebra/
   exposed-modules:
-    ReportingLogic.Adapters.RecordEvents
-    ReportingLogic.Algebra
+    StagingAlgebra.Adapters.RecordEvents
+    StagingAlgebra.Algebra
 
   build-depends:
     base,
     pgenie:base,
 
-library parallelism-logic
+library parallelism-algebra
   import: base
-  hs-source-dirs: src/parallelism-logic/
+  hs-source-dirs: src/parallelism-algebra/
   exposed-modules:
-    ParallelismLogic
+    ParallelismAlgebra
 
   other-modules:
-    ParallelismLogic.Adapters
-    ParallelismLogic.Adapters.ExceptT
-    ParallelismLogic.Adapters.IO
-    ParallelismLogic.Adapters.MaybeT
-    ParallelismLogic.Adapters.ReaderT
-    ParallelismLogic.Algebra
+    ParallelismAlgebra.Adapters
+    ParallelismAlgebra.Adapters.ExceptT
+    ParallelismAlgebra.Adapters.IO
+    ParallelismAlgebra.Adapters.MaybeT
+    ParallelismAlgebra.Adapters.ReaderT
+    ParallelismAlgebra.Algebra
 
   build-tool-depends:
     autoexporter:autoexporter
@@ -258,13 +258,13 @@ library gen-algebra
     containers,
     pgenie:base,
 
-library fs-logic
+library fs-algebra
   import: base
-  hs-source-dirs: src/fs-logic/
+  hs-source-dirs: src/fs-algebra/
   exposed-modules:
-    FsLogic.Adapters.IO
-    FsLogic.Algebra
-    FsLogic.Properties
+    FsAlgebra.Adapters.IO
+    FsAlgebra.Algebra
+    FsAlgebra.Properties
 
   build-depends:
     QuickCheck,

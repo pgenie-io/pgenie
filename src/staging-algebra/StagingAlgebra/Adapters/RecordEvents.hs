@@ -1,4 +1,4 @@
-module ReportingLogic.Adapters.RecordEvents
+module StagingAlgebra.Adapters.RecordEvents
   ( RecordEvents,
     run,
     Event (..),
@@ -6,7 +6,7 @@ module ReportingLogic.Adapters.RecordEvents
 where
 
 import Base.Prelude
-import ReportingLogic.Algebra
+import StagingAlgebra.Algebra
 
 data Event
   = StageEnter Text

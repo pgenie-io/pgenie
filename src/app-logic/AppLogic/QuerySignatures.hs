@@ -1,4 +1,4 @@
-module AppLogic.Algebra.QuerySignatures where
+module AppLogic.QuerySignatures where
 
 import Base.Prelude hiding (writeFile)
 import ParallelismLogic qualified as Parallelism

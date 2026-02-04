@@ -3,7 +3,7 @@ module CliUi
   )
 where
 
-import AppLogic.Algebra qualified
+import AppLogic qualified
 import Base.Prelude
 import CliUi.Commands qualified as Commands
 import CommandCliUiAlgebra qualified as Algebra
@@ -13,7 +13,7 @@ import CommandCliUiAlgebra qualified as Algebra
 --
 -- Parses the arguments.
 main ::
-  (AppLogic.Algebra.Effect m) =>
+  (AppLogic.Effect m) =>
   -- | Name of the application.
   Text ->
   -- | Description of the application.

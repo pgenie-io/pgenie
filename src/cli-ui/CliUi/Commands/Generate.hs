@@ -4,12 +4,11 @@
 module CliUi.Commands.Generate (generate) where
 
 import AppLogic qualified
-import AppLogic.Algebra qualified
 import Base.Prelude
 import CommandCliUiAlgebra
 import Options.Applicative qualified as Opt
 
-generate :: (AppLogic.Algebra.Effect m) => Command m
+generate :: (AppLogic.Effect m) => Command m
 generate =
   Command
     { name = "generate",
@@ -24,5 +23,5 @@ parser :: Opt.Parser Params
 parser =
   pure Params
 
-execute :: (AppLogic.Algebra.Effect m) => Params -> m ()
+execute :: (AppLogic.Effect m) => Params -> m ()
 execute _params = AppLogic.generate

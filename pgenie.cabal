@@ -184,9 +184,8 @@ library app-logic
   hs-source-dirs: src/app-logic/
   exposed-modules:
     AppLogic
-    AppLogic.Algebra
-    AppLogic.Algebra.Migrations
-    AppLogic.Algebra.QuerySignatures
+    AppLogic.Migrations
+    AppLogic.QuerySignatures
 
   build-depends:
     aeson,

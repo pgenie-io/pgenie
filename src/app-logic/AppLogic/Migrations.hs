@@ -1,4 +1,4 @@
-module AppLogic.Algebra.Migrations where
+module AppLogic.Migrations where
 
 import AlgebraicPath qualified as Path
 import Base.Prelude

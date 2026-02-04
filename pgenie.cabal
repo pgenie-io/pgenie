@@ -184,13 +184,12 @@ library app-logic
   hs-source-dirs: src/app-logic/
   exposed-modules:
     AppLogic
-    AppLogic.Cli
-    AppLogic.Commands
     AppLogic.Migrations
     AppLogic.QuerySignatures
+    Commands
 
   other-modules:
-    AppLogic.Commands.Generate
+    Commands.Generate
 
   build-depends:
     aeson,

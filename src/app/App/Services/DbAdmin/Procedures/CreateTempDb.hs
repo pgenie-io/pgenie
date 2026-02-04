@@ -26,18 +26,18 @@ instance IsProcedure CreateTempDb where
     dbName <- dbName <$> Uuid.nextRandom
     fmap (first Error) do
       Hasql.Pool.use context.pool do
-        Hasql.Session.sql
-          $ to
+        Hasql.Session.script
+          $ from @TextBuilder
           $ mconcat
           $ [ "CREATE USER ",
-              dbName,
+              to dbName,
               " WITH PASSWORD '",
-              dbName,
+              to dbName,
               "';\n",
               "CREATE DATABASE ",
-              dbName,
+              to dbName,
               " OWNER ",
-              dbName,
+              to dbName,
               ";"
             ]
         pure (TempDbHandle dbName)

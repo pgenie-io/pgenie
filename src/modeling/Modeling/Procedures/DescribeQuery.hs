@@ -7,7 +7,7 @@ where
 
 import Base.Prelude
 import Data.Vector qualified as Vector
-import Hasql.Connection qualified
+import Hasql.Session qualified
 import HasqlDev qualified
 import LibpqExtras.Procedures.DescribeQuery qualified
 import Modeling.Frameworks.Procedure
@@ -42,12 +42,12 @@ instance Procedure DescribeQuery where
   type ProcedureResult DescribeQuery = DescribeQueryResult
   runProcedure (DescribeQuery query) = do
     result <- HasqlDev.runSession do
-      hasqlConnection <- ask
-      liftIO do
-        Hasql.Connection.withLibPQConnection hasqlConnection \libpqConnection ->
+      Hasql.Session.onLibpqConnection \libpqConnection -> do
+        result <-
           LibpqExtras.Procedures.DescribeQuery.io
             libpqConnection
             LibpqExtras.Procedures.DescribeQuery.Params {query}
+        pure (Right result, libpqConnection)
     case result of
       Right (LibpqExtras.Procedures.DescribeQuery.Result paramTypeOids resultColumns) ->
         pure

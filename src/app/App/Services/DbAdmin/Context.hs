@@ -13,11 +13,10 @@ import App.Frameworks.Service
 import App.Services.PqConnection qualified as PqConnection
 import Base.Prelude
 import Hasql.Connection qualified
-import Hasql.Connection.Setting qualified
-import Hasql.Connection.Setting.Connection qualified
-import Hasql.Connection.Setting.Connection.Param qualified
+import Hasql.Connection.Settings qualified
 import Hasql.Pool qualified
 import Hasql.Pool.Config qualified
+import Hasql.Session qualified
 
 data Context = Context
   { pool :: Hasql.Pool.Pool,
@@ -55,18 +54,15 @@ instance IsService Context where
               (compileConnectionSettings config)
           ]
 
-      compileConnectionSettings :: Config Context -> [Hasql.Connection.Setting.Setting]
+      compileConnectionSettings :: Config Context -> Hasql.Connection.Settings.Settings
       compileConnectionSettings config =
-        [ Hasql.Connection.Setting.connection
-            ( Hasql.Connection.Setting.Connection.params
-                [ Hasql.Connection.Setting.Connection.Param.host config.host,
-                  Hasql.Connection.Setting.Connection.Param.port config.port,
-                  Hasql.Connection.Setting.Connection.Param.user config.user,
-                  Hasql.Connection.Setting.Connection.Param.password config.password,
-                  Hasql.Connection.Setting.Connection.Param.dbname config.database
-                ]
-            )
-        ]
+        mconcat
+          [ Hasql.Connection.Settings.host config.host,
+            Hasql.Connection.Settings.hostAndPort config.host config.port,
+            Hasql.Connection.Settings.user config.user,
+            Hasql.Connection.Settings.password config.password,
+            Hasql.Connection.Settings.dbname config.database
+          ]
 
   stop (Context pool _) = do
     Hasql.Pool.release pool
@@ -76,11 +72,10 @@ instance ContainsService PqConnection.Context Context where
     Hasql.Pool.use service.pool session
       & fmap processResult
     where
-      session = do
-        connection <- ask
-        liftIO do
-          Hasql.Connection.withLibPQConnection connection \pqConnection ->
-            subprocedure (to pqConnection) subnotify
+      session =
+        Hasql.Session.onLibpqConnection \pqConnection -> do
+          result <- subprocedure (to pqConnection) subnotify
+          pure (Right result, pqConnection)
       subnotify _pqConnectionEvent =
         pure ()
       processResult = \case

@@ -7,6 +7,7 @@ import Base.Prelude
 import Data.Vector qualified as Vector
 import Hasql.Decoders qualified as Decoders
 import Hasql.Encoders qualified as Encoders
+import Hasql.Errors qualified
 import Hasql.Session qualified as Session
 import Hasql.Statement qualified as Statement
 import HasqlDev qualified as Hasql
@@ -38,13 +39,12 @@ instance Procedure ResolveParamNullabilities where
           nullabilities
       )
     where
-      queryBytes = to params.query
       go !determinedParamsEncoder !remainingValueEncoders !nullabilities =
         case remainingValueEncoders of
           remainingValueEncodersHead : remainingValueEncodersTail ->
             tryError attempt >>= \case
               Right () -> goWithNullable
-              Left (Session.QueryError _ _ (Session.ResultError (Session.ServerError "23502" _ _ _ _))) ->
+              Left (Hasql.Errors.StatementSessionError _ _ _ _ _ (Hasql.Errors.ServerStatementError (Hasql.Errors.ServerError "23502" _ _ _ _))) ->
                 goWithNonNullable
               Left err -> throwError err
             where
@@ -63,7 +63,7 @@ instance Procedure ResolveParamNullabilities where
                 Session.statement () statement
                 where
                   statement =
-                    Statement.Statement queryBytes encoder decoder False
+                    Statement.unpreparable params.query encoder decoder
                     where
                       encoder =
                         determinedParamsEncoder

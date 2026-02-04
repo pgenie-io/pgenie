@@ -3,7 +3,7 @@ packages: .
 source-repository-package
   type: git
   location: https://github.com/nikita-volkov/hasql-dev
-  tag: cd66da3ca980db6a5ec27eea799a9a6aaf98f486
+  tag: 1cca9c2262cfa2b5bc6d9e487e059c344305a82b
 
 source-repository-package
   type: git
@@ -16,6 +16,7 @@ constraints:
   bytestring >=0.10 && <0.13,
   data-has ^>=0.4,
   filepath ^>=1.5.4,
+  hasql ^>=1.10.2,
   lawful-conversions ^>=0.3,
   megaparsec >=9 && <10,
   mtl >=2.3.1 && <3,

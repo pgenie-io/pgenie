@@ -26,13 +26,13 @@ instance IsProcedure DropTempDb where
     fmap (first Error) do
       Hasql.Pool.use context.pool do
         let name = params.handle.userAndDbName
-        Hasql.Session.sql
-          $ to
+        Hasql.Session.script
+          $ from @TextBuilder
           $ mconcat
           $ [ "DROP DATABASE ",
-              name,
+              to name,
               ";\n",
               "DROP USER ",
-              name,
+              to name,
               ";"
             ]

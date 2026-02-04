@@ -1,8 +1,8 @@
 module AppLogic.QuerySignatures where
 
 import Base.Prelude hiding (writeFile)
-import ParallelismAlgebra qualified as Parallelism
-import StagingAlgebra.Algebra qualified as ReportingLogic
+import ParallelismAlgebra qualified
+import StagingAlgebra qualified
 
 -- * Model
 
@@ -17,8 +17,8 @@ data QueryName
 
 class
   ( MonadError Error m,
-    Parallelism.Parallelism m,
-    ReportingLogic.Reports m
+    ParallelismAlgebra.Parallelism m,
+    StagingAlgebra.Reports m
   ) =>
   ControlsQuerySignatures m
   where

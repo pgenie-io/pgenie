@@ -12,7 +12,7 @@ import PGenieGen qualified as Gen
 import PGenieGen.Model.Input qualified as Gen.Input
 import PGenieGen.Model.Output qualified as Gen.Output
 import ParallelismAlgebra
-import StagingAlgebra.Algebra
+import StagingAlgebra
 
 -- * Error
 
@@ -111,6 +111,14 @@ data QueriesMetadataMerged = QueriesMetadataMerged
   { queries :: [Gen.Input.Query],
     customTypes :: [Gen.Input.CustomType]
   }
+
+-- ** Instances
+
+instance IsSome Error Migrations.Error where
+  to = MigrationsError
+  maybeFrom = \case
+    MigrationsError err -> Just err
+    _ -> Nothing
 
 -- * Effect
 

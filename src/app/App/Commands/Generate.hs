@@ -1,11 +1,11 @@
 -- | Command that generates code and missing signature files for the project.
 --
 -- Forces the intended use of the application. The user has no option not to generate the signature files.
-module AppCommands.Generate (generate) where
+module App.Commands.Generate (generate) where
 
+import App.Algebras.CliUi
 import AppLogic qualified
 import Base.Prelude
-import CommandCliUiAlgebra
 import Options.Applicative qualified as Opt
 
 generate :: (AppLogic.Effect m) => Command m

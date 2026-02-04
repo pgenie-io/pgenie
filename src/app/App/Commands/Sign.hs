@@ -1,16 +1,16 @@
 {-# OPTIONS_GHC -Wno-unused-binds -Wno-unused-imports -Wno-name-shadowing -Wno-incomplete-patterns -Wno-unused-matches -Wno-missing-methods -Wno-unused-record-wildcards -Wno-redundant-constraints #-}
 
-module App.Commands.GenerateSignatures (generateSignatures) where
+module App.Commands.Sign (sign) where
 
-import App.Algebras.CommandCliApp
+import App.Algebras.CliUi
 import Base.Prelude
 import Data.Text qualified as Text
 import Options.Applicative qualified as Opt
 
-generateSignatures :: Command
-generateSignatures =
+sign :: Command m
+sign =
   Command
-    { name = "generate-signatures",
+    { name = "sign",
       description = "Generate missing type signatures in metadata files",
       parser,
       execute
@@ -29,6 +29,6 @@ parser =
           <> Opt.help "Force generation of signatures, even if they already exist"
       )
 
-execute :: Params -> IO ()
+execute :: Params -> m ()
 execute =
   error "TODO"

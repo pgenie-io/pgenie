@@ -1,4 +1,4 @@
-module CommandCliUiAlgebra where
+module App.Algebras.CliUi where
 
 import Base.Prelude
 import Data.Text qualified as Text

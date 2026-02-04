@@ -1,8 +1,6 @@
 module App.Commands
-  ( compile,
-    generateSignatures,
+  ( generate,
   )
 where
 
-import App.Commands.Compile (compile)
-import App.Commands.GenerateSignatures (generateSignatures)
+import App.Commands.Generate (generate)

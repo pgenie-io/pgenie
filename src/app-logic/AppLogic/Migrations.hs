@@ -3,7 +3,7 @@ module AppLogic.Migrations where
 import AlgebraicPath qualified as Path
 import Base.Prelude
 import ParallelismAlgebra
-import StagingAlgebra.Algebra
+import StagingAlgebra
 
 -- * Logic
 

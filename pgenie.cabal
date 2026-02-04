@@ -194,30 +194,6 @@ library app-logic
     filepath,
     optparse-applicative,
     pgenie:base,
-    pgenie:command-cli-ui-algebra,
-    pgenie:parallelism-algebra,
-    pgenie:staging-algebra,
-    pgenie-gen,
-    syntactic-class,
-
-library app-commands
-  import: base
-  hs-source-dirs: src/app-commands/
-  exposed-modules:
-    AppCommands
-
-  other-modules:
-    AppCommands.Generate
-
-  build-depends:
-    aeson,
-    algebraic-path,
-    containers,
-    filepath,
-    optparse-applicative,
-    pgenie:app-logic,
-    pgenie:base,
-    pgenie:command-cli-ui-algebra,
     pgenie:parallelism-algebra,
     pgenie:staging-algebra,
     pgenie-gen,
@@ -227,6 +203,9 @@ library staging-algebra
   import: base
   hs-source-dirs: src/staging-algebra/
   exposed-modules:
+    StagingAlgebra
+
+  other-modules:
     StagingAlgebra.Adapters.RecordEvents
     StagingAlgebra.Algebra
 
@@ -253,17 +232,6 @@ library parallelism-algebra
 
   build-depends:
     pgenie:base
-
-library command-cli-ui-algebra
-  import: base
-  hs-source-dirs: src/command-cli-ui-algebra/
-  exposed-modules:
-    CommandCliUiAlgebra
-
-  build-depends:
-    optparse-applicative,
-    pgenie:base,
-    text,
 
 library fs-algebra
   import: base
@@ -293,11 +261,11 @@ library app
   hs-source-dirs: src/app/
   exposed-modules:
     App
-    App.Algebras.CommandCliApp
+    App.Algebras.CliUi
     App.Algebras.Service
     App.Commands
-    App.Commands.Compile
-    App.Commands.GenerateSignatures
+    App.Commands.Generate
+    App.Commands.Sign
     App.Services.Analyser.Domain
     App.Services.DbAdmin
     App.Services.DbAdmin.Context
@@ -319,7 +287,10 @@ library app
     hasql,
     hasql-pool,
     optparse-applicative,
+    pgenie:app-logic,
     pgenie:base,
+    pgenie:parallelism-algebra,
+    pgenie:staging-algebra,
     postgresql-libpq,
     text,
     uuid,

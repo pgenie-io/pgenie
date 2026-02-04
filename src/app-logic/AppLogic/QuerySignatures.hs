@@ -18,7 +18,7 @@ data QueryName
 class
   ( MonadError Error m,
     ParallelismAlgebra.Parallelism m,
-    StagingAlgebra.Reports m
+    StagingAlgebra.Stages m
   ) =>
   ControlsQuerySignatures m
   where

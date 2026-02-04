@@ -46,4 +46,4 @@ instance AppLogic.Effect App
 
 instance AppLogic.Migrations.ControlsMigrations AppLogic.Error App
 
-instance StagingAlgebra.Reports App
+instance StagingAlgebra.Stages App

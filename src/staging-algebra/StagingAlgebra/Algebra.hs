@@ -1,6 +1,6 @@
 module StagingAlgebra.Algebra
   ( -- * Ports
-    Reports (..),
+    Stages (..),
   )
 where
 
@@ -11,7 +11,7 @@ import Control.Arrow
 -- - Reports progress.
 -- - Reports stage enter and exit for logging.
 -- - Reports parallelism as @enters - exits@. Amount of actively running stages.
-class (Monad m) => Reports m where
+class (Monad m) => Stages m where
   -- | Wrap an action as a stage in progress.
   stage ::
     -- | Name of the stage. May be empty.

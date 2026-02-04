@@ -125,7 +125,7 @@ instance IsSome Error Migrations.Error where
 class
   ( MonadError Error m,
     Parallelism m,
-    Reports m,
+    Stages m,
     Migrations.ControlsMigrations Error m
   ) =>
   Effect m

@@ -33,7 +33,7 @@ newtype RecordEvents a
     (Functor, Applicative, Monad)
     via (ReaderT Scope (State Memory))
 
-instance Reports RecordEvents where
+instance Stages RecordEvents where
   stage name substagesCount (RecordEvents runInner) =
     RecordEvents \scope memory ->
       if substagesCount > 0

@@ -50,7 +50,7 @@ class
   ( IsSome e Error,
     MonadError e m,
     Parallelism m,
-    Reports m
+    Stages m
   ) =>
   ControlsMigrations e m
   where

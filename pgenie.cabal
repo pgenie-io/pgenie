@@ -118,6 +118,7 @@ library base
     text-builder,
     text-builder-lawful-conversions,
     time,
+    transformers,
     tuple,
     uuid,
     vector,
@@ -243,9 +244,15 @@ library parallelism-logic
     ParallelismLogic
 
   other-modules:
+    ParallelismLogic.Adapters
     ParallelismLogic.Adapters.ExceptT
     ParallelismLogic.Adapters.IO
+    ParallelismLogic.Adapters.MaybeT
+    ParallelismLogic.Adapters.ReaderT
     ParallelismLogic.Algebra
+
+  build-tool-depends:
+    autoexporter:autoexporter
 
   build-depends:
     pgenie:base

@@ -16,6 +16,7 @@ import Control.Monad.Reader as Exports
 import Control.Monad.ST as Exports
 import Control.Monad.ST.Unsafe as Exports
 import Control.Monad.State.Strict as Exports
+import Control.Monad.Trans.Maybe as Exports (MaybeT (..))
 import Control.Monad.Writer.Strict as Exports
 import Data.Bifunctor as Exports
 import Data.Bits as Exports

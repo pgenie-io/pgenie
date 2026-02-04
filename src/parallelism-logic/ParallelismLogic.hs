@@ -6,5 +6,5 @@ module ParallelismLogic
   )
 where
 
-import ParallelismLogic.Adapters.IO ()
+import ParallelismLogic.Adapters ()
 import ParallelismLogic.Algebra

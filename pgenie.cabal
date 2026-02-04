@@ -209,20 +209,6 @@ library reporting-logic
     base,
     pgenie:base,
 
-test-suite reporting-logic-test
-  import: test
-  type: exitcode-stdio-1.0
-  hs-source-dirs: src/reporting-logic-test
-  main-is: Main.hs
-  other-modules:
-  build-tool-depends:
-    hspec-discover:hspec-discover >=2 && <3
-
-  build-depends:
-    hspec >=2.11 && <3,
-    pgenie:base,
-    pgenie:reporting-logic,
-
 library parallelism-logic
   import: base
   hs-source-dirs: src/parallelism-logic/

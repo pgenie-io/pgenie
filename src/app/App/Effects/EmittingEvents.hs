@@ -1,12 +1,21 @@
-module App.Effects.EmittingEvents where
+module App.Effects.EmittingEvents
+  ( run,
+    EmittingEvents,
+    Reports (..),
+  )
+where
 
 import Base.Prelude
+import ParallelismAlgebra
 import StagingAlgebra
+
+run :: EmittingEvents m a -> m a
+run (EmittingEvents runInner) = runInner 1.0
 
 newtype EmittingEvents m a
   = EmittingEvents (Double -> m a)
   deriving
-    (Functor, Applicative, Monad)
+    (Functor, Applicative, Monad, Parallelism)
     via (ReaderT Double m)
 
 instance (Reports m) => Stages (EmittingEvents m) where
@@ -24,9 +33,9 @@ instance (Reports m) => Stages (EmittingEvents m) where
         exitStage name progressPerStage
         pure result
 
+instance MonadTrans EmittingEvents where
+  lift ma = EmittingEvents \_ -> ma
+
 class (Monad m) => Reports m where
   enterStage :: Text -> m ()
   exitStage :: Text -> Double -> m ()
-
-run :: EmittingEvents m a -> m a
-run (EmittingEvents runInner) = runInner 1.0

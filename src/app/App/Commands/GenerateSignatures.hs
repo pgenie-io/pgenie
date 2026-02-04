@@ -2,7 +2,7 @@
 
 module App.Commands.GenerateSignatures (generateSignatures) where
 
-import App.Frameworks.CommandCliApp
+import App.Algebras.CommandCliApp
 import Base.Prelude
 import Data.Text qualified as Text
 import Options.Applicative qualified as Opt

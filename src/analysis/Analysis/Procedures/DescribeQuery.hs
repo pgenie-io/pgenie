@@ -5,7 +5,7 @@ module Analysis.Procedures.DescribeQuery
   )
 where
 
-import Analysis.Frameworks.Procedure
+import Analysis.Algebras.Procedure
 import Base.Prelude
 import Data.Vector qualified as Vector
 import Hasql.Session qualified

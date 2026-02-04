@@ -132,8 +132,8 @@ library analysis
     Analysis
 
   other-modules:
+    Analysis.Algebras.Procedure
     Analysis.Domain
-    Analysis.Frameworks.Procedure
     Analysis.Procedures
     Analysis.Procedures.DescribeQuery
     Analysis.Procedures.ResolveColumn
@@ -258,11 +258,11 @@ library app
   hs-source-dirs: src/app/
   exposed-modules:
     App
+    App.Algebras.CommandCliApp
+    App.Algebras.Service
     App.Commands
     App.Commands.Compile
     App.Commands.GenerateSignatures
-    App.Frameworks.CommandCliApp
-    App.Frameworks.Service
     App.Services.Analyser.Domain
     App.Services.DbAdmin
     App.Services.DbAdmin.Context

@@ -1,4 +1,4 @@
-module App.Frameworks.Service where
+module App.Algebras.Service where
 
 import Base.Prelude
 

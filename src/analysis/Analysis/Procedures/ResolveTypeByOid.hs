@@ -3,8 +3,8 @@ module Analysis.Procedures.ResolveTypeByOid
   )
 where
 
+import Analysis.Algebras.Procedure
 import Analysis.Domain as Domain
-import Analysis.Frameworks.Procedure
 import Analysis.Procedures.ResolveTypeByOid.Statements qualified as Statements
 import Base.Prelude hiding (Enum)
 import SyntacticClass qualified as Syntactic

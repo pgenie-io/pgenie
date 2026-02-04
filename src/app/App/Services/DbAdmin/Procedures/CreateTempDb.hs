@@ -4,7 +4,7 @@ module App.Services.DbAdmin.Procedures.CreateTempDb
   )
 where
 
-import App.Frameworks.Service
+import App.Algebras.Service
 import App.Services.DbAdmin.Context
 import App.Services.DbAdmin.Domain
 import Base.Prelude

@@ -4,8 +4,8 @@ module App
   )
 where
 
+import App.Algebras.CommandCliApp
 import App.Commands qualified as Commands
-import App.Frameworks.CommandCliApp
 import Base.Prelude
 
 main :: IO ()

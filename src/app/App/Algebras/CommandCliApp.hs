@@ -1,4 +1,4 @@
-module App.Frameworks.CommandCliApp
+module App.Algebras.CommandCliApp
   ( -- * Application
     runApp,
 

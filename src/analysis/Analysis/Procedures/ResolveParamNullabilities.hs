@@ -3,8 +3,8 @@ module Analysis.Procedures.ResolveParamNullabilities
   )
 where
 
+import Analysis.Algebras.Procedure
 import Analysis.Domain
-import Analysis.Frameworks.Procedure
 import Analysis.Procedures.ResolveParamNullabilities.DefaultEncoder qualified as DefaultEncoder
 import Base.Prelude
 import Data.Vector qualified as Vector

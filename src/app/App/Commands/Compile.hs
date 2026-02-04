@@ -1,6 +1,6 @@
 module App.Commands.Compile (compile) where
 
-import App.Frameworks.CommandCliApp
+import App.Algebras.CommandCliApp
 import Base.Prelude
 import Options.Applicative qualified as Opt
 

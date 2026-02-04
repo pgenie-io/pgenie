@@ -1,7 +1,7 @@
 module Analysis where
 
+import Analysis.Algebras.Procedure qualified as Procedure
 import Analysis.Domain
-import Analysis.Frameworks.Procedure qualified as Procedure
 import Analysis.Procedures qualified as Procedures
 import Base.Prelude hiding (Enum)
 import Data.Vector qualified as Vector

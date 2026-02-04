@@ -6,7 +6,7 @@ module App.Services.HasqlPool.Context
   )
 where
 
-import App.Frameworks.Service
+import App.Algebras.Service
 import App.Services.PqConnection qualified as PqConnection
 import Base.Prelude
 import Hasql.Connection qualified

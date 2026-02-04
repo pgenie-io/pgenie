@@ -184,8 +184,13 @@ library app-logic
   hs-source-dirs: src/app-logic/
   exposed-modules:
     AppLogic
+    AppLogic.Cli
+    AppLogic.Commands
     AppLogic.Migrations
     AppLogic.QuerySignatures
+
+  other-modules:
+    AppLogic.Commands.Generate
 
   build-depends:
     aeson,
@@ -194,6 +199,7 @@ library app-logic
     filepath,
     optparse-applicative,
     pgenie:base,
+    pgenie:command-cli-ui-algebra,
     pgenie:parallelism-algebra,
     pgenie:staging-algebra,
     pgenie-gen,
@@ -229,6 +235,17 @@ library parallelism-algebra
 
   build-depends:
     pgenie:base
+
+library command-cli-ui-algebra
+  import: base
+  hs-source-dirs: src/command-cli-ui-algebra/
+  exposed-modules:
+    CommandCliUiAlgebra
+
+  build-depends:
+    optparse-applicative,
+    pgenie:base,
+    text,
 
 library fs-algebra
   import: base

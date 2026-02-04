@@ -149,7 +149,7 @@ library modeling
     Modeling.Procedures.ResolveTypeByOid.Statements.SelectType
 
   build-tool-depends:
-    autoexporter:autoexporter >=2.0.0.13 && <3
+    autoexporter:autoexporter
 
   build-depends:
     aeson,

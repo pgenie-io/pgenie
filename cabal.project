@@ -11,6 +11,7 @@ source-repository-package
   tag: b74373863e8bb0ef9877e0cd8dad5a3128d31818
 
 constraints:
+  autoexporter >=2.0.0.13 && <3,
   base >=4.11 && <5,
   bytestring >=0.10 && <0.13,
   data-has ^>=0.4,

@@ -55,11 +55,11 @@ executeMigrationsAtPath path =
         Parallelism.runParallelly do
           for migrationsListed \migrationListed ->
             Parallelism.parallelly do
-              ReportingLogic.stage (Path.toText migrationListed.path) 1 do
+              ReportingLogic.stage (Path.toText migrationListed.path) 0 do
                 migrationLoaded <- loadMigration migrationListed
                 pure (migrationListed.path, migrationLoaded)
 
     ReportingLogic.stage "Executing" migrationsCount do
       for migrationsLoaded \(path, migrationLoaded) -> do
-        ReportingLogic.stage (Path.toText path) 1 do
+        ReportingLogic.stage (Path.toText path) 0 do
           executeMigration migrationLoaded

@@ -20,6 +20,8 @@ class (Monad m) => Reports m where
     -- | Amount of substages.
     --
     -- Each nested stage exit will increase the progress within this stage by @1 / amountOfSubstages@.
+    --
+    -- If there's no substages, pass @0@. Then only the exit of the whole stage will increase the progress.
     Int ->
     m a ->
     m a

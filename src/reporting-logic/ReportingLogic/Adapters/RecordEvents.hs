@@ -34,24 +34,40 @@ newtype RecordEvents a
     via (ReaderT Scope (State Memory))
 
 instance Reports RecordEvents where
-  stage name size (RecordEvents runInner) =
+  stage name substagesCount (RecordEvents runInner) =
     RecordEvents \scope memory ->
-      let eventsAfterEnter = StageEnter name : memory.events
-          progressPerSubstage = scope.progressPerStage / fromIntegral size
-          (result, Memory innerSubstagesExited eventsAfterInner) =
-            runInner
-              Scope
-                { progressPerStage = progressPerSubstage
-                }
-              Memory
-                { substagesExited = 0,
-                  events = eventsAfterEnter
-                }
-          totalInnerProgress = fromIntegral innerSubstagesExited * progressPerSubstage
-          exitProgress = scope.progressPerStage - totalInnerProgress
-          exitEvent = StageExit name exitProgress
-          eventsAfterExit = exitEvent : eventsAfterInner
-       in (result, Memory {substagesExited = memory.substagesExited + 1, events = eventsAfterExit})
+      if substagesCount > 0
+        then
+          let eventsAfterEnter = StageEnter name : memory.events
+              progressPerSubstage = scope.progressPerStage / fromIntegral substagesCount
+              (result, Memory innerSubstagesExited eventsAfterInner) =
+                runInner
+                  Scope
+                    { progressPerStage = progressPerSubstage
+                    }
+                  Memory
+                    { substagesExited = 0,
+                      events = eventsAfterEnter
+                    }
+              totalInnerProgress = fromIntegral innerSubstagesExited * progressPerSubstage
+              exitProgress = scope.progressPerStage - totalInnerProgress
+              exitEvent = StageExit name exitProgress
+              eventsAfterExit = exitEvent : eventsAfterInner
+           in (result, Memory {substagesExited = memory.substagesExited + 1, events = eventsAfterExit})
+        else
+          let eventsAfterEnter = StageEnter name : memory.events
+              (result, Memory _innerSubstagesExited eventsAfterInner) =
+                runInner
+                  Scope
+                    { progressPerStage = 0
+                    }
+                  Memory
+                    { substagesExited = 0,
+                      events = eventsAfterEnter
+                    }
+              exitEvent = StageExit name scope.progressPerStage
+              eventsAfterExit = exitEvent : eventsAfterInner
+           in (result, Memory {substagesExited = memory.substagesExited + 1, events = eventsAfterExit})
 
 run :: RecordEvents a -> ([Event], a)
 run (RecordEvents action) =

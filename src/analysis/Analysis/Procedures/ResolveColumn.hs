@@ -1,12 +1,12 @@
-module Modeling.Procedures.ResolveColumn
+module Analysis.Procedures.ResolveColumn
   ( ResolveColumn (..),
     ResolveColumnResultRow (..),
   )
 where
 
+import Analysis.Frameworks.Procedure
+import Analysis.Procedures.ResolveColumn.Statements qualified as Statements
 import Base.Prelude
-import Modeling.Frameworks.Procedure
-import Modeling.Procedures.ResolveColumn.Statements qualified as Statements
 import SyntacticClass qualified as Syntactic
 
 data ResolveColumn = ResolveColumn

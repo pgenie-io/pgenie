@@ -1,4 +1,4 @@
-module Modeling.Procedures.ResolveTypeByOid.Statements.SelectEnumLabels where
+module Analysis.Procedures.ResolveTypeByOid.Statements.SelectEnumLabels where
 
 import Base.Prelude
 import Hasql.TH

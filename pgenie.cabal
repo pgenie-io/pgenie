@@ -125,29 +125,29 @@ library base
     vector-instances,
     witherable,
 
-library modeling
+library analysis
   import: base
-  hs-source-dirs: src/modeling/
+  hs-source-dirs: src/analysis/
   exposed-modules:
-    Modeling
+    Analysis
 
   other-modules:
-    Modeling.Domain
-    Modeling.Frameworks.Procedure
-    Modeling.Procedures
-    Modeling.Procedures.DescribeQuery
-    Modeling.Procedures.ResolveColumn
-    Modeling.Procedures.ResolveColumn.Statements
-    Modeling.Procedures.ResolveColumn.Statements.GetAttributeByRelationAndOffset
-    Modeling.Procedures.ResolveParamNullabilities
-    Modeling.Procedures.ResolveParamNullabilities.DefaultEncoder
-    Modeling.Procedures.ResolveParamNullabilities.DefaultEncoder.DefaultValues
-    Modeling.Procedures.ResolveTypeByOid
-    Modeling.Procedures.ResolveTypeByOid.Statements
-    Modeling.Procedures.ResolveTypeByOid.Statements.SelectAttributes
-    Modeling.Procedures.ResolveTypeByOid.Statements.SelectEnumLabels
-    Modeling.Procedures.ResolveTypeByOid.Statements.SelectRelationColumns
-    Modeling.Procedures.ResolveTypeByOid.Statements.SelectType
+    Analysis.Domain
+    Analysis.Frameworks.Procedure
+    Analysis.Procedures
+    Analysis.Procedures.DescribeQuery
+    Analysis.Procedures.ResolveColumn
+    Analysis.Procedures.ResolveColumn.Statements
+    Analysis.Procedures.ResolveColumn.Statements.GetAttributeByRelationAndOffset
+    Analysis.Procedures.ResolveParamNullabilities
+    Analysis.Procedures.ResolveParamNullabilities.DefaultEncoder
+    Analysis.Procedures.ResolveParamNullabilities.DefaultEncoder.DefaultValues
+    Analysis.Procedures.ResolveTypeByOid
+    Analysis.Procedures.ResolveTypeByOid.Statements
+    Analysis.Procedures.ResolveTypeByOid.Statements.SelectAttributes
+    Analysis.Procedures.ResolveTypeByOid.Statements.SelectEnumLabels
+    Analysis.Procedures.ResolveTypeByOid.Statements.SelectRelationColumns
+    Analysis.Procedures.ResolveTypeByOid.Statements.SelectType
 
   build-tool-depends:
     autoexporter:autoexporter

@@ -1,4 +1,4 @@
-module Modeling.Frameworks.Procedure where
+module Analysis.Frameworks.Procedure where
 
 import Base.Prelude
 import HasqlDev qualified as Hasql

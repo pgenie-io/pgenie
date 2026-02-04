@@ -1,4 +1,4 @@
-module Modeling.Procedures.ResolveColumn.Statements.GetAttributeByRelationAndOffset where
+module Analysis.Procedures.ResolveColumn.Statements.GetAttributeByRelationAndOffset where
 
 import Base.Prelude
 import Hasql.TH

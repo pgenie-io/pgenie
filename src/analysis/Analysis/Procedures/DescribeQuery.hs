@@ -1,16 +1,16 @@
-module Modeling.Procedures.DescribeQuery
+module Analysis.Procedures.DescribeQuery
   ( DescribeQuery (..),
     DescribeQueryResult (..),
     DescribeQueryResultColumn (..),
   )
 where
 
+import Analysis.Frameworks.Procedure
 import Base.Prelude
 import Data.Vector qualified as Vector
 import Hasql.Session qualified
 import HasqlDev qualified
 import LibpqExtras.Procedures.DescribeQuery qualified
-import Modeling.Frameworks.Procedure
 import SyntacticClass qualified as Syntactic
 
 data DescribeQuery = DescribeQuery

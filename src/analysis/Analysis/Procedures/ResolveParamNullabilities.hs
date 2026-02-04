@@ -1,8 +1,11 @@
-module Modeling.Procedures.ResolveParamNullabilities
+module Analysis.Procedures.ResolveParamNullabilities
   ( ResolveParamNullabilities (..),
   )
 where
 
+import Analysis.Domain
+import Analysis.Frameworks.Procedure
+import Analysis.Procedures.ResolveParamNullabilities.DefaultEncoder qualified as DefaultEncoder
 import Base.Prelude
 import Data.Vector qualified as Vector
 import Hasql.Decoders qualified as Decoders
@@ -11,9 +14,6 @@ import Hasql.Errors qualified
 import Hasql.Session qualified as Session
 import Hasql.Statement qualified as Statement
 import HasqlDev qualified as Hasql
-import Modeling.Domain
-import Modeling.Frameworks.Procedure
-import Modeling.Procedures.ResolveParamNullabilities.DefaultEncoder qualified as DefaultEncoder
 import SyntacticClass qualified as Syntactic
 
 data ResolveParamNullabilities = ResolveParamNullabilities

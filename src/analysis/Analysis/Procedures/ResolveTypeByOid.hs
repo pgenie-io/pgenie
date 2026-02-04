@@ -1,12 +1,12 @@
-module Modeling.Procedures.ResolveTypeByOid
+module Analysis.Procedures.ResolveTypeByOid
   ( ResolveTypeByOid (..),
   )
 where
 
+import Analysis.Domain as Domain
+import Analysis.Frameworks.Procedure
+import Analysis.Procedures.ResolveTypeByOid.Statements qualified as Statements
 import Base.Prelude hiding (Enum)
-import Modeling.Domain as Domain
-import Modeling.Frameworks.Procedure
-import Modeling.Procedures.ResolveTypeByOid.Statements qualified as Statements
 import SyntacticClass qualified as Syntactic
 import TextBuilder qualified
 

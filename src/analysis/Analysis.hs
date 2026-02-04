@@ -1,11 +1,11 @@
-module Modeling where
+module Analysis where
 
+import Analysis.Domain
+import Analysis.Frameworks.Procedure qualified as Procedure
+import Analysis.Procedures qualified as Procedures
 import Base.Prelude hiding (Enum)
 import Data.Vector qualified as Vector
 import HasqlDev qualified
-import Modeling.Domain
-import Modeling.Frameworks.Procedure qualified as Procedure
-import Modeling.Procedures qualified as Procedures
 import SyntacticClass qualified as Syntactic
 
 analyse ::

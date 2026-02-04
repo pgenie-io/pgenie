@@ -194,9 +194,9 @@ library app-logic
     filepath,
     optparse-applicative,
     pgenie:base,
-    pgenie:gen-algebra,
     pgenie:parallelism-algebra,
     pgenie:staging-algebra,
+    pgenie-gen,
     syntactic-class,
 
 library staging-algebra
@@ -229,17 +229,6 @@ library parallelism-algebra
 
   build-depends:
     pgenie:base
-
-library gen-algebra
-  import: base
-  hs-source-dirs: src/gen-algebra/
-  exposed-modules:
-    GenAlgebra
-
-  build-depends:
-    aeson,
-    containers,
-    pgenie:base,
 
 library fs-algebra
   import: base

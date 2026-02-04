@@ -9,7 +9,6 @@ import Data.Aeson qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
 import Data.Map.Strict qualified as Map
 import GenAlgebra qualified as Gen
-import ParallelismLogic
 import ParallelismLogic qualified as Parallelism
 import ReportingLogic.Algebra qualified as ReportingLogic
 
@@ -215,16 +214,16 @@ analyse projectFileLoaded = do
 
   queriesListed <- listQueries projectFileLoaded
 
-  runParallelly do
+  Parallelism.runParallelly do
     Map.fromList
-      <$> for queriesListed \queryListed -> parallelly do
-        (queryIntrospected, querySignatureLoaded) <- runParallelly do
+      <$> for queriesListed \queryListed -> Parallelism.parallelly do
+        (queryIntrospected, querySignatureLoaded) <- Parallelism.runParallelly do
           (,)
-            <$> parallelly do
+            <$> Parallelism.parallelly do
               querySqlLoaded <- loadQuerySql queryListed
               querySqlParsed <- parseQuerySql querySqlLoaded
               introspectQuery querySqlParsed
-            <*> parallelly do
+            <*> Parallelism.parallelly do
               loadQuerySignature projectFileLoaded queryListed
         merged <- mergeQueryMetadata queryIntrospected querySignatureLoaded
         pure (queryListed.name, merged)

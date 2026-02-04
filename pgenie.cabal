@@ -276,6 +276,9 @@ library app
     App.Services.HasqlPool
     App.Services.HasqlPool.Context
     App.Services.HasqlPool.Procedures
+    App.Services.Main
+    App.Services.Main.Context
+    App.Services.Main.Procedures
     App.Services.PqConnection
     App.Services.PqConnection.Context
     App.Services.PqConnection.Procedures

@@ -7,6 +7,7 @@ where
 
 import App.Algebras.CliUi qualified as Algebras.CliUi
 import App.Commands qualified as Commands
+import App.Services.Main qualified as Services.Main
 import AppLogic qualified
 import AppLogic.Migrations qualified
 import Base.Prelude
@@ -30,17 +31,16 @@ interpret :: App a -> IO a
 interpret app =
   error "TODO"
 
-newtype App a = App (())
-
-instance Functor App
-
-instance Applicative App
-
-instance Monad App
-
-instance MonadError AppLogic.Error App
-
-instance ParallelismAlgebra.Parallelism App
+-- | Main execution context.
+newtype App a = App (Services.Main.Context -> IO (Either AppLogic.Error a))
+  deriving
+    ( Functor,
+      Applicative,
+      Monad,
+      MonadError AppLogic.Error,
+      ParallelismAlgebra.Parallelism
+    )
+    via (ReaderT Services.Main.Context (ExceptT AppLogic.Error IO))
 
 instance AppLogic.Effect App
 

@@ -14,7 +14,6 @@ import Control.Arrow
 class (Monad m) => Reports m where
   -- | Wrap an action as a stage in progress.
   stage ::
-    (Reports m) =>
     -- | Name of the stage. May be empty.
     Text ->
     -- | Amount of substages.

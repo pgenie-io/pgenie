@@ -2,8 +2,8 @@ module AppLogic.Migrations where
 
 import AlgebraicPath qualified as Path
 import Base.Prelude
-import ParallelismAlgebra qualified as Parallelism
-import StagingAlgebra.Algebra qualified as ReportingLogic
+import ParallelismAlgebra
+import StagingAlgebra.Algebra
 
 -- * Model
 
@@ -29,8 +29,8 @@ data MigrationExecuted
 class
   ( IsSome e Error,
     MonadError e m,
-    Parallelism.Parallelism m,
-    ReportingLogic.Reports m
+    Parallelism m,
+    Reports m
   ) =>
   ControlsMigrations e m
   where
@@ -45,21 +45,21 @@ executeMigrationsAtPath ::
   Path ->
   m MigrationsExecuted
 executeMigrationsAtPath path =
-  ReportingLogic.stage "Executing migrations" 2 do
+  stage "Executing migrations" 2 do
     migrationsListed <- listMigrations path
 
     let migrationsCount = length migrationsListed
 
     migrationsLoaded <-
-      ReportingLogic.stage "Loading" migrationsCount do
-        Parallelism.runParallelly do
+      stage "Loading" migrationsCount do
+        runParallelly do
           for migrationsListed \migrationListed ->
-            Parallelism.parallelly do
-              ReportingLogic.stage (Path.toText migrationListed.path) 0 do
+            parallelly do
+              stage (Path.toText migrationListed.path) 0 do
                 migrationLoaded <- loadMigration migrationListed
                 pure (migrationListed.path, migrationLoaded)
 
-    ReportingLogic.stage "Executing" migrationsCount do
+    stage "Executing" migrationsCount do
       for migrationsLoaded \(path, migrationLoaded) -> do
-        ReportingLogic.stage (Path.toText path) 0 do
+        stage (Path.toText path) 0 do
           executeMigration migrationLoaded

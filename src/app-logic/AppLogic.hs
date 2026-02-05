@@ -122,6 +122,7 @@ instance IsSome Error Migrations.Error where
 
 -- * Effect
 
+-- | Domain operations.
 class
   ( MonadError Error m,
     Parallelism m,

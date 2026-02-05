@@ -6,5 +6,5 @@ module ParallelismAlgebra
   )
 where
 
-import ParallelismAlgebra.Adapters ()
 import ParallelismAlgebra.Algebra
+import ParallelismAlgebra.Runtimes ()

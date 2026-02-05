@@ -1,4 +1,4 @@
-module StagingAlgebra.Adapters.RecordEvents
+module StagingAlgebra.Runtimes.RecordEvents
   ( RecordEvents,
     run,
     Event (..),

@@ -206,8 +206,8 @@ library staging-algebra
     StagingAlgebra
 
   other-modules:
-    StagingAlgebra.Adapters.RecordEvents
     StagingAlgebra.Algebra
+    StagingAlgebra.Runtimes.RecordEvents
 
   build-depends:
     base,
@@ -220,12 +220,12 @@ library parallelism-algebra
     ParallelismAlgebra
 
   other-modules:
-    ParallelismAlgebra.Adapters
-    ParallelismAlgebra.Adapters.ExceptT
-    ParallelismAlgebra.Adapters.IO
-    ParallelismAlgebra.Adapters.MaybeT
-    ParallelismAlgebra.Adapters.ReaderT
     ParallelismAlgebra.Algebra
+    ParallelismAlgebra.Runtimes
+    ParallelismAlgebra.Runtimes.ExceptT
+    ParallelismAlgebra.Runtimes.IO
+    ParallelismAlgebra.Runtimes.MaybeT
+    ParallelismAlgebra.Runtimes.ReaderT
 
   build-tool-depends:
     autoexporter:autoexporter
@@ -237,9 +237,9 @@ library fs-algebra
   import: base
   hs-source-dirs: src/fs-algebra/
   exposed-modules:
-    FsAlgebra.Adapters.IO
     FsAlgebra.Algebra
     FsAlgebra.Properties
+    FsAlgebra.Runtimes.IO
 
   build-depends:
     QuickCheck,

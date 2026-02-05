@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module ParallelismAlgebra.Adapters.MaybeT where
+module ParallelismAlgebra.Runtimes.MaybeT where
 
 import Base.Prelude
 import ParallelismAlgebra.Algebra

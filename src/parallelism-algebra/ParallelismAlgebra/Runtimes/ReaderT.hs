@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module ParallelismAlgebra.Adapters.ReaderT where
+module ParallelismAlgebra.Runtimes.ReaderT where
 
 import Base.Prelude
 import ParallelismAlgebra.Algebra

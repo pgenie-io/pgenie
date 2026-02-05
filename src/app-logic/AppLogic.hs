@@ -129,7 +129,7 @@ class
     Stages m,
     Migrations.ControlsMigrations Error m
   ) =>
-  Effect m
+  DomainOps m
   where
   loadProjectFile :: m ProjectFileLoaded
   listQueries :: ProjectFileLoaded -> m QueriesListed
@@ -150,13 +150,13 @@ class
 
   loadGen :: Gen.Location -> m Gen
 
-check :: (Effect m) => m ()
+check :: (DomainOps m) => m ()
 check = do
   projectFileLoaded <- loadProjectFile
   analyse projectFileLoaded
   pure ()
 
-generate :: (Effect m) => m ()
+generate :: (DomainOps m) => m ()
 generate =
   stage "Generate" 3 do
     projectFileLoaded <-
@@ -168,7 +168,7 @@ generate =
       generateCode projectFileLoaded genProject
     pure ()
 
-loadGens :: (Effect m) => [Artifact] -> m [(Text, Gen.Input -> Gen.Output)]
+loadGens :: (DomainOps m) => [Artifact] -> m [(Text, Gen.Input -> Gen.Output)]
 loadGens artifacts =
   stage "Loading generators" (length artifacts) do
     runParallelly do
@@ -182,7 +182,7 @@ loadGens artifacts =
               Right compileFn ->
                 pure (name, compileFn)
 
-generateCode :: (Effect m) => ProjectFileLoaded -> Gen.Input.Project -> m CodeGenerated
+generateCode :: (DomainOps m) => ProjectFileLoaded -> Gen.Input.Project -> m CodeGenerated
 generateCode projectFileLoaded project = do
   loadedGens <- loadGens projectFileLoaded.artifacts
 
@@ -205,7 +205,7 @@ generateCode projectFileLoaded project = do
 
   pure (CodeGenerated artifacts)
 
-analyse :: (Effect m) => ProjectFileLoaded -> m Gen.Input.Project
+analyse :: (DomainOps m) => ProjectFileLoaded -> m Gen.Input.Project
 analyse projectFileLoaded = do
   Migrations.executeMigrationsAtPath projectFileLoaded.migrationsDir
 
@@ -251,7 +251,7 @@ mergeQueryMetadata :: QueryIntrospected -> QuerySignatureLoaded -> m QueryIntros
 mergeQueryMetadata =
   error "TODO"
 
-stagedParFor :: (Effect m) => Text -> (a -> Text) -> [a] -> (a -> m b) -> m [b]
+stagedParFor :: (DomainOps m) => Text -> (a -> Text) -> [a] -> (a -> m b) -> m [b]
 stagedParFor stageName nameFn items action =
   stage stageName (length items) do
     runParallelly do

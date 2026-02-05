@@ -25,7 +25,7 @@ newtype Main a = Main (Services.Main.Context -> IO (Either AppLogic.Error a))
     )
     via (ReaderT Services.Main.Context (ExceptT AppLogic.Error IO))
 
-instance AppLogic.Effect Main
+instance AppLogic.DomainOps Main
 
 instance AppLogic.Migrations.ControlsMigrations AppLogic.Error Main
 

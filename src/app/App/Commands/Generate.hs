@@ -8,7 +8,7 @@ import AppLogic qualified
 import Base.Prelude
 import Options.Applicative qualified as Opt
 
-generate :: (AppLogic.Effect m) => Command m
+generate :: (AppLogic.DomainOps m) => Command m
 generate =
   Command
     { name = "generate",
@@ -23,5 +23,5 @@ parser :: Opt.Parser Params
 parser =
   pure Params
 
-execute :: (AppLogic.Effect m) => Params -> m ()
+execute :: (AppLogic.DomainOps m) => Params -> m ()
 execute _params = AppLogic.generate

@@ -5,7 +5,7 @@ where
 
 import App.Algebras.CliUi qualified as Algebras.CliUi
 import App.Commands qualified as Commands
-import App.Effects.Main qualified as Effects.Main
+import App.Runtimes.Main qualified as Effects.Main
 import Base.Prelude
 
 main :: IO ()

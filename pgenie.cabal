@@ -266,9 +266,9 @@ library app
     App.Commands
     App.Commands.Generate
     App.Commands.Sign
-    App.Effects.Displaying
-    App.Effects.EmittingEvents
-    App.Effects.Main
+    App.Runtimes.Displaying
+    App.Runtimes.EmittingEvents
+    App.Runtimes.Main
     App.Services.Analyser.Domain
     App.Services.DbAdmin
     App.Services.DbAdmin.Context

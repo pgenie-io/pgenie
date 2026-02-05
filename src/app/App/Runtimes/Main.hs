@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-unused-binds -Wno-unused-imports -Wno-name-shadowing -Wno-incomplete-patterns -Wno-unused-matches -Wno-missing-methods -Wno-unused-record-wildcards -Wno-redundant-constraints -Wno-deprecations -Wno-missing-signatures #-}
 
-module App.Effects.Main where
+module App.Runtimes.Main where
 
 import App.Algebras.CliUi qualified as Algebras.CliUi
 import App.Services.Main qualified as Services.Main

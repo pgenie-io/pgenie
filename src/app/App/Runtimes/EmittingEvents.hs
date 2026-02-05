@@ -1,4 +1,4 @@
-module App.Effects.EmittingEvents
+module App.Runtimes.EmittingEvents
   ( run,
     EmittingEvents,
     Reports (..),

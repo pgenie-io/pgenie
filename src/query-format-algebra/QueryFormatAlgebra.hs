@@ -2,6 +2,7 @@ module QueryFormatAlgebra where
 
 import Base.Prelude
 
+-- | SQL, prql, etc. 
 data QueryFormat = QueryFormat
   { -- | Expect files with these extensions to be read.
     fileExtensions :: [Text],

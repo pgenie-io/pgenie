@@ -3,7 +3,7 @@ module App.Runtimes.Displaying
   )
 where
 
-import App.Runtimes.EmittingEvents qualified as Effects.EmittingEvents
+import App.Runtimes.EmittingEvents qualified as Runtimes.EmittingEvents
 import App.Services.Display qualified as Services.Display
 import Base.Prelude
 import Data.Text.IO qualified as Text
@@ -12,7 +12,7 @@ import StagingAlgebra
 
 type Displaying = ReaderT Services.Display.Context
 
-instance (MonadIO m) => Effects.EmittingEvents.Reports (Displaying m) where
+instance (MonadIO m) => Runtimes.EmittingEvents.Reports (Displaying m) where
   enterStage name =
     (liftIO . Text.putStrLn . mconcat)
       [ "Entering stage: ",

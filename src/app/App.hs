@@ -5,7 +5,7 @@ where
 
 import App.Commands qualified as Commands
 import App.Frameworks.CliUi qualified as Algebras.CliUi
-import App.Runtimes.Main qualified as Effects.Main
+import App.Runtimes.Main qualified as Runtimes.Main
 import Base.Prelude
 
 main :: IO ()
@@ -15,4 +15,4 @@ main =
     "pGenie CLI"
     [ Commands.generate
     ]
-    Effects.Main.run
+    Runtimes.Main.run

@@ -38,9 +38,6 @@ crash reason = do
 
 runStatementByParams ::
   ( Hasql.RunsSession m,
-    MonadReader Location m,
-    MonadError Error m,
-    MonadWriter [Error] m,
     Hasql.IsStatementParams params
   ) =>
   params ->

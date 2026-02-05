@@ -3,7 +3,7 @@
 -- Forces the intended use of the application. The user has no option not to generate the signature files.
 module App.Commands.Generate (generate) where
 
-import App.Algebras.CliUi
+import App.Frameworks.CliUi
 import AppLogic qualified
 import Base.Prelude
 import Options.Applicative qualified as Opt

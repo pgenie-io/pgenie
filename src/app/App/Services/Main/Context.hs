@@ -6,7 +6,7 @@ module App.Services.Main.Context
   )
 where
 
-import App.Algebras.Service
+import App.Frameworks.Service
 import App.Services.HasqlPool qualified as HasqlPool
 import Base.Prelude
 import Hasql.Connection qualified

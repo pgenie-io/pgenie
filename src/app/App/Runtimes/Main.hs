@@ -2,7 +2,7 @@
 
 module App.Runtimes.Main where
 
-import App.Algebras.CliUi qualified as Algebras.CliUi
+import App.Frameworks.CliUi qualified as Algebras.CliUi
 import App.Services.Main qualified as Services.Main
 import AppLogic qualified
 import AppLogic.Migrations qualified

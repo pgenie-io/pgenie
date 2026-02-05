@@ -3,8 +3,8 @@ module App
   )
 where
 
-import App.Algebras.CliUi qualified as Algebras.CliUi
 import App.Commands qualified as Commands
+import App.Frameworks.CliUi qualified as Algebras.CliUi
 import App.Runtimes.Main qualified as Effects.Main
 import Base.Prelude
 

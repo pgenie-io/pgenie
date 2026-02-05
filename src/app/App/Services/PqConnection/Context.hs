@@ -9,7 +9,7 @@ module App.Services.PqConnection.Context
   )
 where
 
-import App.Algebras.Service
+import App.Frameworks.Service
 import Base.Prelude
 import Database.PostgreSQL.LibPQ qualified as Pq
 

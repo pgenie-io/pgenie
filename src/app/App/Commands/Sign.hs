@@ -2,7 +2,7 @@
 
 module App.Commands.Sign (sign) where
 
-import App.Algebras.CliUi
+import App.Frameworks.CliUi
 import Base.Prelude
 import Data.Text qualified as Text
 import Options.Applicative qualified as Opt

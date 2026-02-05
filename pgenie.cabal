@@ -261,11 +261,11 @@ library app
   hs-source-dirs: src/app/
   exposed-modules:
     App
-    App.Algebras.CliUi
-    App.Algebras.Service
     App.Commands
     App.Commands.Generate
     App.Commands.Sign
+    App.Frameworks.CliUi
+    App.Frameworks.Service
     App.Runtimes.Displaying
     App.Runtimes.EmittingEvents
     App.Runtimes.Main

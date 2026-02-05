@@ -8,7 +8,7 @@ module App.Services.PqConnection.Procedures.DescribeQuery
   )
 where
 
-import App.Algebras.Service
+import App.Frameworks.Service
 import App.Services.PqConnection.Context qualified as Context
 import App.Services.PqConnection.Utils.LawfulConversions ()
 import Base.Prelude

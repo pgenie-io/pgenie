@@ -8,7 +8,6 @@ import AppLogic qualified
 import AppLogic.Migrations qualified
 import Base.Prelude
 import ParallelismAlgebra qualified
-import StagingAlgebra
 import StagingAlgebra qualified
 
 run :: Main a -> IO a

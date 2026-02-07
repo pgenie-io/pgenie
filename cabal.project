@@ -12,6 +12,11 @@ source-repository-package
 
 source-repository-package
   type: git
+  location: https://github.com/nikita-volkov/fx
+  tag: 9fb9245190a81be666a266d5f037b200a4ac15c0
+
+source-repository-package
+  type: git
   location: https://github.com/pgenie-io/gen-sdk
   tag: acf156341f8670b7aa6dc2557abc496424a469a6
   subdir: haskell

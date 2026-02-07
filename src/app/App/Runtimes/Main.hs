@@ -5,7 +5,6 @@ module App.Runtimes.Main where
 import App.Frameworks.CliUi qualified as Algebras.CliUi
 import App.Services.Main qualified as Services.Main
 import AppLogic qualified
-import AppLogic.Migrations qualified
 import Base.Prelude
 import ParallelismAlgebra qualified
 import StagingAlgebra qualified
@@ -25,8 +24,10 @@ newtype Main a = Main (Services.Main.Context -> IO (Either AppLogic.Error a))
     )
     via (ReaderT Services.Main.Context (ExceptT AppLogic.Error IO))
 
+instance AppLogic.DbOps Main
+
 instance AppLogic.DomainOps Main
 
-instance AppLogic.Migrations.ControlsMigrations AppLogic.Error Main
+instance AppLogic.ControlsMigrations AppLogic.Error Main
 
 instance StagingAlgebra.Stages Main

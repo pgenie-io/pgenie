@@ -3,7 +3,6 @@
 module AppLogic where
 
 import AlgebraicPath qualified as Path
-import AppLogic.Migrations qualified as Migrations
 import Base.Prelude hiding (writeFile)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
@@ -30,7 +29,7 @@ data Error
       Text
       -- | Error message.
       Text
-  | MigrationsError Migrations.Error
+  | MigrationsError Error
 
 -- * States
 
@@ -112,22 +111,38 @@ data QueriesMetadataMerged = QueriesMetadataMerged
     customTypes :: [Gen.Input.CustomType]
   }
 
--- ** Instances
+type MigrationsLoaded = [MigrationLoaded]
 
-instance IsSome Error Migrations.Error where
-  to = MigrationsError
-  maybeFrom = \case
-    MigrationsError err -> Just err
-    _ -> Nothing
+type MigrationsExecuted = [MigrationExecuted]
 
--- * Effect
+data MigrationLoaded
+
+data MigrationExecuted
+
+-- * Effects
+
+class DbOps m where
+  introspectQuery :: QuerySqlParsed -> m QueryIntrospected
+
+class
+  ( IsSome e Error,
+    MonadError e m,
+    Parallelism m,
+    Stages m
+  ) =>
+  ControlsMigrations e m
+  where
+  listMigrations :: Path -> m [Path]
+  loadMigration :: Path -> m MigrationLoaded
+  executeMigration :: MigrationLoaded -> m MigrationExecuted
 
 -- | Domain operations.
 class
   ( MonadError Error m,
     Parallelism m,
     Stages m,
-    Migrations.ControlsMigrations Error m
+    ControlsMigrations Error m,
+    DbOps m
   ) =>
   DomainOps m
   where
@@ -141,7 +156,6 @@ class
   loadQuerySignature :: ProjectFileLoaded -> QueryListed -> m QuerySignatureLoaded
 
   parseQuerySql :: QuerySqlLoaded -> m QuerySqlParsed
-  introspectQuery :: QuerySqlParsed -> m QueryIntrospected
 
   -- | Create or replace the signature file for the query.
   generateSignature :: ProjectFileLoaded -> QueryIntrospected -> m SignatureGenerated
@@ -207,7 +221,7 @@ generateCode projectFileLoaded project = do
 
 analyse :: (DomainOps m) => ProjectFileLoaded -> m Gen.Input.Project
 analyse projectFileLoaded = do
-  Migrations.executeMigrationsAtPath projectFileLoaded.migrationsDir
+  executeMigrationsAtPath projectFileLoaded.migrationsDir
 
   queriesListed <-
     listQueries projectFileLoaded
@@ -250,6 +264,30 @@ analyse projectFileLoaded = do
 mergeQueryMetadata :: QueryIntrospected -> QuerySignatureLoaded -> m QueryIntrospected
 mergeQueryMetadata =
   error "TODO"
+
+executeMigrationsAtPath ::
+  (ControlsMigrations e m) =>
+  Path ->
+  m MigrationsExecuted
+executeMigrationsAtPath path =
+  stage "Executing migrations" 2 do
+    migrationsListed <- listMigrations path
+
+    let migrationsCount = length migrationsListed
+
+    migrationsLoaded <-
+      stage "Loading" migrationsCount do
+        runParallelly do
+          for migrationsListed \migrationListed ->
+            parallelly do
+              stage (Path.toText migrationListed) 0 do
+                migrationLoaded <- loadMigration migrationListed
+                pure (migrationListed, migrationLoaded)
+
+    stage "Executing" migrationsCount do
+      for migrationsLoaded \(migrationListed, migrationLoaded) -> do
+        stage (Path.toText migrationListed) 0 do
+          executeMigration migrationLoaded
 
 stagedParFor :: (DomainOps m) => Text -> (a -> Text) -> [a] -> (a -> m b) -> m [b]
 stagedParFor stageName nameFn items action =

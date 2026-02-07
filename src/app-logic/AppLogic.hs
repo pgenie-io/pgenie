@@ -122,26 +122,14 @@ data MigrationExecuted
 -- * Effects
 
 class DbOps m where
-  introspectQuery :: QuerySqlParsed -> m QueryIntrospected
-
-class
-  ( IsSome e Error,
-    MonadError e m,
-    Parallelism m,
-    Stages m
-  ) =>
-  ControlsMigrations e m
-  where
-  listMigrations :: Path -> m [Path]
-  loadMigration :: Path -> m MigrationLoaded
   executeMigration :: MigrationLoaded -> m MigrationExecuted
+  introspectQuery :: QuerySqlParsed -> m QueryIntrospected
 
 -- | Domain operations.
 class
   ( MonadError Error m,
     Parallelism m,
     Stages m,
-    ControlsMigrations Error m,
     DbOps m
   ) =>
   DomainOps m
@@ -149,6 +137,9 @@ class
   loadProjectFile :: m ProjectFileLoaded
   listQueries :: ProjectFileLoaded -> m QueriesListed
   loadQuerySql :: QueryListed -> m QuerySqlLoaded
+
+  listMigrations :: Path -> m [Path]
+  loadMigration :: Path -> m MigrationLoaded
 
   -- | Attempt to load the query signature file.
   --
@@ -266,7 +257,7 @@ mergeQueryMetadata =
   error "TODO"
 
 executeMigrationsAtPath ::
-  (ControlsMigrations e m) =>
+  (DomainOps m) =>
   Path ->
   m MigrationsExecuted
 executeMigrationsAtPath path =

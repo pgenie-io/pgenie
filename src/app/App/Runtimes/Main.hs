@@ -28,6 +28,4 @@ instance AppLogic.DbOps Main
 
 instance AppLogic.DomainOps Main
 
-instance AppLogic.ControlsMigrations AppLogic.Error Main
-
 instance StagingAlgebra.Stages Main

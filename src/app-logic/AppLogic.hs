@@ -7,6 +7,7 @@ import Base.Prelude hiding (writeFile)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
 import Data.Map.Strict qualified as Map
+import FsAlgebra.Algebra qualified as FsAlgebra
 import PGenieGen qualified as Gen
 import PGenieGen.Model.Input qualified as Gen.Input
 import PGenieGen.Model.Output qualified as Gen.Output
@@ -146,6 +147,7 @@ class
   -- Missing file is not an error. Parsing failure of an existing file however is.
   loadQuerySignature :: ProjectFileLoaded -> QueryListed -> m QuerySignatureLoaded
 
+  -- TODO: implement in logic. This is not an integration layer concern.
   parseQuerySql :: QuerySqlLoaded -> m QuerySqlParsed
 
   -- | Create or replace the signature file for the query.

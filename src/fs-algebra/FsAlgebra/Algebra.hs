@@ -16,28 +16,11 @@ data Error
   | DirectoryDeleteError Path Text
   deriving stock (Show, Eq)
 
-data PathSegment = PathSegment
-  deriving stock (Show, Eq)
-
 data PathStatus
   = MissingPathStatus
   | IsFilePathStatus
   | IsDirectoryPathStatus
   deriving stock (Show, Eq)
-
--- ** Domain Instances
-
-instance Arbitrary.Arbitrary PathSegment where
-  arbitrary =
-    error "TODO"
-
-instance IsSome Path PathSegment where
-  to = error "TODO"
-  maybeFrom = error "TODO"
-
-instance IsSome FilePath Path where
-  to = error "TODO"
-  maybeFrom = error "TODO"
 
 -- * Operations
 
@@ -49,7 +32,6 @@ class (Monad m) => ControlsFiles m where
   createDir :: Path -> m ()
   deleteDir :: Path -> m ()
   check :: Path -> m PathStatus
-  catchSome :: m a -> (Error -> m (Maybe a)) -> m a
 
 isFile :: (ControlsFiles m) => Path -> m Bool
 isFile path =

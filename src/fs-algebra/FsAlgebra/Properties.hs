@@ -23,34 +23,13 @@ createdDirectoriesGetListed ::
   (ControlsFiles m) =>
   (forall a. m a -> IO a) ->
   Property
-createdDirectoriesGetListed execute = monadicIO do
-  containerPath <- to <$> pick (arbitrary @PathSegment)
-  paths <- fmap (mappend containerPath . to) <$> pick (arbitrary @[PathSegment])
-  result <- run $ execute $ do
-    createDir containerPath
-    forM_ paths $ \path -> do
-      createDir path
-    fmap (mappend containerPath) <$> listDir containerPath
-  pure (all (flip elem result) paths)
+createdDirectoriesGetListed execute = do
+  error "TODO"
 
 listedDirectoriesExist ::
   forall m.
   (ControlsFiles m) =>
   (forall a. m a -> IO a) ->
   Property
-listedDirectoriesExist execute = monadicIO do
-  containerPath <- to <$> pick (arbitrary @PathSegment)
-  paths <- fmap (mappend containerPath . to) <$> pick (arbitrary @[PathSegment])
-  result <- run $ execute $ do
-    createDir containerPath
-    forM_ paths $ \path -> do
-      createDir path
-    paths <- fmap (mappend containerPath) <$> listDir containerPath
-    forM paths $ \path -> do
-      exists <- isDirectory path
-      pure (path, exists)
-  let missingPaths =
-        result
-          & filter (not . snd)
-          & fmap fst
-  pure (missingPaths === [])
+listedDirectoriesExist execute = do
+  error "TODO"

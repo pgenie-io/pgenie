@@ -193,6 +193,7 @@ library app-logic
     filepath,
     optparse-applicative,
     pgenie:base,
+    pgenie:fs-algebra,
     pgenie:parallelism-algebra,
     pgenie:staging-algebra,
     pgenie-gen,
@@ -242,6 +243,7 @@ library fs-algebra
 
   build-depends:
     QuickCheck,
+    algebraic-path,
     bytestring,
     pgenie:base,
 

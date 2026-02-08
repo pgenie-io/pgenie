@@ -3,7 +3,7 @@
 module AppLogic where
 
 import AlgebraicPath qualified as Path
-import Base.Prelude hiding (writeFile)
+import Base.Prelude hiding (readFile, writeFile)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
 import Data.Map.Strict qualified as Map
@@ -53,8 +53,6 @@ data Artifact = Artifact
     config :: Aeson.Value
   }
 
-data Url
-
 type Gen = Gen.Gen
 
 data QueriesLoaded
@@ -76,7 +74,7 @@ data QuerySqlLoaded = QuerySqlLoaded
   }
 
 data QuerySqlParsed = QuerySqlParsed
-  {
+  { sql :: Text
   }
 
 data QueryIntrospected = QueryIntrospected
@@ -116,9 +114,11 @@ type MigrationsLoaded = [MigrationLoaded]
 
 type MigrationsExecuted = [MigrationExecuted]
 
-data MigrationLoaded
+data MigrationLoaded = MigrationLoaded
+  { sql :: Text
+  }
 
-data MigrationExecuted
+data MigrationExecuted = MigrationExecuted
 
 -- * Effects
 
@@ -161,28 +161,38 @@ generate =
       generateCode projectFileLoaded genProject
     pure ()
 
-loadProjectFile :: m ProjectFileLoaded
-loadProjectFile = error "TODO"
+loadProjectFile :: (FsOps m) => m ProjectFileLoaded
+loadProjectFile = do
+  configContent <- readFile "project.pgn1.yaml"
+  -- TODO: Parse YAML config and extract project details
+  -- For now return placeholder
+  error "TODO: Parse project config file"
 
-loadQuerySql :: QueryListed -> m QuerySqlLoaded
-loadQuerySql = error "TODO"
+loadQuerySql :: (FsOps m) => QueryListed -> m QuerySqlLoaded
+loadQuerySql queryListed = do
+  sql <- readFile queryListed.filePath
+  pure QuerySqlLoaded {sql}
 
 -- | Attempt to load the query signature file.
 --
 -- Missing file is not an error. Parsing failure of an existing file however is.
-loadQuerySignature :: ProjectFileLoaded -> QueryListed -> m QuerySignatureLoaded
-loadQuerySignature = error "TODO"
+loadQuerySignature :: (FsOps m) => ProjectFileLoaded -> QueryListed -> m QuerySignatureLoaded
+loadQuerySignature _projectFileLoaded queryListed = do
+  case queryListed.signatureFilePath of
+    Nothing -> pure NotFoundQuerySignatureLoaded
+    Just sigPath -> do
+      sigContent <- readFile sigPath
+      -- TODO: Parse signature file content (JSON/YAML)
+      -- For now, return not found
+      pure NotFoundQuerySignatureLoaded
 
 listQueries :: (FsOps m) => ProjectFileLoaded -> m QueriesListed
 listQueries projectFileLoaded = do
   queryPaths <- listDir projectFileLoaded.queriesDir
   for queryPaths \queryPath -> do
-    pure
-      QueryListed
-        { name = error "TODO: parse query name from path",
-          filePath = queryPath,
-          signatureFilePath = Nothing -- TODO: implement signature file detection
-        }
+    -- TODO: Extract proper query name from path
+    -- For now use error as placeholder since this needs proper implementation
+    error "TODO: Implement proper query name extraction from path"
 
 loadGens :: (LoadsGen m, Stages m, Parallelism m) => [Artifact] -> m [(Text, Gen.Input -> Gen.Output)]
 loadGens artifacts =
@@ -222,13 +232,17 @@ generateCode projectFileLoaded project = do
   pure (CodeGenerated artifacts)
 
 -- | Create or replace the signature file for the query.
-generateSignature :: ProjectFileLoaded -> QueryIntrospected -> m SignatureGenerated
-generateSignature =
-  error "TODO"
+generateSignature :: (FsOps m) => ProjectFileLoaded -> QueryIntrospected -> m SignatureGenerated
+generateSignature _projectFileLoaded queryIntrospected = do
+  -- TODO: Implement proper signature generation
+  error "TODO: Implement generateSignature"
 
 -- TODO: implement in logic. This is not an integration layer concern.
-parseQuerySql :: QuerySqlLoaded -> m QuerySqlParsed
-parseQuerySql = error "TODO"
+parseQuerySql :: (Monad m) => QuerySqlLoaded -> m QuerySqlParsed
+parseQuerySql querySqlLoaded = do
+  -- For now, just pass through the SQL as-is
+  -- In a real implementation, this might validate/parse the SQL
+  pure QuerySqlParsed {sql = querySqlLoaded.sql}
 
 analyse :: (LoadsGen m, DbOps m, Parallelism m, FsOps m, Stages m) => ProjectFileLoaded -> m Gen.Input.Project
 analyse projectFileLoaded = do
@@ -272,20 +286,31 @@ analyse projectFileLoaded = do
         queries = queries
       }
 
-mergeQueryMetadata :: QueryIntrospected -> QuerySignatureLoaded -> m QueryIntrospected
-mergeQueryMetadata =
-  error "TODO"
+mergeQueryMetadata :: (Monad m) => QueryIntrospected -> QuerySignatureLoaded -> m QueryIntrospected
+mergeQueryMetadata queryIntrospected querySignatureLoaded = do
+  case querySignatureLoaded of
+    NotFoundQuerySignatureLoaded ->
+      -- No signature file, return introspected data as-is
+      pure queryIntrospected
+    QuerySignatureLoaded params resultRows -> do
+      -- TODO: Merge signature data with introspected data
+      -- For now, prefer introspected data
+      pure queryIntrospected
 
-listMigrations :: Path -> m [Path]
-listMigrations =
-  error "TODO"
+listMigrations :: (FsOps m) => Path -> m [Path]
+listMigrations migrationsDir = do
+  allPaths <- listDir migrationsDir
+  -- Filter for .sql files
+  let isSqlFile p = ".sql" `isSuffixOf` (to @String $ Path.toText p)
+  pure $ filter isSqlFile allPaths
 
-loadMigration :: Path -> m MigrationLoaded
-loadMigration =
-  error "TODO"
+loadMigration :: (FsOps m) => Path -> m MigrationLoaded
+loadMigration migrationPath = do
+  sql <- readFile migrationPath
+  pure MigrationLoaded {sql}
 
 executeMigrationsAtPath ::
-  (LoadsGen m, Parallelism m, DbOps m, Stages m) =>
+  (LoadsGen m, Parallelism m, DbOps m, FsOps m, Stages m) =>
   Path ->
   m MigrationsExecuted
 executeMigrationsAtPath path =

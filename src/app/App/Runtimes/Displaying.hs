@@ -3,8 +3,8 @@ module App.Runtimes.Displaying
   )
 where
 
-import App.Runtimes.EmittingEvents qualified as Runtimes.EmittingEvents
 import App.Services.Display qualified as Services.Display
+import AppLogic.Transformers.EmittingEvents qualified as Runtimes.EmittingEvents
 import Base.Prelude
 import Data.Text.IO qualified as Text
 import ParallelismAlgebra

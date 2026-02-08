@@ -1,4 +1,4 @@
-module App.Runtimes.EmittingEvents
+module AppLogic.Transformers.EmittingEvents
   ( run,
     EmittingEvents,
     Reports (..),

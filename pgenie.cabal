@@ -185,6 +185,7 @@ library app-logic
   exposed-modules:
     AppLogic
     AppLogic.QuerySignatures
+    AppLogic.Transformers.EmittingEvents
 
   build-depends:
     aeson,
@@ -268,7 +269,6 @@ library app
     App.Frameworks.CliUi
     App.Frameworks.Service
     App.Runtimes.Displaying
-    App.Runtimes.EmittingEvents
     App.Runtimes.Main
     App.Services.Analyser.Domain
     App.Services.DbAdmin

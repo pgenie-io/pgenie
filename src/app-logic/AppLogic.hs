@@ -122,48 +122,34 @@ data MigrationExecuted
 
 -- * Effects
 
-class DbOps m where
+class (MonadError Error m) => DbOps m where
   executeMigration :: MigrationLoaded -> m MigrationExecuted
   introspectQuery :: QuerySqlParsed -> m QueryIntrospected
 
--- | Domain operations.
-class
-  ( MonadError Error m,
-    Parallelism m,
-    Stages m,
-    DbOps m
-  ) =>
-  DomainOps m
-  where
-  loadProjectFile :: m ProjectFileLoaded
-  listQueries :: ProjectFileLoaded -> m QueriesListed
-  loadQuerySql :: QueryListed -> m QuerySqlLoaded
-
-  listMigrations :: Path -> m [Path]
-  loadMigration :: Path -> m MigrationLoaded
-
-  -- | Attempt to load the query signature file.
-  --
-  -- Missing file is not an error. Parsing failure of an existing file however is.
-  loadQuerySignature :: ProjectFileLoaded -> QueryListed -> m QuerySignatureLoaded
-
-  -- TODO: implement in logic. This is not an integration layer concern.
-  parseQuerySql :: QuerySqlLoaded -> m QuerySqlParsed
-
-  -- | Create or replace the signature file for the query.
-  generateSignature :: ProjectFileLoaded -> QueryIntrospected -> m SignatureGenerated
-
+class (MonadError Error m) => FsOps m where
+  readFile :: Path -> m Text
   writeFile :: Path -> Text -> m ()
+  listDir :: Path -> m [Path]
 
+-- | Domain operations.
+class (MonadError Error m) => LoadsGen m where
   loadGen :: Gen.Location -> m Gen
 
-check :: (DomainOps m) => m ()
+type AllOps m =
+  ( DbOps m,
+    FsOps m,
+    LoadsGen m,
+    Parallelism m,
+    Stages m
+  )
+
+check :: (LoadsGen m, DbOps m, Parallelism m, FsOps m, Stages m) => m ()
 check = do
   projectFileLoaded <- loadProjectFile
   analyse projectFileLoaded
   pure ()
 
-generate :: (DomainOps m) => m ()
+generate :: (LoadsGen m, DbOps m, Parallelism m, FsOps m, Stages m) => m ()
 generate =
   stage "Generate" 3 do
     projectFileLoaded <-
@@ -175,7 +161,30 @@ generate =
       generateCode projectFileLoaded genProject
     pure ()
 
-loadGens :: (DomainOps m) => [Artifact] -> m [(Text, Gen.Input -> Gen.Output)]
+loadProjectFile :: m ProjectFileLoaded
+loadProjectFile = error "TODO"
+
+loadQuerySql :: QueryListed -> m QuerySqlLoaded
+loadQuerySql = error "TODO"
+
+-- | Attempt to load the query signature file.
+--
+-- Missing file is not an error. Parsing failure of an existing file however is.
+loadQuerySignature :: ProjectFileLoaded -> QueryListed -> m QuerySignatureLoaded
+loadQuerySignature = error "TODO"
+
+listQueries :: (FsOps m) => ProjectFileLoaded -> m QueriesListed
+listQueries projectFileLoaded = do
+  queryPaths <- listDir projectFileLoaded.queriesDir
+  for queryPaths \queryPath -> do
+    pure
+      QueryListed
+        { name = error "TODO: parse query name from path",
+          filePath = queryPath,
+          signatureFilePath = Nothing -- TODO: implement signature file detection
+        }
+
+loadGens :: (LoadsGen m, Stages m, Parallelism m) => [Artifact] -> m [(Text, Gen.Input -> Gen.Output)]
 loadGens artifacts =
   stage "Loading generators" (length artifacts) do
     runParallelly do
@@ -189,7 +198,7 @@ loadGens artifacts =
               Right compileFn ->
                 pure (name, compileFn)
 
-generateCode :: (DomainOps m) => ProjectFileLoaded -> Gen.Input.Project -> m CodeGenerated
+generateCode :: (LoadsGen m, Stages m, Parallelism m, FsOps m) => ProjectFileLoaded -> Gen.Input.Project -> m CodeGenerated
 generateCode projectFileLoaded project = do
   loadedGens <- loadGens projectFileLoaded.artifacts
 
@@ -212,14 +221,23 @@ generateCode projectFileLoaded project = do
 
   pure (CodeGenerated artifacts)
 
-analyse :: (DomainOps m) => ProjectFileLoaded -> m Gen.Input.Project
+-- | Create or replace the signature file for the query.
+generateSignature :: ProjectFileLoaded -> QueryIntrospected -> m SignatureGenerated
+generateSignature =
+  error "TODO"
+
+-- TODO: implement in logic. This is not an integration layer concern.
+parseQuerySql :: QuerySqlLoaded -> m QuerySqlParsed
+parseQuerySql = error "TODO"
+
+analyse :: (LoadsGen m, DbOps m, Parallelism m, FsOps m, Stages m) => ProjectFileLoaded -> m Gen.Input.Project
 analyse projectFileLoaded = do
   executeMigrationsAtPath projectFileLoaded.migrationsDir
 
   queriesListed <-
     listQueries projectFileLoaded
 
-  queriesMerged <-
+  queriesIntrospected <-
     runParallelly do
       for queriesListed \queryListed ->
         parallelly do
@@ -236,10 +254,10 @@ analyse projectFileLoaded = do
           mergeQueryMetadata queryIntrospected querySignatureLoaded
 
   let queries =
-        queriesMerged & map (.query)
+        queriesIntrospected & map (.query)
 
   let customTypes =
-        queriesMerged
+        queriesIntrospected
           & foldMap (.mentionedCustomTypes)
           & fmap (\x -> ((x.pgSchema, x.pgName), x))
           & Map.fromList
@@ -258,8 +276,16 @@ mergeQueryMetadata :: QueryIntrospected -> QuerySignatureLoaded -> m QueryIntros
 mergeQueryMetadata =
   error "TODO"
 
+listMigrations :: Path -> m [Path]
+listMigrations =
+  error "TODO"
+
+loadMigration :: Path -> m MigrationLoaded
+loadMigration =
+  error "TODO"
+
 executeMigrationsAtPath ::
-  (DomainOps m) =>
+  (LoadsGen m, Parallelism m, DbOps m, Stages m) =>
   Path ->
   m MigrationsExecuted
 executeMigrationsAtPath path =
@@ -282,7 +308,7 @@ executeMigrationsAtPath path =
         stage (Path.toText migrationListed) 0 do
           executeMigration migrationLoaded
 
-stagedParFor :: (DomainOps m) => Text -> (a -> Text) -> [a] -> (a -> m b) -> m [b]
+stagedParFor :: (LoadsGen m, Parallelism m, Stages m) => Text -> (a -> Text) -> [a] -> (a -> m b) -> m [b]
 stagedParFor stageName nameFn items action =
   stage stageName (length items) do
     runParallelly do

@@ -26,6 +26,8 @@ newtype Main a = Main (Services.Main.Context -> IO (Either AppLogic.Error a))
 
 instance AppLogic.DbOps Main
 
-instance AppLogic.DomainOps Main
+instance AppLogic.FsOps Main
+
+instance AppLogic.LoadsGen Main
 
 instance StagingAlgebra.Stages Main

@@ -31,3 +31,7 @@ instance AppLogic.FsOps Main
 instance AppLogic.LoadsGen Main
 
 instance StagingAlgebra.Stages Main
+
+instance AppLogic.Reports Main where
+  enterStage _ = pure ()
+  exitStage _ _ = pure ()

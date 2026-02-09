@@ -120,6 +120,46 @@ data MigrationLoaded = MigrationLoaded
 
 data MigrationExecuted = MigrationExecuted
 
+-- * Transformers
+
+-- ** EmittingEvents
+
+runEmittingEvents :: EmittingEvents m a -> m a
+runEmittingEvents (EmittingEvents runInner) = runInner 1.0
+
+newtype EmittingEvents m a
+  = EmittingEvents (Double -> m a)
+  deriving
+    (Functor, Applicative, Monad, Parallelism, FsOps, DbOps, LoadsGen)
+    via (ReaderT Double m)
+
+instance (MonadError Error m) => MonadError Error (EmittingEvents m) where
+  throwError e = lift (throwError e)
+  catchError (EmittingEvents f) handler =
+    EmittingEvents \p -> catchError (f p) (\e -> let EmittingEvents h = handler e in h p)
+
+instance (Reports m) => Stages (EmittingEvents m) where
+  stage name substagesCount =
+    if substagesCount > 0
+      then \(EmittingEvents runInner) -> EmittingEvents \progressPerStage -> do
+        enterStage name
+        let progressPerSubstage = progressPerStage / fromIntegral substagesCount
+        result <- runInner progressPerSubstage
+        exitStage name 0
+        pure result
+      else \(EmittingEvents runInner) -> EmittingEvents \progressPerStage -> do
+        enterStage name
+        result <- runInner 0
+        exitStage name progressPerStage
+        pure result
+
+instance MonadTrans EmittingEvents where
+  lift ma = EmittingEvents \_ -> ma
+
+class (Monad m) => Reports m where
+  enterStage :: Text -> m ()
+  exitStage :: Text -> Double -> m ()
+
 -- * Effects
 
 class (MonadError Error m) => DbOps m where
@@ -140,17 +180,30 @@ type AllOps m =
     FsOps m,
     LoadsGen m,
     Parallelism m,
-    Stages m
+    Stages m,
+    Reports m
   )
 
-check :: (LoadsGen m, DbOps m, Parallelism m, FsOps m, Stages m) => m ()
-check = do
+instance (DbOps m) => DbOps (ReaderT r m) where
+  executeMigration migrationLoaded = lift (executeMigration migrationLoaded)
+  introspectQuery querySqlParsed = lift (introspectQuery querySqlParsed)
+
+instance (FsOps m) => FsOps (ReaderT r m) where
+  readFile path = lift (readFile path)
+  writeFile path content = lift (writeFile path content)
+  listDir path = lift (listDir path)
+
+instance (LoadsGen m) => LoadsGen (ReaderT r m) where
+  loadGen genUrl = lift (loadGen genUrl)
+
+check :: (LoadsGen m, DbOps m, Parallelism m, FsOps m, Reports m) => m ()
+check = runEmittingEvents do
   projectFileLoaded <- loadProjectFile
   analyse projectFileLoaded
   pure ()
 
-generate :: (LoadsGen m, DbOps m, Parallelism m, FsOps m, Stages m) => m ()
-generate =
+generate :: (LoadsGen m, DbOps m, Parallelism m, FsOps m, Reports m) => m ()
+generate = runEmittingEvents do
   stage "Generate" 3 do
     projectFileLoaded <-
       stage "Load Project File" 1 do

@@ -267,7 +267,6 @@ library app
     App.Commands.Sign
     App.Frameworks.CliUi
     App.Frameworks.Service
-    App.Runtimes.Displaying
     App.Runtimes.Main
     App.Services.Analyser.Domain
     App.Services.DbAdmin
@@ -276,7 +275,6 @@ library app
     App.Services.DbAdmin.Procedures
     App.Services.DbAdmin.Procedures.CreateTempDb
     App.Services.DbAdmin.Procedures.DropTempDb
-    App.Services.Display
     App.Services.HasqlPool
     App.Services.HasqlPool.Context
     App.Services.HasqlPool.Procedures
@@ -291,6 +289,7 @@ library app
 
   build-depends:
     attoparsec,
+    fx,
     hasql,
     hasql-pool,
     optparse-applicative,
@@ -312,3 +311,18 @@ library query-format-algebra
   other-modules:
   build-depends:
     pgenie:base
+
+library infra
+  import: base
+  hs-source-dirs: src/infra
+  exposed-modules:
+    Infra.Devices.Display
+
+  build-depends:
+    fx,
+    pgenie:app-logic,
+    pgenie:base,
+    pgenie:parallelism-algebra,
+    pgenie:staging-algebra,
+    text,
+    text-builder-dev,

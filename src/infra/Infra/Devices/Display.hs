@@ -5,6 +5,7 @@ import Base.Prelude
 import Data.Text.IO qualified as Text
 import Fx
 import StagingAlgebra qualified
+import TextBuilder qualified
 import TextBuilderDev qualified
 
 data Device = Device
@@ -58,7 +59,11 @@ instance StagingAlgebra.Stages (Fx Device Error) where
         $ from @TextBuilder
         $ mconcat
         $ [ "Progress: ",
-            TextBuilderDev.doubleFixedPointPercent 0 newProgress
+            TextBuilderDev.doubleFixedPointPercent 0 newProgress,
+            "%, at stage: ",
+            to name,
+            ", location: ",
+            TextBuilder.intercalateMap " > " to (reverse dev.location)
           ]
       let newMemory = memory {progress = newProgress}
       putMVar dev.memoryVar newMemory

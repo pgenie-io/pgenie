@@ -326,4 +326,5 @@ library infra
     pgenie:parallelism-algebra,
     pgenie:staging-algebra,
     text,
+    text-builder,
     text-builder-dev,

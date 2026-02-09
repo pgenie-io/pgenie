@@ -317,6 +317,7 @@ library infra
   hs-source-dirs: src/infra
   exposed-modules:
     Infra.Devices.Display
+    Infra.Devices.Main
 
   build-depends:
     fx,

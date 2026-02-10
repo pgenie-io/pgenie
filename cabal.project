@@ -13,7 +13,7 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/nikita-volkov/fx
-  tag: 4a4b23407585c528489ad2a07d5423aff6090123
+  tag: 5d52d083af1139e5fed9b783d667c8ed2167fae3
 
 source-repository-package
   type: git

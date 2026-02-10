@@ -339,6 +339,7 @@ library sql-template
 
   other-modules:
   build-depends:
+    QuickCheck,
     containers,
     megaparsec,
     pgenie:base,

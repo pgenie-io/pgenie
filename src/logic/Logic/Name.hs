@@ -1,5 +1,6 @@
 module Logic.Name
   ( Name,
+    toGenName,
     toPartsVector,
     toPartsNonEmpty,
     toText,
@@ -19,6 +20,7 @@ import Data.Vector qualified as Vector
 import Logic.Name.Megaparsec qualified as Megaparsec
 import Test.QuickCheck qualified as Qc
 import TextBuilder qualified
+import PGenieGen.Models.Input qualified as Gen
 
 -- |
 -- Normalized name. Sequence of lowercase words separated by hyphens.
@@ -113,6 +115,10 @@ toTextBuilderInSnakeCase = TextBuilder.intercalateMap "_" to . toPartsVector
 
 toTextBuilderInScreamCase :: Name -> TextBuilder
 toTextBuilderInScreamCase = TextBuilder.intercalateMap "_" (to . Text.toUpper) . toPartsVector
+
+toGenName :: Name -> Gen.Name
+toGenName name =
+  error "TODO"
 
 tryFromText :: Text -> Either Text Name
 tryFromText =

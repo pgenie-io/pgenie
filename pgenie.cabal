@@ -185,14 +185,11 @@ library app-logic
     aeson,
     algebraic-path,
     containers,
-    filepath,
-    optparse-applicative,
     pgenie:base,
     pgenie:fs-algebra,
     pgenie:parallelism-algebra,
     pgenie:staging-algebra,
     pgenie-gen,
-    syntactic-class,
 
 library staging-algebra
   import: base
@@ -286,7 +283,6 @@ library app
 
   build-depends:
     attoparsec,
-    fx,
     hasql,
     hasql-pool,
     optparse-applicative,
@@ -310,7 +306,6 @@ library infra
     fx,
     pgenie:app-logic,
     pgenie:base,
-    pgenie:parallelism-algebra,
     pgenie:staging-algebra,
     text,
     text-builder,

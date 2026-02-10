@@ -18,9 +18,9 @@ import Base.Prelude
 import Data.Text qualified as Text
 import Data.Vector qualified as Vector
 import Logic.Name.Megaparsec qualified as Megaparsec
+import PGenieGen.Model.Input qualified as Gen
 import Test.QuickCheck qualified as Qc
 import TextBuilder qualified
-import PGenieGen.Models.Input qualified as Gen
 
 -- |
 -- Normalized name. Sequence of lowercase words separated by hyphens.
@@ -118,7 +118,51 @@ toTextBuilderInScreamCase = TextBuilder.intercalateMap "_" (to . Text.toUpper) .
 
 toGenName :: Name -> Gen.Name
 toGenName name =
-  error "TODO"
+  case toPartsNonEmpty name of
+    word :| rest ->
+      Gen.Name
+        { head = wordToGenWord word,
+          tail = map wordOrNumberFromPart rest
+        }
+  where
+    wordToGenWord :: Text -> Gen.Word
+    wordToGenWord = fromMaybe (error "Empty word") . nonEmpty . fmap textCharToWordChar . Text.unpack
+
+    wordOrNumberFromPart :: Text -> Gen.WordOrNumber
+    wordOrNumberFromPart text =
+      case reads (Text.unpack text) of
+        [(n, "")] -> Gen.WordOrNumberNumber n
+        _ -> Gen.WordOrNumberWord (wordToGenWord text)
+
+    textCharToWordChar :: Char -> Gen.WordChar
+    textCharToWordChar = \case
+      'a' -> Gen.WordCharA
+      'b' -> Gen.WordCharB
+      'c' -> Gen.WordCharC
+      'd' -> Gen.WordCharD
+      'e' -> Gen.WordCharE
+      'f' -> Gen.WordCharF
+      'g' -> Gen.WordCharG
+      'h' -> Gen.WordCharH
+      'i' -> Gen.WordCharI
+      'j' -> Gen.WordCharJ
+      'k' -> Gen.WordCharK
+      'l' -> Gen.WordCharL
+      'm' -> Gen.WordCharM
+      'n' -> Gen.WordCharN
+      'o' -> Gen.WordCharO
+      'p' -> Gen.WordCharP
+      'q' -> Gen.WordCharQ
+      'r' -> Gen.WordCharR
+      's' -> Gen.WordCharS
+      't' -> Gen.WordCharT
+      'u' -> Gen.WordCharU
+      'v' -> Gen.WordCharV
+      'w' -> Gen.WordCharW
+      'x' -> Gen.WordCharX
+      'y' -> Gen.WordCharY
+      'z' -> Gen.WordCharZ
+      c -> error ("Invalid character in name: " <> show c)
 
 tryFromText :: Text -> Either Text Name
 tryFromText =

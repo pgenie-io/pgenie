@@ -123,8 +123,37 @@ render keepWhitespace renderParam (SqlTemplate segments) =
           newlineHanger <> "\"" <> from text <> "\"" <> next indices count ""
 
 toGenQueryFragments :: SqlTemplate -> [Gen.QueryFragment]
-toGenQueryFragments (SqlTemplate _segments) =
-  error "TODO"
+toGenQueryFragments (SqlTemplate segments) =
+  concat $ evalState (traverse segmentToFragment segments) (Map.empty, 0)
+  where
+    segmentToFragment segment = do
+      (indices, count) <- get
+      case segment of
+        NonWhitespace text -> do
+          return [Gen.QueryFragmentSql text]
+        Param name -> do
+          case Map.lookup name indices of
+            Just index -> do
+              return
+                [ Gen.QueryFragmentVar
+                    ( Gen.MkQueryFragmentVar
+                        { name = Name.toGenName name,
+                          rawName = Name.toText name,
+                          paramIndex = fromIntegral index
+                        }
+                    )
+                ]
+            Nothing -> do
+              put (Map.insert name count indices, succ count)
+              segmentToFragment (Param name)
+        Newline -> do
+          return [Gen.QueryFragmentSql "\n"]
+        LineWhitespace text -> do
+          return [Gen.QueryFragmentSql text]
+        SingleQuotedLiteral text -> do
+          return [Gen.QueryFragmentSql ("'" <> text <> "'")]
+        DoubleQuotedLiteral text -> do
+          return [Gen.QueryFragmentSql ("\"" <> text <> "\"")]
 
 megaparsecOf :: Megaparsec.Parsec Void Text SqlTemplate
 megaparsecOf = do

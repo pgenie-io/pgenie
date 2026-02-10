@@ -17,7 +17,8 @@ data Error
 
 instance StagingAlgebra.Stages (Fx Device Error) where
   stage name substagesCount =
-    interlay
+    subtransform
       (.display)
+      (\display device -> device {display})
       DisplayError
       (StagingAlgebra.stage name substagesCount)

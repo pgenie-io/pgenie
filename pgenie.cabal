@@ -223,6 +223,7 @@ library parallelism-algebra
     ParallelismAlgebra.Algebra
     ParallelismAlgebra.Runtimes
     ParallelismAlgebra.Runtimes.ExceptT
+    ParallelismAlgebra.Runtimes.Fx
     ParallelismAlgebra.Runtimes.IO
     ParallelismAlgebra.Runtimes.MaybeT
     ParallelismAlgebra.Runtimes.ReaderT
@@ -231,7 +232,8 @@ library parallelism-algebra
     autoexporter:autoexporter
 
   build-depends:
-    pgenie:base
+    fx,
+    pgenie:base,
 
 library fs-algebra
   import: base

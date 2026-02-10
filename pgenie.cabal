@@ -304,16 +304,6 @@ library app
     uuid,
     vector,
 
-library query-format-algebra
-  import: base
-  hs-source-dirs: src/query-format-algebra
-  exposed-modules:
-    QueryFormatAlgebra
-
-  other-modules:
-  build-depends:
-    pgenie:base
-
 library infra
   import: base
   hs-source-dirs: src/infra

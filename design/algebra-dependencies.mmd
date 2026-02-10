@@ -19,10 +19,10 @@ loadQuerySql --> listQueries
 loadQuerySignature --> loadProjectFile
 loadQuerySignature --> listQueries
 parseQuerySql --> loadQuerySql
-introspectQuery --> createTemporaryDb
-introspectQuery --> parseQuerySql
+analyseQuery --> createTemporaryDb
+analyseQuery --> parseQuerySql
 mergeQueryMetadata --> loadQuerySignature
-mergeQueryMetadata --> introspectQuery
+mergeQueryMetadata --> analyseQuery
 generateCode --> loadProjectFile
 generateCode --> mergeQueryMetadata
 generateSignature --> loadProjectFile

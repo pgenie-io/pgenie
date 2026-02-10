@@ -57,7 +57,7 @@ type Gen = Gen.Gen
 
 data QueriesLoaded
 
-type QueriesIntrospected = [QueryIntrospected]
+type QueriesIntrospected = [QueryAnalysed]
 
 data QueriesMetadataLoaded
 
@@ -73,11 +73,11 @@ data QuerySqlLoaded = QuerySqlLoaded
   { sql :: Text
   }
 
-data QuerySqlParsed = QuerySqlParsed
+data QueryTemplate = QueryTemplate
   { sql :: Text
   }
 
-data QueryIntrospected = QueryIntrospected
+data QueryAnalysed = QueryAnalysed
   { query :: Gen.Input.Query,
     mentionedCustomTypes :: [Gen.Input.CustomType]
   }
@@ -164,7 +164,7 @@ class (Monad m) => Reports m where
 
 class (MonadError Error m) => DbOps m where
   executeMigration :: MigrationLoaded -> m MigrationExecuted
-  introspectQuery :: QuerySqlParsed -> m QueryIntrospected
+  analyseQuery :: QueryTemplate -> m QueryAnalysed
 
 class (MonadError Error m) => FsOps m where
   readFile :: Path -> m Text
@@ -186,7 +186,7 @@ type AllOps m =
 
 instance (DbOps m) => DbOps (ReaderT r m) where
   executeMigration migrationLoaded = lift (executeMigration migrationLoaded)
-  introspectQuery querySqlParsed = lift (introspectQuery querySqlParsed)
+  analyseQuery queryTemplate = lift (analyseQuery queryTemplate)
 
 instance (FsOps m) => FsOps (ReaderT r m) where
   readFile path = lift (readFile path)
@@ -285,17 +285,17 @@ generateCode projectFileLoaded project = do
   pure (CodeGenerated artifacts)
 
 -- | Create or replace the signature file for the query.
-generateSignature :: (FsOps m) => ProjectFileLoaded -> QueryIntrospected -> m SignatureGenerated
+generateSignature :: (FsOps m) => ProjectFileLoaded -> QueryAnalysed -> m SignatureGenerated
 generateSignature _projectFileLoaded queryIntrospected = do
   -- TODO: Implement proper signature generation
   error "TODO: Implement generateSignature"
 
 -- TODO: implement in logic. This is not an integration layer concern.
-parseQuerySql :: (Monad m) => QuerySqlLoaded -> m QuerySqlParsed
+parseQuerySql :: (Monad m) => QuerySqlLoaded -> m QueryTemplate
 parseQuerySql querySqlLoaded = do
   -- For now, just pass through the SQL as-is
   -- In a real implementation, this might validate/parse the SQL
-  pure QuerySqlParsed {sql = querySqlLoaded.sql}
+  pure QueryTemplate {sql = querySqlLoaded.sql}
 
 analyse :: (LoadsGen m, DbOps m, Parallelism m, FsOps m, Stages m) => ProjectFileLoaded -> m Gen.Input.Project
 analyse projectFileLoaded = do
@@ -313,8 +313,8 @@ analyse projectFileLoaded = do
               (,)
                 <$> parallelly do
                   querySqlLoaded <- loadQuerySql queryListed
-                  querySqlParsed <- parseQuerySql querySqlLoaded
-                  introspectQuery querySqlParsed
+                  queryTemplate <- parseQuerySql querySqlLoaded
+                  analyseQuery queryTemplate
                 <*> parallelly do
                   loadQuerySignature projectFileLoaded queryListed
 
@@ -339,7 +339,7 @@ analyse projectFileLoaded = do
         queries = queries
       }
 
-mergeQueryMetadata :: (Monad m) => QueryIntrospected -> QuerySignatureLoaded -> m QueryIntrospected
+mergeQueryMetadata :: (Monad m) => QueryAnalysed -> QuerySignatureLoaded -> m QueryAnalysed
 mergeQueryMetadata queryIntrospected querySignatureLoaded = do
   case querySignatureLoaded of
     NotFoundQuerySignatureLoaded ->

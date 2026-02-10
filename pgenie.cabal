@@ -330,3 +330,15 @@ library infra
     text,
     text-builder,
     text-builder-dev,
+
+library sql-template
+  import: base
+  hs-source-dirs: src/sql-template
+  exposed-modules:
+    SqlTemplate
+
+  other-modules:
+  build-depends:
+    containers,
+    megaparsec,
+    pgenie:base,

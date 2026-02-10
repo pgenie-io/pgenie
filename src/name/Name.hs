@@ -1,4 +1,4 @@
-module Base.Name
+module Name
   ( Name,
     toPartsVector,
     toPartsNonEmpty,
@@ -13,10 +13,10 @@ module Base.Name
   )
 where
 
-import Base.Name.Megaparsec qualified as Megaparsec
 import Base.Prelude
 import Data.Text qualified as Text
 import Data.Vector qualified as Vector
+import Name.Megaparsec qualified as Megaparsec
 import Test.QuickCheck qualified as Qc
 import TextBuilder qualified
 

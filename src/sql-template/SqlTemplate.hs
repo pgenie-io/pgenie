@@ -5,10 +5,10 @@ module SqlTemplate
   )
 where
 
-import Base.Name qualified as Name
 import Base.Prelude
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
+import Name qualified as Name
 import Test.QuickCheck qualified as Qc
 import Text.Megaparsec qualified as Megaparsec
 import Text.Megaparsec.Char qualified as Megaparsec

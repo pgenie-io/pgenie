@@ -8,6 +8,7 @@ import Data.Aeson qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
 import Data.Map.Strict qualified as Map
 import FsAlgebra.Algebra qualified as FsAlgebra
+import Logic.SqlTemplate qualified as SqlTemplate
 import PGenieGen qualified as Gen
 import PGenieGen.Model.Input qualified as Gen.Input
 import PGenieGen.Model.Output qualified as Gen.Output
@@ -70,10 +71,6 @@ data QueryListed = QueryListed
   }
 
 data QuerySqlLoaded = QuerySqlLoaded
-  { sql :: Text
-  }
-
-data QueryTemplate = QueryTemplate
   { sql :: Text
   }
 
@@ -164,7 +161,7 @@ class (Monad m) => Reports m where
 
 class (MonadError Error m) => DbOps m where
   executeMigration :: MigrationLoaded -> m MigrationExecuted
-  analyseQuery :: QueryTemplate -> m QueryAnalysed
+  analyseQuery :: SqlTemplate.SqlTemplate -> m QueryAnalysed
 
 class (MonadError Error m) => FsOps m where
   readFile :: Path -> m Text
@@ -291,37 +288,46 @@ generateSignature _projectFileLoaded queryIntrospected = do
   error "TODO: Implement generateSignature"
 
 -- TODO: implement in logic. This is not an integration layer concern.
-parseQuerySql :: (Monad m) => QuerySqlLoaded -> m QueryTemplate
+parseQuerySql :: (Monad m) => QuerySqlLoaded -> m SqlTemplate.SqlTemplate
 parseQuerySql querySqlLoaded = do
-  -- For now, just pass through the SQL as-is
-  -- In a real implementation, this might validate/parse the SQL
-  pure QueryTemplate {sql = querySqlLoaded.sql}
+  case SqlTemplate.tryFromText querySqlLoaded.sql of
+    Left err -> error "TODO"
+    Right res -> pure res
 
 analyse :: (LoadsGen m, DbOps m, Parallelism m, FsOps m, Stages m) => ProjectFileLoaded -> m Gen.Input.Project
 analyse projectFileLoaded = do
-  executeMigrationsAtPath projectFileLoaded.migrationsDir
+  stage "Executing migrations" 1 do
+    executeMigrationsAtPath projectFileLoaded.migrationsDir
 
   queriesListed <-
-    listQueries projectFileLoaded
+    stage "Listing queries" 1 do
+      listQueries projectFileLoaded
 
   queriesIntrospected <-
-    runParallelly do
-      for queriesListed \queryListed ->
-        parallelly do
-          (queryIntrospected, querySignatureLoaded) <-
-            runParallelly do
-              (,)
-                <$> parallelly do
-                  querySqlLoaded <- loadQuerySql queryListed
-                  queryTemplate <- parseQuerySql querySqlLoaded
-                  analyseQuery queryTemplate
-                <*> parallelly do
-                  loadQuerySignature projectFileLoaded queryListed
+    stage "Introspecting queries" (length queriesListed) do
+      runParallelly do
+        for queriesListed \queryListed ->
+          parallelly do
+            stage "" 3 do
+              (queryIntrospected, querySignatureLoaded) <-
+                runParallelly do
+                  (,)
+                    <$> parallelly do
+                      querySqlLoaded <-
+                        stage "loading" 1 do
+                          loadQuerySql queryListed
+                      queryTemplate <- parseQuerySql querySqlLoaded
+                      stage "analysing" 1 do
+                        analyseQuery queryTemplate
+                    <*> parallelly do
+                      stage "signature-loading" 1 do
+                        loadQuerySignature projectFileLoaded queryListed
 
-          mergeQueryMetadata queryIntrospected querySignatureLoaded
+              mergeQueryMetadata queryIntrospected querySignatureLoaded
 
   let queries =
-        queriesIntrospected & map (.query)
+        queriesIntrospected
+          & map (.query)
 
   let customTypes =
         queriesIntrospected

@@ -3,6 +3,7 @@ module Logic.SqlTemplate
     toGenQueryFragments,
     render,
     megaparsecOf,
+    tryFromText,
   )
 where
 
@@ -233,3 +234,9 @@ normalize (SqlTemplate segments) =
           Param name : LineWhitespace " " : NonWhitespace text : rest
         _ ->
           segment : acc
+
+tryFromText :: Text -> Either Text SqlTemplate
+tryFromText text =
+  case Megaparsec.parse megaparsecOf "" text of
+    Left err -> Left (Text.pack (Megaparsec.errorBundlePretty err))
+    Right template -> Right template

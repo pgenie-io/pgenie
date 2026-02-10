@@ -1,5 +1,6 @@
 module SqlTemplate
   ( SqlTemplate,
+    toGenQueryFragments,
     render,
     megaparsecOf,
   )
@@ -9,6 +10,7 @@ import Base.Prelude
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
 import Name qualified as Name
+import PGenieGen.Model.Input qualified as Gen
 import Test.QuickCheck qualified as Qc
 import Text.Megaparsec qualified as Megaparsec
 import Text.Megaparsec.Char qualified as Megaparsec
@@ -119,6 +121,10 @@ render keepWhitespace renderParam (SqlTemplate segments) =
           newlineHanger <> "'" <> from text <> "'" <> next indices count ""
         DoubleQuotedLiteral text ->
           newlineHanger <> "\"" <> from text <> "\"" <> next indices count ""
+
+toGenQueryFragments :: SqlTemplate -> [Gen.QueryFragment]
+toGenQueryFragments (SqlTemplate _segments) =
+  error "TODO"
 
 megaparsecOf :: Megaparsec.Parsec Void Text SqlTemplate
 megaparsecOf = do

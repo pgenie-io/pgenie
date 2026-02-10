@@ -341,6 +341,7 @@ library sql-template
     megaparsec,
     pgenie:base,
     pgenie:name,
+    pgenie-gen,
     text,
 
 test-suite sql-template-test

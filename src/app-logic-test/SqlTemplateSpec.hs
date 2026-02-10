@@ -1,8 +1,8 @@
 module SqlTemplateSpec (spec) where
 
+import AppLogic.SqlTemplate
 import Base.Prelude
 import Data.Text qualified as Text
-import SqlTemplate
 import Test.Hspec
 import Test.Hspec.QuickCheck
 import Test.QuickCheck

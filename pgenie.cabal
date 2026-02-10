@@ -179,17 +179,25 @@ library app-logic
   hs-source-dirs: src/app-logic/
   exposed-modules:
     AppLogic
+    AppLogic.Name
+    AppLogic.Name.Megaparsec
     AppLogic.QuerySignatures
+    AppLogic.SqlTemplate
 
   build-depends:
+    QuickCheck,
     aeson,
     algebraic-path,
     containers,
+    megaparsec,
     pgenie:base,
     pgenie:fs-algebra,
     pgenie:parallelism-algebra,
     pgenie:staging-algebra,
     pgenie-gen,
+    text,
+    text-builder,
+    vector,
 
 library staging-algebra
   import: base
@@ -239,16 +247,6 @@ library fs-algebra
     QuickCheck,
     algebraic-path,
     bytestring,
-    pgenie:base,
-
-library project-file
-  import: base
-  hs-source-dirs: src/project-file
-  exposed-modules:
-    ProjectFile
-
-  build-depends:
-    aeson,
     pgenie:base,
 
 library app
@@ -311,43 +309,10 @@ library infra
     text-builder,
     text-builder-dev,
 
-library name
-  import: base
-  hs-source-dirs: src/name
-  exposed-modules:
-    Name
-
-  other-modules:
-    Name.Megaparsec
-
-  build-depends:
-    QuickCheck,
-    megaparsec,
-    pgenie:base,
-    text,
-    text-builder,
-    vector,
-
-library sql-template
-  import: base
-  hs-source-dirs: src/sql-template
-  exposed-modules:
-    SqlTemplate
-
-  other-modules:
-  build-depends:
-    QuickCheck,
-    containers,
-    megaparsec,
-    pgenie:base,
-    pgenie:name,
-    pgenie-gen,
-    text,
-
-test-suite sql-template-test
+test-suite app-logic-test
   import: test
   type: exitcode-stdio-1.0
-  hs-source-dirs: src/sql-template-test
+  hs-source-dirs: src/app-logic-test
   main-is: Main.hs
   other-modules:
     SqlTemplateSpec
@@ -359,6 +324,6 @@ test-suite sql-template-test
     QuickCheck,
     hspec,
     megaparsec,
+    pgenie:app-logic,
     pgenie:base,
-    pgenie:sql-template,
     text,

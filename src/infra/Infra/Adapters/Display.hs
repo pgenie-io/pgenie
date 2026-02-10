@@ -1,4 +1,4 @@
-module Infra.Devices.Display where
+module Infra.Adapters.Display where
 
 import AppLogic qualified
 import Base.Prelude

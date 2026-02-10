@@ -318,8 +318,8 @@ library infra
   import: base
   hs-source-dirs: src/infra
   exposed-modules:
-    Infra.Devices.Display
-    Infra.Devices.Main
+    Infra.Adapters.Display
+    Infra.Adapters.Main
 
   build-depends:
     fx,

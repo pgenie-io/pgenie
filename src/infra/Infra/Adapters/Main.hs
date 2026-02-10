@@ -1,10 +1,10 @@
-module Infra.Devices.Main where
+module Infra.Adapters.Main where
 
 import AppLogic qualified
 import Base.Prelude
 import Data.Text.IO qualified as Text
 import Fx
-import Infra.Devices.Display qualified as Display
+import Infra.Adapters.Display qualified as Display
 import StagingAlgebra qualified
 import TextBuilderDev qualified
 

@@ -343,3 +343,23 @@ library sql-template
     containers,
     megaparsec,
     pgenie:base,
+    text,
+
+test-suite sql-template-test
+  import: test
+  type: exitcode-stdio-1.0
+  hs-source-dirs: src/sql-template-test
+  main-is: Main.hs
+  other-modules:
+    SqlTemplateSpec
+
+  build-tool-depends:
+    hspec-discover:hspec-discover
+
+  build-depends:
+    QuickCheck,
+    hspec,
+    megaparsec,
+    pgenie:base,
+    pgenie:sql-template,
+    text,

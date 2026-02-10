@@ -50,10 +50,17 @@ instance Arbitrary Name where
     case Vector.uncons parts of
       Nothing -> []
       Just (firstPart, restParts) -> do
-        shrunkFirstPart <- Qc.shrink firstPart
-        guard (not (Text.null shrunkFirstPart))
-        shrunkRestParts <- Qc.shrink (Vector.toList restParts)
+        shrunkFirstPart <- shrinkPart firstPart
+        shrunkRestParts <- Qc.shrinkList shrinkPart (Vector.toList restParts)
         return (Name (Vector.fromList (shrunkFirstPart : shrunkRestParts)))
+    where
+      shrinkPart part =
+        case Text.uncons part of
+          Nothing -> []
+          Just (firstChar, restChars) -> do
+            shrunkRestChars <- Qc.shrink restChars
+            let shrunkPart = Text.cons firstChar shrunkRestChars
+            return shrunkPart
 
 instance Show Name where
   showsPrec p = showsPrec p . toText

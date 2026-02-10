@@ -17,6 +17,7 @@ import Base.Name.Megaparsec qualified as Megaparsec
 import Base.Prelude
 import Data.Text qualified as Text
 import Data.Vector qualified as Vector
+import Test.QuickCheck qualified as Qc
 import TextBuilder qualified
 
 -- |
@@ -27,6 +28,32 @@ import TextBuilder qualified
 -- It can be converted to various casing formats, such as camelCase, PascalCase, snake_case, etc.
 newtype Name = Name (Vector Text)
   deriving newtype (Eq, Ord, Hashable, Semigroup, Monoid)
+
+instance Arbitrary Name where
+  arbitrary = do
+    parts <- Qc.listOf1 do
+      firstChar <-
+        Qc.elements ['a' .. 'z']
+      restChars <-
+        Qc.listOf
+          ( Qc.oneof
+              [ Qc.elements ['a' .. 'z'],
+                Qc.arbitrary `Qc.suchThat` isDigit
+              ]
+          )
+
+      return (Text.pack (firstChar : restChars))
+
+    return (Name (Vector.fromList parts))
+
+  shrink (Name parts) =
+    case Vector.uncons parts of
+      Nothing -> []
+      Just (firstPart, restParts) -> do
+        shrunkFirstPart <- Qc.shrink firstPart
+        guard (not (Text.null shrunkFirstPart))
+        shrunkRestParts <- Qc.shrink (Vector.toList restParts)
+        return (Name (Vector.fromList (shrunkFirstPart : shrunkRestParts)))
 
 instance Show Name where
   showsPrec p = showsPrec p . toText

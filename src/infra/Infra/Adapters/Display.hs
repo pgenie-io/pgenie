@@ -1,9 +1,9 @@
 module Infra.Adapters.Display where
 
-import AppLogic qualified
 import Base.Prelude
 import Data.Text.IO qualified as Text
 import Fx
+import Logic qualified
 import StagingAlgebra qualified
 import TextBuilder qualified
 import TextBuilderDev qualified
@@ -22,7 +22,7 @@ data Memory = Memory
 type Error = Void
 
 -- | Temporary implementation of progress reporting. Just prints to console.
-instance AppLogic.Reports (Fx Device Error) where
+instance Logic.Reports (Fx Device Error) where
   enterStage name =
     (runTotalIO . const . Text.putStrLn . mconcat)
       [ "Entering stage: ",

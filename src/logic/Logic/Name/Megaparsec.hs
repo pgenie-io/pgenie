@@ -1,4 +1,4 @@
-module AppLogic.Name.Megaparsec where
+module Logic.Name.Megaparsec where
 
 import Base.Prelude hiding (many)
 import Data.Text qualified as Text

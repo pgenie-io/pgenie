@@ -1,4 +1,4 @@
-module AppLogic.Name
+module Logic.Name
   ( Name,
     toPartsVector,
     toPartsNonEmpty,
@@ -13,10 +13,10 @@ module AppLogic.Name
   )
 where
 
-import AppLogic.Name.Megaparsec qualified as Megaparsec
 import Base.Prelude
 import Data.Text qualified as Text
 import Data.Vector qualified as Vector
+import Logic.Name.Megaparsec qualified as Megaparsec
 import Test.QuickCheck qualified as Qc
 import TextBuilder qualified
 

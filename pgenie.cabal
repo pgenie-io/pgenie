@@ -174,15 +174,15 @@ library libpq-extras
     postgresql-libpq,
     vector,
 
-library app-logic
+library logic
   import: base
-  hs-source-dirs: src/app-logic/
+  hs-source-dirs: src/logic/
   exposed-modules:
-    AppLogic
-    AppLogic.Name
-    AppLogic.Name.Megaparsec
-    AppLogic.QuerySignatures
-    AppLogic.SqlTemplate
+    Logic
+    Logic.Name
+    Logic.Name.Megaparsec
+    Logic.QuerySignatures
+    Logic.SqlTemplate
 
   build-depends:
     QuickCheck,
@@ -284,8 +284,8 @@ library app
     hasql,
     hasql-pool,
     optparse-applicative,
-    pgenie:app-logic,
     pgenie:base,
+    pgenie:logic,
     pgenie:parallelism-algebra,
     pgenie:staging-algebra,
     postgresql-libpq,
@@ -302,17 +302,17 @@ library infra
 
   build-depends:
     fx,
-    pgenie:app-logic,
     pgenie:base,
+    pgenie:logic,
     pgenie:staging-algebra,
     text,
     text-builder,
     text-builder-dev,
 
-test-suite app-logic-test
+test-suite logic-test
   import: test
   type: exitcode-stdio-1.0
-  hs-source-dirs: src/app-logic-test
+  hs-source-dirs: src/logic-test
   main-is: Main.hs
   other-modules:
     SqlTemplateSpec
@@ -324,6 +324,6 @@ test-suite app-logic-test
     QuickCheck,
     hspec,
     megaparsec,
-    pgenie:app-logic,
     pgenie:base,
+    pgenie:logic,
     text,

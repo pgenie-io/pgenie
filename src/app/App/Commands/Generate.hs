@@ -4,13 +4,13 @@
 module App.Commands.Generate (generate) where
 
 import App.Frameworks.CliUi
-import AppLogic qualified
 import Base.Prelude
+import Logic qualified
 import Options.Applicative qualified as Opt
 import ParallelismAlgebra qualified
 import StagingAlgebra qualified
 
-generate :: (AppLogic.AllOps m) => Command m
+generate :: (Logic.AllOps m) => Command m
 generate =
   Command
     { name = "generate",
@@ -25,5 +25,5 @@ parser :: Opt.Parser Params
 parser =
   pure Params
 
-execute :: (AppLogic.AllOps m) => Params -> m ()
-execute _params = AppLogic.generate
+execute :: (Logic.AllOps m) => Params -> m ()
+execute _params = Logic.generate

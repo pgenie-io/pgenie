@@ -1,10 +1,10 @@
 module Infra.Adapters.Main where
 
-import AppLogic qualified
 import Base.Prelude
 import Data.Text.IO qualified as Text
 import Fx
 import Infra.Adapters.Display qualified as Display
+import Logic qualified
 import StagingAlgebra qualified
 import TextBuilderDev qualified
 

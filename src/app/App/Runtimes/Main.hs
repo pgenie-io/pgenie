@@ -4,8 +4,8 @@ module App.Runtimes.Main where
 
 import App.Frameworks.CliUi qualified as Algebras.CliUi
 import App.Services.Main qualified as Services.Main
-import AppLogic qualified
 import Base.Prelude
+import Logic qualified
 import ParallelismAlgebra qualified
 import StagingAlgebra qualified
 
@@ -14,24 +14,24 @@ run =
   error "TODO"
 
 -- | Main execution context.
-newtype Main a = Main (Services.Main.Context -> IO (Either AppLogic.Error a))
+newtype Main a = Main (Services.Main.Context -> IO (Either Logic.Error a))
   deriving
     ( Functor,
       Applicative,
       Monad,
-      MonadError AppLogic.Error,
+      MonadError Logic.Error,
       ParallelismAlgebra.Parallelism
     )
-    via (ReaderT Services.Main.Context (ExceptT AppLogic.Error IO))
+    via (ReaderT Services.Main.Context (ExceptT Logic.Error IO))
 
-instance AppLogic.DbOps Main
+instance Logic.DbOps Main
 
-instance AppLogic.FsOps Main
+instance Logic.FsOps Main
 
-instance AppLogic.LoadsGen Main
+instance Logic.LoadsGen Main
 
 instance StagingAlgebra.Stages Main
 
-instance AppLogic.Reports Main where
+instance Logic.Reports Main where
   enterStage _ = pure ()
   exitStage _ _ = pure ()

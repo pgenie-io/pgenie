@@ -15,7 +15,7 @@ complete parser = parser <* eof
 
 parts :: Parser [Text]
 parts =
-  sepBy1 part (char '-')
+  sepBy1 part (char '_')
   where
     part =
       Text.cons

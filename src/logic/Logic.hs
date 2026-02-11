@@ -5,33 +5,28 @@ module Logic where
 import AlgebraicPath qualified as Path
 import Base.Prelude hiding (readFile, writeFile)
 import Data.Aeson qualified as Aeson
+import Data.Aeson.Text qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
 import Data.Map.Strict qualified as Map
+import Data.Text qualified as Text
 import FsAlgebra.Algebra qualified as FsAlgebra
 import Logic.SqlTemplate qualified as SqlTemplate
 import PGenieGen qualified as Gen
 import PGenieGen.Model.Input qualified as Gen.Input
 import PGenieGen.Model.Output qualified as Gen.Output
+import PGenieGen.Model.Output.Report qualified as Gen.Output.Report
 import ParallelismAlgebra
 import StagingAlgebra
 
 -- * Error
 
--- | Application error.
-data Error
-  = GenError
-      -- | Name of the artifact.
-      Text
-      -- | Warnings.
-      [Gen.Output.Report]
-      -- | Error report.
-      Gen.Output.Report
-  | GenConfigParsingError
-      -- | Name of the artifact.
-      Text
-      -- | Error message.
-      Text
-  | MigrationsError Error
+-- | Error report.
+data Error = Error
+  { path :: [Text],
+    message :: Text,
+    suggestion :: Maybe Text,
+    details :: [(Text, Text)]
+  }
 
 -- * States
 
@@ -254,7 +249,14 @@ loadGens artifacts =
             gen <- loadGen genUrl
             case gen config of
               Left errMsg ->
-                throwError (GenConfigParsingError name errMsg)
+                throwError
+                  ( Error
+                      []
+                      errMsg
+                      (Just "Ensure the artifact configuration conforms to the format expected by the generator")
+                      [ ("config", to (Aeson.encodeToTextBuilder config))
+                      ]
+                  )
               Right compileFn ->
                 pure (name, compileFn)
 
@@ -270,7 +272,18 @@ generateCode projectFileLoaded project = do
             let output = compile project
             case output.result of
               Gen.Output.ResultErr report ->
-                throwError (GenError artifactName output.warnings report)
+                throwError
+                  ( Error
+                      report.path
+                      report.message
+                      Nothing
+                      [ ( "warnings",
+                          output.warnings
+                            & map Gen.Output.Report.toWarningYamlText
+                            & Text.intercalate "\n"
+                        )
+                      ]
+                  )
               Gen.Output.ResultOk generatedFiles -> do
                 let artifactPath = fold (Path.maybeFromText artifactName)
                 generatedFilePaths <- for generatedFiles \file -> do

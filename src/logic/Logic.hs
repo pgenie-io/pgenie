@@ -183,7 +183,7 @@ type AllOps m =
 
 instance (DbOps m) => DbOps (ReaderT r m) where
   executeMigration migrationLoaded = lift (executeMigration migrationLoaded)
-  analyseQuery queryTemplate = lift (analyseQuery queryTemplate)
+  analyseQuery sqlTemplate = lift (analyseQuery sqlTemplate)
 
 instance (FsOps m) => FsOps (ReaderT r m) where
   readFile path = lift (readFile path)
@@ -218,10 +218,12 @@ loadProjectFile = do
   -- For now return placeholder
   error "TODO: Parse project config file"
 
-loadQuerySql :: (FsOps m) => QueryListed -> m QuerySqlLoaded
+loadQuerySql :: (FsOps m) => QueryListed -> m SqlTemplate.SqlTemplate
 loadQuerySql queryListed = do
   sql <- readFile queryListed.filePath
-  pure QuerySqlLoaded {sql}
+  case SqlTemplate.tryFromText sql of
+    Left err -> error "TODO"
+    Right res -> pure res
 
 -- | Attempt to load the query signature file.
 --
@@ -232,9 +234,7 @@ loadQuerySignature _projectFileLoaded queryListed = do
     Nothing -> pure NotFoundQuerySignatureLoaded
     Just sigPath -> do
       sigContent <- readFile sigPath
-      -- TODO: Parse signature file content (JSON/YAML)
-      -- For now, return not found
-      pure NotFoundQuerySignatureLoaded
+      error "TODO: Parse signature file content (JSON/YAML)"
 
 listQueries :: (FsOps m) => ProjectFileLoaded -> m QueriesListed
 listQueries projectFileLoaded = do
@@ -287,13 +287,6 @@ generateSignature _projectFileLoaded queryIntrospected = do
   -- TODO: Implement proper signature generation
   error "TODO: Implement generateSignature"
 
--- TODO: implement in logic. This is not an integration layer concern.
-parseQuerySql :: (Monad m) => QuerySqlLoaded -> m SqlTemplate.SqlTemplate
-parseQuerySql querySqlLoaded = do
-  case SqlTemplate.tryFromText querySqlLoaded.sql of
-    Left err -> error "TODO"
-    Right res -> pure res
-
 analyse :: (LoadsGen m, DbOps m, Parallelism m, FsOps m, Stages m) => ProjectFileLoaded -> m Gen.Input.Project
 analyse projectFileLoaded = do
   stage "Executing migrations" 1 do
@@ -313,12 +306,11 @@ analyse projectFileLoaded = do
                 runParallelly do
                   (,)
                     <$> parallelly do
-                      querySqlLoaded <-
+                      sqlTemplate <-
                         stage "loading" 1 do
                           loadQuerySql queryListed
-                      queryTemplate <- parseQuerySql querySqlLoaded
                       stage "analysing" 1 do
-                        analyseQuery queryTemplate
+                        analyseQuery sqlTemplate
                     <*> parallelly do
                       stage "signature-loading" 1 do
                         loadQuerySignature projectFileLoaded queryListed

@@ -57,8 +57,6 @@ type QueriesIntrospected = [QueryAnalysed]
 
 data QueriesMetadataLoaded
 
-type QueriesListed = [QueryListed]
-
 data QueryListed = QueryListed
   { name :: Gen.Input.Name,
     filePath :: Path,
@@ -114,45 +112,73 @@ data MigrationExecuted = MigrationExecuted
 
 -- * Transformers
 
--- ** EmittingEvents
+runLogic :: Logic m a -> m a
+runLogic (Logic f) = f 0 []
 
-runEmittingEvents :: EmittingEvents m a -> m a
-runEmittingEvents (EmittingEvents runInner) = runInner 1.0
-
-newtype EmittingEvents m a
-  = EmittingEvents (Double -> m a)
+-- |
+-- Internal monad transformer for pure logic, which:
+-- 
+-- - Enables serialization of staging as reporting events
+-- - Extends errors with staging paths to complete context
+newtype Logic m a
+  = Logic (Double -> [Text] -> m a)
   deriving
-    (Functor, Applicative, Monad, Parallelism, FsOps, DbOps, LoadsGen)
-    via (ReaderT Double m)
+    (Functor, Applicative, Monad, Parallelism)
+    via (ReaderT Double (ReaderT [Text] m))
 
-instance (MonadError Error m) => MonadError Error (EmittingEvents m) where
-  throwError e = lift (throwError e)
-  catchError (EmittingEvents f) handler =
-    EmittingEvents \p -> catchError (f p) (\e -> let EmittingEvents h = handler e in h p)
+instance MonadTrans Logic where
+  lift ma = Logic \_ _ -> ma
 
-instance (Reports m) => Stages (EmittingEvents m) where
-  stage name substagesCount =
-    if substagesCount > 0
-      then \(EmittingEvents runInner) -> EmittingEvents \progressPerStage -> do
-        enterStage name
-        let progressPerSubstage = progressPerStage / fromIntegral substagesCount
-        result <- runInner progressPerSubstage
-        exitStage name 0
-        pure result
-      else \(EmittingEvents runInner) -> EmittingEvents \progressPerStage -> do
-        enterStage name
-        result <- runInner 0
-        exitStage name progressPerStage
-        pure result
+instance (MonadError Error m) => MonadError Error (Logic m) where
+  throwError e = Logic \_ path ->
+    let newPath = path <> e.path
+        newError = e {path = newPath}
+     in throwError newError
 
-instance MonadTrans EmittingEvents where
-  lift ma = EmittingEvents \_ -> ma
+  catchError (Logic f) handler =
+    Logic \p q -> catchError (f p q) (\e -> let Logic h = handler e in h p q)
 
+instance (Reports m) => Stages (Logic m) where
+  stage name substagesCount (Logic runInner) =
+    Logic \progressPerStage path ->
+      if substagesCount > 0
+        then do
+          let newPath = name : path
+          enterStage newPath
+          let progressPerSubstage = progressPerStage / fromIntegral substagesCount
+          result <- runInner progressPerSubstage newPath
+          exitStage newPath 0
+          pure result
+        else do
+          let newPath = name : path
+          enterStage newPath
+          result <- runInner 0 newPath
+          exitStage newPath progressPerStage
+          pure result
+
+instance (DbOps m) => DbOps (Logic m) where
+  executeMigration migrationLoaded = lift (executeMigration migrationLoaded)
+  analyseQuery sqlTemplate = lift (analyseQuery sqlTemplate)
+
+instance (FsOps m) => FsOps (Logic m) where
+  readFile path = lift (readFile path)
+  writeFile path content = lift (writeFile path content)
+  listDir path = lift (listDir path)
+
+instance (LoadsGen m) => LoadsGen (Logic m) where
+  loadGen genUrl = lift (loadGen genUrl)
+
+-- * Capabilities
+
+-- | Typeclasses representing capabilities required by the logic and serving as ports as per the hexagonal architecture.
+--
+-- They allow to implement the overall orchestration logic in a way that is decoupled from specific implementations of these capabilities, making it easier to test and maintain.
+-- We simply state what we need for the logic to work and provide an interface for the implementations to conform to.
+
+-- | Capability for reporting progress of stages and substages.
 class (Monad m) => Reports m where
-  enterStage :: Text -> m ()
-  exitStage :: Text -> Double -> m ()
-
--- * Effects
+  enterStage :: [Text] -> m ()
+  exitStage :: [Text] -> Double -> m ()
 
 class (MonadError Error m) => DbOps m where
   executeMigration :: MigrationLoaded -> m MigrationExecuted
@@ -167,44 +193,38 @@ class (MonadError Error m) => FsOps m where
 class (MonadError Error m) => LoadsGen m where
   loadGen :: Gen.Location -> m Gen
 
-type AllOps m =
-  ( DbOps m,
-    FsOps m,
-    LoadsGen m,
+-- | Combined capabilities required by the logic.
+type Caps m =
+  ( LoadsGen m,
+    DbOps m,
     Parallelism m,
-    Stages m,
+    FsOps m,
     Reports m
   )
 
-instance (DbOps m) => DbOps (ReaderT r m) where
-  executeMigration migrationLoaded = lift (executeMigration migrationLoaded)
-  analyseQuery sqlTemplate = lift (analyseQuery sqlTemplate)
+-- * API ops
 
-instance (FsOps m) => FsOps (ReaderT r m) where
-  readFile path = lift (readFile path)
-  writeFile path content = lift (writeFile path content)
-  listDir path = lift (listDir path)
-
-instance (LoadsGen m) => LoadsGen (ReaderT r m) where
-  loadGen genUrl = lift (loadGen genUrl)
-
-check :: (LoadsGen m, DbOps m, Parallelism m, FsOps m, Reports m) => m ()
-check = runEmittingEvents do
-  projectFileLoaded <- loadProjectFile
-  analyse projectFileLoaded
-  pure ()
-
-generate :: (LoadsGen m, DbOps m, Parallelism m, FsOps m, Reports m) => m ()
-generate = runEmittingEvents do
-  stage "Generate" 3 do
-    projectFileLoaded <-
-      stage "Load Project File" 1 do
-        loadProjectFile
-    genProject <- stage "Analyse" 1 do
-      analyse projectFileLoaded
-    stage "Generate Code" 1 do
-      generateCode projectFileLoaded genProject
+check :: (Caps m) => m ()
+check =
+  runLogic do
+    projectFileLoaded <- loadProjectFile
+    analyse projectFileLoaded
     pure ()
+
+generate :: (Caps m) => m ()
+generate =
+  runLogic do
+    stage "" 3 do
+      projectFileLoaded <-
+        stage "Loading Project File" 1 do
+          loadProjectFile
+      genProject <- stage "Analysing" 1 do
+        analyse projectFileLoaded
+      stage "Generating" 1 do
+        generateCode projectFileLoaded genProject
+      pure ()
+
+-- * Helpers
 
 loadProjectFile :: (FsOps m) => m ProjectFileLoaded
 loadProjectFile = do
@@ -230,14 +250,6 @@ loadQuerySignature _projectFileLoaded queryListed = do
     Just sigPath -> do
       sigContent <- readFile sigPath
       error "TODO: Parse signature file content (JSON/YAML)"
-
-listQueries :: (FsOps m) => ProjectFileLoaded -> m QueriesListed
-listQueries projectFileLoaded = do
-  queryPaths <- listDir projectFileLoaded.queriesDir
-  for queryPaths \queryPath -> do
-    -- TODO: Extract proper query name from path
-    -- For now use error as placeholder since this needs proper implementation
-    error "TODO: Implement proper query name extraction from path"
 
 loadGens :: (LoadsGen m, Stages m, Parallelism m) => [Artifact] -> m [(Text, Gen.Input -> Gen.Output)]
 loadGens artifacts =
@@ -307,7 +319,11 @@ analyse projectFileLoaded = do
 
   queriesListed <-
     stage "Listing queries" 1 do
-      listQueries projectFileLoaded
+      queryPaths <- listDir projectFileLoaded.queriesDir
+      for queryPaths \queryPath -> do
+        -- TODO: Extract proper query name from path
+        -- For now use error as placeholder since this needs proper implementation
+        error "TODO: Implement proper query name extraction from path"
 
   queriesIntrospected <-
     stage "Introspecting queries" (length queriesListed) do

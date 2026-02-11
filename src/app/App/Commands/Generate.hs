@@ -7,10 +7,9 @@ import App.Frameworks.CliUi
 import Base.Prelude
 import Logic qualified
 import Options.Applicative qualified as Opt
-import ParallelismAlgebra qualified
 import StagingAlgebra qualified
 
-generate :: (Logic.AllOps m) => Command m
+generate :: (Logic.Caps m) => Command m
 generate =
   Command
     { name = "generate",
@@ -25,5 +24,5 @@ parser :: Opt.Parser Params
 parser =
   pure Params
 
-execute :: (Logic.AllOps m) => Params -> m ()
+execute :: (Logic.Caps m) => Params -> m ()
 execute _params = Logic.generate

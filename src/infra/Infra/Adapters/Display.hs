@@ -23,16 +23,16 @@ type Error = Void
 
 -- | Temporary implementation of progress reporting. Just prints to console.
 instance Logic.Reports (Fx Device Error) where
-  enterStage name =
-    (runTotalIO . const . Text.putStrLn . mconcat)
+  enterStage path =
+    (runTotalIO . const . Text.putStrLn . to . mconcat)
       [ "Entering stage: ",
-        name
+        TextBuilder.intercalateMap " > " to path
       ]
 
-  exitStage name progress =
-    (runTotalIO . const . Text.putStrLn . mconcat)
+  exitStage path progress =
+    (runTotalIO . const . Text.putStrLn . to . mconcat)
       [ "Exiting stage: ",
-        name,
+        TextBuilder.intercalateMap " > " to path,
         " with progress: ",
         onto (show progress)
       ]

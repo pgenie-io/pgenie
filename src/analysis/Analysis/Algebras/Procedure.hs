@@ -1,6 +1,7 @@
 module Analysis.Algebras.Procedure where
 
 import Base.Prelude
+import Hasql.Mapping.IsStatement qualified as Hasql
 import HasqlDev qualified as Hasql
 import TextBuilder qualified
 
@@ -38,9 +39,9 @@ crash reason = do
 
 runStatementByParams ::
   ( Hasql.RunsSession m,
-    Hasql.IsStatementParams params
+    Hasql.IsStatement params
   ) =>
   params ->
-  m (Hasql.StatementResultByParams params)
+  m (Hasql.Result params)
 runStatementByParams params =
   Hasql.runSession $ Hasql.runStatementByParams params

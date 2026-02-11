@@ -1,8 +1,8 @@
 module Analysis.Procedures.ResolveTypeByOid.Statements.SelectEnumLabels where
 
 import Base.Prelude
+import Hasql.Mapping.IsStatement
 import Hasql.TH
-import HasqlDev
 
 data SelectEnumLabelsParams = SelectEnumLabelsParams
   { -- | The object identifier of the type.
@@ -12,9 +12,9 @@ data SelectEnumLabelsParams = SelectEnumLabelsParams
 
 type SelectEnumLabelsResult = Vector Text
 
-instance IsStatementParams SelectEnumLabelsParams where
-  type StatementResultByParams SelectEnumLabelsParams = SelectEnumLabelsResult
-  statementByParams =
+instance IsStatement SelectEnumLabelsParams where
+  type Result SelectEnumLabelsParams = SelectEnumLabelsResult
+  statement =
     [vectorStatement|
       select enumlabel :: text
       from pg_enum

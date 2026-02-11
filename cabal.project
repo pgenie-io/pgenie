@@ -3,7 +3,12 @@ packages: .
 source-repository-package
   type: git
   location: https://github.com/nikita-volkov/hasql-dev
-  tag: 1cca9c2262cfa2b5bc6d9e487e059c344305a82b
+  tag: 76d8faaa706872e0fe9b1036aa011edd2eb9d0ed
+
+source-repository-package
+  type: git
+  location: https://github.com/nikita-volkov/hasql-mapping
+  tag: 307dfb5f25ba28d8408fac3aa160ca4ba702acc9
 
 source-repository-package
   type: git

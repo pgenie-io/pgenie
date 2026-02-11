@@ -1,8 +1,8 @@
 module Analysis.Procedures.ResolveTypeByOid.Statements.SelectAttributes where
 
 import Base.Prelude
+import Hasql.Mapping.IsStatement
 import Hasql.TH
-import HasqlDev
 
 data SelectAttributesParams = SelectAttributesParams
   { -- | The object identifier of the type.
@@ -23,9 +23,9 @@ data SelectAttributesResultRow = SelectAttributesResultRow
     notNull :: Bool
   }
 
-instance IsStatementParams SelectAttributesParams where
-  type StatementResultByParams SelectAttributesParams = SelectAttributesResult
-  statementByParams =
+instance IsStatement SelectAttributesParams where
+  type Result SelectAttributesParams = SelectAttributesResult
+  statement =
     [vectorStatement|
       select attname :: text, atttypid :: int4, attndims :: int4, attnotnull :: bool
       from pg_type

@@ -1,8 +1,8 @@
 module Analysis.Procedures.ResolveTypeByOid.Statements.SelectType where
 
 import Base.Prelude
+import Hasql.Mapping.IsStatement
 import Hasql.TH
-import HasqlDev
 
 data SelectTypeParams = SelectTypeParams
   { -- | The object identifier of the type.
@@ -25,9 +25,9 @@ data SelectTypeResultRow = SelectTypeResultRow
     elementTypeOid :: Int32
   }
 
-instance IsStatementParams SelectTypeParams where
-  type StatementResultByParams SelectTypeParams = SelectTypeResult
-  statementByParams =
+instance IsStatement SelectTypeParams where
+  type Result SelectTypeParams = SelectTypeResult
+  statement =
     [maybeStatement|
       select typname :: text, typtype :: text, typrelid :: int4, typelem :: int4
       from pg_type

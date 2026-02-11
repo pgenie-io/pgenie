@@ -1,8 +1,8 @@
 module Analysis.Procedures.ResolveTypeByOid.Statements.SelectRelationColumns where
 
 import Base.Prelude
+import Hasql.Mapping.IsStatement
 import Hasql.TH
-import HasqlDev
 
 data SelectRelationColumnsParams = SelectRelationColumnsParams
   { -- | Relation name.
@@ -20,9 +20,9 @@ data SelectRelationColumnsResultRow = SelectRelationColumnsResultRow
     notNull :: Bool
   }
 
-instance IsStatementParams SelectRelationColumnsParams where
-  type StatementResultByParams SelectRelationColumnsParams = SelectRelationColumnsResult
-  statementByParams =
+instance IsStatement SelectRelationColumnsParams where
+  type Result SelectRelationColumnsParams = SelectRelationColumnsResult
+  statement =
     [vectorStatement|
       select attname :: text, atttypid :: int4, attndims :: int4, attnotnull :: bool
       from pg_class

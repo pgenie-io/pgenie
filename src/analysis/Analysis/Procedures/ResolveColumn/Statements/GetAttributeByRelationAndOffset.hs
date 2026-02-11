@@ -1,8 +1,8 @@
 module Analysis.Procedures.ResolveColumn.Statements.GetAttributeByRelationAndOffset where
 
 import Base.Prelude
+import Hasql.Mapping.IsStatement
 import Hasql.TH
-import HasqlDev
 
 data GetAttributeByRelationAndOffsetParams = GetAttributeByRelationAndOffsetParams
   { relationOid :: Int32,
@@ -23,9 +23,9 @@ data GetAttributeByRelationAndOffsetResultRow = GetAttributeByRelationAndOffsetR
     notNull :: Bool
   }
 
-instance IsStatementParams GetAttributeByRelationAndOffsetParams where
-  type StatementResultByParams GetAttributeByRelationAndOffsetParams = GetAttributeByRelationAndOffsetResult
-  statementByParams =
+instance IsStatement GetAttributeByRelationAndOffsetParams where
+  type Result GetAttributeByRelationAndOffsetParams = GetAttributeByRelationAndOffsetResult
+  statement =
     [maybeStatement|
       select
         attname :: text,

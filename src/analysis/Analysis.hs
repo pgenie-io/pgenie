@@ -1,4 +1,8 @@
-module Analysis where
+module Analysis
+  ( Procedure.Error (..),
+    analyse,
+  )
+where
 
 import Analysis.Algebras.Procedure qualified as Procedure
 import Analysis.Domain
@@ -9,9 +13,8 @@ import HasqlDev qualified
 import SyntacticClass qualified as Syntactic
 
 analyse ::
-  (Monad m, HasqlDev.RunsSession m) =>
   Text ->
-  m (Either Procedure.Error (Query, [Procedure.Error]))
+  HasqlDev.Session (Either Procedure.Error (Query, [Procedure.Error]))
 analyse query =
   flip runReaderT []
     $ runExceptT

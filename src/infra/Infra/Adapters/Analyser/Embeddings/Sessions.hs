@@ -151,7 +151,7 @@ adaptComposite comp = do
   pure
     Gen.Input.CustomType
       { name,
-        pgSchema = error "TODO: extract from `comp` and discover it in Sessions",
+        pgSchema = comp.schemaName,
         pgName = comp.name,
         definition =
           Gen.Input.CustomTypeDefinitionComposite fields
@@ -176,7 +176,7 @@ adaptEnum enum = do
   pure
     Gen.Input.CustomType
       { name,
-        pgSchema = error "TODO: extract from `comp` and discover it in Sessions",
+        pgSchema = enum.schemaName,
         pgName = enum.name,
         definition =
           Gen.Input.CustomTypeDefinitionEnum variants

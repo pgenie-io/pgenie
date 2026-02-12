@@ -74,7 +74,8 @@ data Primitive
   deriving stock (Show, Eq)
 
 data Composite = Composite
-  { name :: Text,
+  { schemaName :: Text,
+    name :: Text,
     fields :: Vector CompositeField
   }
   deriving stock (Show, Eq)
@@ -86,7 +87,8 @@ data CompositeField = CompositeField
   deriving stock (Show, Eq)
 
 data Enum = Enum
-  { name :: Text,
+  { schemaName :: Text,
+    name :: Text,
     options :: Vector Text
   }
   deriving stock (Show, Eq)

@@ -47,11 +47,11 @@ instance Procedure ResolveTypeByOid where
                                   pure (Type fieldDims elementScalar)
                                 else pure fieldType
                         pure (CompositeField fieldName fieldType)
-                    pure (Type 0 (CompositeScalar (Composite type_.name fields)))
+                    pure (Type 0 (CompositeScalar (Composite type_.schemaName type_.name fields)))
                   "d" -> crash ["Domain types are not supported yet"]
                   "e" -> do
                     labels <- runStatementByParams Statements.SelectEnumLabelsParams {oid}
-                    pure (Type 0 (EnumScalar (Enum type_.name labels)))
+                    pure (Type 0 (EnumScalar (Enum type_.schemaName type_.name labels)))
                   "p" -> crash ["Pseudo types are not supported yet"]
                   "r" -> crash ["Range types are not supported yet"]
                   "m" -> crash ["Multirange types are not supported yet"]

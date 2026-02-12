@@ -132,12 +132,12 @@ fromPrimitive = \case
   XmlPrimitive -> Nothing
 
 fromComposite :: Composite -> Maybe (Encoders.Value ())
-fromComposite (Composite name fields) = do
+fromComposite (Composite schemaName name fields) = do
   fieldEncoders <- traverse (\field -> fmap (Encoders.field . Encoders.nonNullable) (fromType field.type_)) fields
-  pure $ Encoders.composite Nothing name (fold fieldEncoders) $< ()
+  pure $ Encoders.composite (Just schemaName) name (fold fieldEncoders) $< ()
 
 fromEnum :: Enum -> Maybe (Encoders.Value ())
-fromEnum (Enum name variants) =
+fromEnum (Enum schemaName name variants) =
   case Vector.uncons variants of
-    Just (variant, _) -> Just $ Encoders.enum Nothing name (const variant) $< ()
+    Just (variant, _) -> Just $ Encoders.enum (Just schemaName) name (const variant) $< ()
     Nothing -> Nothing

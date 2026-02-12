@@ -2,7 +2,6 @@
 module Infra.Adapters.Analyser.Translations.Sessions where
 
 import Base.Prelude
-import Data.Text qualified as Text
 import Data.Vector qualified as Vector
 import Infra.Adapters.Analyser.Sessions qualified as Sessions
 import Logic qualified
@@ -39,7 +38,7 @@ textToName :: Text -> Gen.Input.Name
 textToName text =
   case Name.tryFromText text of
     Right name -> Name.toGenName name
-    Left _ -> Name.toGenName (fromString (filter isAsciiLower (Text.unpack text)))
+    Left _ -> error "TODO: propagate failure"
 
 adaptType :: Sessions.Type -> Gen.Input.Value
 adaptType type_ =
@@ -127,7 +126,7 @@ adaptComposite :: Sessions.Composite -> Gen.Input.CustomType
 adaptComposite comp =
   Gen.Input.CustomType
     { name = textToName comp.name,
-      pgSchema = "public",
+      pgSchema = error "TODO: extract from `comp` and discover it in Sessions",
       pgName = comp.name,
       definition =
         Gen.Input.CustomTypeDefinitionComposite
@@ -147,7 +146,7 @@ adaptEnum :: Sessions.Enum -> Gen.Input.CustomType
 adaptEnum enum =
   Gen.Input.CustomType
     { name = textToName enum.name,
-      pgSchema = "public",
+      pgSchema = error "TODO: extract from `comp` and discover it in Sessions",
       pgName = enum.name,
       definition =
         Gen.Input.CustomTypeDefinitionEnum

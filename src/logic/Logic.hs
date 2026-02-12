@@ -24,8 +24,6 @@ import PGenieGen.Model.Output.Report qualified as Gen.Output.Report
 import StagingAlgebra
 import SyntacticClass qualified as Syntactic
 
--- * Error
-
 -- * Transformers
 
 runLogic :: Logic m a -> m a

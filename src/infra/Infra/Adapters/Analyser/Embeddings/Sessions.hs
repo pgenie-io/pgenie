@@ -8,61 +8,77 @@ import Logic qualified
 import Logic.Name qualified as Name
 import PGenieGen.Model.Input qualified as Gen.Input
 
-adaptQuery :: Sessions.Query -> Logic.InferredQueryTypes
-adaptQuery query =
-  let params =
-        fmap adaptParam (Vector.toList query.params)
-      resultColumns =
-        map adaptResultColumn (Vector.toList query.resultColumns)
-      mentionedCustomTypes =
-        collectCustomTypes query
-   in Logic.InferredQueryTypes {params, resultColumns, mentionedCustomTypes}
+type Embed = Either Logic.Error
 
-adaptParam :: Sessions.Param -> Logic.InferredParam
-adaptParam param =
-  Logic.InferredParam
-    { isNullable = param.nullable,
-      type_ = adaptType param.type_
-    }
+adaptQuery :: Sessions.Query -> Embed Logic.InferredQueryTypes
+adaptQuery query = do
+  params <-
+    traverse adaptParam (Vector.toList query.params)
+  resultColumns <-
+    traverse adaptResultColumn (Vector.toList query.resultColumns)
+  mentionedCustomTypes <-
+    collectCustomTypes query
+  pure Logic.InferredQueryTypes {params, resultColumns, mentionedCustomTypes}
 
-adaptResultColumn :: Sessions.ResultColumn -> Gen.Input.Member
-adaptResultColumn col =
-  Gen.Input.Member
-    { name = textToName col.name,
-      pgName = col.name,
-      isNullable = col.nullable,
-      value = adaptType col.type_
-    }
+adaptParam :: Sessions.Param -> Embed Logic.InferredParam
+adaptParam param = do
+  type_ <- adaptType param.type_
+  pure
+    Logic.InferredParam
+      { isNullable = param.nullable,
+        type_
+      }
 
-textToName :: Text -> Gen.Input.Name
+adaptResultColumn :: Sessions.ResultColumn -> Embed Gen.Input.Member
+adaptResultColumn col = do
+  name <- textToName col.name
+  value <- adaptType col.type_
+  pure
+    Gen.Input.Member
+      { name,
+        pgName = col.name,
+        isNullable = col.nullable,
+        value
+      }
+
+textToName :: Text -> Embed Gen.Input.Name
 textToName text =
   case Name.tryFromText text of
-    Right name -> Name.toGenName name
-    Left _ -> error "TODO: propagate failure"
+    Right name -> pure (Name.toGenName name)
+    Left err ->
+      Left
+        Logic.Error
+          { path = [],
+            message = err,
+            suggestion = Nothing,
+            details = []
+          }
 
-adaptType :: Sessions.Type -> Gen.Input.Value
-adaptType type_ =
-  Gen.Input.Value
-    { arraySettings =
-        if type_.dimensionality > 0
-          then
-            Just
-              Gen.Input.ArraySettings
-                { dimensionality = fromIntegral type_.dimensionality,
-                  elementIsNullable = False
-                }
-          else Nothing,
-      scalar = adaptScalar type_.scalar
-    }
+adaptType :: Sessions.Type -> Embed Gen.Input.Value
+adaptType type_ = do
+  scalar <- adaptScalar type_.scalar
+  pure
+    Gen.Input.Value
+      { arraySettings =
+          if type_.dimensionality > 0
+            then
+              Just
+                Gen.Input.ArraySettings
+                  { dimensionality = fromIntegral type_.dimensionality,
+                    elementIsNullable = False
+                  }
+            else Nothing,
+        scalar
+      }
 
-adaptScalar :: Sessions.Scalar -> Gen.Input.Scalar
+adaptScalar :: Sessions.Scalar -> Embed Gen.Input.Scalar
 adaptScalar = \case
   Sessions.PrimitiveScalar prim ->
-    Gen.Input.ScalarPrimitive (adaptPrimitive prim)
+    pure $ Gen.Input.ScalarPrimitive (adaptPrimitive prim)
   Sessions.CompositeScalar comp ->
-    Gen.Input.ScalarCustom (textToName comp.name)
+    Gen.Input.ScalarCustom <$> textToName comp.name
   Sessions.EnumScalar enum ->
-    Gen.Input.ScalarCustom (textToName enum.name)
+    Gen.Input.ScalarCustom <$> textToName enum.name
 
 adaptPrimitive :: Sessions.Primitive -> Gen.Input.Primitive
 adaptPrimitive = \case
@@ -104,58 +120,73 @@ adaptPrimitive = \case
   Sessions.UuidPrimitive -> Gen.Input.PrimitiveUuid
   Sessions.XmlPrimitive -> Gen.Input.PrimitiveXml
 
-collectCustomTypes :: Sessions.Query -> [Gen.Input.CustomType]
-collectCustomTypes query =
-  nubBy
-    (\a b -> a.pgName == b.pgName)
-    ( concatMap (collectFromType . (.type_)) (Vector.toList query.params)
-        <> concatMap (collectFromType . (.type_)) (Vector.toList query.resultColumns)
-    )
+collectCustomTypes :: Sessions.Query -> Embed [Gen.Input.CustomType]
+collectCustomTypes query = do
+  paramTypes <- traverse (collectFromType . (.type_)) (Vector.toList query.params)
+  resultTypes <- traverse (collectFromType . (.type_)) (Vector.toList query.resultColumns)
+  pure
+    $ nubBy
+      (\a b -> a.pgName == b.pgName)
+      (concat paramTypes <> concat resultTypes)
 
-collectFromType :: Sessions.Type -> [Gen.Input.CustomType]
+collectFromType :: Sessions.Type -> Embed [Gen.Input.CustomType]
 collectFromType type_ =
   collectFromScalar type_.scalar
 
-collectFromScalar :: Sessions.Scalar -> [Gen.Input.CustomType]
+collectFromScalar :: Sessions.Scalar -> Embed [Gen.Input.CustomType]
 collectFromScalar = \case
-  Sessions.PrimitiveScalar _ -> []
-  Sessions.CompositeScalar comp -> adaptComposite comp : concatMap (collectFromType . (.type_)) (Vector.toList comp.fields)
-  Sessions.EnumScalar enum -> [adaptEnum enum]
+  Sessions.PrimitiveScalar _ -> pure []
+  Sessions.CompositeScalar comp -> do
+    composite <- adaptComposite comp
+    fieldTypes <- traverse (collectFromType . (.type_)) (Vector.toList comp.fields)
+    pure $ composite : concat fieldTypes
+  Sessions.EnumScalar enum -> do
+    enum' <- adaptEnum enum
+    pure [enum']
 
-adaptComposite :: Sessions.Composite -> Gen.Input.CustomType
-adaptComposite comp =
-  Gen.Input.CustomType
-    { name = textToName comp.name,
-      pgSchema = error "TODO: extract from `comp` and discover it in Sessions",
-      pgName = comp.name,
-      definition =
-        Gen.Input.CustomTypeDefinitionComposite
-          (map adaptCompositeField (Vector.toList comp.fields))
-    }
+adaptComposite :: Sessions.Composite -> Embed Gen.Input.CustomType
+adaptComposite comp = do
+  name <- textToName comp.name
+  fields <- traverse adaptCompositeField (Vector.toList comp.fields)
+  pure
+    Gen.Input.CustomType
+      { name,
+        pgSchema = error "TODO: extract from `comp` and discover it in Sessions",
+        pgName = comp.name,
+        definition =
+          Gen.Input.CustomTypeDefinitionComposite fields
+      }
 
-adaptCompositeField :: Sessions.CompositeField -> Gen.Input.Member
-adaptCompositeField field =
-  Gen.Input.Member
-    { name = textToName field.name,
-      pgName = field.name,
-      isNullable = False,
-      value = adaptType field.type_
-    }
+adaptCompositeField :: Sessions.CompositeField -> Embed Gen.Input.Member
+adaptCompositeField field = do
+  name <- textToName field.name
+  value <- adaptType field.type_
+  pure
+    Gen.Input.Member
+      { name,
+        pgName = field.name,
+        isNullable = False,
+        value
+      }
 
-adaptEnum :: Sessions.Enum -> Gen.Input.CustomType
-adaptEnum enum =
-  Gen.Input.CustomType
-    { name = textToName enum.name,
-      pgSchema = error "TODO: extract from `comp` and discover it in Sessions",
-      pgName = enum.name,
-      definition =
-        Gen.Input.CustomTypeDefinitionEnum
-          (map adaptEnumVariant (Vector.toList enum.options))
-    }
+adaptEnum :: Sessions.Enum -> Embed Gen.Input.CustomType
+adaptEnum enum = do
+  name <- textToName enum.name
+  variants <- traverse adaptEnumVariant (Vector.toList enum.options)
+  pure
+    Gen.Input.CustomType
+      { name,
+        pgSchema = error "TODO: extract from `comp` and discover it in Sessions",
+        pgName = enum.name,
+        definition =
+          Gen.Input.CustomTypeDefinitionEnum variants
+      }
 
-adaptEnumVariant :: Text -> Gen.Input.EnumVariant
-adaptEnumVariant opt =
-  Gen.Input.EnumVariant
-    { name = textToName opt,
-      pgName = opt
-    }
+adaptEnumVariant :: Text -> Embed Gen.Input.EnumVariant
+adaptEnumVariant opt = do
+  name <- textToName opt
+  pure
+    Gen.Input.EnumVariant
+      { name,
+        pgName = opt
+      }

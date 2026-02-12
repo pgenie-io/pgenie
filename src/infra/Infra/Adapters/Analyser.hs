@@ -90,10 +90,14 @@ instance Logic.DbOps (Fx Device Logic.Error) where
       Left err ->
         throwError (adaptAnalysisError err)
       Right (query, warnings) ->
-        pure
-          ( Embeddings.Sessions.adaptQuery query,
-            map adaptAnalysisError warnings
-          )
+        case Embeddings.Sessions.adaptQuery query of
+          Left err ->
+            throwError err
+          Right queryTypes ->
+            pure
+              ( queryTypes,
+                map adaptAnalysisError warnings
+              )
     where
       adaptAnalysisError :: Sessions.Error -> Logic.Error
       adaptAnalysisError err =

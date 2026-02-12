@@ -1,0 +1,28 @@
+name: Main branch maintenance
+
+on:
+  push:
+    branches: [main, master]
+
+# Prevent overlapping publishes on rapid pushes
+concurrency:
+  group: main-maintenance
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  publish-docs:
+    uses: nikita-volkov/haskell-hackage-lib-github-actions-workflows/.github/workflows/deploy-docs-to-github-pages.yaml@v4
+    secrets: inherit
+
+  format:
+    uses: nikita-volkov/haskell-hackage-lib-github-actions-workflows/.github/workflows/format.yaml@v4
+    secrets: inherit
+
+  build:
+    uses: ./.github/workflows/build.yaml
+    secrets: inherit

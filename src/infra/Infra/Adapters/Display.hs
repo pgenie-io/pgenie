@@ -24,18 +24,23 @@ type Error = Void
 -- | Temporary implementation of progress reporting. Just prints to console.
 instance Logic.Reports (Fx Device Error) where
   enterStage path =
-    (runTotalIO . const . Text.putStrLn . to . mconcat)
-      [ "Entering stage: ",
-        TextBuilder.intercalateMap " > " to path
-      ]
+    runTotalIO \dev -> do
+      progress <- (.progress) <$> readMVar dev.memoryVar
+      Text.putStrLn
+        $ from @TextBuilder
+        $ mconcat
+        $ [ "Progress: ",
+            TextBuilderDev.doubleFixedPointPercent 0 progress,
+            "%, at stage: ",
+            TextBuilder.intercalateMap " > " to path
+          ]
 
   exitStage path progress =
-    (runTotalIO . const . Text.putStrLn . to . mconcat)
-      [ "Exiting stage: ",
-        TextBuilder.intercalateMap " > " to path,
-        " with progress: ",
-        onto (show progress)
-      ]
+    runTotalIO \dev -> do
+      memory <- takeMVar dev.memoryVar
+      let newProgress = memory.progress + progress
+      let newMemory = memory {progress = newProgress}
+      putMVar dev.memoryVar newMemory
 
 instance StagingAlgebra.Stages (Fx Device Error) where
   stage name substagesCount action = do

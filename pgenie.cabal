@@ -202,6 +202,7 @@ library infra
     Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements.SelectEnumLabels
     Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements.SelectRelationColumns
     Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements.SelectType
+    Infra.Adapters.Analyser.Translations.Sessions
     Infra.Adapters.Display
     Infra.Adapters.Main
 

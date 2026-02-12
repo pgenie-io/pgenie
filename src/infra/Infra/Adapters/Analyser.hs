@@ -37,7 +37,7 @@ scope = do
   pool <-
     acquire
       ( runTotalIO
-          ( \_ ->
+          ( \() ->
               Hasql.Pool.acquire
                 ( Hasql.Pool.Config.settings
                     [ Hasql.Pool.Config.size 100,
@@ -47,8 +47,13 @@ scope = do
                 )
           )
       )
-      & releasing
-        (runTotalIO (\pool -> Hasql.Pool.release pool))
+
+  registerRelease
+    ( runTotalIO
+        ( \() ->
+            Hasql.Pool.release pool
+        )
+    )
 
   pure (Device pool)
 

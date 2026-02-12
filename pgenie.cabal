@@ -230,33 +230,15 @@ library app
     App.Commands.Generate
     App.Commands.Sign
     App.Frameworks.CliUi
-    App.Frameworks.Service
-    App.Runtimes.Main
-    App.Services.Analyser.Domain
-    App.Services.DbAdmin
-    App.Services.DbAdmin.Context
-    App.Services.DbAdmin.Domain
-    App.Services.DbAdmin.Procedures
-    App.Services.DbAdmin.Procedures.CreateTempDb
-    App.Services.DbAdmin.Procedures.DropTempDb
-    App.Services.HasqlPool
-    App.Services.HasqlPool.Context
-    App.Services.HasqlPool.Procedures
-    App.Services.Main
-    App.Services.Main.Context
-    App.Services.Main.Procedures
-    App.Services.PqConnection
-    App.Services.PqConnection.Context
-    App.Services.PqConnection.Procedures
-    App.Services.PqConnection.Procedures.DescribeQuery
-    App.Services.PqConnection.Utils.LawfulConversions
 
   build-depends:
     attoparsec,
+    fx,
     hasql,
     hasql-pool,
     optparse-applicative,
     pgenie:base,
+    pgenie:infra,
     pgenie:logic,
     pgenie:staging-algebra,
     postgresql-libpq,
@@ -273,6 +255,8 @@ library infra
     Infra.Adapters.Main
 
   build-depends:
+    algebraic-path,
+    directory,
     fx,
     hasql,
     hasql-dev,

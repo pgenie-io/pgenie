@@ -1,6 +1,5 @@
 module Infra.Adapters.Analyser
   ( Device,
-    Error,
     scope,
   )
 where
@@ -23,9 +22,7 @@ import TestcontainersPostgresql qualified
 
 newtype Device = Device Hasql.Pool.Pool
 
-type Error = Logic.Error
-
-adaptPoolUsageError :: Hasql.Pool.UsageError -> Error
+adaptPoolUsageError :: Hasql.Pool.UsageError -> Logic.Error
 adaptPoolUsageError err =
   Logic.Error
     { path = ["db"],
@@ -34,7 +31,7 @@ adaptPoolUsageError err =
       details = []
     }
 
-adaptTestcontainersError :: SomeException -> Error
+adaptTestcontainersError :: SomeException -> Logic.Error
 adaptTestcontainersError err =
   Logic.Error
     { path = ["testcontainers"],
@@ -43,7 +40,7 @@ adaptTestcontainersError err =
       details = []
     }
 
-scope :: Fx.Scope Error Device
+scope :: Fx.Scope Logic.Error Device
 scope = do
   (host, port) <-
     first
@@ -81,12 +78,12 @@ scope = do
 
   pure (Device pool)
 
-instance HasqlDev.RunsSession (Fx Device Error) where
+instance HasqlDev.RunsSession (Fx Device Logic.Error) where
   runSession session =
     runPartialIO \(Device pool) ->
       first adaptPoolUsageError <$> Hasql.Pool.use pool session
 
-instance Logic.DbOps (Fx Device Error) where
+instance Logic.DbOps (Fx Device Logic.Error) where
   executeMigration migrationText =
     HasqlDev.runSession (Hasql.Session.script migrationText)
 
@@ -100,7 +97,7 @@ instance Logic.DbOps (Fx Device Error) where
             map adaptAnalysisError warnings
           )
     where
-      adaptAnalysisError :: Analysis.Error -> Error
+      adaptAnalysisError :: Analysis.Error -> Logic.Error
       adaptAnalysisError err =
         Logic.Error
           { path = err.location,

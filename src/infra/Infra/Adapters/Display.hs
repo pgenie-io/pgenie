@@ -1,4 +1,8 @@
-module Infra.Adapters.Display where
+module Infra.Adapters.Display
+  ( Device,
+    scope,
+  )
+where
 
 import Base.Prelude
 import Data.Text.IO qualified as Text
@@ -19,10 +23,14 @@ data Memory = Memory
     progress :: Double
   }
 
-type Error = Void
+scope :: Fx.Scope Logic.Error Device
+scope =
+  acquire do
+    memoryVar <- runTotalIO (\() -> newMVar Memory {progress = 0})
+    pure Device {memoryVar, location = [], progressPerStage = 1}
 
 -- | Temporary implementation of progress reporting. Just prints to console.
-instance Logic.Reports (Fx Device Error) where
+instance Logic.Reports (Fx Device Logic.Error) where
   enterStage path =
     runTotalIO \dev -> do
       progress <- (.progress) <$> readMVar dev.memoryVar
@@ -42,7 +50,7 @@ instance Logic.Reports (Fx Device Error) where
       let newMemory = memory {progress = newProgress}
       putMVar dev.memoryVar newMemory
 
-instance StagingAlgebra.Stages (Fx Device Error) where
+instance StagingAlgebra.Stages (Fx Device Logic.Error) where
   stage name substagesCount action = do
     result <-
       action

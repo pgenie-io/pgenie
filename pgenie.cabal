@@ -89,7 +89,9 @@ executable pgn
   hs-source-dirs: src/pgn/
   main-is: Main.hs
   build-depends:
-    pgenie:app
+    pgenie:app,
+    pgenie:base,
+    pgenie:infra,
 
 library base
   import: base
@@ -156,7 +158,6 @@ library app
   import: base
   hs-source-dirs: src/app/
   exposed-modules:
-    App
     App.Commands
     App.Commands.Generate
     App.Commands.Sign
@@ -165,7 +166,6 @@ library app
   build-depends:
     optparse-applicative,
     pgenie:base,
-    pgenie:infra,
     pgenie:logic,
     text,
 

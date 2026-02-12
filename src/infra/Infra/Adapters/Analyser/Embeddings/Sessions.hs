@@ -1,5 +1,5 @@
 -- | Translation of sessions data structures to logic data structures.
-module Infra.Adapters.Analyser.Translations.Sessions where
+module Infra.Adapters.Analyser.Embeddings.Sessions where
 
 import Base.Prelude
 import Data.Vector qualified as Vector

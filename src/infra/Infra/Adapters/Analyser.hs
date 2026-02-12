@@ -12,9 +12,9 @@ import Hasql.Pool qualified
 import Hasql.Pool.Config qualified
 import Hasql.Session qualified
 import HasqlDev qualified
+import Infra.Adapters.Analyser.Embeddings.Sessions qualified as Embeddings.Sessions
 import Infra.Adapters.Analyser.Scopes.Testcontainers qualified
 import Infra.Adapters.Analyser.Sessions qualified as Sessions
-import Infra.Adapters.Analyser.Translations.Sessions qualified as Translations.Sessions
 import Logic qualified
 import TestcontainersPostgresql qualified
 
@@ -91,7 +91,7 @@ instance Logic.DbOps (Fx Device Logic.Error) where
         throwError (adaptAnalysisError err)
       Right (query, warnings) ->
         pure
-          ( Translations.Sessions.adaptQuery query,
+          ( Embeddings.Sessions.adaptQuery query,
             map adaptAnalysisError warnings
           )
     where

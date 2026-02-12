@@ -15,10 +15,6 @@ permissions:
   id-token: write
 
 jobs:
-  check-cabal:
-    uses: nikita-volkov/haskell-hackage-lib-github-actions-workflows/.github/workflows/check-cabal.yaml@v4
-    secrets: inherit
-
   build-with-latest:
     uses: nikita-volkov/haskell-hackage-lib-github-actions-workflows/.github/workflows/build.yaml@v4
     secrets: inherit

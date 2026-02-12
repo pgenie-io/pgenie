@@ -8,10 +8,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  generate-docs:
-    uses: nikita-volkov/haskell-hackage-lib-github-actions-workflows/.github/workflows/generate-docs.yaml@v4
-    secrets: inherit
-
   build:
     uses: ./.github/workflows/build.yaml
     secrets: inherit

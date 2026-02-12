@@ -137,7 +137,7 @@ toGenQueryFragments (SqlTemplate segments) =
             Just index -> do
               return
                 [ Gen.QueryFragmentVar
-                    ( Gen.MkQueryFragmentVar
+                    ( Gen.Var
                         { name = Name.toGenName name,
                           rawName = Name.toText name,
                           paramIndex = fromIntegral index

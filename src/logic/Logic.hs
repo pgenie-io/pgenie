@@ -10,13 +10,16 @@ import Data.Aeson.Types qualified as Aeson
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
 import FsAlgebra.Algebra qualified as FsAlgebra
+import Logic.Name qualified as Name
 import Logic.SqlTemplate qualified as SqlTemplate
+import Logic.SyntaxAnalyser qualified as SyntaxAnalyser
 import PGenieGen qualified as Gen
 import PGenieGen.Model.Input qualified as Gen.Input
 import PGenieGen.Model.Output qualified as Gen.Output
 import PGenieGen.Model.Output.Report qualified as Gen.Output.Report
 import ParallelismAlgebra
 import StagingAlgebra
+import SyntacticClass qualified as Syntactic
 
 -- * Error
 
@@ -32,8 +35,8 @@ data Error = Error
 
 data ProjectFileLoaded = ProjectFileLoaded
   { configFilePath :: Path,
-    owner :: Gen.Input.Name,
-    name :: Gen.Input.Name,
+    owner :: Name.Name,
+    name :: Name.Name,
     version :: Gen.Input.Version,
     -- | Path to the directory with migrations.
     migrationsDir :: Path,
@@ -49,34 +52,19 @@ data Artifact = Artifact
     config :: Aeson.Value
   }
 
-type Gen = Gen.Gen
-
-data QueriesLoaded
-
-type QueriesIntrospected = [QueryAnalysed]
-
-data QueriesMetadataLoaded
-
 data QueryListed = QueryListed
-  { name :: Gen.Input.Name,
+  { name :: Name.Name,
     filePath :: Path,
     signatureFilePath :: Maybe Path
   }
 
-data QuerySqlLoaded = QuerySqlLoaded
-  { sql :: Text
-  }
-
-data QueryAnalysed = QueryAnalysed
-  { query :: Gen.Input.Query,
+data InferredQueryTypes = InferredQueryTypes
+  { params :: [Gen.Input.Member],
+    resultColumns :: [Gen.Input.Member],
     mentionedCustomTypes :: [Gen.Input.CustomType]
   }
 
-data CodeGenerated = CodeGenerated
-  { artifacts :: [CodeGeneratedArtifact]
-  }
-
-data CodeGeneratedArtifact = CodeGeneratedArtifact
+data GeneratedArtifact = GeneratedArtifact
   { name :: Text,
     warnings :: [Gen.Output.Report],
     filePaths :: [Path]
@@ -87,9 +75,8 @@ data SignatureGenerated = SignatureGenerated
     replaced :: Bool
   }
 
-data QuerySignatureLoaded
-  = NotFoundQuerySignatureLoaded
-  | QuerySignatureLoaded
+data QuerySignature
+  = QuerySignature
       -- | Parameters of the query.
       [Gen.Input.Member]
       -- | Result of the query.
@@ -100,16 +87,6 @@ data QueriesMetadataMerged = QueriesMetadataMerged
     customTypes :: [Gen.Input.CustomType]
   }
 
-type MigrationsLoaded = [MigrationLoaded]
-
-type MigrationsExecuted = [MigrationExecuted]
-
-data MigrationLoaded = MigrationLoaded
-  { sql :: Text
-  }
-
-data MigrationExecuted = MigrationExecuted
-
 -- * Transformers
 
 runLogic :: Logic m a -> m a
@@ -117,7 +94,7 @@ runLogic (Logic f) = f 0 []
 
 -- |
 -- Internal monad transformer for pure logic, which:
--- 
+--
 -- - Enables serialization of staging as reporting events
 -- - Extends errors with staging paths to complete context
 newtype Logic m a
@@ -158,7 +135,7 @@ instance (Reports m) => Stages (Logic m) where
 
 instance (DbOps m) => DbOps (Logic m) where
   executeMigration migrationLoaded = lift (executeMigration migrationLoaded)
-  analyseQuery sqlTemplate = lift (analyseQuery sqlTemplate)
+  inferQueryTypes sqlTemplate = lift (inferQueryTypes sqlTemplate)
 
 instance (FsOps m) => FsOps (Logic m) where
   readFile path = lift (readFile path)
@@ -166,7 +143,7 @@ instance (FsOps m) => FsOps (Logic m) where
   listDir path = lift (listDir path)
 
 instance (LoadsGen m) => LoadsGen (Logic m) where
-  loadGen genUrl = lift (loadGen genUrl)
+  loadGen genLocation = lift (loadGen genLocation)
 
 -- * Capabilities
 
@@ -181,8 +158,8 @@ class (Monad m) => Reports m where
   exitStage :: [Text] -> Double -> m ()
 
 class (MonadError Error m) => DbOps m where
-  executeMigration :: MigrationLoaded -> m MigrationExecuted
-  analyseQuery :: SqlTemplate.SqlTemplate -> m QueryAnalysed
+  executeMigration :: Text -> m ()
+  inferQueryTypes :: Text -> m InferredQueryTypes
 
 class (MonadError Error m) => FsOps m where
   readFile :: Path -> m Text
@@ -191,7 +168,7 @@ class (MonadError Error m) => FsOps m where
 
 -- | Domain operations.
 class (MonadError Error m) => LoadsGen m where
-  loadGen :: Gen.Location -> m Gen
+  loadGen :: Gen.Location -> m Gen.Gen
 
 -- | Combined capabilities required by the logic.
 type Caps m =
@@ -214,14 +191,11 @@ check =
 generate :: (Caps m) => m ()
 generate =
   runLogic do
-    stage "" 3 do
-      projectFileLoaded <-
-        stage "Loading Project File" 1 do
-          loadProjectFile
-      genProject <- stage "Analysing" 1 do
+    stage "" 2 do
+      projectFileLoaded <- loadProjectFile
+      genProject <- do
         analyse projectFileLoaded
-      stage "Generating" 1 do
-        generateCode projectFileLoaded genProject
+      generateCode projectFileLoaded genProject
       pure ()
 
 -- * Helpers
@@ -231,187 +205,208 @@ loadProjectFile = do
   configContent <- readFile "project.pgn1.yaml"
   -- TODO: Parse YAML config and extract project details
   -- For now return placeholder
-  error "TODO: Parse project config file"
+  throwError
+    ( Error
+        []
+        "Project file parsing is not yet implemented"
+        (Just "Implement YAML parsing for project.pgn1.yaml")
+        []
+    )
 
 loadQuerySql :: (FsOps m) => QueryListed -> m SqlTemplate.SqlTemplate
 loadQuerySql queryListed = do
   sql <- readFile queryListed.filePath
   case SqlTemplate.tryFromText sql of
-    Left err -> error "TODO"
+    Left err ->
+      throwError
+        ( Error
+            []
+            "Failed to parse SQL template"
+            (Just "Check the SQL syntax in the query file")
+            [("file", Path.toText queryListed.filePath), ("error", to err)]
+        )
     Right res -> pure res
 
--- | Attempt to load the query signature file.
---
--- Missing file is not an error. Parsing failure of an existing file however is.
-loadQuerySignature :: (FsOps m) => ProjectFileLoaded -> QueryListed -> m QuerySignatureLoaded
-loadQuerySignature _projectFileLoaded queryListed = do
-  case queryListed.signatureFilePath of
-    Nothing -> pure NotFoundQuerySignatureLoaded
-    Just sigPath -> do
-      sigContent <- readFile sigPath
-      error "TODO: Parse signature file content (JSON/YAML)"
-
-loadGens :: (LoadsGen m, Stages m, Parallelism m) => [Artifact] -> m [(Text, Gen.Input -> Gen.Output)]
-loadGens artifacts =
-  stage "Loading generators" (length artifacts) do
+generateCode :: (LoadsGen m, Stages m, Parallelism m, FsOps m) => ProjectFileLoaded -> Gen.Input.Project -> m [GeneratedArtifact]
+generateCode projectFileLoaded project =
+  stage "Generating code" (length projectFileLoaded.artifacts) do
     runParallelly do
-      for artifacts \(Artifact {..}) ->
+      for projectFileLoaded.artifacts \(Artifact {..}) ->
         parallelly do
-          stage name 0 do
-            gen <- loadGen genUrl
-            case gen config of
-              Left errMsg ->
-                throwError
-                  ( Error
-                      []
-                      errMsg
-                      (Just "Ensure the artifact configuration conforms to the format expected by the generator")
-                      [ ("config", to (Aeson.encodeToTextBuilder config))
-                      ]
-                  )
-              Right compileFn ->
-                pure (name, compileFn)
+          stage name 2 do
+            compileFn <-
+              stage "Loading generator" 1 do
+                gen <- loadGen genUrl
+                case gen config of
+                  Left errMsg ->
+                    throwError
+                      ( Error
+                          []
+                          errMsg
+                          (Just "Ensure the artifact configuration conforms to the format expected by the generator")
+                          [ ("config", to (Aeson.encodeToTextBuilder config))
+                          ]
+                      )
+                  Right compileFn ->
+                    pure compileFn
 
-generateCode :: (LoadsGen m, Stages m, Parallelism m, FsOps m) => ProjectFileLoaded -> Gen.Input.Project -> m CodeGenerated
-generateCode projectFileLoaded project = do
-  loadedGens <- loadGens projectFileLoaded.artifacts
-
-  artifacts <-
-    stage "Compiling" (length loadedGens) do
-      runParallelly do
-        for loadedGens \(artifactName, compile) -> parallelly do
-          stage artifactName 0 do
-            let output = compile project
-            case output.result of
-              Gen.Output.ResultErr report ->
-                throwError
-                  ( Error
-                      report.path
-                      report.message
-                      Nothing
-                      [ ( "warnings",
-                          output.warnings
-                            & map Gen.Output.Report.toWarningYamlText
-                            & Text.intercalate "\n"
-                        )
-                      ]
-                  )
-              Gen.Output.ResultOk generatedFiles -> do
-                let artifactPath = fold (Path.maybeFromText artifactName)
-                generatedFilePaths <- for generatedFiles \file -> do
-                  let modifiedPath = artifactPath <> file.path
-                  writeFile modifiedPath file.content
-                  pure modifiedPath
-                pure (CodeGeneratedArtifact artifactName output.warnings generatedFilePaths)
-
-  pure (CodeGenerated artifacts)
-
--- | Create or replace the signature file for the query.
-generateSignature :: (FsOps m) => ProjectFileLoaded -> QueryAnalysed -> m SignatureGenerated
-generateSignature _projectFileLoaded queryIntrospected = do
-  -- TODO: Implement proper signature generation
-  error "TODO: Implement generateSignature"
+            stage "Compiling" 1 do
+              let output = compileFn project
+              case output.result of
+                Gen.Output.ResultErr report ->
+                  throwError
+                    ( Error
+                        report.path
+                        report.message
+                        Nothing
+                        [ ( "warnings",
+                            output.warnings
+                              & map Gen.Output.Report.toWarningYamlText
+                              & Text.intercalate "\n"
+                          )
+                        ]
+                    )
+                Gen.Output.ResultOk generatedFiles -> do
+                  let artifactPath = fold (Path.maybeFromText name)
+                  generatedFilePaths <- for generatedFiles \file -> do
+                    let modifiedPath = artifactPath <> file.path
+                    writeFile modifiedPath file.content
+                    pure modifiedPath
+                  pure (GeneratedArtifact name output.warnings generatedFilePaths)
 
 analyse :: (LoadsGen m, DbOps m, Parallelism m, FsOps m, Stages m) => ProjectFileLoaded -> m Gen.Input.Project
-analyse projectFileLoaded = do
-  stage "Executing migrations" 1 do
-    executeMigrationsAtPath projectFileLoaded.migrationsDir
+analyse projectFileLoaded =
+  stage "Analysing" 2 do
+    stage "Executing migrations" 2 do
+      migrationsListed <-
+        listDir projectFileLoaded.migrationsDir
+          & fmap (filter (\p -> Path.toExtensions p == ["sql"]))
+          & fmap sort
 
-  queriesListed <-
-    stage "Listing queries" 1 do
-      queryPaths <- listDir projectFileLoaded.queriesDir
+      let migrationsCount = length migrationsListed
+
+      migrationsLoaded <-
+        stage "Loading" migrationsCount do
+          runParallelly do
+            for migrationsListed \migrationListed ->
+              parallelly do
+                stage (Path.toText migrationListed) 0 do
+                  migrationLoaded <- readFile migrationListed
+                  pure (migrationListed, migrationLoaded)
+
+      stage "Executing" migrationsCount do
+        for migrationsLoaded \(migrationListed, migrationLoaded) -> do
+          stage (Path.toText migrationListed) 0 do
+            executeMigration migrationLoaded
+
+    queriesListed <- do
+      allPathsInQueriesDir <-
+        listDir projectFileLoaded.queriesDir
+
+      let queryPaths =
+            allPathsInQueriesDir
+              & filter (\p -> Path.toExtensions p == ["sql"])
+              & sort
+
       for queryPaths \queryPath -> do
-        -- TODO: Extract proper query name from path
-        -- For now use error as placeholder since this needs proper implementation
-        error "TODO: Implement proper query name extraction from path"
+        -- Extract query name from path by taking the file name without extension
+        name <- case Name.tryFromText (Path.toBasename queryPath) of
+          Left err ->
+            throwError
+              ( Error
+                  []
+                  "Failed to extract query name from path"
+                  (Just "Ensure the query file name is a valid identifier")
+                  [ ("file", Path.toText queryPath),
+                    ("error", err)
+                  ]
+              )
+          Right name ->
+            pure name
 
-  queriesIntrospected <-
-    stage "Introspecting queries" (length queriesListed) do
-      runParallelly do
-        for queriesListed \queryListed ->
-          parallelly do
-            stage "" 3 do
-              (queryIntrospected, querySignatureLoaded) <-
-                runParallelly do
-                  (,)
-                    <$> parallelly do
-                      sqlTemplate <-
-                        stage "loading" 1 do
-                          loadQuerySql queryListed
-                      stage "analysing" 1 do
-                        analyseQuery sqlTemplate
-                    <*> parallelly do
-                      stage "signature-loading" 1 do
-                        loadQuerySignature projectFileLoaded queryListed
+        pure
+          QueryListed
+            { name = name,
+              filePath = queryPath,
+              signatureFilePath = Nothing
+            }
 
-              mergeQueryMetadata queryIntrospected querySignatureLoaded
-
-  let queries =
-        queriesIntrospected
-          & map (.query)
-
-  let customTypes =
-        queriesIntrospected
-          & foldMap (.mentionedCustomTypes)
-          & fmap (\x -> ((x.pgSchema, x.pgName), x))
-          & Map.fromList
-          & Map.elems
-
-  pure
-    Gen.Input.Project
-      { owner = projectFileLoaded.owner,
-        name = projectFileLoaded.name,
-        version = projectFileLoaded.version,
-        customTypes = customTypes,
-        queries = queries
-      }
-
-mergeQueryMetadata :: (Monad m) => QueryAnalysed -> QuerySignatureLoaded -> m QueryAnalysed
-mergeQueryMetadata queryIntrospected querySignatureLoaded = do
-  case querySignatureLoaded of
-    NotFoundQuerySignatureLoaded ->
-      -- No signature file, return introspected data as-is
-      pure queryIntrospected
-    QuerySignatureLoaded params resultRows -> do
-      -- TODO: Merge signature data with introspected data
-      -- For now, prefer introspected data
-      pure queryIntrospected
-
-listMigrations :: (FsOps m) => Path -> m [Path]
-listMigrations migrationsDir = do
-  allPaths <- listDir migrationsDir
-  -- Filter for .sql files
-  let isSqlFile p = ".sql" `isSuffixOf` (to @String $ Path.toText p)
-  pure $ filter isSqlFile allPaths
-
-loadMigration :: (FsOps m) => Path -> m MigrationLoaded
-loadMigration migrationPath = do
-  sql <- readFile migrationPath
-  pure MigrationLoaded {sql}
-
-executeMigrationsAtPath ::
-  (LoadsGen m, Parallelism m, DbOps m, FsOps m, Stages m) =>
-  Path ->
-  m MigrationsExecuted
-executeMigrationsAtPath path =
-  stage "Executing migrations" 2 do
-    migrationsListed <- listMigrations path
-
-    let migrationsCount = length migrationsListed
-
-    migrationsLoaded <-
-      stage "Loading" migrationsCount do
-        runParallelly do
-          for migrationsListed \migrationListed ->
+    (queries, customTypes) <-
+      stage "Analysing queries" (length queriesListed) do
+        mixedList <- runParallelly do
+          for queriesListed \queryListed ->
             parallelly do
-              stage (Path.toText migrationListed) 0 do
-                migrationLoaded <- loadMigration migrationListed
-                pure (migrationListed, migrationLoaded)
+              stage (Name.inSnakeCase queryListed.name) 2 do
+                sqlTemplate <-
+                  stage "Reading file" 1 do
+                    loadQuerySql queryListed
 
-    stage "Executing" migrationsCount do
-      for migrationsLoaded \(migrationListed, migrationLoaded) -> do
-        stage (Path.toText migrationListed) 0 do
-          executeMigration migrationLoaded
+                let nativeTemplate =
+                      sqlTemplate
+                        & SqlTemplate.render
+                          True
+                          (\_ x -> "$" <> Syntactic.toTextBuilder (succ x))
+                        & to
+
+                InferredQueryTypes {params, resultColumns, mentionedCustomTypes} <-
+                  stage "Inferring types" 1 do
+                    inferQueryTypes nativeTemplate
+
+                result :: Maybe Gen.Input.ResultRows <-
+                  let byCardinality cardinality =
+                        pure case nonEmpty resultColumns of
+                          Nothing ->
+                            Nothing
+                          Just columns ->
+                            Just (Gen.Input.ResultRows cardinality columns)
+                   in case SyntaxAnalyser.resolveText nativeTemplate of
+                        Left err -> do
+                          warn
+                            "Failed to detect result cardinality by AST. Defaulting to multi-row"
+                            [("error", err)]
+                          byCardinality Gen.Input.ResultRowsCardinalityMultiple
+                        Right SyntaxAnalyser.QuerySyntaxAnalysis {resultRowAmount} ->
+                          case resultRowAmount of
+                            SyntaxAnalyser.SpecificRowAmount 0 ->
+                              pure Nothing
+                            SyntaxAnalyser.SpecificRowAmount 1 ->
+                              byCardinality Gen.Input.ResultRowsCardinalitySingle
+                            SyntaxAnalyser.SpecificRowAmount _ ->
+                              byCardinality Gen.Input.ResultRowsCardinalityMultiple
+                            SyntaxAnalyser.UpToRowAmount 1 ->
+                              byCardinality Gen.Input.ResultRowsCardinalityOptional
+                            SyntaxAnalyser.UpToRowAmount _ ->
+                              byCardinality Gen.Input.ResultRowsCardinalityMultiple
+
+                pure
+                  ( Gen.Input.Query
+                      { name = Name.toGenName queryListed.name,
+                        srcPath = queryListed.filePath,
+                        params,
+                        result,
+                        fragments = SqlTemplate.toGenQueryFragments sqlTemplate
+                      },
+                    mentionedCustomTypes
+                  )
+
+        let (queries, customTypesDump) = unzip mixedList
+            customTypes =
+              customTypesDump
+                & concat
+                & fmap (\x -> ((x.pgSchema, x.pgName), x))
+                & Map.fromList
+                & Map.elems
+
+        pure (queries, customTypes)
+
+    pure
+      Gen.Input.Project
+        { owner = Name.toGenName projectFileLoaded.owner,
+          name = Name.toGenName projectFileLoaded.name,
+          version = projectFileLoaded.version,
+          customTypes = customTypes,
+          queries = queries
+        }
 
 stagedParFor :: (LoadsGen m, Parallelism m, Stages m) => Text -> (a -> Text) -> [a] -> (a -> m b) -> m [b]
 stagedParFor stageName nameFn items action =
@@ -421,3 +416,14 @@ stagedParFor stageName nameFn items action =
         parallelly do
           stage (nameFn item) 0 do
             action item
+
+-- | Depending on the warning handling strategy this can either log the warning and continue or throw an error to stop the execution.
+warn :: (MonadError Error m) => Text -> [(Text, Text)] -> m ()
+warn message details =
+  throwError
+    ( Error
+        []
+        message
+        Nothing
+        details
+    )

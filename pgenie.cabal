@@ -181,9 +181,14 @@ library logic
   exposed-modules:
     Logic
     Logic.Name
+    Logic.SqlTemplate
+
+  other-modules:
     Logic.Name.Megaparsec
     Logic.QuerySignatures
-    Logic.SqlTemplate
+    Logic.SyntaxAnalyser
+    Logic.SyntaxAnalyser.AstInterpreter
+    Logic.SyntaxAnalyser.Data
 
   build-depends:
     QuickCheck,
@@ -196,6 +201,8 @@ library logic
     pgenie:parallelism-algebra,
     pgenie:staging-algebra,
     pgenie-gen,
+    postgresql-syntax,
+    syntactic-class,
     text,
     text-builder,
     vector,

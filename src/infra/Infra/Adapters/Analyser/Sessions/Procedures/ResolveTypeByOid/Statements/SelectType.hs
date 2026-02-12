@@ -1,4 +1,4 @@
-module Analysis.Procedures.ResolveTypeByOid.Statements.SelectType where
+module Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements.SelectType where
 
 import Base.Prelude
 import Hasql.Mapping.IsStatement

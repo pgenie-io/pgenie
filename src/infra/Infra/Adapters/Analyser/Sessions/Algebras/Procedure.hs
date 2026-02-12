@@ -1,4 +1,4 @@
-module Analysis.Algebras.Procedure where
+module Infra.Adapters.Analyser.Sessions.Algebras.Procedure where
 
 import Base.Prelude
 import Hasql.Mapping.IsStatement qualified as Hasql

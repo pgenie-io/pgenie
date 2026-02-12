@@ -1,16 +1,16 @@
-module Analysis.Procedures.DescribeQuery
+module Infra.Adapters.Analyser.Sessions.Procedures.DescribeQuery
   ( DescribeQuery (..),
     DescribeQueryResult (..),
     DescribeQueryResultColumn (..),
   )
 where
 
-import Analysis.Algebras.Procedure
-import Analysis.LibpqExtras.Procedures.DescribeQuery qualified as LibpqExtras
 import Base.Prelude
 import Data.Vector qualified as Vector
 import Hasql.Session qualified
 import HasqlDev qualified
+import Infra.Adapters.Analyser.Sessions.Algebras.Procedure
+import Infra.Adapters.Analyser.Sessions.LibpqExtras.Procedures.DescribeQuery qualified as LibpqExtras
 import SyntacticClass qualified as Syntactic
 
 data DescribeQuery = DescribeQuery

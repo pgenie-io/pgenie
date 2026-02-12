@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Analysis.LibpqExtras.LawfulConversions where
+module Infra.Adapters.Analyser.Sessions.LibpqExtras.LawfulConversions where
 
 import Base.Prelude
 import Database.PostgreSQL.LibPQ qualified as Pq

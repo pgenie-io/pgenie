@@ -1,4 +1,4 @@
-module Analysis.Procedures.ResolveColumn.Statements.GetAttributeByRelationAndOffset where
+module Infra.Adapters.Analyser.Sessions.Procedures.ResolveColumn.Statements.GetAttributeByRelationAndOffset where
 
 import Base.Prelude
 import Hasql.Mapping.IsStatement

@@ -1,12 +1,12 @@
-module Analysis.Procedures.ResolveColumn
+module Infra.Adapters.Analyser.Sessions.Procedures.ResolveColumn
   ( ResolveColumn (..),
     ResolveColumnResultRow (..),
   )
 where
 
-import Analysis.Algebras.Procedure
-import Analysis.Procedures.ResolveColumn.Statements qualified as Statements
 import Base.Prelude
+import Infra.Adapters.Analyser.Sessions.Algebras.Procedure
+import Infra.Adapters.Analyser.Sessions.Procedures.ResolveColumn.Statements qualified as Statements
 import SyntacticClass qualified as Syntactic
 
 data ResolveColumn = ResolveColumn

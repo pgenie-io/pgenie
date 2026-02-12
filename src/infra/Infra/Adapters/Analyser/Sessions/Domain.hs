@@ -1,4 +1,4 @@
-module Analysis.Domain where
+module Infra.Adapters.Analyser.Sessions.Domain where
 
 import Base.Prelude hiding (Enum)
 

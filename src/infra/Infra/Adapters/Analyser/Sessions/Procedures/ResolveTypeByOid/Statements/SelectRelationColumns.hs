@@ -1,4 +1,4 @@
-module Analysis.Procedures.ResolveTypeByOid.Statements.SelectRelationColumns where
+module Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements.SelectRelationColumns where
 
 import Base.Prelude
 import Hasql.Mapping.IsStatement

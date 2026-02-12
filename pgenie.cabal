@@ -122,49 +122,6 @@ library base
     vector-instances,
     witherable,
 
-library analysis
-  import: base
-  hs-source-dirs: src/analysis/
-  exposed-modules:
-    Analysis
-
-  other-modules:
-    Analysis.Algebras.Procedure
-    Analysis.Domain
-    Analysis.LibpqExtras.LawfulConversions
-    Analysis.LibpqExtras.Procedures.DescribeQuery
-    Analysis.Procedures
-    Analysis.Procedures.DescribeQuery
-    Analysis.Procedures.ResolveColumn
-    Analysis.Procedures.ResolveColumn.Statements
-    Analysis.Procedures.ResolveColumn.Statements.GetAttributeByRelationAndOffset
-    Analysis.Procedures.ResolveParamNullabilities
-    Analysis.Procedures.ResolveParamNullabilities.DefaultEncoder
-    Analysis.Procedures.ResolveParamNullabilities.DefaultEncoder.DefaultValues
-    Analysis.Procedures.ResolveTypeByOid
-    Analysis.Procedures.ResolveTypeByOid.Statements
-    Analysis.Procedures.ResolveTypeByOid.Statements.SelectAttributes
-    Analysis.Procedures.ResolveTypeByOid.Statements.SelectEnumLabels
-    Analysis.Procedures.ResolveTypeByOid.Statements.SelectRelationColumns
-    Analysis.Procedures.ResolveTypeByOid.Statements.SelectType
-
-  build-tool-depends:
-    autoexporter:autoexporter
-
-  build-depends:
-    aeson,
-    attoparsec,
-    hasql,
-    hasql-dev,
-    hasql-mapping,
-    hasql-th,
-    iproute,
-    pgenie:base,
-    postgresql-libpq,
-    syntactic-class,
-    text-builder,
-    vector,
-
 library logic
   import: base
   hs-source-dirs: src/logic/
@@ -218,25 +175,53 @@ library infra
   hs-source-dirs: src/infra
   exposed-modules:
     Infra.Adapters.Analyser
+    Infra.Adapters.Analyser.Sessions
     Infra.Adapters.Display
     Infra.Adapters.Main
 
   other-modules:
     Infra.Adapters.Analyser.Scopes.Testcontainers
     Infra.Adapters.Analyser.Scopes.Testcontainers.IO
+    Infra.Adapters.Analyser.Sessions.Algebras.Procedure
+    Infra.Adapters.Analyser.Sessions.Domain
+    Infra.Adapters.Analyser.Sessions.LibpqExtras.LawfulConversions
+    Infra.Adapters.Analyser.Sessions.LibpqExtras.Procedures.DescribeQuery
+    Infra.Adapters.Analyser.Sessions.Procedures
+    Infra.Adapters.Analyser.Sessions.Procedures.DescribeQuery
+    Infra.Adapters.Analyser.Sessions.Procedures.ResolveColumn
+    Infra.Adapters.Analyser.Sessions.Procedures.ResolveColumn.Statements
+    Infra.Adapters.Analyser.Sessions.Procedures.ResolveColumn.Statements.GetAttributeByRelationAndOffset
+    Infra.Adapters.Analyser.Sessions.Procedures.ResolveParamNullabilities
+    Infra.Adapters.Analyser.Sessions.Procedures.ResolveParamNullabilities.DefaultEncoder
+    Infra.Adapters.Analyser.Sessions.Procedures.ResolveParamNullabilities.DefaultEncoder.DefaultValues
+    Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid
+    Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements
+    Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements.SelectAttributes
+    Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements.SelectEnumLabels
+    Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements.SelectRelationColumns
+    Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements.SelectType
+
+  build-tool-depends:
+    autoexporter:autoexporter
 
   build-depends:
+    aeson,
     algebraic-path,
+    attoparsec,
     directory,
     fx,
     hasql,
     hasql-dev,
+    hasql-mapping,
     hasql-pool,
-    pgenie:analysis,
+    hasql-th,
+    iproute,
     pgenie:base,
     pgenie:logic,
     pgenie-gen,
+    postgresql-libpq,
     resourcet,
+    syntactic-class,
     testcontainers,
     testcontainers-postgresql,
     text,

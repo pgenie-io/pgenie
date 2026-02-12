@@ -1,6 +1,6 @@
 -- |
 -- Use LibPQ to extract the information about the query parameters and result.
-module Analysis.LibpqExtras.Procedures.DescribeQuery
+module Infra.Adapters.Analyser.Sessions.LibpqExtras.Procedures.DescribeQuery
   ( Context,
 
     -- * Domain
@@ -20,11 +20,11 @@ module Analysis.LibpqExtras.Procedures.DescribeQuery
   )
 where
 
-import Analysis.LibpqExtras.LawfulConversions ()
 import Base.Prelude
 import Data.Attoparsec.ByteString.Char8 qualified as AttoparsecBs
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.LibPQ qualified as Pq
+import Infra.Adapters.Analyser.Sessions.LibpqExtras.LawfulConversions ()
 
 type Context =
   Pq.Connection

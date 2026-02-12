@@ -1,4 +1,4 @@
-module Analysis.Procedures.ResolveTypeByOid.Statements.SelectEnumLabels where
+module Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements.SelectEnumLabels where
 
 import Base.Prelude
 import Hasql.Mapping.IsStatement

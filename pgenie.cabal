@@ -131,6 +131,8 @@ library analysis
   other-modules:
     Analysis.Algebras.Procedure
     Analysis.Domain
+    Analysis.LibpqExtras.LawfulConversions
+    Analysis.LibpqExtras.Procedures.DescribeQuery
     Analysis.Procedures
     Analysis.Procedures.DescribeQuery
     Analysis.Procedures.ResolveColumn
@@ -151,30 +153,16 @@ library analysis
 
   build-depends:
     aeson,
+    attoparsec,
     hasql,
     hasql-dev,
     hasql-mapping,
     hasql-th,
     iproute,
     pgenie:base,
-    pgenie:libpq-extras,
+    postgresql-libpq,
     syntactic-class,
     text-builder,
-    vector,
-
-library libpq-extras
-  import: base
-  hs-source-dirs: src/libpq-extras/
-  exposed-modules:
-    LibpqExtras.LawfulConversions
-    LibpqExtras.Procedures.DescribeQuery
-
-  build-depends:
-    attoparsec,
-    base,
-    lawful-conversions,
-    pgenie:base,
-    postgresql-libpq,
     vector,
 
 library logic

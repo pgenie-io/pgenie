@@ -1,12 +1,9 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module LibpqExtras.LawfulConversions where
+module Analysis.LibpqExtras.LawfulConversions where
 
-import Data.Int
-import Data.Word
+import Base.Prelude
 import Database.PostgreSQL.LibPQ qualified as Pq
-import LawfulConversions
-import Prelude
 
 -- * Oid
 

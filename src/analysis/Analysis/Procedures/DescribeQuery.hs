@@ -6,11 +6,11 @@ module Analysis.Procedures.DescribeQuery
 where
 
 import Analysis.Algebras.Procedure
+import Analysis.LibpqExtras.Procedures.DescribeQuery qualified as LibpqExtras
 import Base.Prelude
 import Data.Vector qualified as Vector
 import Hasql.Session qualified
 import HasqlDev qualified
-import LibpqExtras.Procedures.DescribeQuery qualified
 import SyntacticClass qualified as Syntactic
 
 data DescribeQuery = DescribeQuery
@@ -44,26 +44,26 @@ instance Procedure DescribeQuery where
     result <- HasqlDev.runSession do
       Hasql.Session.onLibpqConnection \libpqConnection -> do
         result <-
-          LibpqExtras.Procedures.DescribeQuery.io
+          LibpqExtras.io
             libpqConnection
-            LibpqExtras.Procedures.DescribeQuery.Params {query}
+            LibpqExtras.Params {query}
         pure (Right result, libpqConnection)
     case result of
-      Right (LibpqExtras.Procedures.DescribeQuery.Result paramTypeOids resultColumns) ->
+      Right (LibpqExtras.Result paramTypeOids resultColumns) ->
         pure
           DescribeQueryResult
             { paramTypeOids,
               resultColumns =
                 Vector.map
-                  ( \(LibpqExtras.Procedures.DescribeQuery.ResultColumn name typeOid typeMod tableOid tableColumnIndex) ->
+                  ( \(LibpqExtras.ResultColumn name typeOid typeMod tableOid tableColumnIndex) ->
                       DescribeQueryResultColumn {name, typeOid, typeMod, tableOid, tableColumnIndex}
                   )
                   resultColumns
             }
       Left error -> case error of
-        LibpqExtras.Procedures.DescribeQuery.ConnectionError ->
+        LibpqExtras.ConnectionError ->
           crash ["Connection error"]
-        LibpqExtras.Procedures.DescribeQuery.ResultError code message position ->
+        LibpqExtras.ResultError code message position ->
           crash
             [ "Broken query. SQLSTATE code: ",
               Syntactic.toTextBuilder code,

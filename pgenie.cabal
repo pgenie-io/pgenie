@@ -174,13 +174,13 @@ library infra
   hs-source-dirs: src/infra
   exposed-modules:
     Infra.Adapters.Analyser
-    Infra.Adapters.Analyser.Sessions
     Infra.Adapters.Display
     Infra.Adapters.Main
 
   other-modules:
     Infra.Adapters.Analyser.Scopes.Testcontainers
     Infra.Adapters.Analyser.Scopes.Testcontainers.IO
+    Infra.Adapters.Analyser.Sessions
     Infra.Adapters.Analyser.Sessions.Algebras.Procedure
     Infra.Adapters.Analyser.Sessions.Domain
     Infra.Adapters.Analyser.Sessions.LibpqExtras.LawfulConversions

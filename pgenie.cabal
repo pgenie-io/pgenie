@@ -91,7 +91,7 @@ executable pgn
   build-depends:
     pgenie:base,
     pgenie:infra,
-    pgenie:ui
+    pgenie:ui,
 
 library base
   import: base

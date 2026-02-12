@@ -12,6 +12,7 @@ import Control.Exception as Exports
 import Control.Monad as Exports hiding (forM, forM_, mapM, mapM_, msum, sequence, sequence_)
 import Control.Monad.Except as Exports
 import Control.Monad.Fix as Exports hiding (fix)
+import Control.Monad.Parallel as Exports (MonadFork (forkExec), MonadParallel (bindM2))
 import Control.Monad.Reader as Exports
 import Control.Monad.ST as Exports
 import Control.Monad.ST.Unsafe as Exports

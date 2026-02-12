@@ -6,7 +6,6 @@ import App.Frameworks.CliUi qualified as Algebras.CliUi
 import App.Services.Main qualified as Services.Main
 import Base.Prelude
 import Logic qualified
-import ParallelismAlgebra qualified
 import StagingAlgebra qualified
 
 run :: Main a -> IO a
@@ -20,7 +19,7 @@ newtype Main a = Main (Services.Main.Context -> IO (Either Logic.Error a))
       Applicative,
       Monad,
       MonadError Logic.Error,
-      ParallelismAlgebra.Parallelism
+      MonadParallel
     )
     via (ReaderT Services.Main.Context (ExceptT Logic.Error IO))
 

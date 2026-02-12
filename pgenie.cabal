@@ -106,6 +106,7 @@ library base
     data-has,
     hashable,
     lawful-conversions,
+    monad-parallel,
     mtl,
     profunctors,
     quickcheck-instances,
@@ -197,8 +198,8 @@ library logic
     algebraic-path,
     containers,
     megaparsec,
+    monad-parallel,
     pgenie:base,
-    pgenie:parallelism-algebra,
     pgenie:staging-algebra,
     pgenie-gen,
     postgresql-syntax,
@@ -219,28 +220,6 @@ library staging-algebra
 
   build-depends:
     pgenie:base
-
-library parallelism-algebra
-  import: base
-  hs-source-dirs: src/parallelism-algebra/
-  exposed-modules:
-    ParallelismAlgebra
-
-  other-modules:
-    ParallelismAlgebra.Algebra
-    ParallelismAlgebra.Runtimes
-    ParallelismAlgebra.Runtimes.ExceptT
-    ParallelismAlgebra.Runtimes.Fx
-    ParallelismAlgebra.Runtimes.IO
-    ParallelismAlgebra.Runtimes.MaybeT
-    ParallelismAlgebra.Runtimes.ReaderT
-
-  build-tool-depends:
-    autoexporter:autoexporter
-
-  build-depends:
-    fx,
-    pgenie:base,
 
 library app
   import: base
@@ -279,7 +258,6 @@ library app
     optparse-applicative,
     pgenie:base,
     pgenie:logic,
-    pgenie:parallelism-algebra,
     pgenie:staging-algebra,
     postgresql-libpq,
     text,

@@ -6,7 +6,6 @@ import Logic.Name qualified as Name
 import PGenieGen qualified as Gen
 import PGenieGen.Model.Input qualified as Gen.Input
 import PGenieGen.Model.Output qualified as Gen.Output
-import ParallelismAlgebra
 
 -- * Error
 
@@ -106,9 +105,9 @@ class (MonadError Error m) => LoadsGen m where
 
 -- | Combined capabilities required by the logic.
 type Caps m =
-  ( LoadsGen m,
+  ( MonadParallel m,
+    LoadsGen m,
     DbOps m,
-    Parallelism m,
     FsOps m,
     Reports m
   )

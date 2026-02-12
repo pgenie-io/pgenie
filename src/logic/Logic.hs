@@ -9,6 +9,7 @@ where
 
 import AlgebraicPath qualified as Path
 import Base.Prelude hiding (readFile, writeFile)
+import Control.Monad.Parallel qualified as MonadParallel
 import Data.Aeson.Text qualified as Aeson
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
@@ -20,7 +21,6 @@ import PGenieGen qualified as Gen
 import PGenieGen.Model.Input qualified as Gen.Input
 import PGenieGen.Model.Output qualified as Gen.Output
 import PGenieGen.Model.Output.Report qualified as Gen.Output.Report
-import ParallelismAlgebra
 import StagingAlgebra
 import SyntacticClass qualified as Syntactic
 
@@ -39,7 +39,7 @@ runLogic (Logic f) = f 0 []
 newtype Logic m a
   = Logic (Double -> [Text] -> m a)
   deriving
-    (Functor, Applicative, Monad, Parallelism)
+    (Functor, Applicative, Monad, MonadParallel)
     via (ReaderT Double (ReaderT [Text] m))
 
 instance MonadTrans Logic where
@@ -132,54 +132,52 @@ loadQuerySql queryListed = do
         )
     Right res -> pure res
 
-generateCode :: (LoadsGen m, Stages m, Parallelism m, FsOps m) => ProjectFileLoaded -> Gen.Input.Project -> m [GeneratedArtifact]
+generateCode :: (LoadsGen m, Stages m, MonadParallel m, FsOps m) => ProjectFileLoaded -> Gen.Input.Project -> m [GeneratedArtifact]
 generateCode projectFileLoaded project =
   stage "Generating code" (length projectFileLoaded.artifacts) do
-    runParallelly do
-      for projectFileLoaded.artifacts \(Artifact {..}) ->
-        parallelly do
-          stage name 2 do
-            compileFn <-
-              stage "Loading generator" 1 do
-                gen <- loadGen genUrl
-                case gen config of
-                  Left errMsg ->
-                    throwError
-                      ( Error
-                          []
-                          errMsg
-                          (Just "Ensure the artifact configuration conforms to the format expected by the generator")
-                          [ ("config", to (Aeson.encodeToTextBuilder config))
-                          ]
+    MonadParallel.forM projectFileLoaded.artifacts \(Artifact {..}) ->
+      stage name 2 do
+        compileFn <-
+          stage "Loading generator" 1 do
+            gen <- loadGen genUrl
+            case gen config of
+              Left errMsg ->
+                throwError
+                  ( Error
+                      []
+                      errMsg
+                      (Just "Ensure the artifact configuration conforms to the format expected by the generator")
+                      [ ("config", to (Aeson.encodeToTextBuilder config))
+                      ]
+                  )
+              Right compileFn ->
+                pure compileFn
+
+        stage "Compiling" 1 do
+          let output = compileFn project
+          case output.result of
+            Gen.Output.ResultErr report ->
+              throwError
+                ( Error
+                    report.path
+                    report.message
+                    Nothing
+                    [ ( "warnings",
+                        output.warnings
+                          & map Gen.Output.Report.toWarningYamlText
+                          & Text.intercalate "\n"
                       )
-                  Right compileFn ->
-                    pure compileFn
+                    ]
+                )
+            Gen.Output.ResultOk generatedFiles -> do
+              let artifactPath = fold (Path.maybeFromText name)
+              generatedFilePaths <- for generatedFiles \file -> do
+                let modifiedPath = artifactPath <> file.path
+                writeFile modifiedPath file.content
+                pure modifiedPath
+              pure (GeneratedArtifact name output.warnings generatedFilePaths)
 
-            stage "Compiling" 1 do
-              let output = compileFn project
-              case output.result of
-                Gen.Output.ResultErr report ->
-                  throwError
-                    ( Error
-                        report.path
-                        report.message
-                        Nothing
-                        [ ( "warnings",
-                            output.warnings
-                              & map Gen.Output.Report.toWarningYamlText
-                              & Text.intercalate "\n"
-                          )
-                        ]
-                    )
-                Gen.Output.ResultOk generatedFiles -> do
-                  let artifactPath = fold (Path.maybeFromText name)
-                  generatedFilePaths <- for generatedFiles \file -> do
-                    let modifiedPath = artifactPath <> file.path
-                    writeFile modifiedPath file.content
-                    pure modifiedPath
-                  pure (GeneratedArtifact name output.warnings generatedFilePaths)
-
-analyse :: (LoadsGen m, DbOps m, Parallelism m, FsOps m, Stages m) => ProjectFileLoaded -> m Gen.Input.Project
+analyse :: (LoadsGen m, DbOps m, MonadParallel m, FsOps m, Stages m) => ProjectFileLoaded -> m Gen.Input.Project
 analyse projectFileLoaded =
   stage "Analysing" 2 do
     stage "Executing migrations" 2 do
@@ -192,12 +190,10 @@ analyse projectFileLoaded =
 
       migrationsLoaded <-
         stage "Loading" migrationsCount do
-          runParallelly do
-            for migrationsListed \migrationListed ->
-              parallelly do
-                stage (Path.toText migrationListed) 0 do
-                  migrationLoaded <- readFile migrationListed
-                  pure (migrationListed, migrationLoaded)
+          MonadParallel.forM migrationsListed \migrationListed -> do
+            stage (Path.toText migrationListed) 0 do
+              migrationLoaded <- readFile migrationListed
+              pure (migrationListed, migrationLoaded)
 
       stage "Executing" migrationsCount do
         for migrationsLoaded \(migrationListed, migrationLoaded) -> do
@@ -238,84 +234,83 @@ analyse projectFileLoaded =
 
     (queries, customTypes) <-
       stage "Analysing queries" (length queriesListed) do
-        mixedList <- runParallelly do
-          for queriesListed \queryListed ->
-            parallelly do
-              stage (Name.inSnakeCase queryListed.name) 2 do
-                sqlTemplate <-
-                  stage "Reading file" 1 do
-                    loadQuerySql queryListed
+        mixedList <-
+          MonadParallel.forM queriesListed \queryListed ->
+            stage (Name.inSnakeCase queryListed.name) 2 do
+              sqlTemplate <-
+                stage "Reading file" 1 do
+                  loadQuerySql queryListed
 
-                let nativeTemplate =
-                      sqlTemplate
-                        & SqlTemplate.render
-                          True
-                          (\_ x -> "$" <> Syntactic.toTextBuilder (succ x))
-                        & to
+              let nativeTemplate =
+                    sqlTemplate
+                      & SqlTemplate.render
+                        True
+                        (\_ x -> "$" <> Syntactic.toTextBuilder (succ x))
+                      & to
 
-                InferredQueryTypes {params, resultColumns, mentionedCustomTypes} <-
-                  stage "Inferring types" 1 do
-                    (queryTypes, warnings) <- inferQueryTypes nativeTemplate
-                    for warnings warn
-                    pure queryTypes
+              InferredQueryTypes {params, resultColumns, mentionedCustomTypes} <-
+                stage "Inferring types" 1 do
+                  (queryTypes, warnings) <- inferQueryTypes nativeTemplate
+                  for warnings warn
+                  pure queryTypes
 
-                result :: Maybe Gen.Input.ResultRows <-
-                  let byCardinality cardinality =
-                        pure case nonEmpty resultColumns of
-                          Nothing ->
-                            Nothing
-                          Just columns ->
-                            Just (Gen.Input.ResultRows cardinality columns)
-                   in case SyntaxAnalyser.resolveText nativeTemplate of
-                        Left err -> do
-                          warn
-                            ( Error
-                                []
-                                "Failed to detect result cardinality by AST. Defaulting to multi-row"
-                                Nothing
-                                [("error", err)]
-                            )
-                          byCardinality Gen.Input.ResultRowsCardinalityMultiple
-                        Right SyntaxAnalyser.QuerySyntaxAnalysis {resultRowAmount} ->
-                          case resultRowAmount of
-                            SyntaxAnalyser.SpecificRowAmount 0 ->
-                              pure Nothing
-                            SyntaxAnalyser.SpecificRowAmount 1 ->
-                              byCardinality Gen.Input.ResultRowsCardinalitySingle
-                            SyntaxAnalyser.SpecificRowAmount _ ->
-                              byCardinality Gen.Input.ResultRowsCardinalityMultiple
-                            SyntaxAnalyser.UpToRowAmount 0 ->
-                              pure Nothing
-                            SyntaxAnalyser.UpToRowAmount 1 ->
-                              byCardinality Gen.Input.ResultRowsCardinalityOptional
-                            SyntaxAnalyser.UpToRowAmount _ ->
-                              byCardinality Gen.Input.ResultRowsCardinalityMultiple
-                            SyntaxAnalyser.AnyRowAmount ->
-                              byCardinality Gen.Input.ResultRowsCardinalityMultiple
+              result :: Maybe Gen.Input.ResultRows <-
+                let byCardinality cardinality =
+                      pure case nonEmpty resultColumns of
+                        Nothing ->
+                          Nothing
+                        Just columns ->
+                          Just (Gen.Input.ResultRows cardinality columns)
+                 in case SyntaxAnalyser.resolveText nativeTemplate of
+                      Left err -> do
+                        warn
+                          ( Error
+                              []
+                              "Failed to detect result cardinality by AST. Defaulting to multi-row"
+                              Nothing
+                              [("error", err)]
+                          )
+                        byCardinality Gen.Input.ResultRowsCardinalityMultiple
+                      Right SyntaxAnalyser.QuerySyntaxAnalysis {resultRowAmount} ->
+                        case resultRowAmount of
+                          SyntaxAnalyser.SpecificRowAmount 0 ->
+                            pure Nothing
+                          SyntaxAnalyser.SpecificRowAmount 1 ->
+                            byCardinality Gen.Input.ResultRowsCardinalitySingle
+                          SyntaxAnalyser.SpecificRowAmount _ ->
+                            byCardinality Gen.Input.ResultRowsCardinalityMultiple
+                          SyntaxAnalyser.UpToRowAmount 0 ->
+                            pure Nothing
+                          SyntaxAnalyser.UpToRowAmount 1 ->
+                            byCardinality Gen.Input.ResultRowsCardinalityOptional
+                          SyntaxAnalyser.UpToRowAmount _ ->
+                            byCardinality Gen.Input.ResultRowsCardinalityMultiple
+                          SyntaxAnalyser.AnyRowAmount ->
+                            byCardinality Gen.Input.ResultRowsCardinalityMultiple
 
-                let interpretedParams =
-                      zipWith
-                        ( \param name ->
-                            Gen.Input.Member
-                              { name = Name.toGenName name,
-                                pgName = Name.inSnakeCase name,
-                                isNullable = param.isNullable,
-                                value = param.type_
-                              }
-                        )
-                        params
-                        (SqlTemplate.toGenParamNames sqlTemplate)
+              let interpretedParams =
+                    zipWith
+                      ( \param name ->
+                          Gen.Input.Member
+                            { name = Name.toGenName name,
+                              pgName = Name.inSnakeCase name,
+                              isNullable = param.isNullable,
+                              value = param.type_
+                            }
+                      )
+                      params
+                      (SqlTemplate.toGenParamNames sqlTemplate)
 
-                pure
-                  ( Gen.Input.Query
-                      { name = Name.toGenName queryListed.name,
-                        srcPath = queryListed.filePath,
-                        params = interpretedParams,
-                        result,
-                        fragments = SqlTemplate.toGenQueryFragments sqlTemplate
-                      },
-                    mentionedCustomTypes
-                  )
+              pure
+                ( Gen.Input.Query
+                    { name = Name.toGenName queryListed.name,
+                      srcPath = queryListed.filePath,
+                      params = interpretedParams,
+                      result,
+                      fragments = SqlTemplate.toGenQueryFragments sqlTemplate
+                    },
+                  mentionedCustomTypes
+                )
 
         let (queries, customTypesDump) = unzip mixedList
             customTypes =
@@ -336,14 +331,12 @@ analyse projectFileLoaded =
           queries = queries
         }
 
-stagedParFor :: (LoadsGen m, Parallelism m, Stages m) => Text -> (a -> Text) -> [a] -> (a -> m b) -> m [b]
+stagedParFor :: (LoadsGen m, MonadParallel m, Stages m) => Text -> (a -> Text) -> [a] -> (a -> m b) -> m [b]
 stagedParFor stageName nameFn items action =
   stage stageName (length items) do
-    runParallelly do
-      for items \item ->
-        parallelly do
-          stage (nameFn item) 0 do
-            action item
+    MonadParallel.forM items \item ->
+      stage (nameFn item) 0 do
+        action item
 
 -- | Depending on the warning handling strategy this can either log the warning and continue or throw an error to stop the execution.
 warn :: (MonadError Error m) => Error -> m ()

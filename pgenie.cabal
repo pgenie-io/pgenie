@@ -180,6 +180,7 @@ library logic
   hs-source-dirs: src/logic/
   exposed-modules:
     Logic
+    Logic.Algebra
     Logic.Name
     Logic.SqlTemplate
 

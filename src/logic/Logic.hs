@@ -51,22 +51,22 @@ instance (MonadError Error m) => MonadError Error (Logic m) where
   catchError (Logic f) handler =
     Logic \p q -> catchError (f p q) (\e -> let Logic h = handler e in h p q)
 
-instance (Reports m) => Stages (Logic m) where
+instance (Emits m) => Stages (Logic m) where
   stage name substagesCount (Logic runInner) =
     Logic \progressPerStage path ->
       if substagesCount > 0
         then do
           let newPath = name : path
-          enterStage newPath
+          emit (StageEntered newPath)
           let progressPerSubstage = progressPerStage / fromIntegral substagesCount
           result <- runInner progressPerSubstage newPath
-          exitStage newPath 0
+          emit (StageExited newPath 0)
           pure result
         else do
           let newPath = name : path
-          enterStage newPath
+          emit (StageEntered newPath)
           result <- runInner 0 newPath
-          exitStage newPath progressPerStage
+          emit (StageExited newPath progressPerStage)
           pure result
 
 instance (DbOps m) => DbOps (Logic m) where
@@ -80,6 +80,9 @@ instance (FsOps m) => FsOps (Logic m) where
 
 instance (LoadsGen m) => LoadsGen (Logic m) where
   loadGen genLocation = lift (loadGen genLocation)
+
+instance (Emits m) => Emits (Logic m) where
+  emit event = lift (emit event)
 
 -- * API ops
 
@@ -174,7 +177,7 @@ generateCode projectFileLoaded project =
                 pure modifiedPath
               pure (GeneratedArtifact name output.warnings generatedFilePaths)
 
-analyse :: (LoadsGen m, DbOps m, MonadParallel m, FsOps m, Stages m) => ProjectFileLoaded -> m Gen.Input.Project
+analyse :: (LoadsGen m, DbOps m, MonadParallel m, FsOps m, Stages m, Emits m) => ProjectFileLoaded -> m Gen.Input.Project
 analyse projectFileLoaded =
   stage "Analysing" 2 do
     stage "Executing migrations" 2 do
@@ -336,7 +339,7 @@ stagedParFor stageName nameFn items action =
         action item
 
 -- | Depending on the warning handling strategy this can either log the warning and continue or throw an error to stop the execution.
-warn :: (MonadError Error m) => Error -> m ()
+warn :: (Emits m) => Error -> m ()
 warn =
   -- TODO: Implement conditional throwing or emission.
-  throwError
+  emit . WarningEmitted

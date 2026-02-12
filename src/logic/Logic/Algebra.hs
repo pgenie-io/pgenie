@@ -17,6 +17,14 @@ data Error = Error
     details :: [(Text, Text)]
   }
 
+-- * Event
+
+data Event
+  = StageEntered [Text]
+  | StageExited [Text] Double
+  | WarningEmitted Error
+  | Failed Error
+
 -- * States
 
 data ProjectFileLoaded = ProjectFileLoaded
@@ -103,10 +111,8 @@ class (Monad m) => Stages m where
     m a ->
     m a
 
--- | Capability for reporting progress of stages and substages.
-class (Monad m) => Reports m where
-  enterStage :: [Text] -> m ()
-  exitStage :: [Text] -> Double -> m ()
+class (Monad m) => Emits m where
+  emit :: Event -> m ()
 
 class (MonadError Error m) => DbOps m where
   executeMigration :: Text -> m ()
@@ -127,5 +133,5 @@ type Caps m =
     LoadsGen m,
     DbOps m,
     FsOps m,
-    Reports m
+    Emits m
   )

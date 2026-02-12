@@ -56,13 +56,9 @@ scope = do
   analyser <- Analyser.scope
   pure Device {display, analyser}
 
-instance Logic.Reports (Fx Device Logic.Error) where
-  enterStage path =
-    Logic.enterStage path
-      & mapEnv (.display)
-
-  exitStage path progress =
-    Logic.exitStage path progress
+instance Logic.Emits (Fx Device Logic.Error) where
+  emit event =
+    Logic.emit event
       & mapEnv (.display)
 
 instance Logic.DbOps (Fx Device Logic.Error) where

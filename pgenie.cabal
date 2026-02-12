@@ -302,6 +302,21 @@ library infra
     text-builder,
     text-builder-dev,
 
+library testcontainers-fx
+  import: base
+  hs-source-dirs: src/testcontainers-fx
+  exposed-modules:
+    TestcontainersFx.Scope
+
+  other-modules:
+    TestcontainersFx.Scope.IO
+
+  build-depends:
+    fx,
+    pgenie:base,
+    resourcet,
+    testcontainers,
+
 test-suite logic-test
   import: test
   type: exitcode-stdio-1.0

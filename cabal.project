@@ -40,6 +40,8 @@ constraints:
   optparse-applicative ^>=0.18.1,
   postgresql-syntax ^>=0.4.3,
   profunctors >=5.6 && <6,
+  resourcet ^>=1.3,
+  testcontainers ^>=0.5,
   text >=1.2 && <3,
   text-builder ^>=1.0.0.3,
   text-builder-lawful-conversions ^>=0.1,
@@ -51,6 +53,7 @@ constraints:
   witherable ^>=0.5,
 
 allow-newer: 
+  *:base,
   dhall-json:aeson, 
   dhall-json:bytestring, 
-  dhall-json:text
+  dhall-json:text,

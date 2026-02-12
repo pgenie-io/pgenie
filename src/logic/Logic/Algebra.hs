@@ -88,7 +88,7 @@ class (Monad m) => Reports m where
 
 class (MonadError Error m) => DbOps m where
   executeMigration :: Text -> m ()
-  inferQueryTypes :: Text -> m InferredQueryTypes
+  inferQueryTypes :: Text -> m (InferredQueryTypes, [Error])
 
 class (MonadError Error m) => FsOps m where
   readFile :: Path -> m Text

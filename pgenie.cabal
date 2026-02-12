@@ -298,15 +298,19 @@ library infra
   build-depends:
     fx,
     hasql,
+    hasql-dev,
     hasql-pool,
+    pgenie:analysis,
     pgenie:base,
     pgenie:logic,
     pgenie:staging-algebra,
     pgenie:testcontainers-fx,
+    pgenie-gen,
     testcontainers-postgresql,
     text,
     text-builder,
     text-builder-dev,
+    vector,
 
 library testcontainers-fx
   import: base

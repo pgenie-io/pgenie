@@ -254,7 +254,9 @@ analyse projectFileLoaded =
 
                 InferredQueryTypes {params, resultColumns, mentionedCustomTypes} <-
                   stage "Inferring types" 1 do
-                    inferQueryTypes nativeTemplate
+                    (queryTypes, warnings) <- inferQueryTypes nativeTemplate
+                    for warnings warn
+                    pure queryTypes
 
                 result :: Maybe Gen.Input.ResultRows <-
                   let byCardinality cardinality =
@@ -266,8 +268,12 @@ analyse projectFileLoaded =
                    in case SyntaxAnalyser.resolveText nativeTemplate of
                         Left err -> do
                           warn
-                            "Failed to detect result cardinality by AST. Defaulting to multi-row"
-                            [("error", err)]
+                            ( Error
+                                []
+                                "Failed to detect result cardinality by AST. Defaulting to multi-row"
+                                Nothing
+                                [("error", err)]
+                            )
                           byCardinality Gen.Input.ResultRowsCardinalityMultiple
                         Right SyntaxAnalyser.QuerySyntaxAnalysis {resultRowAmount} ->
                           case resultRowAmount of
@@ -326,12 +332,7 @@ stagedParFor stageName nameFn items action =
             action item
 
 -- | Depending on the warning handling strategy this can either log the warning and continue or throw an error to stop the execution.
-warn :: (MonadError Error m) => Text -> [(Text, Text)] -> m ()
-warn message details =
+warn :: (MonadError Error m) => Error -> m ()
+warn =
+  -- TODO: Implement conditional throwing or emission.
   throwError
-    ( Error
-        []
-        message
-        Nothing
-        details
-    )

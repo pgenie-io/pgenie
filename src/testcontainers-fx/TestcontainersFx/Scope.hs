@@ -9,7 +9,8 @@ import TestcontainersFx.Scope.IO qualified as IO
 
 testContainer :: Tc.TestContainer a -> Scope SomeException a
 testContainer startContainers = do
-  (a, internalState) <-
-    acquire (runExceptionalIO (const (IO.acquire startContainers)))
+  (a, internalState) <- acquire (runExceptionalIO (const (IO.acquire startContainers)))
+
   registerRelease (runExceptionalIO (const (IO.release internalState)))
+
   pure a

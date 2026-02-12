@@ -1,9 +1,9 @@
 module Main (main) where
 
-import App.Commands qualified as Commands
-import App.Frameworks.CliUi qualified as Algebras.CliUi
 import Base.Prelude
 import Infra.Adapters.Main qualified as MainAdapter
+import Ui.Commands qualified as Commands
+import Ui.Frameworks.CliUi qualified as Algebras.CliUi
 
 main :: IO ()
 main =

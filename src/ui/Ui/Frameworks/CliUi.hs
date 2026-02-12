@@ -1,4 +1,4 @@
-module App.Frameworks.CliUi where
+module Ui.Frameworks.CliUi where
 
 import Base.Prelude
 import Data.Text qualified as Text

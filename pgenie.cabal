@@ -89,9 +89,9 @@ executable pgn
   hs-source-dirs: src/pgn/
   main-is: Main.hs
   build-depends:
-    pgenie:app,
     pgenie:base,
     pgenie:infra,
+    pgenie:ui
 
 library base
   import: base
@@ -154,14 +154,14 @@ library logic
     text-builder,
     vector,
 
-library app
+library ui
   import: base
-  hs-source-dirs: src/app/
+  hs-source-dirs: src/ui/
   exposed-modules:
-    App.Commands
-    App.Commands.Generate
-    App.Commands.Sign
-    App.Frameworks.CliUi
+    Ui.Commands
+    Ui.Commands.Generate
+    Ui.Commands.Sign
+    Ui.Frameworks.CliUi
 
   build-depends:
     optparse-applicative,

@@ -17,9 +17,15 @@ data Error
   = DisplayError Display.Error
 
 instance StagingAlgebra.Stages (Fx Device Error) where
-  stage name substagesCount =
-    subtransform
-      (.display)
-      (\display device -> device {display})
-      DisplayError
-      (StagingAlgebra.stage name substagesCount)
+  stage :: forall a. Text -> Int -> Fx Device Error a -> Fx Device Error a
+  stage name substagesCount nestedFx = do
+    dev :: Device <- runTotalIO pure
+    let subFx :: Fx Display.Device Display.Error (Either Error a) =
+          nestedFx
+            & mapEnv (const dev)
+            & exposeErr
+    result <-
+      StagingAlgebra.stage name substagesCount subFx
+        & mapEnv (.display)
+        & mapErr DisplayError
+    either throwError pure result

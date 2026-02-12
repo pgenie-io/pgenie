@@ -18,7 +18,7 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/nikita-volkov/fx
-  tag: 5d52d083af1139e5fed9b783d667c8ed2167fae3
+  tag: 137b75bd4fb631a76128a1155c77b9d76bdf9a90
 
 -- Provides `pgenie-gen`
 source-repository-package

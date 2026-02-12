@@ -42,6 +42,7 @@ common base
     GADTs
     GeneralizedNewtypeDeriving
     ImportQualifiedPost
+    InstanceSigs
     LambdaCase
     LiberalTypeSynonyms
     MagicHash

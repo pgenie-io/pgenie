@@ -4,7 +4,6 @@ import Base.Prelude
 import Control.Monad.Trans.Resource qualified as ResourceT
 import Control.Monad.Trans.Resource.Internal qualified as ResourceT
 import Data.Acquire qualified as ResourceT
-import Fx qualified
 import TestContainers qualified as Tc
 import TestContainers.Monad qualified as Tc
 

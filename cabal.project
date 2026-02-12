@@ -56,6 +56,8 @@ constraints:
 
 allow-newer: 
   *:base,
+  *:ghc,
+  *:template-haskell,
   dhall-json:aeson, 
   dhall-json:bytestring, 
   dhall-json:text,

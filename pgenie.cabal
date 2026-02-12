@@ -154,20 +154,21 @@ library logic
     text-builder,
     vector,
 
-library ui
-  import: base
-  hs-source-dirs: src/ui/
-  exposed-modules:
-    Ui
-
+test-suite logic-test
+  import: test
+  type: exitcode-stdio-1.0
+  hs-source-dirs: src/logic-test
+  main-is: Main.hs
   other-modules:
-    Ui.Commands
-    Ui.Commands.Generate
-    Ui.Commands.Sign
-    Ui.Framework
+    SqlTemplateSpec
+
+  build-tool-depends:
+    hspec-discover:hspec-discover
 
   build-depends:
-    optparse-applicative,
+    QuickCheck,
+    hspec,
+    megaparsec,
     pgenie:base,
     pgenie:logic,
     text,
@@ -232,21 +233,20 @@ library infra
     text-builder-dev,
     vector,
 
-test-suite logic-test
-  import: test
-  type: exitcode-stdio-1.0
-  hs-source-dirs: src/logic-test
-  main-is: Main.hs
-  other-modules:
-    SqlTemplateSpec
+library ui
+  import: base
+  hs-source-dirs: src/ui/
+  exposed-modules:
+    Ui
 
-  build-tool-depends:
-    hspec-discover:hspec-discover
+  other-modules:
+    Ui.Commands
+    Ui.Commands.Generate
+    Ui.Commands.Sign
+    Ui.Framework
 
   build-depends:
-    QuickCheck,
-    hspec,
-    megaparsec,
+    optparse-applicative,
     pgenie:base,
     pgenie:logic,
     text,

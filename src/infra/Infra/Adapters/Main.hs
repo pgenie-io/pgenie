@@ -12,8 +12,8 @@ import Fx
 import Infra.Adapters.Analyser qualified as Analyser
 import Infra.Adapters.Display qualified as Display
 import Logic qualified
+import Logic.StagingAlgebra qualified as StagingAlgebra
 import PGenieGen qualified as Gen
-import StagingAlgebra qualified
 import System.Directory qualified as Directory
 import TextBuilder qualified
 
@@ -28,7 +28,7 @@ run fx =
     & scoping scope
     & handleErr
       ( \err ->
-          runTotalIO \dev -> do
+          runTotalIO \_dev -> do
             Text.putStrLn
               $ from @TextBuilder
               $ mconcat

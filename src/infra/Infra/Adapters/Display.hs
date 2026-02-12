@@ -8,7 +8,7 @@ import Base.Prelude
 import Data.Text.IO qualified as Text
 import Fx
 import Logic qualified
-import StagingAlgebra qualified
+import Logic.StagingAlgebra qualified as StagingAlgebra
 import TextBuilder qualified
 import TextBuilderDev qualified
 
@@ -43,7 +43,7 @@ instance Logic.Reports (Fx Device Logic.Error) where
             TextBuilder.intercalateMap " > " to path
           ]
 
-  exitStage path progress =
+  exitStage _path progress =
     runTotalIO \dev -> do
       memory <- takeMVar dev.memoryVar
       let newProgress = memory.progress + progress

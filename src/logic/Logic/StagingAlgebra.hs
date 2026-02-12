@@ -1,4 +1,4 @@
-module StagingAlgebra.Algebra
+module Logic.StagingAlgebra
   ( -- * Ports
     Stages (..),
   )

@@ -16,12 +16,12 @@ import Data.Text qualified as Text
 import Logic.Algebra
 import Logic.Name qualified as Name
 import Logic.SqlTemplate qualified as SqlTemplate
+import Logic.StagingAlgebra
 import Logic.SyntaxAnalyser qualified as SyntaxAnalyser
 import PGenieGen qualified as Gen
 import PGenieGen.Model.Input qualified as Gen.Input
 import PGenieGen.Model.Output qualified as Gen.Output
 import PGenieGen.Model.Output.Report qualified as Gen.Output.Report
-import StagingAlgebra
 import SyntacticClass qualified as Syntactic
 
 -- * Transformers

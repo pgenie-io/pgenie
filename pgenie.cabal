@@ -185,6 +185,7 @@ library logic
     Logic.Algebra
     Logic.Name
     Logic.SqlTemplate
+    Logic.StagingAlgebra
 
   other-modules:
     Logic.Name.Megaparsec
@@ -200,26 +201,12 @@ library logic
     megaparsec,
     monad-parallel,
     pgenie:base,
-    pgenie:staging-algebra,
     pgenie-gen,
     postgresql-syntax,
     syntactic-class,
     text,
     text-builder,
     vector,
-
-library staging-algebra
-  import: base
-  hs-source-dirs: src/staging-algebra/
-  exposed-modules:
-    StagingAlgebra
-
-  other-modules:
-    StagingAlgebra.Algebra
-    StagingAlgebra.Runtimes.RecordEvents
-
-  build-depends:
-    pgenie:base
 
 library app
   import: base
@@ -232,19 +219,11 @@ library app
     App.Frameworks.CliUi
 
   build-depends:
-    attoparsec,
-    fx,
-    hasql,
-    hasql-pool,
     optparse-applicative,
     pgenie:base,
     pgenie:infra,
     pgenie:logic,
-    pgenie:staging-algebra,
-    postgresql-libpq,
     text,
-    uuid,
-    vector,
 
 library infra
   import: base
@@ -264,7 +243,6 @@ library infra
     pgenie:analysis,
     pgenie:base,
     pgenie:logic,
-    pgenie:staging-algebra,
     pgenie:testcontainers-fx,
     pgenie-gen,
     testcontainers-postgresql,

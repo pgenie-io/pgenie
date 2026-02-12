@@ -1,15 +1,9 @@
 module Main (main) where
 
 import Base.Prelude
-import Infra.Adapters.Main qualified as MainAdapter
-import Ui.Commands qualified as Commands
-import Ui.Framework qualified as Algebras.CliUi
+import Infra.Adapters.Main qualified
+import Ui qualified
 
 main :: IO ()
 main =
-  Algebras.CliUi.main
-    "pgn"
-    "pGenie CLI"
-    [ Commands.generate
-    ]
-    MainAdapter.run
+  Ui.main Infra.Adapters.Main.run

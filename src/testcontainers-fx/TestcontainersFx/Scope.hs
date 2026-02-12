@@ -7,7 +7,7 @@ import Fx
 import TestContainers qualified as Tc
 import TestcontainersFx.Scope.IO qualified as IO
 
-testContainer :: Tc.TestContainer a -> Scope env SomeException a
+testContainer :: Tc.TestContainer a -> Scope SomeException a
 testContainer startContainers =
   acquire (runExceptionalIO (const (IO.acquire startContainers)))
     & releasing (runExceptionalIO (IO.release . snd))

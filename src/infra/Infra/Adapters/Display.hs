@@ -8,7 +8,6 @@ import Base.Prelude
 import Data.Text.IO qualified as Text
 import Fx
 import Logic qualified
-import Logic.StagingAlgebra qualified as StagingAlgebra
 import TextBuilder qualified
 import TextBuilderDev qualified
 
@@ -49,36 +48,3 @@ instance Logic.Reports (Fx Device Logic.Error) where
       let newProgress = memory.progress + progress
       let newMemory = memory {progress = newProgress}
       putMVar dev.memoryVar newMemory
-
-instance StagingAlgebra.Stages (Fx Device Logic.Error) where
-  stage name substagesCount action = do
-    result <-
-      action
-        & mapEnv
-          ( \dev ->
-              dev
-                { progressPerStage =
-                    dev.progressPerStage / fromIntegral substagesCount,
-                  location =
-                    name : dev.location
-                }
-          )
-
-    -- Inner stage finished. Reporting progress.
-    runTotalIO \dev -> do
-      memory <- takeMVar dev.memoryVar
-      let newProgress = memory.progress + dev.progressPerStage
-      Text.putStrLn
-        $ from @TextBuilder
-        $ mconcat
-        $ [ "Progress: ",
-            TextBuilderDev.doubleFixedPointPercent 0 newProgress,
-            "%, at stage: ",
-            to name,
-            ", location: ",
-            TextBuilder.intercalateMap " > " to (reverse dev.location)
-          ]
-      let newMemory = memory {progress = newProgress}
-      putMVar dev.memoryVar newMemory
-
-    pure result

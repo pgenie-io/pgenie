@@ -85,6 +85,24 @@ data QueriesMetadataMerged = QueriesMetadataMerged
 -- They allow to implement the overall orchestration logic in a way that is decoupled from specific implementations of these capabilities, making it easier to test and maintain.
 -- We simply state what we need for the logic to work and provide an interface for the implementations to conform to.
 
+-- |
+-- - Reports progress.
+-- - Reports stage enter and exit for logging.
+-- - Reports parallelism as @enters - exits@. Amount of actively running stages.
+class (Monad m) => Stages m where
+  -- | Wrap an action as a stage in progress.
+  stage ::
+    -- | Name of the stage. May be empty.
+    Text ->
+    -- | Amount of substages.
+    --
+    -- Each nested stage exit will increase the progress within this stage by @1 / amountOfSubstages@.
+    --
+    -- If there's no substages, pass @0@. Then only the exit of the whole stage will increase the progress.
+    Int ->
+    m a ->
+    m a
+
 -- | Capability for reporting progress of stages and substages.
 class (Monad m) => Reports m where
   enterStage :: [Text] -> m ()

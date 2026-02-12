@@ -12,7 +12,6 @@ import Fx
 import Infra.Adapters.Analyser qualified as Analyser
 import Infra.Adapters.Display qualified as Display
 import Logic qualified
-import Logic.StagingAlgebra qualified as StagingAlgebra
 import PGenieGen qualified as Gen
 import System.Directory qualified as Directory
 import TextBuilder qualified
@@ -56,18 +55,6 @@ scope = do
   display <- Display.scope
   analyser <- Analyser.scope
   pure Device {display, analyser}
-
-instance StagingAlgebra.Stages (Fx Device Logic.Error) where
-  stage name substagesCount nestedFx = do
-    dev <- runTotalIO pure
-    let subFx =
-          nestedFx
-            & mapEnv (const dev)
-            & exposeErr
-    result <-
-      StagingAlgebra.stage name substagesCount subFx
-        & mapEnv (.display)
-    either throwError pure result
 
 instance Logic.Reports (Fx Device Logic.Error) where
   enterStage path =

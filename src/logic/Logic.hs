@@ -16,7 +16,6 @@ import Data.Text qualified as Text
 import Logic.Algebra
 import Logic.Name qualified as Name
 import Logic.SqlTemplate qualified as SqlTemplate
-import Logic.StagingAlgebra
 import Logic.SyntaxAnalyser qualified as SyntaxAnalyser
 import PGenieGen qualified as Gen
 import PGenieGen.Model.Input qualified as Gen.Input

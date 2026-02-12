@@ -130,7 +130,6 @@ library logic
     Logic.Algebra
     Logic.Name
     Logic.SqlTemplate
-    Logic.StagingAlgebra
 
   other-modules:
     Logic.Name.Megaparsec

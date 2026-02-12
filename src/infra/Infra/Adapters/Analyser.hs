@@ -112,20 +112,18 @@ instance Logic.DbOps (Fx Device Error) where
       adaptQuery :: Analysis.Query -> Logic.InferredQueryTypes
       adaptQuery query =
         let params =
-              zipWith adaptParam [1 ..] (Vector.toList query.params)
+              fmap adaptParam (Vector.toList query.params)
             resultColumns =
               map adaptResultColumn (Vector.toList query.resultColumns)
             mentionedCustomTypes =
               collectCustomTypes query
          in Logic.InferredQueryTypes {params, resultColumns, mentionedCustomTypes}
 
-      adaptParam :: Int -> Analysis.Param -> Gen.Input.Member
-      adaptParam ix param =
-        Gen.Input.Member
-          { name = textToName ("param" <> Text.pack (show ix)),
-            pgName = "$" <> Text.pack (show ix),
-            isNullable = param.nullable,
-            value = adaptType param.type_
+      adaptParam :: Analysis.Param -> Logic.InferredParam
+      adaptParam param =
+        Logic.InferredParam
+          { isNullable = param.nullable,
+            type_ = adaptType param.type_
           }
 
       adaptResultColumn :: Analysis.ResultColumn -> Gen.Input.Member

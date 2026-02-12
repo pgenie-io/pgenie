@@ -46,9 +46,14 @@ data QueryListed = QueryListed
   }
 
 data InferredQueryTypes = InferredQueryTypes
-  { params :: [Gen.Input.Member],
+  { params :: [InferredParam],
     resultColumns :: [Gen.Input.Member],
     mentionedCustomTypes :: [Gen.Input.CustomType]
+  }
+
+data InferredParam = InferredParam
+  { isNullable :: Bool,
+    type_ :: Gen.Input.Value
   }
 
 data GeneratedArtifact = GeneratedArtifact

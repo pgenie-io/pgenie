@@ -1,6 +1,7 @@
 module Logic.SqlTemplate
   ( SqlTemplate,
     toGenQueryFragments,
+    toGenParamNames,
     render,
     megaparsecOf,
     tryFromText,
@@ -155,6 +156,10 @@ toGenQueryFragments (SqlTemplate segments) =
           return [Gen.QueryFragmentSql ("'" <> text <> "'")]
         DoubleQuotedLiteral text -> do
           return [Gen.QueryFragmentSql ("\"" <> text <> "\"")]
+
+toGenParamNames :: SqlTemplate -> [Name.Name]
+toGenParamNames (SqlTemplate segments) =
+  nub [name | Param name <- segments]
 
 megaparsecOf :: Megaparsec.Parsec Void Text SqlTemplate
 megaparsecOf = do

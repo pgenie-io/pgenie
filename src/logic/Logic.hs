@@ -1,7 +1,8 @@
 {-# OPTIONS_GHC -Wno-unused-binds -Wno-unused-imports -Wno-name-shadowing -Wno-incomplete-patterns -Wno-unused-matches -Wno-missing-methods -Wno-unused-record-wildcards -Wno-redundant-constraints -Wno-deprecations -Wno-missing-signatures #-}
 
 module Logic
-  ( module Logic,
+  ( check,
+    generate,
     module Logic.Algebra,
   )
 where
@@ -292,11 +293,24 @@ analyse projectFileLoaded =
                             SyntaxAnalyser.AnyRowAmount ->
                               byCardinality Gen.Input.ResultRowsCardinalityMultiple
 
+                let interpretedParams =
+                      zipWith
+                        ( \param name ->
+                            Gen.Input.Member
+                              { name = Name.toGenName name,
+                                pgName = Name.inSnakeCase name,
+                                isNullable = param.isNullable,
+                                value = param.type_
+                              }
+                        )
+                        params
+                        (SqlTemplate.toGenParamNames sqlTemplate)
+
                 pure
                   ( Gen.Input.Query
                       { name = Name.toGenName queryListed.name,
                         srcPath = queryListed.filePath,
-                        params,
+                        params = interpretedParams,
                         result,
                         fragments = SqlTemplate.toGenQueryFragments sqlTemplate
                       },

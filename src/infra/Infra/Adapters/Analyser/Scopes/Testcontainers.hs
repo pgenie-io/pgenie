@@ -1,11 +1,11 @@
 -- |
 -- Adapter for the `TestContainer` monad to `Scope`.
-module TestcontainersFx.Scope where
+module Infra.Adapters.Analyser.Scopes.Testcontainers where
 
 import Base.Prelude
 import Fx
+import Infra.Adapters.Analyser.Scopes.Testcontainers.IO qualified as IO
 import TestContainers qualified as Tc
-import TestcontainersFx.Scope.IO qualified as IO
 
 testContainer :: Tc.TestContainer a -> Scope SomeException a
 testContainer startContainers = do

@@ -233,6 +233,10 @@ library infra
     Infra.Adapters.Display
     Infra.Adapters.Main
 
+  other-modules:
+    Infra.Adapters.Analyser.Scopes.Testcontainers
+    Infra.Adapters.Analyser.Scopes.Testcontainers.IO
+
   build-depends:
     algebraic-path,
     directory,
@@ -243,28 +247,14 @@ library infra
     pgenie:analysis,
     pgenie:base,
     pgenie:logic,
-    pgenie:testcontainers-fx,
     pgenie-gen,
+    resourcet,
+    testcontainers,
     testcontainers-postgresql,
     text,
     text-builder,
     text-builder-dev,
     vector,
-
-library testcontainers-fx
-  import: base
-  hs-source-dirs: src/testcontainers-fx
-  exposed-modules:
-    TestcontainersFx.Scope
-
-  other-modules:
-    TestcontainersFx.Scope.IO
-
-  build-depends:
-    fx,
-    pgenie:base,
-    resourcet,
-    testcontainers,
 
 test-suite logic-test
   import: test

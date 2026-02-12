@@ -14,10 +14,10 @@ import Hasql.Pool qualified
 import Hasql.Pool.Config qualified
 import Hasql.Session qualified
 import HasqlDev qualified
+import Infra.Adapters.Analyser.Scopes.Testcontainers qualified
 import Logic qualified
 import Logic.Name qualified as Name
 import PGenieGen.Model.Input qualified as Gen.Input
-import TestcontainersFx.Scope qualified
 import TestcontainersPostgresql qualified
 
 newtype Device = Device Hasql.Pool.Pool
@@ -45,7 +45,7 @@ scope = do
   (host, port) <-
     first
       adaptTestcontainersError
-      ( TestcontainersFx.Scope.testContainer
+      ( Infra.Adapters.Analyser.Scopes.Testcontainers.testContainer
           ( TestcontainersPostgresql.setup
               TestcontainersPostgresql.Config
                 { tagName = "postgres:18",

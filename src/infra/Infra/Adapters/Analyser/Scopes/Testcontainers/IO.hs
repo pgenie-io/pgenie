@@ -1,4 +1,4 @@
-module TestcontainersFx.Scope.IO where
+module Infra.Adapters.Analyser.Scopes.Testcontainers.IO where
 
 import Base.Prelude
 import Control.Monad.Trans.Resource qualified as ResourceT

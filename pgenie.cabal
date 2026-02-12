@@ -291,14 +291,19 @@ library infra
   import: base
   hs-source-dirs: src/infra
   exposed-modules:
+    Infra.Adapters.Analyser
     Infra.Adapters.Display
     Infra.Adapters.Main
 
   build-depends:
     fx,
+    hasql,
+    hasql-pool,
     pgenie:base,
     pgenie:logic,
     pgenie:staging-algebra,
+    pgenie:testcontainers-fx,
+    testcontainers-postgresql,
     text,
     text-builder,
     text-builder-dev,

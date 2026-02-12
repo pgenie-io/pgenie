@@ -187,7 +187,6 @@ library logic
 
   other-modules:
     Logic.Name.Megaparsec
-    Logic.QuerySignatures
     Logic.SyntaxAnalyser
     Logic.SyntaxAnalyser.AstInterpreter
     Logic.SyntaxAnalyser.Data

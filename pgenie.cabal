@@ -159,9 +159,11 @@ library ui
   hs-source-dirs: src/ui/
   exposed-modules:
     Ui.Commands
+    Ui.Framework
+
+  other-modules:
     Ui.Commands.Generate
     Ui.Commands.Sign
-    Ui.Frameworks.CliUi
 
   build-depends:
     optparse-applicative,

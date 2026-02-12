@@ -5,7 +5,7 @@ module Ui.Commands.Sign (sign) where
 import Base.Prelude
 import Data.Text qualified as Text
 import Options.Applicative qualified as Opt
-import Ui.Frameworks.CliUi
+import Ui.Framework
 
 sign :: Command m
 sign =

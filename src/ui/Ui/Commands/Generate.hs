@@ -6,7 +6,7 @@ module Ui.Commands.Generate (generate) where
 import Base.Prelude
 import Logic qualified
 import Options.Applicative qualified as Opt
-import Ui.Frameworks.CliUi
+import Ui.Framework
 
 generate :: (Logic.Caps m) => Command m
 generate =

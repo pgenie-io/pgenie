@@ -1,23 +1,12 @@
 module Logic.Algebra where
 
-import AlgebraicPath qualified as Path
 import Base.Prelude hiding (readFile, writeFile)
 import Data.Aeson qualified as Aeson
-import Data.Aeson.Text qualified as Aeson
-import Data.Aeson.Types qualified as Aeson
-import Data.Map.Strict qualified as Map
-import Data.Text qualified as Text
-import FsAlgebra.Algebra qualified as FsAlgebra
 import Logic.Name qualified as Name
-import Logic.SqlTemplate qualified as SqlTemplate
-import Logic.SyntaxAnalyser qualified as SyntaxAnalyser
 import PGenieGen qualified as Gen
 import PGenieGen.Model.Input qualified as Gen.Input
 import PGenieGen.Model.Output qualified as Gen.Output
-import PGenieGen.Model.Output.Report qualified as Gen.Output.Report
 import ParallelismAlgebra
-import StagingAlgebra
-import SyntacticClass qualified as Syntactic
 
 -- * Error
 

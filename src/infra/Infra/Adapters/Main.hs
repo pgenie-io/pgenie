@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-unused-binds -Wno-unused-imports -Wno-name-shadowing -Wno-incomplete-patterns -Wno-unused-matches -Wno-missing-methods -Wno-unused-record-wildcards -Wno-redundant-constraints -Wno-deprecations -Wno-missing-signatures #-}
+
 module Infra.Adapters.Main where
 
 import Base.Prelude
@@ -6,7 +8,6 @@ import Fx
 import Infra.Adapters.Display qualified as Display
 import Logic qualified
 import StagingAlgebra qualified
-import TextBuilderDev qualified
 
 data Device = Device
   { display :: Display.Device

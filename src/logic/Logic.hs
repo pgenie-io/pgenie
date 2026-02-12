@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-unused-binds -Wno-unused-imports -Wno-name-shadowing -Wno-incomplete-patterns -Wno-unused-matches -Wno-missing-methods -Wno-unused-record-wildcards -Wno-redundant-constraints -Wno-deprecations -Wno-missing-signatures #-}
+
 module Logic
   ( module Logic,
     module Logic.Algebra,
@@ -6,12 +8,9 @@ where
 
 import AlgebraicPath qualified as Path
 import Base.Prelude hiding (readFile, writeFile)
-import Data.Aeson qualified as Aeson
 import Data.Aeson.Text qualified as Aeson
-import Data.Aeson.Types qualified as Aeson
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
-import FsAlgebra.Algebra qualified as FsAlgebra
 import Logic.Algebra
 import Logic.Name qualified as Name
 import Logic.SqlTemplate qualified as SqlTemplate
@@ -107,7 +106,7 @@ generate =
 
 loadProjectFile :: (FsOps m) => m ProjectFileLoaded
 loadProjectFile = do
-  configContent <- readFile "project.pgn1.yaml"
+  _configContent <- readFile "project.pgn1.yaml"
   -- TODO: Parse YAML config and extract project details
   -- For now return placeholder
   throwError
@@ -278,9 +277,13 @@ analyse projectFileLoaded =
                               byCardinality Gen.Input.ResultRowsCardinalitySingle
                             SyntaxAnalyser.SpecificRowAmount _ ->
                               byCardinality Gen.Input.ResultRowsCardinalityMultiple
+                            SyntaxAnalyser.UpToRowAmount 0 ->
+                              pure Nothing
                             SyntaxAnalyser.UpToRowAmount 1 ->
                               byCardinality Gen.Input.ResultRowsCardinalityOptional
                             SyntaxAnalyser.UpToRowAmount _ ->
+                              byCardinality Gen.Input.ResultRowsCardinalityMultiple
+                            SyntaxAnalyser.AnyRowAmount ->
                               byCardinality Gen.Input.ResultRowsCardinalityMultiple
 
                 pure

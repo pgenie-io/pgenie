@@ -5,7 +5,6 @@ module StagingAlgebra.Algebra
 where
 
 import Base.Prelude
-import Control.Arrow
 
 -- |
 -- - Reports progress.

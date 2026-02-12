@@ -198,7 +198,6 @@ library logic
     containers,
     megaparsec,
     pgenie:base,
-    pgenie:fs-algebra,
     pgenie:parallelism-algebra,
     pgenie:staging-algebra,
     pgenie-gen,
@@ -219,8 +218,7 @@ library staging-algebra
     StagingAlgebra.Runtimes.RecordEvents
 
   build-depends:
-    base,
-    pgenie:base,
+    pgenie:base
 
 library parallelism-algebra
   import: base
@@ -242,20 +240,6 @@ library parallelism-algebra
 
   build-depends:
     fx,
-    pgenie:base,
-
-library fs-algebra
-  import: base
-  hs-source-dirs: src/fs-algebra/
-  exposed-modules:
-    FsAlgebra.Algebra
-    FsAlgebra.Properties
-    FsAlgebra.Runtimes.IO
-
-  build-depends:
-    QuickCheck,
-    algebraic-path,
-    bytestring,
     pgenie:base,
 
 library app

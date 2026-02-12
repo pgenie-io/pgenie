@@ -125,7 +125,7 @@ render keepWhitespace renderParam (SqlTemplate segments) =
 
 toGenQueryFragments :: SqlTemplate -> [Gen.QueryFragment]
 toGenQueryFragments (SqlTemplate segments) =
-  concat $ evalState (traverse segmentToFragment segments) (Map.empty, 0)
+  concat $ evalState (traverse segmentToFragment segments) (Map.empty, 0 :: Int)
   where
     segmentToFragment segment = do
       (indices, count) <- get

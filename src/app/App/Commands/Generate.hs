@@ -7,7 +7,6 @@ import App.Frameworks.CliUi
 import Base.Prelude
 import Logic qualified
 import Options.Applicative qualified as Opt
-import StagingAlgebra qualified
 
 generate :: (Logic.Caps m) => Command m
 generate =

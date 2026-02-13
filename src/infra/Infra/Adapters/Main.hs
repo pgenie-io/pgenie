@@ -1,7 +1,6 @@
 module Infra.Adapters.Main
   ( Device,
     scope,
-    run,
   )
 where
 
@@ -20,35 +19,6 @@ data Device = Device
   { display :: Display.Device,
     analyser :: Analyser.Device
   }
-
-run :: Fx Device Logic.Error () -> IO ()
-run fx =
-  fx
-    & scoping scope
-    & handleErr
-      ( \err ->
-          runTotalIO \_dev -> do
-            Text.putStrLn
-              $ from @TextBuilder
-              $ mconcat
-              $ [ "Error at location: ",
-                  TextBuilder.intercalateMap " > " to err.path,
-                  "\nMessage: ",
-                  to err.message,
-                  maybe "" (mappend "\nSuggestion: " . to) err.suggestion,
-                  if null err.details
-                    then ""
-                    else
-                      "\nDetails:\n"
-                        <> TextBuilder.intercalateMap
-                          "\n"
-                          ( \(key, value) ->
-                              "  " <> to key <> ": " <> to value
-                          )
-                          err.details
-                ]
-      )
-    & Fx.runFx
 
 scope :: Fx.Scope Logic.Error Device
 scope = do

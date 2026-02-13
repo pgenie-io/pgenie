@@ -27,7 +27,7 @@ import SyntacticClass qualified as Syntactic
 -- * Transformers
 
 runLogic :: Logic m a -> m a
-runLogic (Logic f) = f 0 []
+runLogic (Logic f) = f 1 []
 
 -- |
 -- Internal monad transformer for pure logic, which:

@@ -210,6 +210,7 @@ analyse projectFile =
         listDir "migrations"
           & fmap (filter (\p -> Path.toExtensions p == ["sql"]))
           & fmap sort
+          & fmap (fmap ("migrations" <>))
 
       let migrationsCount = length migrationsListed
 
@@ -228,11 +229,12 @@ analyse projectFile =
     queriesListed <- do
       allPathsInQueriesDir <-
         listDir "queries"
+          & fmap sort
+          & fmap (fmap ("queries" <>))
 
       let queryPaths =
             allPathsInQueriesDir
               & filter (\p -> Path.toExtensions p == ["sql"])
-              & sort
 
       for queryPaths \queryPath -> do
         -- Extract query name from path by taking the file name without extension

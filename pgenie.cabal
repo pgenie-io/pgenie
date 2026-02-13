@@ -208,7 +208,9 @@ library infra
     Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements.SelectRelationColumns
     Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements.SelectType
     Infra.Adapters.Display
-    Infra.Adapters.Display.TextBuilders
+    Infra.Adapters.Display.Memory
+    Infra.Adapters.Display.View
+    Infra.Adapters.Display.View.TextBuilders
     Infra.Adapters.Main
 
   build-tool-depends:

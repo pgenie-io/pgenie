@@ -1,4 +1,4 @@
-module Infra.Adapters.Display.TextBuilders where
+module Infra.Adapters.Display.View.TextBuilders where
 
 import Base.Prelude
 import Data.Text qualified as Text
@@ -12,6 +12,16 @@ clearLine = "\ESC[2K"
 
 moveCursorToLineStart :: TextBuilder
 moveCursorToLineStart = "\r"
+
+-- | ANSI color codes
+boldRed :: TextBuilder -> TextBuilder
+boldRed text = "\ESC[1;31m" <> text <> "\ESC[0m"
+
+green :: TextBuilder -> TextBuilder
+green text = "\ESC[32m" <> text <> "\ESC[0m"
+
+yellow :: TextBuilder -> TextBuilder
+yellow text = "\ESC[33m" <> text <> "\ESC[0m"
 
 -- | Render an ASCII progress bar
 progressBar :: Double -> TextBuilder

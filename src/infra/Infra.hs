@@ -13,6 +13,10 @@ import TextBuilder qualified
 run :: Fx MainAdapter.Device Logic.Error () -> IO ()
 run fx =
   fx
+    & handleErr
+      ( \err -> do
+          Logic.emit (Logic.Failed err)
+      )
     & scoping MainAdapter.scope
     & handleErr
       ( \err ->
@@ -20,10 +24,12 @@ run fx =
             Text.putStrLn
               $ from @TextBuilder
               $ mconcat
-              $ [ "Error at location: ",
-                  TextBuilder.intercalateMap " > " to err.path,
-                  "\nMessage: ",
+              $ [ "Scope error: ",
                   to err.message,
+                  if null err.path
+                    then ""
+                    else
+                      "\nLocation: " <> TextBuilder.intercalateMap " > " to err.path,
                   maybe "" (mappend "\nSuggestion: " . to) err.suggestion,
                   if null err.details
                     then ""

@@ -80,7 +80,7 @@ instance (FsOps m) => FsOps (Logic m) where
   listDir path = lift (listDir path)
 
 instance (LoadsGen m) => LoadsGen (Logic m) where
-  loadGen genLocation = lift (loadGen genLocation)
+  loadGen genLocation maybeHash = lift (loadGen genLocation maybeHash)
 
 instance (Emits m) => Emits (Logic m) where
   emit event = lift (emit event)
@@ -163,8 +163,8 @@ generateCode projectFile project =
       let name = Name.inSnakeCase artifact.name
       stage name 2 do
         compileFn <-
-          stage "Loading generator" 1 do
-            gen <- loadGen artifact.gen
+          stage "Loading generator" 0 do
+            (gen, _) <- loadGen artifact.gen Nothing
             case gen artifact.config of
               Left errMsg ->
                 throwError
@@ -178,7 +178,7 @@ generateCode projectFile project =
               Right compileFn ->
                 pure compileFn
 
-        stage "Compiling" 1 do
+        stage "Compiling" 0 do
           let output = compileFn project
           case output.result of
             Gen.Output.ResultErr report ->
@@ -275,7 +275,7 @@ analyse projectFile =
           MonadParallel.forM queriesListed \queryListed ->
             stage (Name.inSnakeCase queryListed.name) 2 do
               sqlTemplate <-
-                stage "Reading file" 1 do
+                stage "Reading file" 0 do
                   loadQuerySql queryListed
 
               let nativeTemplate =
@@ -286,7 +286,7 @@ analyse projectFile =
                       & to
 
               InferredQueryTypes {params, resultColumns, mentionedCustomTypes} <-
-                stage "Inferring types" 1 do
+                stage "Inferring types" 0 do
                   (queryTypes, warnings) <- inferQueryTypes nativeTemplate
                   for warnings warn
                   pure queryTypes

@@ -14,10 +14,14 @@ complete :: Parser a -> Parser a
 complete parser = parser <* eof
 
 parts :: Parser [Text]
-parts =
-  sepBy1 part (char '_')
-  where
-    part =
-      Text.cons
+parts = do
+  firstWord <- 
+    Text.cons
         <$> satisfy isAsciiLower
         <*> takeWhileP (Just "part tail") (\c -> isAsciiLower c || isDigit c)
+        
+  tail <- many do
+    char '_'
+    takeWhileP (Just "tail part") (\c -> isAsciiLower c || isDigit c)
+  
+  return (firstWord : tail)

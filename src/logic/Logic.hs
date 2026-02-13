@@ -53,21 +53,18 @@ instance (MonadError Error m) => MonadError Error (Logic m) where
 
 instance (Emits m) => Stages (Logic m) where
   stage name substagesCount (Logic runInner) =
-    Logic \progressPerStage path ->
-      if substagesCount > 0
-        then do
-          let newPath = name : path
-          emit (StageEntered newPath)
-          let progressPerSubstage = progressPerStage / fromIntegral substagesCount
-          result <- runInner progressPerSubstage newPath
-          emit (StageExited newPath 0)
-          pure result
-        else do
-          let newPath = name : path
-          emit (StageEntered newPath)
-          result <- runInner 0 newPath
-          emit (StageExited newPath progressPerStage)
-          pure result
+    Logic \progressPerStage path -> do
+      let newPath =
+            if Text.null name
+              then path
+              else name : path
+      emit (StageEntered newPath)
+      (remainingProgress, result) <-
+        if substagesCount > 0
+          then (0,) <$> runInner (progressPerStage / fromIntegral substagesCount) newPath
+          else (progressPerStage,) <$> runInner 0 newPath
+      emit (StageExited newPath remainingProgress)
+      pure result
 
 instance (DbOps m) => DbOps (Logic m) where
   executeMigration migrationLoaded = lift (executeMigration migrationLoaded)
@@ -127,7 +124,7 @@ check =
 generate :: (Caps m) => m ()
 generate =
   runLogic do
-    stage "Generate" 2 do
+    stage "" 2 do
       projectFile <- loadProjectFile
       genProject <- do
         analyse projectFile
@@ -162,7 +159,7 @@ loadQuerySql queryListed = do
 
 generateCode :: (LoadsGen m, Stages m, MonadParallel m, FsOps m) => ProjectFile.ProjectFile -> Gen.Input.Project -> m [GeneratedArtifact]
 generateCode projectFile project =
-  stage "Generating code" (length projectFile.artifacts) do
+  stage "Generating" (length projectFile.artifacts) do
     -- Load existing hashes file
     existingHashes <- GeneratorHashes.tryLoadHashesFile
 
@@ -174,7 +171,7 @@ generateCode projectFile project =
             maybeHash = Map.lookup genUrl existingHashes
         stage name 2 do
           compileFnWithHash <-
-            stage (if isJust maybeHash then "Loading generator" else "Caching generator") 0 do
+            stage (if isJust maybeHash then "Loading" else "Caching") 0 do
               (gen, newHash) <- loadGen artifact.gen maybeHash
               case gen artifact.config of
                 Left errMsg ->

@@ -18,8 +18,9 @@ view event oldMemory newMemory = case event of
       [ if oldMemory.hasProgressBar
           then TextBuilders.moveCursorToLineStart <> TextBuilders.clearLine
           else "",
-        TextBuilder.intercalateMap " > " to (reverse path),
-        "\n",
+        if null path
+          then ""
+          else TextBuilder.intercalateMap " > " to (reverse path) <> "\n",
         TextBuilders.progressBar newMemory.progress
       ]
   Logic.StageExited _path _progressDelta ->

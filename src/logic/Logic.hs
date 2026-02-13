@@ -85,6 +85,37 @@ instance (LoadsGen m) => LoadsGen (Logic m) where
 instance (Emits m) => Emits (Logic m) where
   emit event = lift (emit event)
 
+-- * Intermediate (non-interface) Types
+
+data QueryListed = QueryListed
+  { name :: Name.Name,
+    filePath :: Path,
+    signatureFilePath :: Maybe Path
+  }
+
+data GeneratedArtifact = GeneratedArtifact
+  { name :: Text,
+    warnings :: [Gen.Output.Report],
+    filePaths :: [Path]
+  }
+
+data SignatureGenerated = SignatureGenerated
+  { filePath :: Path,
+    replaced :: Bool
+  }
+
+data QuerySignature
+  = QuerySignature
+      -- | Parameters of the query.
+      [Gen.Input.Member]
+      -- | Result of the query.
+      (Maybe Gen.Input.ResultRows)
+
+data QueriesMetadataMerged = QueriesMetadataMerged
+  { queries :: [Gen.Input.Query],
+    customTypes :: [Gen.Input.CustomType]
+  }
+
 -- * API ops
 
 check :: (Caps m) => m ()

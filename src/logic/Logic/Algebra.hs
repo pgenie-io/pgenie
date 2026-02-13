@@ -1,10 +1,8 @@
 module Logic.Algebra where
 
 import Base.Prelude hiding (readFile, writeFile)
-import Logic.Name qualified as Name
 import PGenieGen qualified as Gen
 import PGenieGen.Model.Input qualified as Gen.Input
-import PGenieGen.Model.Output qualified as Gen.Output
 
 -- * Error
 
@@ -26,12 +24,6 @@ data Event
 
 -- * States
 
-data QueryListed = QueryListed
-  { name :: Name.Name,
-    filePath :: Path,
-    signatureFilePath :: Maybe Path
-  }
-
 data InferredQueryTypes = InferredQueryTypes
   { params :: [InferredParam],
     resultColumns :: [Gen.Input.Member],
@@ -41,29 +33,6 @@ data InferredQueryTypes = InferredQueryTypes
 data InferredParam = InferredParam
   { isNullable :: Bool,
     type_ :: Gen.Input.Value
-  }
-
-data GeneratedArtifact = GeneratedArtifact
-  { name :: Text,
-    warnings :: [Gen.Output.Report],
-    filePaths :: [Path]
-  }
-
-data SignatureGenerated = SignatureGenerated
-  { filePath :: Path,
-    replaced :: Bool
-  }
-
-data QuerySignature
-  = QuerySignature
-      -- | Parameters of the query.
-      [Gen.Input.Member]
-      -- | Result of the query.
-      (Maybe Gen.Input.ResultRows)
-
-data QueriesMetadataMerged = QueriesMetadataMerged
-  { queries :: [Gen.Input.Query],
-    customTypes :: [Gen.Input.CustomType]
   }
 
 -- * Capabilities

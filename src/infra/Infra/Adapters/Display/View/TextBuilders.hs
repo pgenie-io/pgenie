@@ -24,8 +24,8 @@ yellow :: TextBuilder -> TextBuilder
 yellow text = "\ESC[33m" <> text <> "\ESC[0m"
 
 -- | Render an ASCII progress bar
-progressBar :: Double -> TextBuilder
-progressBar progress =
+progressBar :: Double -> Maybe NominalDiffTime -> TextBuilder
+progressBar progress timeLeftEstimate =
   let width =
         30
       filledWidth =
@@ -46,5 +46,11 @@ progressBar progress =
           to arrow,
           empty,
           "]  ",
-          percentage
+          percentage,
+          case timeLeftEstimate of
+            Nothing -> ""
+            Just t ->
+              " ("
+                <> TextBuilderDev.doubleFixedPoint 1 (realToFrac t :: Double)
+                <> "s left)"
         ]

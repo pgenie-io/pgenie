@@ -21,7 +21,7 @@ view event oldMemory newMemory = case event of
         if null path
           then ""
           else TextBuilder.intercalateMap " > " to (reverse path) <> "\n",
-        TextBuilders.progressBar newMemory.progress
+        TextBuilders.progressBar newMemory.progress newMemory.timeLeftEstimate
       ]
   Logic.StageExited _path _progressDelta ->
     if oldMemory.progress >= 1
@@ -31,7 +31,7 @@ view event oldMemory newMemory = case event of
           [ TextBuilders.moveCursorToLineStart,
             TextBuilders.clearLine,
             if newMemory.progress < 1
-              then TextBuilders.progressBar newMemory.progress
+              then TextBuilders.progressBar newMemory.progress newMemory.timeLeftEstimate
               else TextBuilders.green "Done!" <> "\n"
           ]
   Logic.WarningEmitted err ->

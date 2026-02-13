@@ -18,7 +18,9 @@ data Device = Device
 scope :: Fx.Scope Logic.Error Device
 scope =
   acquire do
-    memoryVar <- runTotalIO (\() -> newMVar Memory.init)
+    memoryVar <- runTotalIO \() -> do
+      currentTime <- getCurrentTime
+      newMVar (Memory.init currentTime)
     pure Device {memoryVar}
 
 -- | Implementation of progress reporting with ASCII progress bar on last line
@@ -26,7 +28,8 @@ instance Logic.Emits (Fx Device Logic.Error) where
   emit event =
     runTotalIO \dev -> do
       oldMemory <- takeMVar dev.memoryVar
-      let newMemory = Memory.update event oldMemory
+      currentTime <- getCurrentTime
+      let newMemory = Memory.setCurrentTime currentTime (Memory.update event oldMemory)
           output = View.view event oldMemory newMemory
       TextIO.putStr (to output)
       putMVar dev.memoryVar newMemory

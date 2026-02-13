@@ -2,6 +2,7 @@ module Infra.Adapters.Display.Memory
   ( Memory (..),
     init,
     update,
+    setCurrentTime,
   )
 where
 
@@ -13,14 +14,18 @@ data Memory = Memory
   { -- | Overall progress.
     progress :: Double,
     -- | Whether we've printed progress bar yet
-    hasProgressBar :: Bool
+    hasProgressBar :: Bool,
+    startTime :: UTCTime,
+    timeLeftEstimate :: Maybe NominalDiffTime
   }
 
-init :: Memory
-init =
+init :: UTCTime -> Memory
+init startTime =
   Memory
     { progress = 0,
-      hasProgressBar = False
+      hasProgressBar = False,
+      startTime,
+      timeLeftEstimate = Nothing
     }
 
 -- | Memory function: event -> model -> model
@@ -45,3 +50,13 @@ update event memory =
         }
     Logic.Failed _err ->
       memory
+
+setCurrentTime :: UTCTime -> Memory -> Memory
+setCurrentTime currentTime memory =
+  let elapsedTime = currentTime `diffUTCTime` memory.startTime
+      timeLeftEstimate =
+         if memory.progress > 0
+        then Just (elapsedTime / realToFrac memory.progress - elapsedTime)
+        else Nothing
+    in memory {timeLeftEstimate}
+  

@@ -51,19 +51,28 @@ instance Logic.Emits (Fx Device Logic.Error) where
                   else "",
                 TextBuilder.intercalateMap " > " to (reverse path),
                 "\n",
-                TextBuilders.progressBar 20 memory.progress
+                TextBuilders.progressBar memory.progress
               ],
             memory {hasProgressBar = True}
           )
       Logic.StageExited _path progressDelta ->
         display \memory ->
-          let newProgress =
-                memory.progress + progressDelta
-              output =
-                TextBuilders.moveCursorToLineStart <> TextBuilders.clearLine <> TextBuilders.progressBar 20 newProgress
-              newMemory =
-                memory {progress = newProgress, hasProgressBar = True}
-           in (output, newMemory)
+          if memory.progress >= 1
+            then (mempty, memory) -- Don't update progress if already at 100%
+            else
+              let newProgress =
+                    memory.progress + progressDelta
+                  output =
+                    mconcat
+                      [ TextBuilders.moveCursorToLineStart,
+                        TextBuilders.clearLine,
+                        if newProgress < 1
+                          then TextBuilders.progressBar newProgress
+                          else "Done!\n"
+                      ]
+                  newMemory =
+                    memory {progress = newProgress}
+               in (output, newMemory)
       Logic.WarningEmitted err ->
         display \memory ->
           ( let prefix =

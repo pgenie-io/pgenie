@@ -14,9 +14,11 @@ moveCursorToLineStart :: TextBuilder
 moveCursorToLineStart = "\r"
 
 -- | Render an ASCII progress bar
-progressBar :: Int -> Double -> TextBuilder
-progressBar width progress =
-  let filledWidth =
+progressBar :: Double -> TextBuilder
+progressBar progress =
+  let width =
+        30
+      filledWidth =
         round (progress * fromIntegral width)
       emptyWidth =
         width - filledWidth

@@ -34,7 +34,7 @@ constraints:
   data-has ^>=0.4,
   directory ^>=1.3,
   filepath ^>=1.5.4,
-  hasql ^>=1.10.2,
+  hasql ^>=1.10.2.3,
   lawful-conversions ^>=0.3,
   megaparsec >=9 && <10,
   monad-parallel ^>=0.8,

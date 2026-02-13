@@ -41,7 +41,7 @@ instance Logic.Emits (Fx Device Logic.Error) where
             $ [ "Progress: ",
                 TextBuilderDev.doubleFixedPointPercent 0 progress,
                 ", at stage: ",
-                TextBuilder.intercalateMap " > " to path
+                TextBuilder.intercalateMap " > " to (reverse path)
               ]
       Logic.StageExited _path progress ->
         runTotalIO \dev -> do
@@ -55,7 +55,7 @@ instance Logic.Emits (Fx Device Logic.Error) where
             $ from @TextBuilder
             $ mconcat
             $ [ "Warning at location: ",
-                TextBuilder.intercalateMap " > " to err.path,
+                TextBuilder.intercalateMap " > " to (reverse err.path),
                 "\nMessage: ",
                 to err.message,
                 maybe "" (mappend "\nSuggestion: " . to) err.suggestion,
@@ -76,7 +76,7 @@ instance Logic.Emits (Fx Device Logic.Error) where
             $ from @TextBuilder
             $ mconcat
             $ [ "Failed at location: ",
-                TextBuilder.intercalateMap " > " to err.path,
+                TextBuilder.intercalateMap " > " to (reverse err.path),
                 "\nMessage: ",
                 to err.message,
                 maybe "" (mappend "\nSuggestion: " . to) err.suggestion,

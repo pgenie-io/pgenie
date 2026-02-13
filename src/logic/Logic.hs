@@ -128,7 +128,7 @@ check =
 generate :: (Caps m) => m ()
 generate =
   runLogic do
-    stage "" 2 do
+    stage "generate" 2 do
       projectFile <- loadProjectFile
       genProject <- do
         analyse projectFile

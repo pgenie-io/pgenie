@@ -31,21 +31,27 @@ run fx =
             Text.putStrLn
               $ from @TextBuilder
               $ mconcat
-              $ [ "Error at location: ",
-                  TextBuilder.intercalateMap " > " to err.path,
-                  "\nMessage: ",
+              $ [ "\n\ESC[1;31mError\ESC[0m: ",
                   to err.message,
-                  maybe "" (mappend "\nSuggestion: " . to) err.suggestion,
+                  "\n",
+                  if null err.path
+                    then ""
+                    else
+                      "Location: "
+                        <> TextBuilder.intercalateMap " > " to err.path
+                        <> "\n",
+                  maybe "" (mappend "Suggestion: " . to . mappend "\n") err.suggestion,
                   if null err.details
                     then ""
                     else
-                      "\nDetails:\n"
+                      "Details:\n"
                         <> TextBuilder.intercalateMap
                           "\n"
                           ( \(key, value) ->
                               "  " <> to key <> ": " <> to value
                           )
                           err.details
+                        <> "\n"
                 ]
       )
     & Fx.runFx

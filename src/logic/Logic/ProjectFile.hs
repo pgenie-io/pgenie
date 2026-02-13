@@ -5,7 +5,6 @@ import Base.Prelude hiding (Version)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Key qualified as Aeson.Key
 import Data.Aeson.KeyMap qualified as Aeson.KeyMap
-import Data.Aeson.Types qualified as Aeson.Types
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text.Encoding
 import Data.Yaml qualified as Yaml
@@ -82,7 +81,7 @@ tryFromYaml text = do
               }
         Just value -> return value
 
-    extractString fieldName (Aeson.String txt) = return txt
+    extractString _ (Aeson.String txt) = return txt
     extractString fieldName _ =
       throwError
         Algebra.Error

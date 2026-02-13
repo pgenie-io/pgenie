@@ -48,96 +48,83 @@ renderProgressBar progress =
       percentage = from @TextBuilder $ TextBuilderDev.doubleFixedPointPercent 1 progress
    in "[" <> filled <> arrow <> empty <> "]  " <> percentage
 
--- | Update the progress bar on the last line
-updateProgressBar :: Double -> Bool -> IO ()
-updateProgressBar progress hasBar = do
-  when hasBar $ do
-    -- If there's already a progress bar, clear it
-    TextIO.putStr $ moveCursorToLineStart <> clearLine
-  TextIO.putStr $ renderProgressBar progress
-  hFlush stdout
-
 -- | Implementation of progress reporting with ASCII progress bar on last line
 instance Logic.Emits (Fx Device Logic.Error) where
   emit event =
     case event of
       Logic.StageEntered path ->
         runTotalIO \dev -> do
-          memory <- takeMVar dev.memoryVar
-          -- Clear the progress bar if it exists
-          when memory.hasProgressBar $ do
-            TextIO.putStr $ moveCursorToLineStart <> clearLine
-          -- Print the new stage on a new line
-          TextIO.putStrLn $ from @TextBuilder $ TextBuilder.intercalateMap " > " to (reverse path)
-          hFlush stdout
-          -- Update to show we'll need to clear the progress bar next time
-          let newMemory = memory {hasProgressBar = False}
-          putMVar dev.memoryVar newMemory
+          modifyMVar_ dev.memoryVar \memory -> do
+            -- Do all IO while holding the MVar
+            when memory.hasProgressBar $
+              TextIO.putStr "\n"
+            TextIO.putStr $ from @TextBuilder $ TextBuilder.intercalateMap " > " to (reverse path)
+            TextIO.putStr "\n"
+            hFlush stdout
+            pure memory {hasProgressBar = False}
           
       Logic.StageExited _path progressDelta ->
         runTotalIO \dev -> do
-          memory <- takeMVar dev.memoryVar
-          let newProgress = memory.progress + progressDelta
-          let newMemory = memory {progress = newProgress, hasProgressBar = True}
-          putMVar dev.memoryVar newMemory
-          updateProgressBar newProgress memory.hasProgressBar
+          modifyMVar_ dev.memoryVar \memory -> do
+            let newProgress = memory.progress + progressDelta
+            -- Do all IO while holding the MVar
+            when memory.hasProgressBar $
+              TextIO.putStr $ moveCursorToLineStart <> clearLine
+            TextIO.putStr $ renderProgressBar newProgress
+            hFlush stdout
+            pure memory {progress = newProgress, hasProgressBar = True}
           
       Logic.WarningEmitted err ->
         runTotalIO \dev -> do
-          memory <- takeMVar dev.memoryVar
-          -- Clear the progress bar before printing warning
-          when memory.hasProgressBar $ do
-            TextIO.putStr $ moveCursorToLineStart <> clearLine
-          
-          TextIO.putStrLn
-            $ from @TextBuilder
-            $ mconcat
-            $ [ "Warning at location: ",
-                TextBuilder.intercalateMap " > " to (reverse err.path),
-                "\nMessage: ",
-                to err.message,
-                maybe "" (mappend "\nSuggestion: " . to) err.suggestion,
-                if null err.details
-                  then ""
-                  else
-                    "\nDetails:\n"
-                      <> TextBuilder.intercalateMap
-                        "\n"
-                        ( \(key, value) ->
-                            "  " <> to key <> ": " <> to value
-                        )
-                        err.details
-              ]
-          hFlush stdout
-          
-          -- Update to show we need to redraw progress bar
-          let newMemory = memory {hasProgressBar = False}
-          putMVar dev.memoryVar newMemory
+          modifyMVar_ dev.memoryVar \memory -> do
+            when memory.hasProgressBar $
+              TextIO.putStr "\n"
+            TextIO.putStr
+              $ from @TextBuilder
+              $ mconcat
+              $ [ "Warning at location: ",
+                  TextBuilder.intercalateMap " > " to (reverse err.path),
+                  "\nMessage: ",
+                  to err.message,
+                  maybe "" (mappend "\nSuggestion: " . to) err.suggestion,
+                  if null err.details
+                    then ""
+                    else
+                      "\nDetails:\n"
+                        <> TextBuilder.intercalateMap
+                          "\n"
+                          ( \(key, value) ->
+                              "  " <> to key <> ": " <> to value
+                          )
+                          err.details
+                ]
+            TextIO.putStr "\n"
+            hFlush stdout
+            pure memory {hasProgressBar = False}
           
       Logic.Failed err ->
         runTotalIO \dev -> do
-          memory <- readMVar dev.memoryVar
-          -- Clear the progress bar before printing error
-          when memory.hasProgressBar $ do
-            TextIO.putStr $ moveCursorToLineStart <> clearLine
-          
-          TextIO.putStrLn
-            $ from @TextBuilder
-            $ mconcat
-            $ [ "Failed at location: ",
-                TextBuilder.intercalateMap " > " to (reverse err.path),
-                "\nMessage: ",
-                to err.message,
-                maybe "" (mappend "\nSuggestion: " . to) err.suggestion,
-                if null err.details
-                  then ""
-                  else
-                    "\nDetails:\n"
-                      <> TextBuilder.intercalateMap
-                        "\n"
-                        ( \(key, value) ->
-                            "  " <> to key <> ": " <> to value
-                        )
-                        err.details
-              ]
-          hFlush stdout
+          withMVar dev.memoryVar \memory -> do
+            when memory.hasProgressBar $
+              TextIO.putStr "\n"
+            TextIO.putStr
+              $ from @TextBuilder
+              $ mconcat
+              $ [ "Failed at location: ",
+                  TextBuilder.intercalateMap " > " to (reverse err.path),
+                  "\nMessage: ",
+                  to err.message,
+                  maybe "" (mappend "\nSuggestion: " . to) err.suggestion,
+                  if null err.details
+                    then ""
+                    else
+                      "\nDetails:\n"
+                        <> TextBuilder.intercalateMap
+                          "\n"
+                          ( \(key, value) ->
+                              "  " <> to key <> ": " <> to value
+                          )
+                          err.details
+                ]
+            TextIO.putStr "\n"
+            hFlush stdout

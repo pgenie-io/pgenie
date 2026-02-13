@@ -30,37 +30,42 @@ scope =
     memoryVar <- runTotalIO (\() -> newMVar Memory {progress = 0, hasProgressBar = False})
     pure Device {memoryVar}
 
+display :: (Memory -> (TextBuilder, Memory)) -> Fx Device Logic.Error ()
+display buildOutput =
+  runTotalIO \dev -> do
+    memory <- takeMVar dev.memoryVar
+    let (output, newMemory) = buildOutput memory
+    TextIO.putStr (to output)
+    putMVar dev.memoryVar newMemory
+    hFlush stdout
+
 -- | Implementation of progress reporting with ASCII progress bar on last line
 instance Logic.Emits (Fx Device Logic.Error) where
   emit event =
     case event of
       Logic.StageEntered path ->
-        runTotalIO \dev -> do
-          memory <- takeMVar dev.memoryVar
-          let prefix =
-                if memory.hasProgressBar
-                  then TextBuilders.moveCursorToLineStart <> TextBuilders.clearLine -- Clear progress bar
-                  else ""
-              stageText = to (TextBuilder.intercalateMap " > " to (reverse path))
-              output = to (prefix <> stageText <> "\n")
-          TextIO.putStr output
-          putMVar dev.memoryVar (memory {hasProgressBar = False})
-          hFlush stdout
+        display \memory ->
+          ( let prefix =
+                  if memory.hasProgressBar
+                    then TextBuilders.moveCursorToLineStart <> TextBuilders.clearLine -- Clear progress bar
+                    else ""
+                stageText =
+                  TextBuilder.intercalateMap " > " to (reverse path)
+             in prefix <> stageText <> "\n",
+            memory {hasProgressBar = False}
+          )
       Logic.StageExited _path progressDelta ->
-        runTotalIO \dev -> do
-          memory <- takeMVar dev.memoryVar
-          let newProgress = memory.progress + progressDelta
-              -- Build output string atomically
-              output = to (TextBuilders.moveCursorToLineStart <> TextBuilders.clearLine <> TextBuilders.progressBar 20 newProgress)
-          TextIO.putStr output
-          putMVar dev.memoryVar (memory {progress = newProgress, hasProgressBar = True})
-          hFlush stdout
+        display \memory ->
+          let newProgress =
+                memory.progress + progressDelta
+              output =
+                TextBuilders.moveCursorToLineStart <> TextBuilders.clearLine <> TextBuilders.progressBar 20 newProgress
+              newMemory =
+                memory {progress = newProgress, hasProgressBar = True}
+           in (output, newMemory)
       Logic.WarningEmitted err ->
-        runTotalIO \dev -> do
-          memory <- takeMVar dev.memoryVar
-
-          TextIO.putStr
-            let prefix =
+        display \memory ->
+          ( let prefix =
                   if memory.hasProgressBar
                     then TextBuilders.moveCursorToLineStart <> TextBuilders.clearLine -- Clear progress bar
                     else ""
@@ -83,15 +88,12 @@ instance Logic.Emits (Fx Device Logic.Error) where
                                 )
                                 err.details
                       ]
-             in to (prefix <> warningText <> "\n")
-          putMVar dev.memoryVar (memory {hasProgressBar = False})
-          hFlush stdout
+             in prefix <> warningText <> "\n",
+            memory {hasProgressBar = False}
+          )
       Logic.Failed err ->
-        runTotalIO \dev -> do
-          memory <- takeMVar dev.memoryVar
-
-          TextIO.putStr
-            let prefix =
+        display \memory ->
+          ( let prefix =
                   if memory.hasProgressBar
                     then TextBuilders.moveCursorToLineStart <> TextBuilders.clearLine -- Clear progress bar
                     else ""
@@ -113,6 +115,6 @@ instance Logic.Emits (Fx Device Logic.Error) where
                                 )
                                 err.details
                       ]
-             in to (prefix <> errorText <> "\n")
-          putMVar dev.memoryVar memory
-          hFlush stdout
+             in prefix <> errorText <> "\n",
+            memory
+          )

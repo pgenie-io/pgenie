@@ -20,7 +20,4 @@ version: 1.0.0
 # If you don't specify any artifacts Pgenie simply validates your schema
 # and queries.
 artifacts:
-  hasql: https://raw.githubusercontent.com/pgenie-io/haskell-hasql.gen/afbd29862d3879178978b18926333d8b56cf94c9/src/package.dhall
-  hasql_2:
-    gen: https://raw.githubusercontent.com/pgenie-io/haskell-hasql.gen/afbd29862d3879178978b18926333d8b56cf94c9/src/package.dhall
-    config:
+  hasql: https://raw.githubusercontent.com/pgenie-io/haskell-hasql.gen/b3375117fb22621ace748e9b5b245328d56a2a8f/gen/Gen.dhall

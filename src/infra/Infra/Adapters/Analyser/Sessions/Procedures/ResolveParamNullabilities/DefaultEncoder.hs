@@ -13,7 +13,8 @@ fromType :: Type -> Maybe (Encoders.Value ())
 fromType (Type dimensionality scalar) = do
   elemEncoder <- fromScalar scalar
   case dimensionality of
-    0 -> Nothing
+    0 ->
+      Just elemEncoder
     1 ->
       Just
         let encoder =

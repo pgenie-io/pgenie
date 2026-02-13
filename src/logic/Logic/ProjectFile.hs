@@ -24,7 +24,7 @@ data ProjectFile = ProjectFile
 data Artifact = Artifact
   { name :: Name.Name,
     gen :: Gen.Location,
-    config :: Aeson.Value
+    config :: Maybe Aeson.Value
   }
 
 tryFromYaml :: (MonadError Algebra.Error m) => Text -> m ProjectFile
@@ -84,11 +84,10 @@ tryFromYaml text = do
     artifactsValue :: U.Value [Artifact]
     artifactsValue =
       U.mappingValue
-        $ fmap (map setNameOnArtifact)
-        $ U.foldMapping (,) Fold.list artifactKeyString artifactValue
+        $ U.foldMapping merge Fold.list artifactKeyString artifactValue
       where
         -- Set the name field on the artifact
-        setNameOnArtifact (artifactName, Artifact {gen, config}) = Artifact {name = artifactName, gen, config}
+        merge artifactName (gen, config) = Artifact {name = artifactName, gen, config}
 
         -- Parse and normalize artifact names
         artifactKeyString =
@@ -97,55 +96,54 @@ tryFromYaml text = do
              in case Name.tryFromText normalized of
                   Left err -> Left ("Invalid artifact name: " <> err)
                   Right name -> Right name
-
-        normalizeArtifactName txt =
-          -- Replace hyphens with underscores and prefix purely numeric parts with 'v'
-          let parts = Text.splitOn "_" (Text.replace "-" "_" txt)
-              normalizedParts = map normalizePart parts
-           in Text.intercalate "_" normalizedParts
           where
-            normalizePart part
-              | Text.null part = part
-              | isDigit (Text.head part) = "v" <> part
-              | otherwise = Text.toLower part
+            normalizeArtifactName txt =
+              -- Replace hyphens with underscores and prefix purely numeric parts with 'v'
+              let parts = Text.splitOn "_" (Text.replace "-" "_" txt)
+                  normalizedParts = map normalizePart parts
+               in Text.intercalate "_" normalizedParts
+              where
+                normalizePart part
+                  | Text.null part = part
+                  | isDigit (Text.head part) = "v" <> part
+                  | otherwise = Text.toLower part
 
-    artifactValue :: U.Value Artifact
-    artifactValue =
-      U.value
-        [U.stringScalar locationString] -- Short form: just a URL string
-        (Just artifactMapping) -- Long form: object with gen and optional config
-        Nothing
-      where
-        locationString =
-          U.formattedString "location" $ \txt -> do
-            gen <- parseLocation txt
-            return Artifact {name = error "name set later", gen, config = Aeson.Null}
+        artifactValue =
+          U.value
+            [U.stringScalar locationString] -- Short form: just a URL string
+            (Just artifactMapping) -- Long form: object with gen and optional config
+            Nothing
+          where
+            locationString =
+              U.formattedString "location" $ \txt -> do
+                gen <- parseLocation txt
+                return (gen, Nothing)
 
-        artifactMapping =
-          U.byKeyMapping (U.CaseSensitive True) $ do
-            genText <- U.atByKey "gen" (U.scalarsValue [U.stringScalar genLocationString])
-            config <-
-              asum
-                [ U.atByKey "config" configValue,
-                  pure Aeson.Null
-                ]
-            return Artifact {name = error "name set later", gen = genText, config}
+            artifactMapping =
+              U.byKeyMapping (U.CaseSensitive True) $ do
+                genText <- U.atByKey "gen" (U.scalarsValue [U.stringScalar genLocationString])
+                config <-
+                  asum
+                    [ U.atByKey "config" configValue,
+                      pure Nothing
+                    ]
+                return (genText, config)
 
-        genLocationString =
-          U.formattedString "location" parseLocation
+            genLocationString =
+              U.formattedString "location" parseLocation
 
-        parseLocation :: Text -> Either Text Gen.Location
-        parseLocation txt
-          | "http://" `Text.isPrefixOf` txt || "https://" `Text.isPrefixOf` txt =
-              Right (Gen.LocationUrl txt)
-          | otherwise =
-              case Path.maybeFromText txt of
-                Nothing -> Left ("Invalid path: " <> txt)
-                Just path -> Right (Gen.LocationPath path)
+            parseLocation :: Text -> Either Text Gen.Location
+            parseLocation txt
+              | "http://" `Text.isPrefixOf` txt || "https://" `Text.isPrefixOf` txt =
+                  Right (Gen.LocationUrl txt)
+              | otherwise =
+                  case Path.maybeFromText txt of
+                    Nothing -> Left ("Invalid path: " <> txt)
+                    Just path -> Right (Gen.LocationPath path)
 
-    configValue :: U.Value Aeson.Value
+    configValue :: U.Value (Maybe Aeson.Value)
     configValue =
-      U.value
+      U.nullableValue
         [ U.stringScalar (fmap Aeson.String U.textString),
           U.nullScalar Aeson.Null,
           U.boolScalar <&> Aeson.Bool,
@@ -159,9 +157,19 @@ tryFromYaml text = do
             (\k v -> (Key.fromText k, v))
             (Fold.Fold (\acc (k, v) -> (k, v) : acc) [] (Aeson.Object . KeyMap.fromList . reverse))
             U.textString
-            configValue
+            deeperValue
 
         configSequence =
           U.foldSequence
             (Fold.Fold (\acc v -> v : acc) [] (Aeson.Array . Vector.fromList . reverse))
-            configValue
+            deeperValue
+
+        deeperValue =
+          U.value
+            [ U.stringScalar (fmap Aeson.String U.textString),
+              U.nullScalar Aeson.Null,
+              U.boolScalar <&> Aeson.Bool,
+              U.scientificScalar <&> Aeson.Number
+            ]
+            (Just configMapping)
+            (Just configSequence)

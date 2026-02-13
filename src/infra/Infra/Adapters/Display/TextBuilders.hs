@@ -13,6 +13,13 @@ clearLine = "\ESC[2K"
 moveCursorToLineStart :: TextBuilder
 moveCursorToLineStart = "\r"
 
+-- | ANSI color codes
+boldRed :: TextBuilder -> TextBuilder
+boldRed text = "\ESC[1;31m" <> text <> "\ESC[0m"
+
+green :: TextBuilder -> TextBuilder
+green text = "\ESC[32m" <> text <> "\ESC[0m"
+
 -- | Render an ASCII progress bar
 progressBar :: Double -> TextBuilder
 progressBar progress =

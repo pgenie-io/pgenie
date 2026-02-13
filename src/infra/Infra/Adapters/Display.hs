@@ -68,7 +68,7 @@ instance Logic.Emits (Fx Device Logic.Error) where
                         TextBuilders.clearLine,
                         if newProgress < 1
                           then TextBuilders.progressBar newProgress
-                          else "Done!\n"
+                          else TextBuilders.green "Done!" <> "\n"
                       ]
                   newMemory =
                     memory {progress = newProgress}
@@ -109,22 +109,30 @@ instance Logic.Emits (Fx Device Logic.Error) where
                     else ""
                 errorText =
                   mconcat
-                    $ [ "Failed at location: ",
-                        TextBuilder.intercalateMap " > " to (reverse err.path),
-                        "\nMessage: ",
+                    $ [ "\n",
+                        TextBuilders.boldRed "Error",
+                        ": ",
                         to err.message,
-                        maybe "" (mappend "\nSuggestion: " . to) err.suggestion,
+                        "\n",
+                        if null err.path
+                          then ""
+                          else
+                            "Location: "
+                              <> TextBuilder.intercalateMap " > " to (reverse err.path)
+                              <> "\n",
+                        maybe "" (mappend "Suggestion: " . to . mappend "\n") err.suggestion,
                         if null err.details
                           then ""
                           else
-                            "\nDetails:\n"
+                            "Details:\n"
                               <> TextBuilder.intercalateMap
                                 "\n"
                                 ( \(key, value) ->
                                     "  " <> to key <> ": " <> to value
                                 )
                                 err.details
+                              <> "\n"
                       ]
-             in prefix <> errorText <> "\n",
-            memory
+             in prefix <> errorText,
+            memory {hasProgressBar = False}
           )

@@ -38,8 +38,10 @@ instance Logic.Emits (Fx Device Logic.Error) where
           Text.putStrLn
             $ from @TextBuilder
             $ mconcat
-            $ [ TextBuilderDev.doubleFixedPointPercent 5 progress,
-                ": ",
+            $ [ TextBuilderDev.padFromLeft
+                  6
+                  ' '
+                  (TextBuilderDev.doubleFixedPointPercent 0 progress <> ": "),
                 TextBuilder.intercalateMap " > " to (reverse path)
               ]
       Logic.StageExited _path progress ->

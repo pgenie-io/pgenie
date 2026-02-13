@@ -45,14 +45,15 @@ instance Logic.Emits (Fx Device Logic.Error) where
     case event of
       Logic.StageEntered path ->
         display \memory ->
-          ( let prefix =
-                  if memory.hasProgressBar
-                    then TextBuilders.moveCursorToLineStart <> TextBuilders.clearLine -- Clear progress bar
-                    else ""
-                stageText =
-                  TextBuilder.intercalateMap " > " to (reverse path)
-             in prefix <> stageText <> "\n",
-            memory {hasProgressBar = False}
+          ( mconcat
+              [ if memory.hasProgressBar
+                  then TextBuilders.moveCursorToLineStart <> TextBuilders.clearLine
+                  else "",
+                TextBuilder.intercalateMap " > " to (reverse path),
+                "\n",
+                TextBuilders.progressBar 20 memory.progress
+              ],
+            memory {hasProgressBar = True}
           )
       Logic.StageExited _path progressDelta ->
         display \memory ->

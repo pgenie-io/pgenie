@@ -15,6 +15,7 @@ import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
 import Logic.Algebra
 import Logic.Name qualified as Name
+import Logic.ProjectFile qualified as ProjectFile
 import Logic.SqlTemplate qualified as SqlTemplate
 import Logic.SyntaxAnalyser qualified as SyntaxAnalyser
 import PGenieGen qualified as Gen
@@ -89,34 +90,26 @@ instance (Emits m) => Emits (Logic m) where
 check :: (Caps m) => m ()
 check =
   runLogic do
-    projectFileLoaded <- loadProjectFile
-    analyse projectFileLoaded
+    projectFile <- loadProjectFile
+    analyse projectFile
     pure ()
 
 generate :: (Caps m) => m ()
 generate =
   runLogic do
     stage "" 2 do
-      projectFileLoaded <- loadProjectFile
+      projectFile <- loadProjectFile
       genProject <- do
-        analyse projectFileLoaded
-      generateCode projectFileLoaded genProject
+        analyse projectFile
+      generateCode projectFile genProject
       pure ()
 
 -- * Helpers
 
-loadProjectFile :: (FsOps m) => m ProjectFileLoaded
+loadProjectFile :: (FsOps m) => m ProjectFile.ProjectFile
 loadProjectFile = do
-  _configContent <- readFile "project.pgn1.yaml"
-  -- TODO: Parse YAML config and extract project details
-  -- For now return placeholder
-  throwError
-    ( Error
-        []
-        "Project file parsing is not yet implemented"
-        (Just "Implement YAML parsing for project.pgn1.yaml")
-        []
-    )
+  configContent <- readFile "project.pgn1.yaml"
+  ProjectFile.tryFromYaml configContent
 
 loadQuerySql :: (FsOps m) => QueryListed -> m SqlTemplate.SqlTemplate
 loadQuerySql queryListed = do
@@ -132,22 +125,23 @@ loadQuerySql queryListed = do
         )
     Right res -> pure res
 
-generateCode :: (LoadsGen m, Stages m, MonadParallel m, FsOps m) => ProjectFileLoaded -> Gen.Input.Project -> m [GeneratedArtifact]
-generateCode projectFileLoaded project =
-  stage "Generating code" (length projectFileLoaded.artifacts) do
-    MonadParallel.forM projectFileLoaded.artifacts \(Artifact {..}) ->
+generateCode :: (LoadsGen m, Stages m, MonadParallel m, FsOps m) => ProjectFile.ProjectFile -> Gen.Input.Project -> m [GeneratedArtifact]
+generateCode projectFile project =
+  stage "Generating code" (length projectFile.artifacts) do
+    MonadParallel.forM projectFile.artifacts \artifact -> do
+      let name = Name.inSnakeCase artifact.name
       stage name 2 do
         compileFn <-
           stage "Loading generator" 1 do
-            gen <- loadGen genUrl
-            case gen config of
+            gen <- loadGen artifact.gen
+            case gen artifact.config of
               Left errMsg ->
                 throwError
                   ( Error
                       []
                       errMsg
                       (Just "Ensure the artifact configuration conforms to the format expected by the generator")
-                      [ ("config", to (Aeson.encodeToTextBuilder config))
+                      [ ("config", to (Aeson.encodeToTextBuilder artifact.config))
                       ]
                   )
               Right compileFn ->
@@ -177,12 +171,12 @@ generateCode projectFileLoaded project =
                 pure modifiedPath
               pure (GeneratedArtifact name output.warnings generatedFilePaths)
 
-analyse :: (LoadsGen m, DbOps m, MonadParallel m, FsOps m, Stages m, Emits m) => ProjectFileLoaded -> m Gen.Input.Project
-analyse projectFileLoaded =
+analyse :: (LoadsGen m, DbOps m, MonadParallel m, FsOps m, Stages m, Emits m) => ProjectFile.ProjectFile -> m Gen.Input.Project
+analyse projectFile =
   stage "Analysing" 2 do
     stage "Executing migrations" 2 do
       migrationsListed <-
-        listDir projectFileLoaded.migrationsDir
+        listDir "migrations"
           & fmap (filter (\p -> Path.toExtensions p == ["sql"]))
           & fmap sort
 
@@ -202,7 +196,7 @@ analyse projectFileLoaded =
 
     queriesListed <- do
       allPathsInQueriesDir <-
-        listDir projectFileLoaded.queriesDir
+        listDir "queries"
 
       let queryPaths =
             allPathsInQueriesDir
@@ -324,9 +318,9 @@ analyse projectFileLoaded =
 
     pure
       Gen.Input.Project
-        { owner = Name.toGenName projectFileLoaded.owner,
-          name = Name.toGenName projectFileLoaded.name,
-          version = projectFileLoaded.version,
+        { space = Name.toGenName projectFile.space,
+          name = Name.toGenName projectFile.name,
+          version = projectFile.version,
           customTypes = customTypes,
           queries = queries
         }

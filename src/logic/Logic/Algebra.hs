@@ -1,7 +1,6 @@
 module Logic.Algebra where
 
 import Base.Prelude hiding (readFile, writeFile)
-import Data.Aeson qualified as Aeson
 import Logic.Name qualified as Name
 import PGenieGen qualified as Gen
 import PGenieGen.Model.Input qualified as Gen.Input
@@ -26,25 +25,6 @@ data Event
   | Failed Error
 
 -- * States
-
-data ProjectFileLoaded = ProjectFileLoaded
-  { configFilePath :: Path,
-    owner :: Name.Name,
-    name :: Name.Name,
-    version :: Gen.Input.Version,
-    -- | Path to the directory with migrations.
-    migrationsDir :: Path,
-    -- | Path to the directory with queries.
-    queriesDir :: Path,
-    -- | List of codegen configurations.
-    artifacts :: [Artifact]
-  }
-
-data Artifact = Artifact
-  { name :: Text,
-    genUrl :: Gen.Location,
-    config :: Aeson.Value
-  }
 
 data QueryListed = QueryListed
   { name :: Name.Name,

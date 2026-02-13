@@ -61,7 +61,13 @@ scope = do
                 ( Hasql.Pool.Config.settings
                     [ Hasql.Pool.Config.size 100,
                       Hasql.Pool.Config.staticConnectionSettings
-                        (Hasql.Connection.Settings.hostAndPort host port)
+                        ( mconcat
+                            [ Hasql.Connection.Settings.hostAndPort host port,
+                              Hasql.Connection.Settings.user "postgres",
+                              Hasql.Connection.Settings.password "",
+                              Hasql.Connection.Settings.dbname "postgres"
+                            ]
+                        )
                     ]
                 )
           )

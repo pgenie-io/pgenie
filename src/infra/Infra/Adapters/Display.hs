@@ -9,7 +9,6 @@ import Data.Text qualified as Text
 import Data.Text.IO qualified as TextIO
 import Fx
 import Logic qualified
-import System.IO (hFlush, stdout)
 import TextBuilder qualified
 import TextBuilderDev qualified
 

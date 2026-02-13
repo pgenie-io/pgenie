@@ -80,7 +80,7 @@ instance (FsOps m) => FsOps (Logic m) where
   listDir path = lift (listDir path)
 
 instance (LoadsGen m) => LoadsGen (Logic m) where
-  loadGen genLocation = lift (loadGen genLocation)
+  loadGen genLocation maybeHash = lift (loadGen genLocation maybeHash)
 
 instance (Emits m) => Emits (Logic m) where
   emit event = lift (emit event)
@@ -164,7 +164,7 @@ generateCode projectFile project =
       stage name 2 do
         compileFn <-
           stage "Loading generator" 1 do
-            gen <- loadGen artifact.gen
+            (gen, _) <- loadGen artifact.gen Nothing
             case gen artifact.config of
               Left errMsg ->
                 throwError

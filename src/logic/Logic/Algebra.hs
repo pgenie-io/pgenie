@@ -74,7 +74,12 @@ class (MonadError Error m) => FsOps m where
 
 -- | Domain operations.
 class (MonadError Error m) => LoadsGen m where
-  loadGen :: Gen.Location -> m Gen.Gen
+  loadGen ::
+    Gen.Location ->
+    -- | Possible integrity hash for caching.
+    Maybe Text ->
+    -- | Action producing the gen along with its integrity hash.
+    m (Gen.Gen, Text)
 
 -- | Combined capabilities required by the logic.
 type Caps m =

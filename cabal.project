@@ -18,13 +18,13 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/nikita-volkov/fx
-  tag: e2931f2a5de2a93c976820799fcc14da7ea946c6
+  tag: 489db0ddd26a88a405d6c501d233e9d825bf5a43
 
 -- Provides `pgenie-gen`
 source-repository-package
   type: git
   location: https://github.com/pgenie-io/gen-sdk
-  tag: d9d37522305ed25cf1ea48e5e163d4dc0ff5465e
+  tag: d035cc6dec7fd397a04f713f81197b511486c06c
   subdir: haskell
 
 constraints:

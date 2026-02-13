@@ -77,6 +77,7 @@ instance Logic.FsOps (Fx Device Logic.Error) where
 
   writeFile path content =
     liftFileOp "Failed to write file" path do
+      Directory.createDirectoryIfMissing True (Path.toFilePath (path <> ".."))
       Text.writeFile (Path.toFilePath path) content
 
   listDir path = do
@@ -99,7 +100,7 @@ instance Logic.FsOps (Fx Device Logic.Error) where
 
 instance Logic.LoadsGen (Fx Device Logic.Error) where
   loadGen location =
-    runExceptionalIO (const (Gen.load location))
+    runExceptionalIO (const (Gen.load location (const (pure ()))))
       & first
         ( \err ->
             Logic.Error

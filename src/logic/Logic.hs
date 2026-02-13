@@ -27,7 +27,7 @@ import SyntacticClass qualified as Syntactic
 -- * Transformers
 
 runLogic :: Logic m a -> m a
-runLogic (Logic f) = f 0 []
+runLogic (Logic f) = f 1 []
 
 -- |
 -- Internal monad transformer for pure logic, which:
@@ -128,7 +128,7 @@ check =
 generate :: (Caps m) => m ()
 generate =
   runLogic do
-    stage "generate" 2 do
+    stage "Generate" 2 do
       projectFile <- loadProjectFile
       genProject <- do
         analyse projectFile
@@ -195,7 +195,17 @@ generateCode projectFile project =
                     ]
                 )
             Gen.Output.ResultOk generatedFiles -> do
-              let artifactPath = fold (Path.maybeFromText name)
+              artifactPath <- case Path.maybeFromText name of
+                Nothing ->
+                  throwError
+                    ( Error
+                        []
+                        "Invalid artifact name"
+                        (Just "Must be in snake_case and must not start with a number")
+                        [("name", name)]
+                    )
+                Just path ->
+                  pure ("artifacts" <> path)
               generatedFilePaths <- for generatedFiles \file -> do
                 let modifiedPath = artifactPath <> file.path
                 writeFile modifiedPath file.content
@@ -205,7 +215,7 @@ generateCode projectFile project =
 analyse :: (LoadsGen m, DbOps m, MonadParallel m, FsOps m, Stages m, Emits m) => ProjectFile.ProjectFile -> m Gen.Input.Project
 analyse projectFile =
   stage "Analysing" 2 do
-    stage "Executing migrations" 2 do
+    stage "Migrating" 2 do
       migrationsListed <-
         listDir "migrations"
           & fmap (filter (\p -> Path.toExtensions p == ["sql"]))

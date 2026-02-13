@@ -21,5 +21,8 @@
 !/src/
 !/demo/
 
+# Reignore subtrees:
+/demo/artifacts/
+
 # Ignore noise:
 .DS_Store

@@ -235,7 +235,7 @@ generateCode projectFile project =
 analyse :: (LoadsGen m, DbOps m, MonadParallel m, FsOps m, Stages m, Emits m) => ProjectFile.ProjectFile -> m Gen.Input.Project
 analyse projectFile =
   stage "Analysing" 2 do
-    stage "Migrating" 2 do
+    stage "Migrations" 2 do
       migrationsListed <-
         listDir "migrations"
           & fmap (filter (\p -> Path.toExtensions p == ["sql"]))
@@ -290,12 +290,12 @@ analyse projectFile =
             }
 
     (queries, customTypes) <-
-      stage "Analysing queries" (length queriesListed) do
+      stage "Queries" (length queriesListed) do
         mixedList <-
           MonadParallel.forM queriesListed \queryListed ->
             stage (Name.inSnakeCase queryListed.name) 2 do
               sqlTemplate <-
-                stage "Reading file" 0 do
+                stage "Loading" 0 do
                   loadQuerySql queryListed
 
               let nativeTemplate =
@@ -306,7 +306,7 @@ analyse projectFile =
                       & to
 
               InferredQueryTypes {params, resultColumns, mentionedCustomTypes} <-
-                stage "Inferring types" 0 do
+                stage "Inferring" 0 do
                   (queryTypes, warnings) <- inferQueryTypes nativeTemplate
                   for warnings warn
                   pure queryTypes

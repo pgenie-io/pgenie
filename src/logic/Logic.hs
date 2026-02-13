@@ -229,9 +229,11 @@ generateCode projectFile project =
     -- Extract artifacts and hashes
     let (artifacts, hashPairs) = unzip artifactsWithHashes
         updatedHashes = Map.union (Map.fromList hashPairs) existingHashes
+        noNewHashes = null hashPairs
 
     -- Write updated hashes file
-    writeFile "freeze.pgn1.yaml" (GeneratorHashes.serializeHashesMap updatedHashes)
+    unless noNewHashes do
+      writeFile "freeze.pgn1.yaml" (GeneratorHashes.serializeHashesMap updatedHashes)
 
     pure artifacts
 

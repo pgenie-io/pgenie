@@ -154,6 +154,7 @@ library logic
     text,
     text-builder,
     vector,
+    yaml,
 
 test-suite logic-test
   import: test

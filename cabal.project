@@ -53,6 +53,7 @@ constraints:
   vector-extras ^>=0.3,
   vector-instances >=3.4.2 && <4,
   witherable ^>=0.5,
+  yaml-unscrambler ^>=0.1.0.21,
 
 allow-newer: 
   *:base,

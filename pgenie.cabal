@@ -145,6 +145,7 @@ library logic
     aeson,
     algebraic-path,
     containers,
+    foldl,
     megaparsec,
     monad-parallel,
     pgenie:base,
@@ -154,7 +155,7 @@ library logic
     text,
     text-builder,
     vector,
-    yaml,
+    yaml-unscrambler,
 
 test-suite logic-test
   import: test

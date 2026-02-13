@@ -2,16 +2,17 @@ module Logic.ProjectFile where
 
 import AlgebraicPath qualified as Path
 import Base.Prelude hiding (Version)
+import Control.Foldl qualified as Fold
 import Data.Aeson qualified as Aeson
-import Data.Aeson.Key qualified as Aeson.Key
-import Data.Aeson.KeyMap qualified as Aeson.KeyMap
+import Data.Aeson.Key qualified as Key
+import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Text qualified as Text
-import Data.Text.Encoding qualified as Text.Encoding
-import Data.Yaml qualified as Yaml
+import Data.Vector qualified as Vector
 import Logic.Algebra qualified as Algebra
 import Logic.Name qualified as Name
 import PGenieGen qualified as Gen
 import PGenieGen.Model.Input qualified as Gen
+import YamlUnscrambler qualified as U
 
 data ProjectFile = ProjectFile
   { space :: Name.Name,
@@ -28,170 +29,139 @@ data Artifact = Artifact
 
 tryFromYaml :: (MonadError Algebra.Error m) => Text -> m ProjectFile
 tryFromYaml text = do
-  -- Parse YAML to Aeson Value
-  yamlValue <- case Yaml.decodeEither' (Text.Encoding.encodeUtf8 text) of
-    Left parseException ->
+  case U.parseText projectFileValue text of
+    Left errMsg ->
       throwError
         Algebra.Error
           { path = ["project.pgn1.yaml"],
-            message = "Failed to parse YAML: " <> Text.pack (show parseException),
-            suggestion = Just "Check YAML syntax",
+            message = errMsg,
+            suggestion = Just "Check YAML syntax and required fields",
             details = []
           }
-    Right value -> return value
-
-  -- Parse the top-level object
-  case yamlValue of
-    Aeson.Object obj -> do
-      -- Parse space
-      spaceText <- extractField obj "space" >>= extractString "space"
-      space <- parseName "space" spaceText
-
-      -- Parse name
-      nameText <- extractField obj "name" >>= extractString "name"
-      name <- parseName "name" nameText
-
-      -- Parse version
-      versionText <- extractField obj "version" >>= extractString "version"
-      version <- parseVersion versionText
-
-      -- Parse artifacts
-      artifactsValue <- extractField obj "artifacts"
-      artifacts <- parseArtifacts artifactsValue
-
-      return ProjectFile {space, name, version, artifacts}
-    _ ->
-      throwError
-        Algebra.Error
-          { path = ["project.pgn1.yaml"],
-            message = "Expected object at top level",
-            suggestion = Nothing,
-            details = []
-          }
+    Right projectFile -> return projectFile
   where
-    extractField obj fieldName =
-      case Aeson.KeyMap.lookup (Aeson.Key.fromText fieldName) obj of
-        Nothing ->
-          throwError
-            Algebra.Error
-              { path = ["project.pgn1.yaml", fieldName],
-                message = "Missing required field: " <> fieldName,
-                suggestion = Nothing,
-                details = []
-              }
-        Just value -> return value
+    projectFileValue :: U.Value ProjectFile
+    projectFileValue =
+      U.mappingValue
+        $ U.byKeyMapping (U.CaseSensitive True)
+        $ do
+          space <- U.atByKey "space" nameValue
+          name <- U.atByKey "name" nameValue
+          version <- U.atByKey "version" versionValue
+          artifacts <- U.atByKey "artifacts" artifactsValue
+          return ProjectFile {space, name, version, artifacts}
 
-    extractString _ (Aeson.String txt) = return txt
-    extractString fieldName _ =
-      throwError
-        Algebra.Error
-          { path = ["project.pgn1.yaml", fieldName],
-            message = "Expected string for field: " <> fieldName,
-            suggestion = Nothing,
-            details = []
-          }
-
-    parseName fieldName txt =
-      case Name.tryFromText txt of
-        Left err ->
-          throwError
-            Algebra.Error
-              { path = ["project.pgn1.yaml", fieldName],
-                message = "Invalid name: " <> err,
-                suggestion = Just "Use lowercase letters, digits, and hyphens only",
-                details = []
-              }
-        Right name -> return name
-
-    parseVersion txt =
-      case Text.splitOn "." txt of
-        [majorText, minorText, patchText] -> do
-          major <- parseNatural "version.major" majorText
-          minor <- parseNatural "version.minor" minorText
-          patch <- parseNatural "version.patch" patchText
-          return Gen.Version {major, minor, patch}
-        _ ->
-          throwError
-            Algebra.Error
-              { path = ["project.pgn1.yaml", "version"],
-                message = "Invalid version format: " <> txt,
-                suggestion = Just "Use semantic versioning format: major.minor.patch (e.g., 1.0.0)",
-                details = []
-              }
-
-    parseNatural fieldName txt =
-      case readMaybe (Text.unpack txt) of
-        Nothing ->
-          throwError
-            Algebra.Error
-              { path = ["project.pgn1.yaml", fieldName],
-                message = "Invalid natural number: " <> txt,
-                suggestion = Just "Use a non-negative integer",
-                details = []
-              }
-        Just n -> return n
-
-    normalizeArtifactName txt =
-      -- Replace hyphens with underscores and prefix purely numeric parts with 'v'
-      let parts = Text.splitOn "_" (Text.replace "-" "_" txt)
-          normalizedParts = map normalizePart parts
-       in Text.intercalate "_" normalizedParts
+    nameValue :: U.Value Name.Name
+    nameValue =
+      U.scalarsValue [U.stringScalar nameString]
       where
-        normalizePart part
-          | Text.null part = part
-          | isDigit (Text.head part) = "v" <> part -- Prefix numeric parts with 'v'
-          | otherwise = Text.toLower part
+        nameString =
+          U.formattedString "name" $ \txt ->
+            case Name.tryFromText txt of
+              Left err -> Left err
+              Right name -> Right name
 
-    parseArtifacts (Aeson.Object obj) = do
-      forM (Aeson.KeyMap.toList obj) $ \(key, value) -> do
-        -- Normalize artifact names: convert to lowercase and ensure parts start with letters
-        let keyText = normalizeArtifactName (Aeson.Key.toText key)
-        artifactName <- parseName "artifacts" keyText
-        parseArtifact artifactName value
-    parseArtifacts _ =
-      throwError
-        Algebra.Error
-          { path = ["project.pgn1.yaml", "artifacts"],
-            message = "Expected object for artifacts",
-            suggestion = Nothing,
-            details = []
-          }
-
-    parseArtifact artifactName value =
-      case value of
-        -- Short form: just a URL string
-        Aeson.String url -> do
-          gen <- parseLocation url
-          return Artifact {name = artifactName, gen, config = Aeson.Null}
-        -- Long form: object with gen and optional config
-        Aeson.Object obj -> do
-          genValue <- extractField obj "gen"
-          genText <- extractString "gen" genValue
-          gen <- parseLocation genText
-          config <- case Aeson.KeyMap.lookup (Aeson.Key.fromText "config") obj of
-            Nothing -> return Aeson.Null
-            Just configValue -> return configValue
-          return Artifact {name = artifactName, gen, config}
-        _ ->
-          throwError
-            Algebra.Error
-              { path = ["project.pgn1.yaml", "artifacts", Name.toText artifactName],
-                message = "Expected string or object for artifact",
-                suggestion = Just "Use either a URL string or an object with 'gen' field",
-                details = []
-              }
-
-    parseLocation txt
-      | "http://" `Text.isPrefixOf` txt || "https://" `Text.isPrefixOf` txt =
-          return (Gen.LocationUrl txt)
-      | otherwise =
-          case Path.maybeFromText txt of
+    versionValue :: U.Value Gen.Version
+    versionValue =
+      U.scalarsValue [U.stringScalar versionString]
+      where
+        versionString =
+          U.formattedString "version (major.minor.patch)" $ \txt ->
+            case Text.splitOn "." txt of
+              [majorText, minorText, patchText] -> do
+                major <- parseNatural "major" majorText
+                minor <- parseNatural "minor" minorText
+                patch <- parseNatural "patch" patchText
+                return Gen.Version {major, minor, patch}
+              _ ->
+                Left "Invalid version format. Use semantic versioning format: major.minor.patch (e.g., 1.0.0)"
+        parseNatural fieldName txt =
+          case readMaybe (Text.unpack txt) of
             Nothing ->
-              throwError
-                Algebra.Error
-                  { path = ["project.pgn1.yaml"],
-                    message = "Invalid path: " <> txt,
-                    suggestion = Nothing,
-                    details = []
-                  }
-            Just path -> return (Gen.LocationPath path)
+              Left ("Invalid natural number for " <> fieldName <> ": " <> txt)
+            Just n -> return n
+
+    artifactsValue :: U.Value [Artifact]
+    artifactsValue =
+      U.mappingValue
+        $ fmap (map setNameOnArtifact)
+        $ U.foldMapping (,) Fold.list artifactKeyString artifactValue
+      where
+        -- Set the name field on the artifact
+        setNameOnArtifact (artifactName, Artifact {gen, config}) = Artifact {name = artifactName, gen, config}
+
+        -- Parse and normalize artifact names
+        artifactKeyString =
+          U.formattedString "artifact-name" $ \txt ->
+            let normalized = normalizeArtifactName txt
+             in case Name.tryFromText normalized of
+                  Left err -> Left ("Invalid artifact name: " <> err)
+                  Right name -> Right name
+
+        normalizeArtifactName txt =
+          -- Replace hyphens with underscores and prefix purely numeric parts with 'v'
+          let parts = Text.splitOn "_" (Text.replace "-" "_" txt)
+              normalizedParts = map normalizePart parts
+           in Text.intercalate "_" normalizedParts
+          where
+            normalizePart part
+              | Text.null part = part
+              | isDigit (Text.head part) = "v" <> part
+              | otherwise = Text.toLower part
+
+    artifactValue :: U.Value Artifact
+    artifactValue =
+      U.value
+        [U.stringScalar locationString] -- Short form: just a URL string
+        (Just artifactMapping) -- Long form: object with gen and optional config
+        Nothing
+      where
+        locationString =
+          U.formattedString "location" $ \txt -> do
+            gen <- parseLocation txt
+            return Artifact {name = error "name set later", gen, config = Aeson.Null}
+
+        artifactMapping =
+          U.byKeyMapping (U.CaseSensitive True) $ do
+            genText <- U.atByKey "gen" (U.scalarsValue [U.stringScalar genLocationString])
+            config <-
+              asum
+                [ U.atByKey "config" configValue,
+                  pure Aeson.Null
+                ]
+            return Artifact {name = error "name set later", gen = genText, config}
+
+        genLocationString =
+          U.formattedString "location" parseLocation
+
+        parseLocation :: Text -> Either Text Gen.Location
+        parseLocation txt
+          | "http://" `Text.isPrefixOf` txt || "https://" `Text.isPrefixOf` txt =
+              Right (Gen.LocationUrl txt)
+          | otherwise =
+              case Path.maybeFromText txt of
+                Nothing -> Left ("Invalid path: " <> txt)
+                Just path -> Right (Gen.LocationPath path)
+
+    configValue :: U.Value Aeson.Value
+    configValue =
+      U.value
+        [ U.stringScalar (fmap Aeson.String U.textString),
+          U.nullScalar Aeson.Null,
+          U.boolScalar <&> Aeson.Bool,
+          U.scientificScalar <&> Aeson.Number
+        ]
+        (Just configMapping)
+        (Just configSequence)
+      where
+        configMapping =
+          U.foldMapping
+            (\k v -> (Key.fromText k, v))
+            (Fold.Fold (\acc (k, v) -> (k, v) : acc) [] (Aeson.Object . KeyMap.fromList . reverse))
+            U.textString
+            configValue
+
+        configSequence =
+          U.foldSequence
+            (Fold.Fold (\acc v -> v : acc) [] (Aeson.Array . Vector.fromList . reverse))
+            configValue

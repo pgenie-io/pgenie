@@ -19,6 +19,7 @@
 !/.github/
 !/design/
 !/src/
+!/demo/
 
 # Ignore noise:
 .DS_Store

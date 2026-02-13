@@ -99,8 +99,8 @@ instance Logic.FsOps (Fx Device Logic.Error) where
               }
 
 instance Logic.LoadsGen (Fx Device Logic.Error) where
-  loadGen location =
-    runExceptionalIO (const (Gen.load location (const (pure ()))))
+  loadGen location maybeHash =
+    runExceptionalIO (const (Gen.load location maybeHash (const (pure ()))))
       & first
         ( \err ->
             Logic.Error

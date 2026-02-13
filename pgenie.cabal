@@ -134,6 +134,7 @@ library logic
     Logic.SqlTemplate
 
   other-modules:
+    Logic.GeneratorHashes
     Logic.Name.Megaparsec
     Logic.ProjectFile
     Logic.SyntaxAnalyser

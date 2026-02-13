@@ -14,6 +14,7 @@ import Data.Aeson.Text qualified as Aeson
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
 import Logic.Algebra
+import Logic.GeneratorHashes qualified as GeneratorHashes
 import Logic.Name qualified as Name
 import Logic.ProjectFile qualified as ProjectFile
 import Logic.SqlTemplate qualified as SqlTemplate
@@ -137,6 +138,11 @@ generate =
 
 -- * Helpers
 
+locationToUrl :: Gen.Location -> Text
+locationToUrl = \case
+  Gen.LocationUrl url -> url
+  Gen.LocationPath path -> Path.toText path
+
 loadProjectFile :: (FsOps m) => m ProjectFile.ProjectFile
 loadProjectFile = do
   configContent <- readFile "project.pgn1.yaml"
@@ -159,58 +165,75 @@ loadQuerySql queryListed = do
 generateCode :: (LoadsGen m, Stages m, MonadParallel m, FsOps m) => ProjectFile.ProjectFile -> Gen.Input.Project -> m [GeneratedArtifact]
 generateCode projectFile project =
   stage "Generating code" (length projectFile.artifacts) do
-    MonadParallel.forM projectFile.artifacts \artifact -> do
-      let name = Name.inSnakeCase artifact.name
-      stage name 2 do
-        compileFn <-
-          stage "Loading generator" 0 do
-            (gen, _) <- loadGen artifact.gen Nothing
-            case gen artifact.config of
-              Left errMsg ->
-                throwError
-                  ( Error
-                      []
-                      errMsg
-                      (Just "Ensure the artifact configuration conforms to the format expected by the generator")
-                      [ ("config", to (Aeson.encodeToTextBuilder artifact.config))
-                      ]
-                  )
-              Right compileFn ->
-                pure compileFn
+    -- Load existing hashes file
+    existingHashes <- GeneratorHashes.tryLoadHashesFile
 
-        stage "Compiling" 0 do
-          let output = compileFn project
-          case output.result of
-            Gen.Output.ResultErr report ->
-              throwError
-                ( Error
-                    report.path
-                    report.message
-                    Nothing
-                    [ ( "warnings",
-                        output.warnings
-                          & map Gen.Output.Report.toWarningYamlText
-                          & Text.intercalate "\n"
-                      )
-                    ]
-                )
-            Gen.Output.ResultOk generatedFiles -> do
-              artifactPath <- case Path.maybeFromText name of
-                Nothing ->
+    -- Load generators and collect new hashes
+    artifactsWithHashes <-
+      MonadParallel.forM projectFile.artifacts \artifact -> do
+        let name = Name.inSnakeCase artifact.name
+            genUrl = locationToUrl artifact.gen
+            maybeHash = Map.lookup genUrl existingHashes
+        stage name 2 do
+          compileFnWithHash <-
+            stage "Loading generator" 0 do
+              (gen, newHash) <- loadGen artifact.gen maybeHash
+              case gen artifact.config of
+                Left errMsg ->
                   throwError
                     ( Error
                         []
-                        "Invalid artifact name"
-                        (Just "Must be in snake_case and must not start with a number")
-                        [("name", name)]
+                        errMsg
+                        (Just "Ensure the artifact configuration conforms to the format expected by the generator")
+                        [ ("config", to (Aeson.encodeToTextBuilder artifact.config))
+                        ]
                     )
-                Just path ->
-                  pure ("artifacts" <> path)
-              generatedFilePaths <- for generatedFiles \file -> do
-                let modifiedPath = artifactPath <> file.path
-                writeFile modifiedPath file.content
-                pure modifiedPath
-              pure (GeneratedArtifact name output.warnings generatedFilePaths)
+                Right compileFn ->
+                  pure (compileFn, genUrl, newHash)
+
+          stage "Compiling" 0 do
+            let (compileFn, genUrl, newHash) = compileFnWithHash
+                output = compileFn project
+            case output.result of
+              Gen.Output.ResultErr report ->
+                throwError
+                  ( Error
+                      report.path
+                      report.message
+                      Nothing
+                      [ ( "warnings",
+                          output.warnings
+                            & map Gen.Output.Report.toWarningYamlText
+                            & Text.intercalate "\n"
+                        )
+                      ]
+                  )
+              Gen.Output.ResultOk generatedFiles -> do
+                artifactPath <- case Path.maybeFromText name of
+                  Nothing ->
+                    throwError
+                      ( Error
+                          []
+                          "Invalid artifact name"
+                          (Just "Must be in snake_case and must not start with a number")
+                          [("name", name)]
+                      )
+                  Just path ->
+                    pure ("artifacts" <> path)
+                generatedFilePaths <- for generatedFiles \file -> do
+                  let modifiedPath = artifactPath <> file.path
+                  writeFile modifiedPath file.content
+                  pure modifiedPath
+                pure ((GeneratedArtifact name output.warnings generatedFilePaths), (genUrl, newHash))
+
+    -- Extract artifacts and hashes
+    let (artifacts, hashPairs) = unzip artifactsWithHashes
+        updatedHashes = Map.union (Map.fromList hashPairs) existingHashes
+
+    -- Write updated hashes file
+    writeFile "freeze.pgn1.yaml" (GeneratorHashes.serializeHashesMap updatedHashes)
+
+    pure artifacts
 
 analyse :: (LoadsGen m, DbOps m, MonadParallel m, FsOps m, Stages m, Emits m) => ProjectFile.ProjectFile -> m Gen.Input.Project
 analyse projectFile =

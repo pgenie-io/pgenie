@@ -55,8 +55,7 @@ setCurrentTime :: UTCTime -> Memory -> Memory
 setCurrentTime currentTime memory =
   let elapsedTime = currentTime `diffUTCTime` memory.startTime
       timeLeftEstimate =
-         if memory.progress > 0
-        then Just (elapsedTime / realToFrac memory.progress - elapsedTime)
-        else Nothing
-    in memory {timeLeftEstimate}
-  
+        if memory.progress > 0
+          then Just (elapsedTime / realToFrac memory.progress - elapsedTime)
+          else Nothing
+   in memory {timeLeftEstimate}

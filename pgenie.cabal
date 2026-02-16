@@ -98,6 +98,7 @@ library base
   hs-source-dirs: src/base/
   exposed-modules:
     Base.Prelude
+    Base.Text
 
   build-depends:
     QuickCheck,

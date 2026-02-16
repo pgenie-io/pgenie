@@ -8,7 +8,6 @@ import Infra.Adapters.Analyser.Sessions.Algebras.Procedure
 import Infra.Adapters.Analyser.Sessions.Domain as Domain
 import Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements qualified as Statements
 import SyntacticClass qualified as Syntactic
-import TextBuilder qualified
 
 data ResolveTypeByOid = ResolveTypeByOid
   { oid :: Int32
@@ -26,12 +25,16 @@ instance Procedure ResolveTypeByOid where
           Nothing -> do
             res <- runStatementByParams Statements.SelectTypeParams {oid}
             type_ <- case res of
-              Nothing -> crash ["Unknown type OID: ", Syntactic.toTextBuilder oid]
+              Nothing ->
+                crash
+                  ["Unknown type OID: "]
+                  [ ("oid", Syntactic.toText oid)
+                  ]
               Just type_ -> pure type_
             inContext ["type:", Syntactic.toTextBuilder type_.name] do
               case type_.elementTypeOid of
                 0 -> case type_.type_ of
-                  "b" -> crash ["Base types are not supported"]
+                  "b" -> crash ["Base types are not supported"] []
                   "c" -> do
                     fields <- runStatementByParams Statements.SelectAttributesParams {oid}
                     fields <- forM fields $ \(Statements.SelectAttributesResultRow fieldName fieldTypeOid (fromIntegral -> fieldDims) _) ->
@@ -48,14 +51,17 @@ instance Procedure ResolveTypeByOid where
                                 else pure fieldType
                         pure (CompositeField fieldName fieldType)
                     pure (Type 0 (CompositeScalar (Composite type_.schemaName type_.name fields)))
-                  "d" -> crash ["Domain types are not supported yet"]
+                  "d" -> crash ["Domain types are not supported yet"] []
                   "e" -> do
                     labels <- runStatementByParams Statements.SelectEnumLabelsParams {oid}
                     pure (Type 0 (EnumScalar (Enum type_.schemaName type_.name labels)))
-                  "p" -> crash ["Pseudo types are not supported yet"]
-                  "r" -> crash ["Range types are not supported yet"]
-                  "m" -> crash ["Multirange types are not supported yet"]
-                  _ -> crash ["Unexpected tag: ", TextBuilder.text type_.type_]
+                  "p" -> crash ["Pseudo types are not supported yet"] []
+                  "r" -> crash ["Range types are not supported yet"] []
+                  "m" -> crash ["Multirange types are not supported yet"] []
+                  _ ->
+                    crash
+                      ["Unexpected tag"]
+                      [("tag", Syntactic.toText type_.type_)]
                 _ -> inContext ["element"] do
                   elementType <- go (fromIntegral type_.elementTypeOid)
                   if elementType.dimensionality == 0

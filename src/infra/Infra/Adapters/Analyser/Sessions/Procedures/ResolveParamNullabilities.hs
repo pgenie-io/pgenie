@@ -29,7 +29,11 @@ instance Procedure ResolveParamNullabilities where
       inContext
         ["param:", Syntactic.toTextBuilder (show index)]
         case DefaultEncoder.fromType type_ of
-          Nothing -> crash ["Unsupported type: ", Syntactic.toTextBuilder (show type_)]
+          Nothing ->
+            crash
+              ["Unsupported type"]
+              [ ("type", Syntactic.toText (show type_))
+              ]
           Just encoder -> pure encoder
     nullabilities <- Vector.fromList <$> Hasql.runSession (go mempty (Vector.toList encoders) [])
     return

@@ -18,7 +18,8 @@ class Procedure params where
 
 data Error = Error
   { location :: [Text],
-    reason :: Text
+    reason :: Text,
+    details :: [(Text, Text)]
   }
   deriving stock (Show, Eq)
 
@@ -30,12 +31,12 @@ inContext context = local (TextBuilder.toText (mconcat context) :)
 warn :: (MonadReader Location m, MonadWriter [Error] m) => [TextBuilder] -> m ()
 warn reason = do
   location <- ask
-  tell [Error location (TextBuilder.toText (mconcat reason))]
+  tell [Error location (TextBuilder.toText (mconcat reason)) []]
 
-crash :: (MonadReader Location m, MonadError Error m) => [TextBuilder] -> m a
-crash reason = do
+crash :: (MonadReader Location m, MonadError Error m) => [TextBuilder] -> [(Text, Text)] -> m a
+crash reason details = do
   location <- ask
-  throwError (Error location (TextBuilder.toText (mconcat reason)))
+  throwError (Error location (TextBuilder.toText (mconcat reason)) details)
 
 runStatementByParams ::
   ( Hasql.RunsSession m,

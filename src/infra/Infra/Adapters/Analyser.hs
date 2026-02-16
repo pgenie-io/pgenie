@@ -111,5 +111,5 @@ instance Logic.DbOps (Fx Device Logic.Error) where
           { path = err.location,
             message = err.reason,
             suggestion = Nothing,
-            details = []
+            details = err.details
           }

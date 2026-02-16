@@ -62,15 +62,13 @@ instance Procedure DescribeQuery where
             }
       Left error -> case error of
         LibpqExtras.ConnectionError ->
-          crash ["Connection error"]
+          crash ["Connection error"] []
         LibpqExtras.ResultError code message position ->
           crash
-            [ "Broken query. SQLSTATE code: ",
-              Syntactic.toTextBuilder code,
-              ", message: ",
-              Syntactic.toTextBuilder message,
-              maybe
-                ""
-                (\pos -> ", position: " <> Syntactic.toTextBuilder pos)
-                position
-            ]
+            ["Broken query"]
+            ( catMaybes
+                [ Just ("code", Syntactic.toText code),
+                  Just ("message", Syntactic.toText message),
+                  ("position",) . Syntactic.toText <$> position
+                ]
+            )

@@ -40,7 +40,7 @@ inferTypes query =
         Procedure.inContext ["column:", Syntactic.toTextBuilder (show index)] do
           name <- case resultColumn.name of
             Nothing -> do
-              Procedure.crash ["Column name missing. Specify one using the AS clause."]
+              Procedure.crash ["Column name missing. Specify one using the AS clause."] []
             Just name -> pure name
           Procedure.inContext ["name:", Syntactic.toTextBuilder name] do
             type_ <-

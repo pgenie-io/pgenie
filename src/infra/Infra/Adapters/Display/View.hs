@@ -35,64 +35,6 @@ view event oldMemory newMemory = case event of
               else TextBuilders.green "Done!" <> "\n"
           ]
   Logic.WarningEmitted err ->
-    mconcat
-      [ if oldMemory.hasProgressBar
-          then TextBuilders.moveCursorToLineStart <> TextBuilders.clearLine -- Clear progress bar
-          else "",
-        "\n",
-        TextBuilders.yellow "Warning",
-        ": ",
-        to err.message,
-        "\n",
-        if null err.path
-          then ""
-          else
-            "Stage: "
-              <> TextBuilder.intercalateMap " > " to (reverse err.path)
-              <> "\n",
-        maybe "" (mappend "Suggestion: " . to . mappend "\n") err.suggestion,
-        if null err.details
-          then ""
-          else
-            "Details:\n"
-              <> TextBuilder.intercalateMap
-                "\n"
-                ( \(key, value) ->
-                    "  " <> to key <> ": " <> to value
-                )
-                err.details
-              <> "\n"
-      ]
+    TextBuilders.report oldMemory.hasProgressBar (TextBuilders.yellow "Warning") err.path err.message err.suggestion err.details
   Logic.Failed err ->
-    mconcat
-      [ if oldMemory.hasProgressBar
-          then TextBuilders.moveCursorToLineStart <> TextBuilders.clearLine -- Clear progress bar
-          else "",
-        "\n",
-        TextBuilders.boldRed "Error",
-        ": ",
-        to err.message,
-        "\n",
-        if null err.path
-          then ""
-          else
-            mconcat
-              [ "Stage: ",
-                TextBuilder.intercalateMap " > " to (reverse err.path),
-                "\n"
-              ],
-        maybe "" (mappend "Suggestion: " . to . mappend "\n") err.suggestion,
-        if null err.details
-          then ""
-          else
-            mconcat
-              [ "Details:\n",
-                TextBuilder.intercalateMap
-                  "\n"
-                  ( \(key, value) ->
-                      "  " <> to key <> ": " <> to value
-                  )
-                  err.details,
-                "\n"
-              ]
-      ]
+    TextBuilders.report oldMemory.hasProgressBar (TextBuilders.boldRed "Error") err.path err.message err.suggestion err.details

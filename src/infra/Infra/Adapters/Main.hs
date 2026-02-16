@@ -13,7 +13,6 @@ import Infra.Adapters.Display qualified as Display
 import Logic qualified
 import PGenieGen qualified as Gen
 import System.Directory qualified as Directory
-import TextBuilder qualified
 
 data Device = Device
   { display :: Display.Device,

@@ -1,9 +1,11 @@
 cabal-version: 3.4
 name: pgenie
 version: 0
-category:
-synopsis:
+category: Database
+synopsis: Type-safe PostgreSQL client code generator
 description:
+  Analyzes SQL migrations and queries to generate type-safe client libraries.
+
 homepage: https://github.com/nikita-volkov/pgenie
 bug-reports: https://github.com/nikita-volkov/pgenie/issues
 author: Nikita Volkov <nikita.y.volkov@mail.ru>

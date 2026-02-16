@@ -67,19 +67,26 @@ instance (Emits m) => Stages (Logic m) where
       pure result
 
 instance (DbOps m) => DbOps (Logic m) where
-  executeMigration migrationLoaded = lift (executeMigration migrationLoaded)
-  inferQueryTypes sqlTemplate = lift (inferQueryTypes sqlTemplate)
+  executeMigration migrationLoaded = liftWithErrs (executeMigration migrationLoaded)
+  inferQueryTypes sqlTemplate = liftWithErrs (inferQueryTypes sqlTemplate)
 
 instance (FsOps m) => FsOps (Logic m) where
-  readFile path = lift (readFile path)
-  writeFile path content = lift (writeFile path content)
-  listDir path = lift (listDir path)
+  readFile path = liftWithErrs (readFile path)
+  writeFile path content = liftWithErrs (writeFile path content)
+  listDir path = liftWithErrs (listDir path)
 
 instance (LoadsGen m) => LoadsGen (Logic m) where
-  loadGen genLocation maybeHash = lift (loadGen genLocation maybeHash)
+  loadGen genLocation maybeHash = liftWithErrs (loadGen genLocation maybeHash)
 
 instance (Emits m) => Emits (Logic m) where
   emit event = lift (emit event)
+
+liftWithErrs :: (MonadError Error m) => m a -> Logic m a
+liftWithErrs ma = Logic \_ path ->
+  catchError ma \e ->
+    let newPath = path <> e.path
+        newError = e {path = newPath}
+     in throwError newError
 
 -- * Intermediate (non-interface) Types
 

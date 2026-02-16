@@ -47,7 +47,7 @@ view event oldMemory newMemory = case event of
         if null err.path
           then ""
           else
-            "Location: "
+            "Stage: "
               <> TextBuilder.intercalateMap " > " to (reverse err.path)
               <> "\n",
         maybe "" (mappend "Suggestion: " . to . mappend "\n") err.suggestion,
@@ -77,7 +77,7 @@ view event oldMemory newMemory = case event of
           then ""
           else
             mconcat
-              [ "Location: ",
+              [ "Stage: ",
                 TextBuilder.intercalateMap " > " to (reverse err.path),
                 "\n"
               ],

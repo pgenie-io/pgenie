@@ -95,7 +95,7 @@ toText :: Name -> Text
 toText = to @Text . toTextBuilder
 
 toTextBuilder :: Name -> TextBuilder
-toTextBuilder = TextBuilder.intercalateMap "-" to . toPartsVector
+toTextBuilder = toTextBuilderInSnakeCase
 
 toTextBuilderInKebabCase :: Name -> TextBuilder
 toTextBuilderInKebabCase = TextBuilder.intercalateMap "-" to . toPartsVector

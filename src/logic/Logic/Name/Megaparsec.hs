@@ -21,7 +21,7 @@ parts = do
       <*> takeWhileP (Just "part tail") (\c -> isAsciiLower c || isDigit c)
 
   tail <- many do
-    char '_'
+    _ <- char '_'
     takeWhileP (Just "tail part") (\c -> isAsciiLower c || isDigit c)
 
   return (firstWord : tail)

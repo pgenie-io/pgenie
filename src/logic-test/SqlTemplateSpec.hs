@@ -17,17 +17,17 @@ spec = do
       rendered `shouldBe` "SELECT 1"
 
     it "renders a template with a single param" do
-      let template = "SELECT $user-id"
+      let template = "SELECT $user_id"
       let rendered = render True (\_ i -> "$" <> to @TextBuilder (Text.pack (show (i + 1)))) template
       rendered `shouldBe` "SELECT $1"
 
     it "renders a template with multiple params" do
-      let template = "SELECT * FROM users WHERE id = $user-id AND name = $user-name"
+      let template = "SELECT * FROM users WHERE id = $user_id AND name = $user_name"
       let rendered = render True (\_ i -> "$" <> to @TextBuilder (Text.pack (show (i + 1)))) template
       rendered `shouldBe` "SELECT * FROM users WHERE id = $1 AND name = $2"
 
     it "handles repeated params with same index" do
-      let template = "SELECT $user-id, $user-id"
+      let template = "SELECT $user_id, $user_id"
       let rendered = render True (\_ i -> "$" <> to @TextBuilder (Text.pack (show (i + 1)))) template
       rendered `shouldBe` "SELECT $1, $1"
 
@@ -62,9 +62,9 @@ spec = do
       rendered `shouldBe` "SELECT \"column_name\""
 
     it "does not interpret params inside single-quoted literals" do
-      let template = "SELECT '$user-id'"
+      let template = "SELECT '$user_id'"
       let rendered = render True (\_ _ -> "PARAM") template
-      rendered `shouldBe` "SELECT '$user-id'"
+      rendered `shouldBe` "SELECT '$user_id'"
 
   describe "megaparsecOf" do
     it "parses a simple SQL query" do
@@ -75,14 +75,14 @@ spec = do
         Right _ -> pure ()
 
     it "parses a query with a parameter" do
-      let input = "SELECT $user-id"
+      let input = "SELECT $user_id"
       let result = Megaparsec.parse megaparsecOf "" input
       case result of
         Left _ -> expectationFailure "Failed to parse query with parameter"
         Right _ -> pure ()
 
     it "parses a query with multiple parameters" do
-      let input = "SELECT * FROM users WHERE id = $user-id AND name = $user-name"
+      let input = "SELECT * FROM users WHERE id = $user_id AND name = $user_name"
       let result = Megaparsec.parse megaparsecOf "" input
       case result of
         Left _ -> expectationFailure "Failed to parse query with multiple parameters"
@@ -117,14 +117,14 @@ spec = do
         Right _ -> pure ()
 
     it "parses params inside quotes as literal text" do
-      let input = "SELECT '$user-id'"
+      let input = "SELECT '$user_id'"
       let result = Megaparsec.parse megaparsecOf "" input
       case result of
         Left _ -> expectationFailure "Failed to parse param inside quotes"
         Right template -> do
           -- Verify that the param is not interpreted by checking the render output
           let rendered = render True (\_ _ -> "REPLACED") template
-          rendered `shouldBe` "SELECT '$user-id'"
+          rendered `shouldBe` "SELECT '$user_id'"
 
     it "parses empty quoted strings" do
       let input = "SELECT ''"

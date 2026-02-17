@@ -165,7 +165,7 @@ adaptCompositeField field = do
     Gen.Input.Member
       { name,
         pgName = field.name,
-        isNullable = False,
+        isNullable = True,
         value
       }
 

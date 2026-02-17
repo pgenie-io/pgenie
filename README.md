@@ -30,7 +30,7 @@ For a specific example see the [demo project](./demo/).
 
 ## Supported artifacts
 
-- **hasql** — Type-safe Haskell client library
+- [**hasql**](https://github.com/pgenie-io/haskell-hasql.gen) — Type-safe Haskell client library
 
 ## Installation
 

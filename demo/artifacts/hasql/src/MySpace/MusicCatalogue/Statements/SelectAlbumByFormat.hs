@@ -1,4 +1,4 @@
-module MySpace.MusicCatalogue.Statements.UpdateAlbumReleasedReturning where
+module MySpace.MusicCatalogue.Statements.SelectAlbumByFormat where
 
 import MySpace.MusicCatalogue.Prelude
 import qualified Hasql.Statement as Statement
@@ -10,32 +10,34 @@ import qualified Hasql.Mapping as Mapping
 import qualified MySpace.MusicCatalogue.Types as Types
 
 -- |
--- Parameters for the @update_album_released_returning@ query.
+-- Parameters for the @select_album_by_format@ query.
 --
 -- ==== SQL Template
 --
--- > update album
--- > set released = $released
--- > where id = $id
--- > returning *
+-- > select 
+-- >   id,
+-- >   name,
+-- >   released,
+-- >   format,
+-- >   recording
+-- > from album
+-- > where format = $format
 --
 -- ==== Source Path
 --
--- > ./queries/update_album_released_returning.sql
+-- > ./queries/select_album_by_format.sql
 --
-data UpdateAlbumReleasedReturning = UpdateAlbumReleasedReturning
-  { -- | Maps to @released@.
-    released :: Maybe (Day),
-    -- | Maps to @id@.
-    id :: Maybe (Int64)
+newtype SelectAlbumByFormat = SelectAlbumByFormat
+  { -- | Maps to @format@.
+    format :: Maybe (Types.AlbumFormat)
   }
   deriving stock (Eq, Show)
 
--- | Result of the statement parameterised by 'UpdateAlbumReleasedReturning'.
-type UpdateAlbumReleasedReturningResult = Vector.Vector UpdateAlbumReleasedReturningResultRow
+-- | Result of the statement parameterised by 'SelectAlbumByFormat'.
+type SelectAlbumByFormatResult = Vector.Vector SelectAlbumByFormatResultRow
 
--- | Row of 'UpdateAlbumReleasedReturningResult'.
-data UpdateAlbumReleasedReturningResultRow = UpdateAlbumReleasedReturningResultRow
+-- | Row of 'SelectAlbumByFormatResult'.
+data SelectAlbumByFormatResultRow = SelectAlbumByFormatResultRow
   { -- | Maps to @id@.
     id :: Int64,
     -- | Maps to @name@.
@@ -50,21 +52,24 @@ data UpdateAlbumReleasedReturningResultRow = UpdateAlbumReleasedReturningResultR
   deriving stock (Show, Eq)
 
 
-instance Mapping.IsStatement UpdateAlbumReleasedReturning where
-  type Result UpdateAlbumReleasedReturning = UpdateAlbumReleasedReturningResult
+instance Mapping.IsStatement SelectAlbumByFormat where
+  type Result SelectAlbumByFormat = SelectAlbumByFormatResult
 
   statement = Statement.preparable sql encoder decoder
     where
       sql =
-        "update album\n\
-        \set released = $1\n\
-        \where id = $2\n\
-        \returning *"
+        "select \n\
+        \  id,\n\
+        \  name,\n\
+        \  released,\n\
+        \  format,\n\
+        \  recording\n\
+        \from album\n\
+        \where format = $1"
 
       encoder =
         mconcat
-          [ (.released) >$< Encoders.param (Encoders.nullable (Mapping.scalarEncoder)),
-            (.id) >$< Encoders.param (Encoders.nullable (Mapping.scalarEncoder))
+          [ (.format) >$< Encoders.param (Encoders.nullable (Mapping.scalarEncoder))
           ]
 
       decoder =
@@ -74,5 +79,5 @@ instance Mapping.IsStatement UpdateAlbumReleasedReturning where
           released <- Decoders.column (Decoders.nullable (Mapping.scalarDecoder))
           format <- Decoders.column (Decoders.nullable (Mapping.scalarDecoder))
           recording <- Decoders.column (Decoders.nullable (Mapping.scalarDecoder))
-          pure UpdateAlbumReleasedReturningResultRow {..}
+          pure SelectAlbumByFormatResultRow {..}
 

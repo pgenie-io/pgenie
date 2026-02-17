@@ -1,4 +1,4 @@
-module MySpace.MusicCatalogue.Statements.SelectAlbumByArtist where
+module MySpace.MusicCatalogue.Statements.SelectAlbumsWithRecordingInfo where
 
 import MySpace.MusicCatalogue.Prelude
 import qualified Hasql.Statement as Statement
@@ -10,36 +10,35 @@ import qualified Hasql.Mapping as Mapping
 import qualified MySpace.MusicCatalogue.Types as Types
 
 -- |
--- Parameters for the @select_album_by_artist@ query.
+-- Parameters for the @select_albums_with_recording_info@ query.
 --
 -- ==== SQL Template
 --
+-- > -- Select albums with their full recording information
 -- > select 
 -- >   album.id,
 -- >   album.name,
 -- >   album.released,
 -- >   album.format,
--- >   (album.recording).studio_name as studio,
+-- >   album.recording,
+-- >   (album.recording).studio_name as studio_name,
 -- >   (album.recording).city as recording_city
 -- > from album
--- > left join album_artist on album_artist.album = album.id
--- > where artist = $artist
+-- > where album.recording is not null
+-- > order by (album.recording).recorded_date desc
 --
 -- ==== Source Path
 --
--- > ./queries/select_album_by_artist.sql
+-- > ./queries/select_albums_with_recording_info.sql
 --
-newtype SelectAlbumByArtist = SelectAlbumByArtist
-  { -- | Maps to @artist@.
-    artist :: Maybe (Int32)
-  }
+data SelectAlbumsWithRecordingInfo = SelectAlbumsWithRecordingInfo
   deriving stock (Eq, Show)
 
--- | Result of the statement parameterised by 'SelectAlbumByArtist'.
-type SelectAlbumByArtistResult = Vector.Vector SelectAlbumByArtistResultRow
+-- | Result of the statement parameterised by 'SelectAlbumsWithRecordingInfo'.
+type SelectAlbumsWithRecordingInfoResult = Vector.Vector SelectAlbumsWithRecordingInfoResultRow
 
--- | Row of 'SelectAlbumByArtistResult'.
-data SelectAlbumByArtistResultRow = SelectAlbumByArtistResultRow
+-- | Row of 'SelectAlbumsWithRecordingInfoResult'.
+data SelectAlbumsWithRecordingInfoResultRow = SelectAlbumsWithRecordingInfoResultRow
   { -- | Maps to @id@.
     id :: Int64,
     -- | Maps to @name@.
@@ -48,34 +47,38 @@ data SelectAlbumByArtistResultRow = SelectAlbumByArtistResultRow
     released :: Maybe (Day),
     -- | Maps to @format@.
     format :: Maybe (Types.AlbumFormat),
-    -- | Maps to @studio@.
-    studio :: Maybe (Text),
+    -- | Maps to @recording@.
+    recording :: Maybe (Types.RecordingInfo),
+    -- | Maps to @studio_name@.
+    studioName :: Maybe (Text),
     -- | Maps to @recording_city@.
     recordingCity :: Maybe (Text)
   }
   deriving stock (Show, Eq)
 
 
-instance Mapping.IsStatement SelectAlbumByArtist where
-  type Result SelectAlbumByArtist = SelectAlbumByArtistResult
+instance Mapping.IsStatement SelectAlbumsWithRecordingInfo where
+  type Result SelectAlbumsWithRecordingInfo = SelectAlbumsWithRecordingInfoResult
 
   statement = Statement.preparable sql encoder decoder
     where
       sql =
-        "select \n\
+        "-- Select albums with their full recording information\n\
+        \select \n\
         \  album.id,\n\
         \  album.name,\n\
         \  album.released,\n\
         \  album.format,\n\
-        \  (album.recording).studio_name as studio,\n\
+        \  album.recording,\n\
+        \  (album.recording).studio_name as studio_name,\n\
         \  (album.recording).city as recording_city\n\
         \from album\n\
-        \left join album_artist on album_artist.album = album.id\n\
-        \where artist = $1"
+        \where album.recording is not null\n\
+        \order by (album.recording).recorded_date desc"
 
       encoder =
         mconcat
-          [ (.artist) >$< Encoders.param (Encoders.nullable (Mapping.scalarEncoder))
+          [ 
           ]
 
       decoder =
@@ -84,7 +87,8 @@ instance Mapping.IsStatement SelectAlbumByArtist where
           name <- Decoders.column (Decoders.nonNullable (Mapping.scalarDecoder))
           released <- Decoders.column (Decoders.nullable (Mapping.scalarDecoder))
           format <- Decoders.column (Decoders.nullable (Mapping.scalarDecoder))
-          studio <- Decoders.column (Decoders.nullable (Mapping.scalarDecoder))
+          recording <- Decoders.column (Decoders.nullable (Mapping.scalarDecoder))
+          studioName <- Decoders.column (Decoders.nullable (Mapping.scalarDecoder))
           recordingCity <- Decoders.column (Decoders.nullable (Mapping.scalarDecoder))
-          pure SelectAlbumByArtistResultRow {..}
+          pure SelectAlbumsWithRecordingInfoResultRow {..}
 

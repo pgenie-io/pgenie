@@ -167,6 +167,7 @@ test-suite logic-test
   hs-source-dirs: src/logic-test
   main-is: Main.hs
   other-modules:
+    NameSpec
     SqlTemplateSpec
 
   build-tool-depends:

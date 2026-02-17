@@ -14,8 +14,8 @@ import qualified MySpace.MusicCatalogue.Types as Types
 --
 -- ==== SQL Template
 --
--- > insert into album (name, released)
--- > values ($name, $released)
+-- > insert into album (name, released, format, recording)
+-- > values ($name, $released, $format, $recording)
 -- > returning id
 --
 -- ==== Source Path
@@ -26,7 +26,11 @@ data InsertAlbum = InsertAlbum
   { -- | Maps to @name@.
     name :: Text,
     -- | Maps to @released@.
-    released :: Maybe (Day)
+    released :: Maybe (Day),
+    -- | Maps to @format@.
+    format :: Maybe (Types.AlbumFormat),
+    -- | Maps to @recording@.
+    recording :: Maybe (Types.RecordingInfo)
   }
   deriving stock (Eq, Show)
 
@@ -47,14 +51,16 @@ instance Mapping.IsStatement InsertAlbum where
   statement = Statement.preparable sql encoder decoder
     where
       sql =
-        "insert into album (name, released)\n\
-        \values ($1, $2)\n\
+        "insert into album (name, released, format, recording)\n\
+        \values ($1, $2, $3, $4)\n\
         \returning id"
 
       encoder =
         mconcat
           [ (.name) >$< Encoders.param (Encoders.nonNullable (Mapping.scalarEncoder)),
-            (.released) >$< Encoders.param (Encoders.nullable (Mapping.scalarEncoder))
+            (.released) >$< Encoders.param (Encoders.nullable (Mapping.scalarEncoder)),
+            (.format) >$< Encoders.param (Encoders.nullable (Mapping.scalarEncoder)),
+            (.recording) >$< Encoders.param (Encoders.nullable (Mapping.scalarEncoder))
           ]
 
       decoder =

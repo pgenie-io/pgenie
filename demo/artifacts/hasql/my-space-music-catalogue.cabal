@@ -30,10 +30,15 @@ library
     MySpace.MusicCatalogue.Prelude
     MySpace.MusicCatalogue.Statements.InsertAlbum
     MySpace.MusicCatalogue.Statements.SelectAlbumByArtist
+    MySpace.MusicCatalogue.Statements.SelectAlbumByFormat
+    MySpace.MusicCatalogue.Statements.SelectAlbumsWithRecordingInfo
     MySpace.MusicCatalogue.Statements.SelectGenreByArtist
+    MySpace.MusicCatalogue.Statements.SelectVinylByCountry
+    MySpace.MusicCatalogue.Statements.UpdateAlbumRecording
     MySpace.MusicCatalogue.Statements.UpdateAlbumReleased
     MySpace.MusicCatalogue.Statements.UpdateAlbumReleasedReturning
-    
+    MySpace.MusicCatalogue.Types.AlbumFormat
+    MySpace.MusicCatalogue.Types.RecordingInfo
 
   build-depends:
     aeson >=2 && <3,

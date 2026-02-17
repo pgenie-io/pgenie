@@ -94,8 +94,9 @@ adaptTestcontainersError err =
       details = []
     }
 
-scope :: Fx.Scope Logic.Error Device
-scope = do
+scope :: (Logic.Event -> IO ()) -> Fx.Scope Logic.Error Device
+scope emitEvent = do
+  acquire $ runTotalIO \() -> emitEvent (Logic.StageEntered ["Starting Container"])
   (host, port) <-
     first
       adaptTestcontainersError
@@ -108,6 +109,10 @@ scope = do
                 }
           )
       )
+
+  acquire $ runTotalIO \() -> emitEvent (Logic.StageExited ["Starting Container"] 0.9)
+
+  acquire $ runTotalIO \() -> emitEvent (Logic.StageEntered ["Connecting"])
 
   pool <-
     acquire
@@ -128,6 +133,8 @@ scope = do
                 )
           )
       )
+
+  acquire $ runTotalIO \() -> emitEvent (Logic.StageExited ["Connecting"] 0.1)
 
   registerRelease
     ( runTotalIO

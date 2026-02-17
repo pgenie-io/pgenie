@@ -1,30 +1,33 @@
-module Infra.Adapters.Display.View
+module Ui.Display.View
   ( view,
   )
 where
 
 import Base.Prelude
 import Data.Text qualified as Text
-import Infra.Adapters.Display.Memory (Memory (..))
 import Logic.Algebra qualified as Logic
 import TextBuilder
 import TextBuilder qualified
 import TextBuilderDev qualified
+import Ui.Display.Memory (Memory (..))
 
 -- | View function: event -> oldModel -> newModel -> TextBuilder
 -- Renders the state transition following Elm architecture
 view :: Logic.Event -> Memory -> Memory -> TextBuilder
 view event oldMemory newMemory = case event of
   Logic.StageEntered path ->
-    mconcat
-      [ if oldMemory.hasProgressBar
-          then moveCursorToLineStart <> clearLine
-          else "",
-        if null path
-          then ""
-          else TextBuilder.intercalateMap " > " to (reverse path) <> "\n",
-        progressBar newMemory.progress newMemory.timeLeftEstimate
-      ]
+    if oldMemory.progress >= 1
+      then mempty -- Don't update if already at 100%
+      else
+        mconcat
+          [ if oldMemory.hasProgressBar
+              then moveCursorToLineStart <> clearLine
+              else "",
+            if null path
+              then ""
+              else TextBuilder.intercalateMap " > " to (reverse path) <> "\n",
+            progressBar newMemory.progress newMemory.timeLeftEstimate
+          ]
   Logic.StageExited _path _progressDelta ->
     if oldMemory.progress >= 1
       then mempty -- Don't update progress if already at 100%
@@ -80,7 +83,7 @@ progressBar progress timeLeftEstimate =
           filled,
           to arrow,
           empty,
-          "]  ",
+          "] ",
           percentage,
           case timeLeftEstimate of
             Nothing -> ""

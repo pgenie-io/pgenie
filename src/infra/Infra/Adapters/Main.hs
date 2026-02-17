@@ -9,26 +9,34 @@ import Base.Prelude
 import Data.Text.IO qualified as Text
 import Fx
 import Infra.Adapters.Analyser qualified as Analyser
-import Infra.Adapters.Display qualified as Display
 import Logic qualified
 import PGenieGen qualified as Gen
 import System.Directory qualified as Directory
 
 data Device = Device
-  { display :: Display.Device,
+  { emitEvent :: Logic.Event -> IO (),
     analyser :: Analyser.Device
   }
 
-scope :: Fx.Scope Logic.Error Device
-scope = do
-  display <- Display.scope
-  analyser <- Analyser.scope
-  pure Device {display, analyser}
+scope :: (Logic.Event -> IO ()) -> Fx.Scope Logic.Error Device
+scope emitEvent = do
+  let halveEvent = \case
+        Logic.StageExited path progress ->
+          Logic.StageExited path (progress / 2)
+        otherEvent ->
+          otherEvent
+      halvedEmitEvent =
+        emitEvent . halveEvent
+  analyser <- Analyser.scope halvedEmitEvent
+  pure
+    Device
+      { emitEvent = halvedEmitEvent,
+        analyser
+      }
 
 instance Logic.Emits (Fx Device Logic.Error) where
   emit event =
-    Logic.emit event
-      & mapEnv (.display)
+    runTotalIO \dev -> dev.emitEvent event
 
 instance Logic.DbOps (Fx Device Logic.Error) where
   executeMigration migrationText =

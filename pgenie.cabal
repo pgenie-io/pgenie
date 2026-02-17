@@ -210,9 +210,6 @@ library infra
     Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements.SelectEnumLabels
     Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements.SelectRelationColumns
     Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements.SelectType
-    Infra.Adapters.Display
-    Infra.Adapters.Display.Memory
-    Infra.Adapters.Display.View
     Infra.Adapters.Main
 
   build-tool-depends:
@@ -253,6 +250,9 @@ library ui
     Ui.Commands
     Ui.Commands.Generate
     Ui.Commands.Sign
+    Ui.Display
+    Ui.Display.Memory
+    Ui.Display.View
     Ui.Framework
 
   build-depends:
@@ -260,3 +260,5 @@ library ui
     pgenie:base,
     pgenie:logic,
     text,
+    text-builder,
+    text-builder-dev,

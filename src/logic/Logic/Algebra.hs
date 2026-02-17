@@ -13,6 +13,7 @@ data Error = Error
     suggestion :: Maybe Text,
     details :: [(Text, Text)]
   }
+  deriving stock (Eq, Show)
 
 -- * Event
 
@@ -21,6 +22,7 @@ data Event
   | StageExited [Text] Double
   | WarningEmitted Error
   | Failed Error
+  deriving stock (Eq, Show)
 
 -- * States
 

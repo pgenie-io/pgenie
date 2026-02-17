@@ -1,4 +1,4 @@
-module Infra.Adapters.Display.Memory
+module Ui.Display.Memory
   ( Memory (..),
     init,
     update,
@@ -18,6 +18,7 @@ data Memory = Memory
     startTime :: UTCTime,
     timeLeftEstimate :: Maybe NominalDiffTime
   }
+  deriving stock (Eq, Show)
 
 init :: UTCTime -> Memory
 init startTime =
@@ -42,7 +43,9 @@ update event memory =
         then memory -- Don't update progress if already at 100%
         else
           memory
-            { progress = memory.progress + progressDelta
+            { progress =
+                (memory.progress + progressDelta)
+                  & (\x -> if x >= 0.99999 then 1 else x) -- Avoid floating point imprecision issues
             }
     Logic.WarningEmitted _err ->
       memory

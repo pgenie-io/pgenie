@@ -3,7 +3,7 @@ module Infra.Adapters.Display.View.TextBuilders where
 import Base.Prelude
 import Data.Text qualified as Text
 import Logic qualified
-import TextBuilder qualified
+import TextBuilder
 import TextBuilderDev qualified
 
 -- | ANSI escape codes for terminal control
@@ -78,7 +78,7 @@ report hasProgressBar label path message suggestion details =
         else
           mconcat
             [ "Stage: ",
-              TextBuilder.intercalateMap " > " to (reverse path),
+              intercalateMap " > " to (reverse path),
               "\n"
             ],
       maybe "" (mappend "Suggestion: " . flip mappend "\n" . to) suggestion,
@@ -87,7 +87,7 @@ report hasProgressBar label path message suggestion details =
         else
           mconcat
             [ "Details:\n",
-              TextBuilder.intercalateMap
+              intercalateMap
                 "\n"
                 ( \(key, value) ->
                     if Text.any (== '\n') value
@@ -108,4 +108,4 @@ indent level text =
 
 prefixEachLine :: TextBuilder -> Text -> TextBuilder
 prefixEachLine prefix text =
-  TextBuilder.intercalateMap "\n" (mappend prefix . to) (Text.lines text)
+  intercalateMap "\n" (mappend prefix . to) (Text.lines text)

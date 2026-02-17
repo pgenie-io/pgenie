@@ -43,9 +43,25 @@ view event oldMemory newMemory = case event of
               ]
           else mempty -- Don't render progress bar if it's not shown
   Logic.WarningEmitted err ->
-    report oldMemory.hasProgressBar (yellow "Warning") err.path err.message err.suggestion err.details
+    mconcat
+      [ if oldMemory.hasProgressBar
+          then clearProgressBar
+          else "",
+        report (yellow "Warning") err.path err.message err.suggestion err.details,
+        if newMemory.hasProgressBar
+          then progressBar newMemory.progress newMemory.timeLeftEstimate
+          else ""
+      ]
   Logic.Failed err ->
-    report oldMemory.hasProgressBar (boldRed "Error") err.path err.message err.suggestion err.details
+    mconcat
+      [ if oldMemory.hasProgressBar
+          then clearProgressBar
+          else "",
+        report (boldRed "Error") err.path err.message err.suggestion err.details,
+        if newMemory.hasProgressBar
+          then progressBar newMemory.progress newMemory.timeLeftEstimate
+          else ""
+      ]
 
 clearProgressBar :: TextBuilder
 clearProgressBar = moveCursorToLineStart <> clearLine
@@ -100,19 +116,15 @@ progressBar progress timeLeftEstimate =
         ]
 
 report ::
-  Bool ->
   TextBuilder ->
   [Text] ->
   Text ->
   Maybe Text ->
   [(Text, Text)] ->
   TextBuilder
-report hasProgressBar label path message suggestion details =
+report label path message suggestion details =
   mconcat
-    [ if hasProgressBar
-        then clearProgressBar -- Clear progress bar
-        else "",
-      label,
+    [ label,
       ": ",
       to message,
       "\n",

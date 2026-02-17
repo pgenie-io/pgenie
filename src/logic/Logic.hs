@@ -59,14 +59,14 @@ data QueriesMetadataMerged = QueriesMetadataMerged
 
 check :: (Caps m) => m ()
 check =
-  runLogic do
+  run do
     projectFile <- loadProjectFile
     analyse projectFile
     pure ()
 
 generate :: (Caps m) => m ()
 generate =
-  runLogic do
+  run do
     stage "" 2 do
       projectFile <- loadProjectFile
       genProject <- do

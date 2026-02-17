@@ -1,5 +1,5 @@
 module Logic.Dsl
-  ( runLogic,
+  ( run,
     Logic,
     Stages (..),
   )
@@ -23,8 +23,8 @@ import PGenieGen.Model.Output qualified as Gen.Output
 import PGenieGen.Model.Output.Report qualified as Gen.Output.Report
 import SyntacticClass qualified as Syntactic
 
-runLogic :: (Caps m) => Logic a -> m a
-runLogic (Logic f) = f 1 []
+run :: (Caps m) => Logic a -> m a
+run (Logic f) = f 1 []
 
 -- |
 -- Monad for defining pure logic scripts.

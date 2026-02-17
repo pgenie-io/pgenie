@@ -49,7 +49,7 @@ update event memory =
             }
     Logic.WarningEmitted _err ->
       memory
-        { hasProgressBar = False
+        { hasProgressBar = True
         }
     Logic.Failed _err ->
       memory

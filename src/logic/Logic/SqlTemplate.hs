@@ -38,12 +38,12 @@ data Segment
 
 instance Qc.Arbitrary SqlTemplate where
   arbitrary =
-    normalize
+    normalizeArbitrary
       <$> SqlTemplate
       <$> Qc.listOf arbitrary
 
   shrink (SqlTemplate segments) =
-    normalize
+    normalizeArbitrary
       <$> SqlTemplate
       <$> Qc.shrink segments
 
@@ -162,10 +162,8 @@ toGenParamNames (SqlTemplate segments) =
   nub [name | Param name <- segments]
 
 megaparsecOf :: Megaparsec.Parsec Void Text SqlTemplate
-megaparsecOf = do
-  segments <- Megaparsec.many segmentParser
-  Megaparsec.eof
-  pure (SqlTemplate segments)
+megaparsecOf =
+  normalizeParsed . SqlTemplate <$> Megaparsec.many segmentParser
   where
     segmentParser =
       Megaparsec.choice
@@ -224,24 +222,60 @@ megaparsecOf = do
       text <- Megaparsec.takeWhile1P (Just "non-whitespace") (\c -> not (isSpace c) && c /= '$' && c /= '\'' && c /= '"')
       pure (NonWhitespace text)
 
-normalize :: SqlTemplate -> SqlTemplate
-normalize (SqlTemplate segments) =
-  SqlTemplate (foldr step [] segments)
+normalizeParsed :: SqlTemplate -> SqlTemplate
+normalizeParsed =
+  SqlTemplate . dropLeadingWhitespace . dropTrailingWhitespace . coerce
+  where
+    dropLeadingWhitespace [] = []
+    dropLeadingWhitespace (segment : rest) =
+      case segment of
+        LineWhitespace _ -> dropLeadingWhitespace rest
+        Newline -> dropLeadingWhitespace rest
+        _ -> segment : rest
+
+    dropTrailingWhitespace = reverse . dropLeadingWhitespace . reverse
+
+normalizeArbitrary :: SqlTemplate -> SqlTemplate
+normalizeArbitrary (SqlTemplate segments) =
+  SqlTemplate (dropLeadingWhitespace (foldr step [] segments))
   where
     step segment acc =
-      case (segment, acc) of
-        (LineWhitespace left, LineWhitespace right : rest) ->
-          LineWhitespace (left <> right) : rest
-        (NonWhitespace left, NonWhitespace right : rest) ->
-          NonWhitespace (left <> right) : rest
-        -- Insert space between Param and NonWhitespace that starts with valid name character
-        (Param name, NonWhitespace text : rest) ->
-          Param name : LineWhitespace " " : NonWhitespace text : rest
+      case segment of
+        LineWhitespace left ->
+          case acc of
+            [] -> [] -- Drop trailing whitespace
+            LineWhitespace right : rest ->
+              LineWhitespace (left <> right) : rest
+            _ ->
+              segment : acc
+        Newline ->
+          case acc of
+            [] -> [] -- Drop trailing newlines
+            _ -> segment : acc
+        NonWhitespace left ->
+          case acc of
+            NonWhitespace right : rest ->
+              NonWhitespace (left <> right) : rest
+            _ ->
+              segment : acc
+        Param name ->
+          case acc of
+            NonWhitespace text : rest ->
+              Param name : LineWhitespace " " : NonWhitespace text : rest
+            _ ->
+              segment : acc
         _ ->
           segment : acc
 
+    dropLeadingWhitespace [] = []
+    dropLeadingWhitespace (segment : rest) =
+      case segment of
+        LineWhitespace _ -> dropLeadingWhitespace rest
+        Newline -> dropLeadingWhitespace rest
+        _ -> segment : rest
+
 tryFromText :: Text -> Either Text SqlTemplate
 tryFromText text =
-  case Megaparsec.parse megaparsecOf "" text of
+  case Megaparsec.parse (megaparsecOf <* Megaparsec.eof) "" text of
     Left err -> Left (Text.pack (Megaparsec.errorBundlePretty err))
     Right template -> Right template

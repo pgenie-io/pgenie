@@ -151,6 +151,88 @@ spec = do
           let rendered = render True (\_ _ -> "?") template
           rendered `shouldBe` "SELECT  \t  1"
 
+  describe "normalize" do
+    it "removes leading whitespace" do
+      let input = "  SELECT 1"
+      let result = Megaparsec.parse megaparsecOf "" input
+      case result of
+        Left _ -> expectationFailure "Failed to parse"
+        Right template -> do
+          let rendered = render True (\_ _ -> "?") template
+          rendered `shouldBe` "SELECT 1"
+
+    it "removes trailing whitespace" do
+      let input = "SELECT 1  "
+      let result = Megaparsec.parse megaparsecOf "" input
+      case result of
+        Left _ -> expectationFailure "Failed to parse"
+        Right template -> do
+          let rendered = render True (\_ _ -> "?") template
+          rendered `shouldBe` "SELECT 1"
+
+    it "removes leading newlines" do
+      let input = "\n\nSELECT 1"
+      let result = Megaparsec.parse megaparsecOf "" input
+      case result of
+        Left _ -> expectationFailure "Failed to parse"
+        Right template -> do
+          let rendered = render True (\_ _ -> "?") template
+          rendered `shouldBe` "SELECT 1"
+
+    it "removes trailing newlines" do
+      let input = "SELECT 1\n\n"
+      let result = Megaparsec.parse megaparsecOf "" input
+      case result of
+        Left _ -> expectationFailure "Failed to parse"
+        Right template -> do
+          let rendered = render True (\_ _ -> "?") template
+          rendered `shouldBe` "SELECT 1"
+
+    it "removes both leading and trailing whitespace" do
+      let input = "\n  SELECT 1  \n"
+      let result = Megaparsec.parse megaparsecOf "" input
+      case result of
+        Left _ -> expectationFailure "Failed to parse"
+        Right template -> do
+          let rendered = render True (\_ _ -> "?") template
+          rendered `shouldBe` "SELECT 1"
+
+    it "preserves internal whitespace" do
+      let input = "  SELECT\n  1\n  FROM\n  users  "
+      let result = Megaparsec.parse megaparsecOf "" input
+      case result of
+        Left _ -> expectationFailure "Failed to parse"
+        Right template -> do
+          let rendered = render True (\_ _ -> "?") template
+          rendered `shouldBe` "SELECT\n  1\n  FROM\n  users"
+
+    it "removes leading tabs and spaces" do
+      let input = "\t  \tSELECT 1"
+      let result = Megaparsec.parse megaparsecOf "" input
+      case result of
+        Left _ -> expectationFailure "Failed to parse"
+        Right template -> do
+          let rendered = render True (\_ _ -> "?") template
+          rendered `shouldBe` "SELECT 1"
+
+    it "removes trailing tabs and spaces" do
+      let input = "SELECT 1\t  \t"
+      let result = Megaparsec.parse megaparsecOf "" input
+      case result of
+        Left _ -> expectationFailure "Failed to parse"
+        Right template -> do
+          let rendered = render True (\_ _ -> "?") template
+          rendered `shouldBe` "SELECT 1"
+
+    it "handles template with only whitespace" do
+      let input = "  \n\t  \n  "
+      let result = Megaparsec.parse megaparsecOf "" input
+      case result of
+        Left _ -> expectationFailure "Failed to parse"
+        Right template -> do
+          let rendered = render True (\_ _ -> "?") template
+          rendered `shouldBe` ""
+
   describe "roundtrip property" do
     prop "parse and render idempotently" \(sqlTemplate :: SqlTemplate) ->
       let rendered =

@@ -81,12 +81,12 @@ locationToUrl = \case
   Gen.LocationUrl url -> url
   Gen.LocationPath path -> Path.toText path
 
-loadProjectFile :: Logic ProjectFile.ProjectFile
+loadProjectFile :: Script ProjectFile.ProjectFile
 loadProjectFile = do
   configContent <- readFile "project.pgn1.yaml"
   ProjectFile.tryFromYaml configContent
 
-loadQuerySql :: QueryListed -> Logic SqlTemplate.SqlTemplate
+loadQuerySql :: QueryListed -> Script SqlTemplate.SqlTemplate
 loadQuerySql queryListed = do
   sql <- readFile queryListed.filePath
   case SqlTemplate.tryFromText sql of
@@ -100,7 +100,7 @@ loadQuerySql queryListed = do
         )
     Right res -> pure res
 
-generateCode :: ProjectFile.ProjectFile -> Gen.Input.Project -> Logic [GeneratedArtifact]
+generateCode :: ProjectFile.ProjectFile -> Gen.Input.Project -> Script [GeneratedArtifact]
 generateCode projectFile project =
   stage "Generating" (length projectFile.artifacts) do
     -- Load existing hashes file
@@ -175,7 +175,7 @@ generateCode projectFile project =
 
     pure artifacts
 
-analyse :: ProjectFile.ProjectFile -> Logic Gen.Input.Project
+analyse :: ProjectFile.ProjectFile -> Script Gen.Input.Project
 analyse projectFile =
   stage "Analysing" 2 do
     stage "Migrations" 2 do
@@ -331,7 +331,7 @@ analyse projectFile =
           queries = queries
         }
 
-stagedParFor :: Text -> (a -> Text) -> [a] -> (a -> Logic b) -> Logic [b]
+stagedParFor :: Text -> (a -> Text) -> [a] -> (a -> Script b) -> Script [b]
 stagedParFor stageName nameFn items action =
   stage stageName (length items) do
     MonadParallel.forM items \item ->
@@ -339,7 +339,7 @@ stagedParFor stageName nameFn items action =
         action item
 
 -- | Depending on the warning handling strategy this can either log the warning and continue or throw an error to stop the execution.
-warn :: Error -> Logic ()
+warn :: Error -> Script ()
 warn =
   -- TODO: Implement conditional throwing or emission.
   emit . WarningEmitted

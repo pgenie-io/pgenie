@@ -21,7 +21,7 @@ view event oldMemory newMemory = case event of
       else
         mconcat
           [ if oldMemory.hasProgressBar
-              then moveCursorToLineStart <> clearLine
+              then clearProgressBar
               else "",
             if null path
               then ""
@@ -46,6 +46,9 @@ view event oldMemory newMemory = case event of
     report oldMemory.hasProgressBar (yellow "Warning") err.path err.message err.suggestion err.details
   Logic.Failed err ->
     report oldMemory.hasProgressBar (boldRed "Error") err.path err.message err.suggestion err.details
+
+clearProgressBar :: TextBuilder
+clearProgressBar = moveCursorToLineStart <> clearLine
 
 -- | ANSI escape codes for terminal control
 clearLine :: TextBuilder
@@ -107,9 +110,8 @@ report ::
 report hasProgressBar label path message suggestion details =
   mconcat
     [ if hasProgressBar
-        then moveCursorToLineStart <> clearLine -- Clear progress bar
+        then clearProgressBar -- Clear progress bar
         else "",
-      "\n",
       label,
       ": ",
       to message,
@@ -139,7 +141,8 @@ report hasProgressBar label path message suggestion details =
                 )
                 details,
               "\n"
-            ]
+            ],
+      "\n"
     ]
 
 indent :: Int -> Text -> TextBuilder

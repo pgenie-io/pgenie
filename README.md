@@ -26,7 +26,7 @@ my-project/
     └── insert_user.sql
 ```
 
-For a specific example see the [demo project](./demo/).
+For a complete example including the generated code see the [demo project](./demo/).
 
 ## Supported artifacts
 
@@ -34,7 +34,7 @@ For a specific example see the [demo project](./demo/).
 
 ## Installation
 
-1. Clone the repository: `git clone`
+1. Clone the repository: `git clone https://github.com/nikita-volkov/pgenie.git`
 
 2. Navigate to the cloned repo and run `cabal install`
 

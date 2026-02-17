@@ -23,13 +23,3 @@ add column format album_format null;
 -- Add recording information to album table
 alter table album
 add column recording recording_info null;
-
--- Add some example data
-update album set format = 'CD' where id = 1;
-update album set format = 'Vinyl' where id = 2;
-update album set format = 'Digital' where id = 3;
-
--- Example of setting composite type data
-update album 
-set recording = row('Abbey Road Studios', 'London', 'United Kingdom', '1969-06-01')::recording_info
-where id = 1;

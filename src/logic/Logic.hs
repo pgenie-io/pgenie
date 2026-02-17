@@ -178,7 +178,7 @@ generateCode projectFile project =
             maybeHash = Map.lookup genUrl existingHashes
         stage name 2 do
           compileFnWithHash <-
-            stage (if isJust maybeHash then "Loading" else "Caching") 0 do
+            stage "Loading" 0 do
               (gen, newHash) <- loadGen artifact.gen maybeHash
               case gen artifact.config of
                 Left errMsg ->

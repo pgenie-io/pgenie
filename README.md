@@ -55,6 +55,6 @@ Run `pgn generate` in a directory with `project.pgn1.yaml` to generate type-safe
 - **Docker image caching** — Downloads and caches the PostgreSQL Docker image  
 - **Code generator caching** — Downloads and caches the Dhall code for the configured generators
 
-You may notice pGenie appears to "hang" on the "Caching/Loading" stage during this initial setup. This is normal!
+You may notice pGenie appears to "hang" on the "Loading" stage during this initial setup. This is normal!
 
 **After the first run, subsequent executions will complete in just a few seconds.**

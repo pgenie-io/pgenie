@@ -12,7 +12,7 @@ import Data.Aeson.Text qualified as Aeson
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
 import Logic.Algebra
-import Logic.Dsl (Logic, runLogic)
+import Logic.Dsl
 import Logic.GeneratorHashes qualified as GeneratorHashes
 import Logic.Name qualified as Name
 import Logic.ProjectFile qualified as ProjectFile

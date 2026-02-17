@@ -85,3 +85,9 @@ spec = do
         case resolveText sql of
           Left err -> expectationFailure $ "Failed to parse: " <> to err
           Right analysis -> analysis.resultRowAmount `shouldBe` SpecificRowAmount 1
+
+      it "detects multiple rows from INSERT SELECT RETURNING" do
+        let sql = "INSERT INTO users (name) SELECT name FROM other_users RETURNING id"
+        case resolveText sql of
+          Left err -> expectationFailure $ "Failed to parse: " <> to err
+          Right analysis -> analysis.resultRowAmount `shouldBe` AnyRowAmount

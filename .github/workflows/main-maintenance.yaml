@@ -16,8 +16,21 @@ permissions:
 
 jobs:
   format:
-    uses: nikita-volkov/haskell-hackage-lib-github-actions-workflows/.github/workflows/format.yaml@v4
-    secrets: inherit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the source
+        uses: actions/checkout@v4
+      - name: Format Cabal
+        uses: nikita-volkov/cabal-gild.github-action@v2
+      - name: Format haskell
+        uses: nikita-volkov/ormolu.github-action@v3
+        with:
+          dirs:
+            src
+      - name: Commit the changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Format
 
   build:
     uses: ./.github/workflows/build.yaml

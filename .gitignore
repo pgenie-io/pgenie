@@ -21,9 +21,5 @@
 !/src/
 !/demo/
 
-# Reignore subtrees:
-/demo/artifacts/
-/demo/freeze.pgn1.yaml
-
 # Ignore noise:
 .DS_Store

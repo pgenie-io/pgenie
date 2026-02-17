@@ -133,6 +133,7 @@ library logic
   exposed-modules:
     Logic
     Logic.Algebra
+    Logic.Dsl
     Logic.Name
     Logic.SqlTemplate
     Logic.SyntaxAnalyser

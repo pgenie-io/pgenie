@@ -12,6 +12,7 @@ import Data.Aeson.Text qualified as Aeson
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
 import Logic.Algebra
+import Logic.Dsl
 import Logic.GeneratorHashes qualified as GeneratorHashes
 import Logic.Name qualified as Name
 import Logic.ProjectFile qualified as ProjectFile
@@ -22,71 +23,6 @@ import PGenieGen.Model.Input qualified as Gen.Input
 import PGenieGen.Model.Output qualified as Gen.Output
 import PGenieGen.Model.Output.Report qualified as Gen.Output.Report
 import SyntacticClass qualified as Syntactic
-
--- * Transformers
-
-runLogic :: Logic m a -> m a
-runLogic (Logic f) = f 1 []
-
--- |
--- Internal monad transformer for pure logic, which:
---
--- - Enables serialization of staging as reporting events
--- - Extends errors with staging paths to complete context
-newtype Logic m a
-  = Logic (Double -> [Text] -> m a)
-  deriving
-    (Functor, Applicative, Monad, MonadParallel)
-    via (ReaderT Double (ReaderT [Text] m))
-
-instance MonadTrans Logic where
-  lift ma = Logic \_ _ -> ma
-
-instance (MonadError Error m) => MonadError Error (Logic m) where
-  throwError e = Logic \_ path ->
-    let newPath = path <> e.path
-        newError = e {path = newPath}
-     in throwError newError
-
-  catchError (Logic f) handler =
-    Logic \p q -> catchError (f p q) (\e -> let Logic h = handler e in h p q)
-
-instance (Emits m) => Stages (Logic m) where
-  stage name substagesCount (Logic runInner) =
-    Logic \progressPerStage path -> do
-      let newPath =
-            if Text.null name
-              then path
-              else name : path
-      emit (StageEntered newPath)
-      (remainingProgress, result) <-
-        if substagesCount > 0
-          then (0,) <$> runInner (progressPerStage / fromIntegral substagesCount) newPath
-          else (progressPerStage,) <$> runInner 0 newPath
-      emit (StageExited newPath remainingProgress)
-      pure result
-
-instance (DbOps m) => DbOps (Logic m) where
-  executeMigration migrationLoaded = liftWithErrs (executeMigration migrationLoaded)
-  inferQueryTypes sqlTemplate = liftWithErrs (inferQueryTypes sqlTemplate)
-
-instance (FsOps m) => FsOps (Logic m) where
-  readFile path = liftWithErrs (readFile path)
-  writeFile path content = liftWithErrs (writeFile path content)
-  listDir path = liftWithErrs (listDir path)
-
-instance (LoadsGen m) => LoadsGen (Logic m) where
-  loadGen genLocation maybeHash = liftWithErrs (loadGen genLocation maybeHash)
-
-instance (Emits m) => Emits (Logic m) where
-  emit event = lift (emit event)
-
-liftWithErrs :: (MonadError Error m) => m a -> Logic m a
-liftWithErrs ma = Logic \_ path ->
-  catchError ma \e ->
-    let newPath = path <> e.path
-        newError = e {path = newPath}
-     in throwError newError
 
 -- * Intermediate (non-interface) Types
 
@@ -123,14 +59,14 @@ data QueriesMetadataMerged = QueriesMetadataMerged
 
 check :: (Caps m) => m ()
 check =
-  runLogic do
+  run do
     projectFile <- loadProjectFile
     analyse projectFile
     pure ()
 
 generate :: (Caps m) => m ()
 generate =
-  runLogic do
+  run do
     stage "" 2 do
       projectFile <- loadProjectFile
       genProject <- do
@@ -145,12 +81,12 @@ locationToUrl = \case
   Gen.LocationUrl url -> url
   Gen.LocationPath path -> Path.toText path
 
-loadProjectFile :: (FsOps m) => m ProjectFile.ProjectFile
+loadProjectFile :: Logic ProjectFile.ProjectFile
 loadProjectFile = do
   configContent <- readFile "project.pgn1.yaml"
   ProjectFile.tryFromYaml configContent
 
-loadQuerySql :: (FsOps m) => QueryListed -> m SqlTemplate.SqlTemplate
+loadQuerySql :: QueryListed -> Logic SqlTemplate.SqlTemplate
 loadQuerySql queryListed = do
   sql <- readFile queryListed.filePath
   case SqlTemplate.tryFromText sql of
@@ -164,7 +100,7 @@ loadQuerySql queryListed = do
         )
     Right res -> pure res
 
-generateCode :: (LoadsGen m, Stages m, MonadParallel m, FsOps m) => ProjectFile.ProjectFile -> Gen.Input.Project -> m [GeneratedArtifact]
+generateCode :: ProjectFile.ProjectFile -> Gen.Input.Project -> Logic [GeneratedArtifact]
 generateCode projectFile project =
   stage "Generating" (length projectFile.artifacts) do
     -- Load existing hashes file
@@ -239,7 +175,7 @@ generateCode projectFile project =
 
     pure artifacts
 
-analyse :: (LoadsGen m, DbOps m, MonadParallel m, FsOps m, Stages m, Emits m) => ProjectFile.ProjectFile -> m Gen.Input.Project
+analyse :: ProjectFile.ProjectFile -> Logic Gen.Input.Project
 analyse projectFile =
   stage "Analysing" 2 do
     stage "Migrations" 2 do
@@ -395,7 +331,7 @@ analyse projectFile =
           queries = queries
         }
 
-stagedParFor :: (LoadsGen m, MonadParallel m, Stages m) => Text -> (a -> Text) -> [a] -> (a -> m b) -> m [b]
+stagedParFor :: Text -> (a -> Text) -> [a] -> (a -> Logic b) -> Logic [b]
 stagedParFor stageName nameFn items action =
   stage stageName (length items) do
     MonadParallel.forM items \item ->
@@ -403,7 +339,7 @@ stagedParFor stageName nameFn items action =
         action item
 
 -- | Depending on the warning handling strategy this can either log the warning and continue or throw an error to stop the execution.
-warn :: (Emits m) => Error -> m ()
+warn :: Error -> Logic ()
 warn =
   -- TODO: Implement conditional throwing or emission.
   emit . WarningEmitted

@@ -169,7 +169,7 @@ tryFromText text =
   let normalized = normalizeInput text
    in fmap Name . fmap Vector.fromList . Megaparsec.toTextParser (Megaparsec.complete Megaparsec.parts) $ normalized
   where
-    -- | Normalize input text to snake_case format.
+    -- \| Normalize input text to snake_case format.
     -- Converts to lowercase and replaces hyphens with underscores.
     normalizeInput :: Text -> Text
     normalizeInput = Text.toLower . Text.replace "-" "_"

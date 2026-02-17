@@ -135,12 +135,12 @@ library logic
     Logic.Algebra
     Logic.Name
     Logic.SqlTemplate
+    Logic.SyntaxAnalyser
 
   other-modules:
     Logic.GeneratorHashes
     Logic.Name.Megaparsec
     Logic.ProjectFile
-    Logic.SyntaxAnalyser
     Logic.SyntaxAnalyser.AstInterpreter
     Logic.SyntaxAnalyser.Data
 
@@ -167,7 +167,9 @@ test-suite logic-test
   hs-source-dirs: src/logic-test
   main-is: Main.hs
   other-modules:
+    NameSpec
     SqlTemplateSpec
+    SyntaxAnalyserSpec
 
   build-tool-depends:
     hspec-discover:hspec-discover

@@ -5,19 +5,19 @@
 module MySpace.MusicCatalogue.Statements 
   ( -- ** InsertAlbum
     module MySpace.MusicCatalogue.Statements.InsertAlbum,
-    -- ** SelectAlbumByArtist
-    module MySpace.MusicCatalogue.Statements.SelectAlbumByArtist,
+    -- ** SelectAlbumByFormat
+    module MySpace.MusicCatalogue.Statements.SelectAlbumByFormat,
     -- ** SelectGenreByArtist
     module MySpace.MusicCatalogue.Statements.SelectGenreByArtist,
+    -- ** UpdateAlbumRecordingReturning
+    module MySpace.MusicCatalogue.Statements.UpdateAlbumRecordingReturning,
     -- ** UpdateAlbumReleased
     module MySpace.MusicCatalogue.Statements.UpdateAlbumReleased,
-    -- ** UpdateAlbumReleasedReturning
-    module MySpace.MusicCatalogue.Statements.UpdateAlbumReleasedReturning,
   )
 where
 
 import MySpace.MusicCatalogue.Statements.InsertAlbum
-import MySpace.MusicCatalogue.Statements.SelectAlbumByArtist
+import MySpace.MusicCatalogue.Statements.SelectAlbumByFormat
 import MySpace.MusicCatalogue.Statements.SelectGenreByArtist
+import MySpace.MusicCatalogue.Statements.UpdateAlbumRecordingReturning
 import MySpace.MusicCatalogue.Statements.UpdateAlbumReleased
-import MySpace.MusicCatalogue.Statements.UpdateAlbumReleasedReturning

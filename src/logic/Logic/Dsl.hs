@@ -90,7 +90,20 @@ instance LoadsGen Logic where
   loadGen genLocation maybeHash = liftWithErrs (loadGen genLocation maybeHash)
 
 instance Emits Logic where
-  emit event = Logic \_ _ -> emit event
+  emit event = Logic \_ path ->
+    let nestStagePath stagePath = stagePath <> path
+        nestError err =
+          err {path = nestStagePath err.path}
+        nestedEvent = case event of
+          StageEntered stagePath ->
+            StageEntered (nestStagePath stagePath)
+          StageExited stagePath remainingProgress ->
+            StageExited (nestStagePath stagePath) remainingProgress
+          WarningEmitted err ->
+            WarningEmitted (nestError err)
+          Failed err ->
+            Failed (nestError err)
+     in emit nestedEvent
 
 liftWithErrs :: (forall m. (Caps m) => m a) -> Logic a
 liftWithErrs ma = Logic \_ path ->

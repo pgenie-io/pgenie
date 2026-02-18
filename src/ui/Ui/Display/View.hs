@@ -16,7 +16,7 @@ import Ui.Display.Memory (Memory (..))
 view :: Logic.Event -> Memory -> Memory -> TextBuilder
 view event oldMemory newMemory = case event of
   Logic.StageEntered path ->
-    if oldMemory.progress >= 1
+    if newMemory.progress >= 1
       then mempty -- Don't update if already at 100%
       else
         mconcat
@@ -29,7 +29,7 @@ view event oldMemory newMemory = case event of
             progressBar newMemory.progress newMemory.timeLeftEstimate
           ]
   Logic.StageExited _path _progressDelta ->
-    if oldMemory.progress >= 1
+    if newMemory.progress >= 1
       then mempty -- Don't update progress if already at 100%
       else
         if oldMemory.hasProgressBar

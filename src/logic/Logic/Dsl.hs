@@ -112,11 +112,6 @@ liftWithErrs ma = Script \_ path ->
         newError = e {path = newPath}
      in throwError newError
 
--- | Typeclasses representing capabilities required by the logic and serving as ports as per the hexagonal architecture.
---
--- They allow to implement the overall orchestration logic in a way that is decoupled from specific implementations of these capabilities, making it easier to test and maintain.
--- We simply state what we need for the logic to work and provide an interface for the implementations to conform to.
-
 -- |
 -- - Reports progress.
 -- - Reports stage enter and exit for logging.

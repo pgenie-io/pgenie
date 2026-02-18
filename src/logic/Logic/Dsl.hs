@@ -90,7 +90,7 @@ instance LoadsGen Script where
   loadGen genLocation maybeHash = liftWithErrs (loadGen genLocation maybeHash)
 
 instance Emits Script where
-  emit event = Script \_ path ->
+  emit event = Script \maxProgress path ->
     let nestStagePath stagePath = stagePath <> path
         nestError err =
           err {path = nestStagePath err.path}
@@ -98,7 +98,7 @@ instance Emits Script where
           StageEntered stagePath ->
             StageEntered (nestStagePath stagePath)
           StageExited stagePath remainingProgress ->
-            StageExited (nestStagePath stagePath) remainingProgress
+            StageExited (nestStagePath stagePath) (remainingProgress * maxProgress)
           WarningEmitted err ->
             WarningEmitted (nestError err)
           Failed err ->

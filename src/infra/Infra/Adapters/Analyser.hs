@@ -7,6 +7,7 @@ where
 import Base.Prelude
 import Base.Text qualified
 import Data.Text qualified as Text
+import Database.PostgreSQL.LibPQ qualified as Pq
 import Fx
 import Hasql.Connection.Settings qualified
 import Hasql.Decoders qualified as Decoders
@@ -181,9 +182,18 @@ instance Logic.DbOps (Fx Device Logic.Error) where
           }
 
   explainQuery sql =
-    HasqlDev.runSession $
-      Hasql.Session.statement () $
-        Statement.unpreparable
-          ("EXPLAIN (GENERIC_PLAN) " <> sql)
-          Encoders.noParams
-          (Decoders.rowList (Decoders.column (Decoders.nonNullable Decoders.text)))
+    HasqlDev.runSession do
+      Hasql.Session.onLibpqConnection \conn -> do
+        let explainSql = to ("EXPLAIN (GENERIC_PLAN) " <> sql) :: ByteString
+        maybeResult <- Pq.exec conn explainSql
+        rows <- case maybeResult of
+          Nothing -> pure []
+          Just result -> do
+            status <- Pq.resultStatus result
+            case status of
+              Pq.TuplesOk -> do
+                numRows <- Pq.ntuples result
+                forM [0 .. numRows - 1] \i ->
+                  fmap (foldMap onto) (Pq.getvalue result i (Pq.Col 0))
+              _ -> pure []
+        pure (Right rows, conn)

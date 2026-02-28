@@ -287,7 +287,6 @@ tryParse text =
     cardinalityValue =
       U.scalarsValue [U.stringScalar cardinalityString]
 
-    cardinalityString :: U.StringParser Cardinality
     cardinalityString =
       U.formattedString "cardinality (zero_or_one, one, many)" $ \case
         "zero_or_one" -> Right CardinalityZeroOrOne

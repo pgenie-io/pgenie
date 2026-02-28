@@ -135,6 +135,7 @@ library logic
     Logic.Algebra
     Logic.Dsl
     Logic.Name
+    Logic.SignatureFile
     Logic.SqlTemplate
     Logic.SyntaxAnalyser
 
@@ -142,7 +143,6 @@ library logic
     Logic.GeneratorHashes
     Logic.Name.Megaparsec
     Logic.ProjectFile
-    Logic.SignatureFile
     Logic.SyntaxAnalyser.AstInterpreter
     Logic.SyntaxAnalyser.Data
 
@@ -170,6 +170,7 @@ test-suite logic-test
   main-is: Main.hs
   other-modules:
     NameSpec
+    SignatureFileSpec
     SqlTemplateSpec
     SyntaxAnalyserSpec
 

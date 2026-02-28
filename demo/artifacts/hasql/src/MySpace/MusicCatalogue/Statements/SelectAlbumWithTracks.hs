@@ -38,7 +38,7 @@ data SelectAlbumWithTracksResultRow = SelectAlbumWithTracksResultRow
     -- | Maps to @name@.
     name :: Text,
     -- | Maps to @tracks@.
-    tracks :: Maybe (Vector (Maybe (Types.TrackInfo))),
+    tracks :: Maybe (Vector (Types.TrackInfo)),
     -- | Maps to @disc@.
     disc :: Maybe (Types.DiscInfo)
   }
@@ -64,6 +64,7 @@ instance Mapping.IsStatement SelectAlbumWithTracks where
         Decoders.rowVector do
           id <- Decoders.column (Decoders.nonNullable (Mapping.scalarDecoder))
           name <- Decoders.column (Decoders.nonNullable (Mapping.scalarDecoder))
-          tracks <- Decoders.column (Decoders.nullable (Decoders.array (Decoders.dimension Vector.replicateM (Decoders.element (Decoders.nullable (Mapping.scalarDecoder))))))
+          tracks <- Decoders.column (Decoders.nullable (Decoders.array (Decoders.dimension Vector.replicateM (Decoders.element (Decoders.nonNullable Mapping.scalarDecoder)))))
           disc <- Decoders.column (Decoders.nullable (Mapping.scalarDecoder))
           pure SelectAlbumWithTracksResultRow {..}
+

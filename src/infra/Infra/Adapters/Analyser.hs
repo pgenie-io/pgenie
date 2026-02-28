@@ -9,10 +9,13 @@ import Base.Text qualified
 import Data.Text qualified as Text
 import Fx
 import Hasql.Connection.Settings qualified
+import Hasql.Decoders qualified as Decoders
+import Hasql.Encoders qualified as Encoders
 import Hasql.Errors qualified as Hasql
 import Hasql.Pool qualified
 import Hasql.Pool.Config qualified
 import Hasql.Session qualified
+import Hasql.Statement qualified as Statement
 import HasqlDev qualified
 import Infra.Adapters.Analyser.Embeddings.Sessions qualified as Embeddings.Sessions
 import Infra.Adapters.Analyser.Scopes.Testcontainers qualified
@@ -176,3 +179,11 @@ instance Logic.DbOps (Fx Device Logic.Error) where
             suggestion = Nothing,
             details = err.details
           }
+
+  explainQuery sql =
+    HasqlDev.runSession $
+      Hasql.Session.statement () $
+        Statement.unpreparable
+          ("EXPLAIN (GENERIC_PLAN) " <> sql)
+          Encoders.noParams
+          (Decoders.rowList (Decoders.column (Decoders.nonNullable Decoders.text)))

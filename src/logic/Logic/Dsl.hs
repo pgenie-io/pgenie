@@ -80,6 +80,7 @@ instance Stages Script where
 instance DbOps Script where
   executeMigration migrationLoaded = liftWithErrs (executeMigration migrationLoaded)
   inferQueryTypes sqlTemplate = liftWithErrs (inferQueryTypes sqlTemplate)
+  explainQuery sqlTemplate = liftWithErrs (explainQuery sqlTemplate)
 
 instance FsOps Script where
   readFile path = liftWithErrs (readFile path)

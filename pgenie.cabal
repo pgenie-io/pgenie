@@ -135,6 +135,7 @@ library logic
     Logic.Algebra
     Logic.Dsl
     Logic.Name
+    Logic.SeqScanDetector
     Logic.SqlTemplate
     Logic.SyntaxAnalyser
 
@@ -169,6 +170,7 @@ test-suite logic-test
   main-is: Main.hs
   other-modules:
     NameSpec
+    SeqScanDetectorSpec
     SqlTemplateSpec
     SyntaxAnalyserSpec
 

@@ -83,7 +83,7 @@ locationToUrl = \case
 
 loadProjectFile :: Script ProjectFile.ProjectFile
 loadProjectFile = do
-  configContent <- readFile "project.pgn1.yaml"
+  configContent <- readFile "project1.pgn.yaml"
   ProjectFile.tryFromYaml configContent
 
 loadQuerySql :: QueryListed -> Script SqlTemplate.SqlTemplate
@@ -171,7 +171,7 @@ generateCode projectFile project =
 
     -- Write updated hashes file
     unless noNewHashes do
-      writeFile "freeze.pgn1.yaml" (GeneratorHashes.serializeHashesMap updatedHashes)
+      writeFile "freeze1.pgn.yaml" (GeneratorHashes.serializeHashesMap updatedHashes)
 
     pure artifacts
 

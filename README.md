@@ -10,14 +10,14 @@ Checks and analyzes SQL migrations and queries and generates type-safe client SD
 
 1. **Define your schema** — Write SQL migrations in `migrations/` directory
 2. **Write your queries** — Create parameterized SQL queries in `queries/` directory  
-3. **Configure project** — Specify artifacts to generate in `project.pgn1.yaml`
+3. **Configure project** — Specify artifacts to generate in `project1.pgn.yaml`
 4. **Generate code** — Run `pgn generate` to produce type-safe client libraries
 
 ## Example project structure
 
 ```
 my-project/
-├── project.pgn1.yaml      # Project configuration
+├── project1.pgn.yaml      # Project configuration
 ├── migrations/            # Schema definitions
 │   ├── 1.sql
 │   └── 2.sql
@@ -46,7 +46,7 @@ To install `pGenie` you need to install Cabal, which is the Haskell package mana
 
 ## Usage
 
-Run `pgn generate` in a directory with `project.pgn1.yaml` to generate type-safe client libraries.
+Run `pgn generate` in a directory with `project1.pgn.yaml` to generate type-safe client libraries.
 
 ### First Run Notice
 

@@ -21,7 +21,7 @@ type HashesMap = Map Text Text
 -- * Constants
 
 hashesFilePath :: Path
-hashesFilePath = "freeze.pgn1.yaml"
+hashesFilePath = "freeze1.pgn.yaml"
 
 -- * Operations
 

@@ -33,7 +33,7 @@ tryFromYaml text = do
     Left errMsg ->
       throwError
         Algebra.Error
-          { path = ["project.pgn1.yaml"],
+          { path = ["project1.pgn.yaml"],
             message = errMsg,
             suggestion = Just "Check YAML syntax and required fields",
             details = []

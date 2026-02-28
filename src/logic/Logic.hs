@@ -16,6 +16,7 @@ import Logic.Dsl
 import Logic.GeneratorHashes qualified as GeneratorHashes
 import Logic.Name qualified as Name
 import Logic.ProjectFile qualified as ProjectFile
+import Logic.SeqScanDetector qualified as SeqScanDetector
 import Logic.SignatureFile qualified as SignatureFile
 import Logic.SqlTemplate qualified as SqlTemplate
 import Logic.SyntaxAnalyser qualified as SyntaxAnalyser
@@ -62,16 +63,17 @@ check :: (Caps m) => m ()
 check =
   run do
     projectFile <- loadProjectFile
-    analyse projectFile
+    _ <- analyse projectFile
     pure ()
 
-generate :: (Caps m) => m ()
-generate =
+generate :: (Caps m) => Bool -> m ()
+generate fix =
   run do
     stage "" 2 do
       projectFile <- loadProjectFile
-      genProject <- do
+      (genProject, seqScanFindings) <- do
         analyse projectFile
+      handleSeqScanFindings fix seqScanFindings
       generateCode projectFile genProject
       pure ()
 
@@ -176,7 +178,7 @@ generateCode projectFile project =
 
     pure artifacts
 
-analyse :: ProjectFile.ProjectFile -> Script Gen.Input.Project
+analyse :: ProjectFile.ProjectFile -> Script (Gen.Input.Project, [(Text, SeqScanFinding)])
 analyse projectFile =
   stage "Analysing" 2 do
     stage "Migrations" 2 do
@@ -233,7 +235,7 @@ analyse projectFile =
               signatureFilePath = Nothing
             }
 
-    (queries, customTypes) <-
+    (queries, customTypes, seqScanFindings) <-
       stage "Queries" (length queriesListed) do
         mixedList <-
           MonadParallel.forM queriesListed \queryListed ->
@@ -254,6 +256,16 @@ analyse projectFile =
                   (queryTypes, warnings) <- inferQueryTypes nativeTemplate
                   for warnings warn
                   pure queryTypes
+
+              -- Detect sequential scans via EXPLAIN
+              querySeqScanFindings <-
+                catchError
+                  ( do
+                      explainLines <- explainQuery nativeTemplate
+                      let findings = SeqScanDetector.detectSeqScans explainLines
+                      pure (map (Name.inSnakeCase queryListed.name,) findings)
+                  )
+                  (\_ -> pure [])
 
               result :: Maybe Gen.Input.ResultRows <-
                 let byCardinality cardinality =
@@ -339,27 +351,31 @@ analyse projectFile =
                       result = finalResult,
                       fragments = SqlTemplate.toGenQueryFragments sqlTemplate
                     },
-                  mentionedCustomTypes
+                  mentionedCustomTypes,
+                  querySeqScanFindings
                 )
 
-        let (queries, customTypesDump) = unzip mixedList
+        let (queries, customTypesDump, seqScanFindingsDump) = unzip3 mixedList
             customTypes =
               customTypesDump
                 & concat
                 & fmap (\x -> ((x.pgSchema, x.pgName), x))
                 & Map.fromList
                 & Map.elems
+            seqScanFindings = concat seqScanFindingsDump
 
-        pure (queries, customTypes)
+        pure (queries, customTypes, seqScanFindings)
 
     pure
-      Gen.Input.Project
-        { space = Name.toGenName projectFile.space,
-          name = Name.toGenName projectFile.name,
-          version = projectFile.version,
-          customTypes = customTypes,
-          queries = queries
-        }
+      ( Gen.Input.Project
+          { space = Name.toGenName projectFile.space,
+            name = Name.toGenName projectFile.name,
+            version = projectFile.version,
+            customTypes = customTypes,
+            queries = queries
+          },
+        seqScanFindings
+      )
 
 stagedParFor :: Text -> (a -> Text) -> [a] -> (a -> Script b) -> Script [b]
 stagedParFor stageName nameFn items action =
@@ -373,3 +389,54 @@ warn :: Error -> Script ()
 warn =
   -- TODO: Implement conditional throwing or emission.
   emit . WarningEmitted
+
+-- | Handle seq-scan findings: with --fix generate migration, otherwise fail.
+handleSeqScanFindings :: Bool -> [(Text, SeqScanFinding)] -> Script ()
+handleSeqScanFindings _ [] = pure ()
+handleSeqScanFindings fix findings
+  | fix = do
+      migrationsListed <-
+        listDir "migrations"
+          & fmap (filter (\p -> Path.toExtensions p == ["sql"]))
+          & fmap sort
+      let nextMigrationNum = length migrationsListed + 1
+          migrationFileName = Text.pack (show nextMigrationNum) <> ".sql"
+          migrationContent = SeqScanDetector.generateCreateIndexStatements (map snd findings)
+      case Path.maybeFromText ("migrations/" <> migrationFileName) of
+        Nothing ->
+          throwError
+            ( Error
+                []
+                "Failed to construct migration file path"
+                Nothing
+                [("filename", migrationFileName)]
+            )
+        Just migrationPath -> do
+          writeFile migrationPath migrationContent
+          emit
+            ( WarningEmitted
+                ( Error
+                    []
+                    ("Generated index migration: migrations/" <> migrationFileName)
+                    (Just "Review the generated migration and re-run generate")
+                    [ ( "content",
+                        migrationContent
+                      )
+                    ]
+                )
+            )
+  | otherwise =
+      throwError
+        ( Error
+            []
+            "Sequential scan detected"
+            (Just "Run with --fix to generate an index migration, or manually create indexes")
+            ( findings
+                & map
+                  ( \(queryName, finding) ->
+                      ( queryName,
+                        "Seq Scan on " <> finding.tableName <> " with filter: " <> finding.filterCondition
+                      )
+                  )
+            )
+        )

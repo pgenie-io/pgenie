@@ -37,6 +37,19 @@ data InferredParam = InferredParam
     type_ :: Gen.Input.Value
   }
 
+-- * Seq-scan detection
+
+-- | A finding of sequential scan in a query execution plan.
+data SeqScanFinding = SeqScanFinding
+  { -- | Name of the table being sequentially scanned.
+    tableName :: Text,
+    -- | The filter condition from the EXPLAIN output.
+    filterCondition :: Text,
+    -- | Suggested columns to create an index on.
+    suggestedIndexColumns :: [Text]
+  }
+  deriving stock (Eq, Show)
+
 -- * Capabilities
 
 -- | Typeclasses representing capabilities required by the logic and serving as ports as per the hexagonal architecture.
@@ -49,6 +62,7 @@ class (Monad m) => Emits m where
 class (MonadError Error m) => DbOps m where
   executeMigration :: Text -> m ()
   inferQueryTypes :: Text -> m (InferredQueryTypes, [Error])
+  explainQuery :: Text -> m [Text]
 
 class (MonadError Error m) => FsOps m where
   readFile :: Path -> m Text

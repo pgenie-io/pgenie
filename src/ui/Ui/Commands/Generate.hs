@@ -18,10 +18,16 @@ generate =
     }
 
 data Params = Params
+  { fix :: Bool
+  }
 
 parser :: Opt.Parser Params
 parser =
-  pure Params
+  Params
+    <$> Opt.switch
+      ( Opt.long "fix"
+          <> Opt.help "Generate index migration to fix sequential scans instead of failing"
+      )
 
 execute :: (Logic.Caps m) => Params -> m ()
-execute _params = Logic.generate
+execute params = Logic.generate params.fix

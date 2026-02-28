@@ -142,6 +142,7 @@ library logic
     Logic.GeneratorHashes
     Logic.Name.Megaparsec
     Logic.ProjectFile
+    Logic.SignatureFile
     Logic.SyntaxAnalyser.AstInterpreter
     Logic.SyntaxAnalyser.Data
 

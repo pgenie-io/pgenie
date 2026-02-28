@@ -1,0 +1,31 @@
+parameters:
+  recording:
+    type: recording_info
+    not_null: false
+  id:
+    type: int8
+    not_null: false
+result:
+  cardinality: many
+  columns:
+    id:
+      type: int8
+      not_null: true
+    name:
+      type: text
+      not_null: true
+    released:
+      type: date
+      not_null: false
+    format:
+      type: album_format
+      not_null: false
+    recording:
+      type: recording_info
+      not_null: false
+    tracks:
+      type: track_info[]
+      not_null: false
+    disc:
+      type: disc_info
+      not_null: false

@@ -73,7 +73,8 @@ extractFilterColumns condition =
           ident = Text.takeWhile (\c -> isAlphaNum c || c == '_' || c == '.') cleaned
        in if Text.null ident
             || Text.isPrefixOf "$" ident
-            || Text.toUpper ident `elem` ["NOT", "IS", "NULL", "TRUE", "FALSE", "ANY", "ALL"]
+            || Text.toUpper ident
+            `elem` ["NOT", "IS", "NULL", "TRUE", "FALSE", "ANY", "ALL"]
             then Nothing
             else Just (extractColumnPart ident)
 

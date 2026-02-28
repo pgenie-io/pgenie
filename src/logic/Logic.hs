@@ -16,6 +16,7 @@ import Logic.Dsl
 import Logic.GeneratorHashes qualified as GeneratorHashes
 import Logic.Name qualified as Name
 import Logic.ProjectFile qualified as ProjectFile
+import Logic.SignatureFile qualified as SignatureFile
 import Logic.SqlTemplate qualified as SqlTemplate
 import Logic.SyntaxAnalyser qualified as SyntaxAnalyser
 import PGenieGen qualified as Gen
@@ -301,12 +302,41 @@ analyse projectFile =
                       params
                       (SqlTemplate.toGenParamNames sqlTemplate)
 
+              -- Signature file handling
+              let sigPath = SignatureFile.signatureFilePath queryListed.filePath
+                  inferredSig = SignatureFile.fromInferred interpretedParams result
+
+              (finalParams, finalResult) <- do
+                maybeSigContent <-
+                  catchError
+                    (Just <$> readFile sigPath)
+                    (\(_ :: Error) -> pure Nothing)
+                case maybeSigContent of
+                  Nothing -> do
+                    writeFile sigPath (SignatureFile.serialize inferredSig)
+                    pure (interpretedParams, result)
+                  Just sigContent -> do
+                    fileSig <- case SignatureFile.tryParse sigContent of
+                      Left err ->
+                        throwError
+                          ( Error
+                              []
+                              "Failed to parse signature file"
+                              (Just "Check the YAML syntax in the signature file")
+                              [("file", Path.toText sigPath), ("error", err)]
+                          )
+                      Right sig -> pure sig
+                    case SignatureFile.validateAndMerge inferredSig fileSig of
+                      Left err -> throwError err
+                      Right mergedSig ->
+                        pure (SignatureFile.applyToQuery mergedSig interpretedParams result)
+
               pure
                 ( Gen.Input.Query
                     { name = Name.toGenName queryListed.name,
                       srcPath = queryListed.filePath,
-                      params = interpretedParams,
-                      result,
+                      params = finalParams,
+                      result = finalResult,
                       fragments = SqlTemplate.toGenQueryFragments sqlTemplate
                     },
                   mentionedCustomTypes

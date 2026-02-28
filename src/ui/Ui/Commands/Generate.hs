@@ -27,7 +27,7 @@ parser =
   Params
     <$> Opt.switch
       ( Opt.long "fix"
-          <> Opt.help "Automatically generate a migration that drops redundant indexes"
+          <> Opt.help "Automatically generate a fixing migration"
       )
     <*> Opt.switch
       ( Opt.long "allow-redundant-indexes"

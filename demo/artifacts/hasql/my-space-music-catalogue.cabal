@@ -16,25 +16,76 @@ description:
 
 library
   hs-source-dirs: src
-
   default-language: Haskell2010
-
   default-extensions:
-    ApplicativeDo, Arrows, BangPatterns, BlockArguments, ConstraintKinds, DataKinds, DefaultSignatures, DeriveAnyClass, DeriveDataTypeable, DeriveFoldable, DeriveFunctor, DeriveGeneric, DeriveTraversable, DerivingStrategies, DerivingVia, DuplicateRecordFields, EmptyDataDecls, FlexibleContexts, FlexibleInstances, FunctionalDependencies, GADTs, GeneralizedNewtypeDeriving, ImportQualifiedPost, LambdaCase, LiberalTypeSynonyms, MagicHash, MultiParamTypeClasses, MultiWayIf, NamedFieldPuns, NoFieldSelectors, NoImplicitPrelude, NoMonomorphismRestriction, NumericUnderscores, OverloadedRecordDot, OverloadedStrings, ParallelListComp, PatternGuards, QuasiQuotes, RankNTypes, RecordWildCards, ScopedTypeVariables, StandaloneDeriving, StrictData, TemplateHaskell, TupleSections, TypeApplications, TypeFamilies, TypeOperators, UnboxedTuples, ViewPatterns
+    ApplicativeDo
+    Arrows
+    BangPatterns
+    BlockArguments
+    ConstraintKinds
+    DataKinds
+    DefaultSignatures
+    DeriveAnyClass
+    DeriveDataTypeable
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveTraversable
+    DerivingStrategies
+    DerivingVia
+    DuplicateRecordFields
+    EmptyDataDecls
+    FlexibleContexts
+    FlexibleInstances
+    FunctionalDependencies
+    GADTs
+    GeneralizedNewtypeDeriving
+    ImportQualifiedPost
+    LambdaCase
+    LiberalTypeSynonyms
+    MagicHash
+    MultiParamTypeClasses
+    MultiWayIf
+    NamedFieldPuns
+    NoFieldSelectors
+    NoImplicitPrelude
+    NoMonomorphismRestriction
+    NumericUnderscores
+    OverloadedRecordDot
+    OverloadedStrings
+    ParallelListComp
+    PatternGuards
+    QuasiQuotes
+    RankNTypes
+    RecordWildCards
+    ScopedTypeVariables
+    StandaloneDeriving
+    StrictData
+    TemplateHaskell
+    TupleSections
+    TypeApplications
+    TypeFamilies
+    TypeOperators
+    UnboxedTuples
+    ViewPatterns
 
   exposed-modules:
     MySpace.MusicCatalogue.Statements
     MySpace.MusicCatalogue.Types
-    
+
   other-modules:
     MySpace.MusicCatalogue.Prelude
     MySpace.MusicCatalogue.Statements.InsertAlbum
     MySpace.MusicCatalogue.Statements.SelectAlbumByFormat
+    MySpace.MusicCatalogue.Statements.SelectAlbumByName
+    MySpace.MusicCatalogue.Statements.SelectAlbumWithTracks
     MySpace.MusicCatalogue.Statements.SelectGenreByArtist
     MySpace.MusicCatalogue.Statements.UpdateAlbumRecordingReturning
     MySpace.MusicCatalogue.Statements.UpdateAlbumReleased
     MySpace.MusicCatalogue.Types.AlbumFormat
+    MySpace.MusicCatalogue.Types.DiscInfo
     MySpace.MusicCatalogue.Types.RecordingInfo
+    MySpace.MusicCatalogue.Types.TrackInfo
 
   build-depends:
     aeson >=2 && <3,

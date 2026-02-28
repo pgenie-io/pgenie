@@ -7,12 +7,16 @@ where
 import Base.Prelude
 import Base.Text qualified
 import Data.Text qualified as Text
+import Database.PostgreSQL.LibPQ qualified as Pq
 import Fx
 import Hasql.Connection.Settings qualified
+import Hasql.Decoders qualified as Decoders
+import Hasql.Encoders qualified as Encoders
 import Hasql.Errors qualified as Hasql
 import Hasql.Pool qualified
 import Hasql.Pool.Config qualified
 import Hasql.Session qualified
+import Hasql.Statement qualified as Statement
 import HasqlDev qualified
 import Infra.Adapters.Analyser.Embeddings.Sessions qualified as Embeddings.Sessions
 import Infra.Adapters.Analyser.Scopes.Testcontainers qualified
@@ -177,6 +181,23 @@ instance Logic.DbOps (Fx Device Logic.Error) where
             suggestion = Nothing,
             details = err.details
           }
+
+  explainQuery sql =
+    HasqlDev.runSession do
+      Hasql.Session.onLibpqConnection \conn -> do
+        let explainSql = to ("EXPLAIN (GENERIC_PLAN) " <> sql) :: ByteString
+        maybeResult <- Pq.exec conn explainSql
+        rows <- case maybeResult of
+          Nothing -> pure []
+          Just result -> do
+            status <- Pq.resultStatus result
+            case status of
+              Pq.TuplesOk -> do
+                numRows <- Pq.ntuples result
+                forM [0 .. numRows - 1] \i ->
+                  fmap (foldMap onto) (Pq.getvalue result i (Pq.Col 0))
+              _ -> pure []
+        pure (Right rows, conn)
 
   getIndexes =
     HasqlDev.runSession GetIndexes.getIndexes

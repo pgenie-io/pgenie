@@ -136,6 +136,8 @@ library logic
     Logic.Dsl
     Logic.Name
     Logic.RedundantIndexDetector
+    Logic.SeqScanDetector
+    Logic.SignatureFile
     Logic.SqlTemplate
     Logic.SyntaxAnalyser
 
@@ -171,6 +173,8 @@ test-suite logic-test
   other-modules:
     NameSpec
     RedundantIndexDetectorSpec
+    SeqScanDetectorSpec
+    SignatureFileSpec
     SqlTemplateSpec
     SyntaxAnalyserSpec
 

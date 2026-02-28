@@ -17,6 +17,8 @@ import Logic.GeneratorHashes qualified as GeneratorHashes
 import Logic.Name qualified as Name
 import Logic.ProjectFile qualified as ProjectFile
 import Logic.RedundantIndexDetector qualified as RedundantIndexDetector
+import Logic.SeqScanDetector qualified as SeqScanDetector
+import Logic.SignatureFile qualified as SignatureFile
 import Logic.SqlTemplate qualified as SqlTemplate
 import Logic.SyntaxAnalyser qualified as SyntaxAnalyser
 import PGenieGen qualified as Gen
@@ -70,8 +72,8 @@ generate options =
   run do
     stage "" 2 do
       projectFile <- loadProjectFile
-      genProject <- do
-        analyse options projectFile
+      (genProject, seqScanFindings) <- analyse options projectFile
+      handleSeqScanFindings options.fix seqScanFindings
       generateCode projectFile genProject
       pure ()
 
@@ -176,7 +178,7 @@ generateCode projectFile project =
 
     pure artifacts
 
-analyse :: GenerateOptions -> ProjectFile.ProjectFile -> Script Gen.Input.Project
+analyse :: GenerateOptions -> ProjectFile.ProjectFile -> Script (Gen.Input.Project, [(Text, SeqScanFinding)])
 analyse options projectFile =
   stage "Analysing" 2 do
     stage "Migrations" 2 do
@@ -256,7 +258,7 @@ analyse options projectFile =
               signatureFilePath = Nothing
             }
 
-    (queries, customTypes) <-
+    (queries, customTypes, seqScanFindings) <-
       stage "Queries" (length queriesListed) do
         mixedList <-
           MonadParallel.forM queriesListed \queryListed ->
@@ -277,6 +279,16 @@ analyse options projectFile =
                   (queryTypes, warnings) <- inferQueryTypes nativeTemplate
                   for warnings warn
                   pure queryTypes
+
+              -- Detect sequential scans via EXPLAIN
+              querySeqScanFindings <-
+                catchError
+                  ( do
+                      explainLines <- explainQuery nativeTemplate
+                      let findings = SeqScanDetector.detectSeqScans explainLines
+                      pure (map (Name.inSnakeCase queryListed.name,) findings)
+                  )
+                  (\_ -> pure [])
 
               result :: Maybe Gen.Input.ResultRows <-
                 let byCardinality cardinality =
@@ -325,35 +337,68 @@ analyse options projectFile =
                       params
                       (SqlTemplate.toGenParamNames sqlTemplate)
 
+              -- Signature file handling
+              let sigPath = SignatureFile.signatureFilePath queryListed.filePath
+                  inferredSig = SignatureFile.fromInferred interpretedParams result
+
+              (finalParams, finalResult) <- do
+                maybeSigContent <-
+                  catchError
+                    (Just <$> readFile sigPath)
+                    (\(_ :: Error) -> pure Nothing)
+                case maybeSigContent of
+                  Nothing -> do
+                    writeFile sigPath (SignatureFile.serialize inferredSig)
+                    pure (interpretedParams, result)
+                  Just sigContent -> do
+                    fileSig <- case SignatureFile.tryParse sigContent of
+                      Left err ->
+                        throwError
+                          ( Error
+                              []
+                              "Failed to parse signature file"
+                              (Just "Check the YAML syntax in the signature file")
+                              [("file", Path.toText sigPath), ("error", err)]
+                          )
+                      Right sig -> pure sig
+                    case SignatureFile.validateAndMerge inferredSig fileSig of
+                      Left err -> throwError err
+                      Right mergedSig ->
+                        pure (SignatureFile.applyToQuery mergedSig interpretedParams result)
+
               pure
                 ( Gen.Input.Query
                     { name = Name.toGenName queryListed.name,
                       srcPath = queryListed.filePath,
-                      params = interpretedParams,
-                      result,
+                      params = finalParams,
+                      result = finalResult,
                       fragments = SqlTemplate.toGenQueryFragments sqlTemplate
                     },
-                  mentionedCustomTypes
+                  mentionedCustomTypes,
+                  querySeqScanFindings
                 )
 
-        let (queries, customTypesDump) = unzip mixedList
+        let (queries, customTypesDump, seqScanFindingsDump) = unzip3 mixedList
             customTypes =
               customTypesDump
                 & concat
                 & fmap (\x -> ((x.pgSchema, x.pgName), x))
                 & Map.fromList
                 & Map.elems
+            seqScanFindings = concat seqScanFindingsDump
 
-        pure (queries, customTypes)
+        pure (queries, customTypes, seqScanFindings)
 
     pure
-      Gen.Input.Project
-        { space = Name.toGenName projectFile.space,
-          name = Name.toGenName projectFile.name,
-          version = projectFile.version,
-          customTypes = customTypes,
-          queries = queries
-        }
+      ( Gen.Input.Project
+          { space = Name.toGenName projectFile.space,
+            name = Name.toGenName projectFile.name,
+            version = projectFile.version,
+            customTypes = customTypes,
+            queries = queries
+          },
+        seqScanFindings
+      )
 
 stagedParFor :: Text -> (a -> Text) -> [a] -> (a -> Script b) -> Script [b]
 stagedParFor stageName nameFn items action =
@@ -368,13 +413,70 @@ warn =
   -- TODO: Implement conditional throwing or emission.
   emit . WarningEmitted
 
+-- | Handle seq-scan findings: with --fix generate migration, otherwise fail.
+handleSeqScanFindings :: Bool -> [(Text, SeqScanFinding)] -> Script ()
+handleSeqScanFindings _ [] = pure ()
+handleSeqScanFindings fix findings
+  | fix = do
+      migrationsListed <-
+        listDir "migrations"
+          & fmap (filter (\p -> Path.toExtensions p == ["sql"]))
+          & fmap sort
+      let nextMigrationNum = length migrationsListed + 1
+          migrationFileName = Text.pack (show nextMigrationNum) <> ".sql"
+          migrationContent = SeqScanDetector.generateCreateIndexStatements (map snd findings)
+      case Path.maybeFromText ("migrations/" <> migrationFileName) of
+        Nothing ->
+          throwError
+            ( Error
+                []
+                "Failed to construct migration file path"
+                Nothing
+                [("filename", migrationFileName)]
+            )
+        Just migrationPath -> do
+          writeFile migrationPath migrationContent
+          emit
+            ( WarningEmitted
+                ( Error
+                    []
+                    ("Generated index migration: migrations/" <> migrationFileName)
+                    (Just "Review the generated migration and re-run generate")
+                    [ ( "content",
+                        migrationContent
+                      )
+                    ]
+                )
+            )
+  | otherwise =
+      throwError
+        ( Error
+            []
+            "Sequential scan detected"
+            (Just "Run with --fix to generate an index migration, or manually create indexes")
+            ( findings
+                & map
+                  ( \(queryName, finding) ->
+                      ( queryName,
+                        "Seq Scan on " <> finding.tableName <> " with filter: " <> finding.filterCondition
+                      )
+                  )
+            )
+        )
+
 redundantIndexMessage :: RedundantIndex -> Text
 redundantIndexMessage ri = case ri.reason of
   ExactDuplicate other ->
-    "Redundant index: " <> ri.index.indexName <> " on " <> ri.index.tableName
+    "Redundant index: "
+      <> ri.index.indexName
+      <> " on "
+      <> ri.index.tableName
       <> " is an exact duplicate of "
       <> other.indexName
   PrefixRedundancy other ->
-    "Redundant index: " <> ri.index.indexName <> " on " <> ri.index.tableName
+    "Redundant index: "
+      <> ri.index.indexName
+      <> " on "
+      <> ri.index.tableName
       <> " is a prefix of "
       <> other.indexName

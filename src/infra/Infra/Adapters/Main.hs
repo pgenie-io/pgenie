@@ -47,6 +47,10 @@ instance Logic.DbOps (Fx Device Logic.Error) where
     Logic.inferQueryTypes queryText
       & mapEnv (.analyser)
 
+  explainQuery sql =
+    Logic.explainQuery sql
+      & mapEnv (.analyser)
+
   getIndexes =
     Logic.getIndexes
       & mapEnv (.analyser)

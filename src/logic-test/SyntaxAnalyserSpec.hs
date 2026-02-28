@@ -55,6 +55,18 @@ spec = do
           Left err -> expectationFailure $ "Failed to parse: " <> to err
           Right analysis -> analysis.resultRowAmount `shouldBe` UpToRowAmount 10
 
+      it "strips comment after string containing escaped quotes" do
+        let sql = "SELECT 'it''s a test' -- this is a comment"
+        case resolveText sql of
+          Left err -> expectationFailure $ "Failed to parse: " <> to err
+          Right analysis -> analysis.resultRowAmount `shouldBe` AnyRowAmount
+
+      it "strips comment after string containing double dashes" do
+        let sql = "SELECT 'abc--def' -- real comment"
+        case resolveText sql of
+          Left err -> expectationFailure $ "Failed to parse: " <> to err
+          Right analysis -> analysis.resultRowAmount `shouldBe` AnyRowAmount
+
     describe "detects cardinality" do
       it "detects single row from LIMIT 1" do
         let sql = "SELECT * FROM users LIMIT 1"

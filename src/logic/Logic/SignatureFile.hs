@@ -211,22 +211,36 @@ serialize sig =
           else "\n" <> foldMap renderParam sig.parameters
 
     renderParam (name, field) =
-      "  " <> name <> ":\n"
-        <> "    type: " <> field.typeName <> "\n"
-        <> "    not_null: " <> boolToText field.notNull <> "\n"
+      "  "
+        <> name
+        <> ":\n"
+        <> "    type: "
+        <> field.typeName
+        <> "\n"
+        <> "    not_null: "
+        <> boolToText field.notNull
+        <> "\n"
 
     resultSection = case sig.result of
       Nothing -> ""
       Just res ->
         "result:\n"
-          <> "  cardinality: " <> cardinalityToText res.cardinality <> "\n"
+          <> "  cardinality: "
+          <> cardinalityToText res.cardinality
+          <> "\n"
           <> "  columns:\n"
           <> foldMap renderColumn res.columns
 
     renderColumn (name, field) =
-      "    " <> name <> ":\n"
-        <> "      type: " <> field.typeName <> "\n"
-        <> "      not_null: " <> boolToText field.notNull <> "\n"
+      "    "
+        <> name
+        <> ":\n"
+        <> "      type: "
+        <> field.typeName
+        <> "\n"
+        <> "      not_null: "
+        <> boolToText field.notNull
+        <> "\n"
 
     boolToText True = "true"
     boolToText False = "false"
@@ -316,12 +330,14 @@ validateAndMerge inferred file = do
     (Nothing, Nothing) -> Right Nothing
     (Just _, Nothing) ->
       Left
-        ( mismatchError "result"
+        ( mismatchError
+            "result"
             "Result section missing from signature file but query returns results"
         )
     (Nothing, Just _) ->
       Left
-        ( mismatchError "result"
+        ( mismatchError
+            "result"
             "Result section present in signature file but query returns no results"
         )
     (Just inferredResult, Just fileResult) ->
@@ -386,8 +402,8 @@ validateField fieldPath isParam inferred file = do
         ( mismatchError fieldPath
             $ "not_null constraint relaxed. Inferred: true. Signature file: false. "
             <> ( if isParam
-                  then "Parameters"
-                  else "Result columns"
+                   then "Parameters"
+                   else "Result columns"
                )
             <> " cannot have their not_null constraint relaxed"
         )

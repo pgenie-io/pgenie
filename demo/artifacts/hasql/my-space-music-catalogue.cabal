@@ -30,6 +30,7 @@ library
     MySpace.MusicCatalogue.Prelude
     MySpace.MusicCatalogue.Statements.InsertAlbum
     MySpace.MusicCatalogue.Statements.SelectAlbumByFormat
+    MySpace.MusicCatalogue.Statements.SelectAlbumByReleased
     MySpace.MusicCatalogue.Statements.SelectGenreByArtist
     MySpace.MusicCatalogue.Statements.UpdateAlbumRecordingReturning
     MySpace.MusicCatalogue.Statements.UpdateAlbumReleased

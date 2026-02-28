@@ -47,6 +47,10 @@ instance Logic.DbOps (Fx Device Logic.Error) where
     Logic.inferQueryTypes queryText
       & mapEnv (.analyser)
 
+  getIndexes =
+    Logic.getIndexes
+      & mapEnv (.analyser)
+
 instance Logic.FsOps (Fx Device Logic.Error) where
   readFile path =
     liftFileOp "Failed to read file" path do

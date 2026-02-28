@@ -17,6 +17,7 @@ import HasqlDev qualified
 import Infra.Adapters.Analyser.Embeddings.Sessions qualified as Embeddings.Sessions
 import Infra.Adapters.Analyser.Scopes.Testcontainers qualified
 import Infra.Adapters.Analyser.Sessions qualified as Sessions
+import Infra.Adapters.Analyser.Sessions.Procedures.GetIndexes qualified as GetIndexes
 import Logic qualified
 import TestcontainersPostgresql qualified
 
@@ -176,3 +177,6 @@ instance Logic.DbOps (Fx Device Logic.Error) where
             suggestion = Nothing,
             details = err.details
           }
+
+  getIndexes =
+    HasqlDev.runSession GetIndexes.getIndexes

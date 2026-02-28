@@ -37,6 +37,43 @@ data InferredParam = InferredParam
     type_ :: Gen.Input.Value
   }
 
+-- * Index info
+
+data IndexInfo = IndexInfo
+  { indexName :: Text,
+    tableName :: Text,
+    schemaName :: Text,
+    columns :: [Text],
+    isUnique :: Bool,
+    isPrimary :: Bool,
+    indexMethod :: Text,
+    predicate :: Maybe Text
+  }
+  deriving stock (Eq, Show)
+
+-- * Redundant index detection results
+
+data RedundantIndex = RedundantIndex
+  { index :: IndexInfo,
+    reason :: RedundancyReason
+  }
+  deriving stock (Eq, Show)
+
+data RedundancyReason
+  = -- | This index's columns are a leading prefix of the superseding index's columns.
+    PrefixRedundancy IndexInfo
+  | -- | This index is an exact duplicate of another index.
+    ExactDuplicate IndexInfo
+  deriving stock (Eq, Show)
+
+-- * Generate options
+
+data GenerateOptions = GenerateOptions
+  { fix :: Bool,
+    allowRedundantIndexes :: Bool
+  }
+  deriving stock (Eq, Show)
+
 -- * Capabilities
 
 -- | Typeclasses representing capabilities required by the logic and serving as ports as per the hexagonal architecture.
@@ -49,6 +86,7 @@ class (Monad m) => Emits m where
 class (MonadError Error m) => DbOps m where
   executeMigration :: Text -> m ()
   inferQueryTypes :: Text -> m (InferredQueryTypes, [Error])
+  getIndexes :: m [IndexInfo]
 
 class (MonadError Error m) => FsOps m where
   readFile :: Path -> m Text

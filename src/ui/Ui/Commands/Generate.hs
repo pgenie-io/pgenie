@@ -18,10 +18,26 @@ generate =
     }
 
 data Params = Params
+  { fix :: Bool,
+    allowRedundantIndexes :: Bool
+  }
 
 parser :: Opt.Parser Params
 parser =
-  pure Params
+  Params
+    <$> Opt.switch
+      ( Opt.long "fix"
+          <> Opt.help "Automatically generate a migration that drops redundant indexes"
+      )
+    <*> Opt.switch
+      ( Opt.long "allow-redundant-indexes"
+          <> Opt.help "Downgrade redundant index errors to warnings"
+      )
 
 execute :: (Logic.Caps m) => Params -> m ()
-execute _params = Logic.generate
+execute params =
+  Logic.generate
+    Logic.GenerateOptions
+      { fix = params.fix,
+        allowRedundantIndexes = params.allowRedundantIndexes
+      }

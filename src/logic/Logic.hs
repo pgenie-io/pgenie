@@ -16,6 +16,7 @@ import Logic.Dsl
 import Logic.GeneratorHashes qualified as GeneratorHashes
 import Logic.Name qualified as Name
 import Logic.ProjectFile qualified as ProjectFile
+import Logic.RedundantIndexDetector qualified as RedundantIndexDetector
 import Logic.SqlTemplate qualified as SqlTemplate
 import Logic.SyntaxAnalyser qualified as SyntaxAnalyser
 import PGenieGen qualified as Gen
@@ -61,16 +62,16 @@ check :: (Caps m) => m ()
 check =
   run do
     projectFile <- loadProjectFile
-    analyse projectFile
+    analyse (GenerateOptions False True) projectFile
     pure ()
 
-generate :: (Caps m) => m ()
-generate =
+generate :: (Caps m) => GenerateOptions -> m ()
+generate options =
   run do
     stage "" 2 do
       projectFile <- loadProjectFile
       genProject <- do
-        analyse projectFile
+        analyse options projectFile
       generateCode projectFile genProject
       pure ()
 
@@ -175,8 +176,8 @@ generateCode projectFile project =
 
     pure artifacts
 
-analyse :: ProjectFile.ProjectFile -> Script Gen.Input.Project
-analyse projectFile =
+analyse :: GenerateOptions -> ProjectFile.ProjectFile -> Script Gen.Input.Project
+analyse options projectFile =
   stage "Analysing" 2 do
     stage "Migrations" 2 do
       migrationsListed <-
@@ -198,6 +199,29 @@ analyse projectFile =
         for migrationsLoaded \(migrationListed, migrationLoaded) -> do
           stage (Path.toText migrationListed) 0 do
             executeMigration migrationLoaded
+
+    -- Redundant index detection
+    stage "Checking indexes" 0 do
+      indexes <- getIndexes
+      let redundant = RedundantIndexDetector.detectRedundantIndexes indexes
+      unless (null redundant) do
+        when options.fix do
+          let migration = RedundantIndexDetector.generateDropMigration redundant
+          writeFile "migrations/fix_redundant_indexes.sql" migration
+          emit (WarningEmitted (Error [] "Generated migration to drop redundant indexes" (Just "Review and execute migrations/fix_redundant_indexes.sql") []))
+
+        for_ redundant \ri -> do
+          let errMsg = redundantIndexMessage ri
+          if options.allowRedundantIndexes
+            then warn (Error [] errMsg Nothing [])
+            else
+              throwError
+                ( Error
+                    []
+                    errMsg
+                    (Just "Remove the redundant index or use --allow-redundant-indexes to downgrade this to a warning")
+                    [("index", ri.index.indexName), ("table", ri.index.tableName)]
+                )
 
     queriesListed <- do
       allPathsInQueriesDir <-
@@ -343,3 +367,14 @@ warn :: Error -> Script ()
 warn =
   -- TODO: Implement conditional throwing or emission.
   emit . WarningEmitted
+
+redundantIndexMessage :: RedundantIndex -> Text
+redundantIndexMessage ri = case ri.reason of
+  ExactDuplicate other ->
+    "Redundant index: " <> ri.index.indexName <> " on " <> ri.index.tableName
+      <> " is an exact duplicate of "
+      <> other.indexName
+  PrefixRedundancy other ->
+    "Redundant index: " <> ri.index.indexName <> " on " <> ri.index.tableName
+      <> " is a prefix of "
+      <> other.indexName

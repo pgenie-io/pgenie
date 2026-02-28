@@ -135,6 +135,7 @@ library logic
     Logic.Algebra
     Logic.Dsl
     Logic.Name
+    Logic.RedundantIndexDetector
     Logic.SqlTemplate
     Logic.SyntaxAnalyser
 
@@ -169,6 +170,7 @@ test-suite logic-test
   main-is: Main.hs
   other-modules:
     NameSpec
+    RedundantIndexDetectorSpec
     SqlTemplateSpec
     SyntaxAnalyserSpec
 
@@ -201,6 +203,7 @@ library infra
     Infra.Adapters.Analyser.Sessions.LibpqExtras.Procedures.DescribeQuery
     Infra.Adapters.Analyser.Sessions.Procedures
     Infra.Adapters.Analyser.Sessions.Procedures.DescribeQuery
+    Infra.Adapters.Analyser.Sessions.Procedures.GetIndexes
     Infra.Adapters.Analyser.Sessions.Procedures.ResolveColumn
     Infra.Adapters.Analyser.Sessions.Procedures.ResolveColumn.Statements
     Infra.Adapters.Analyser.Sessions.Procedures.ResolveColumn.Statements.GetAttributeByRelationAndOffset

@@ -57,8 +57,8 @@ update event memory =
 setCurrentTime :: UTCTime -> Memory -> Memory
 setCurrentTime currentTime memory =
   let elapsedTime = currentTime `diffUTCTime` memory.startTime
-      _timeLeftEstimate =
+      newTimeLeftEstimate =
         if memory.progress > 0
           then Just (elapsedTime / realToFrac memory.progress - elapsedTime)
           else Nothing
-   in memory {timeLeftEstimate = Nothing}
+   in memory {timeLeftEstimate = newTimeLeftEstimate}

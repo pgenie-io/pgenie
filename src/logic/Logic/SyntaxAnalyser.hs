@@ -48,19 +48,21 @@ stripComments = Text.unlines . map stripLineComment . removeBlockComments . Text
 
     -- Remove single-line comments (--)
     stripLineComment :: Text -> Text
-    stripLineComment line =
-      case Text.breakOn "--" line of
-        (before, after) ->
-          if Text.null after
-            then line
-            else
-              -- Check if -- is inside a string literal
-              if isInsideString before
-                then line
-                else Text.stripEnd before
+    stripLineComment line = go "" line
+      where
+        go prefix remaining =
+          case Text.breakOn "--" remaining of
+            (before, after) ->
+              if Text.null after
+                then prefix <> remaining
+                else
+                  let fullBefore = prefix <> before
+                   in if isInsideString fullBefore
+                        then go (fullBefore <> Text.take 2 after) (Text.drop 2 after)
+                        else Text.stripEnd fullBefore
 
     -- Simple heuristic: check if we're inside a string by counting unescaped single quotes
     isInsideString :: Text -> Bool
     isInsideString text =
-      let quotes = Text.count "'" text - Text.count "''" text
+      let quotes = Text.count "'" text - 2 * Text.count "''" text
        in odd quotes

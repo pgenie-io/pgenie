@@ -18,6 +18,7 @@ Checks and analyzes SQL migrations and queries and generates type-safe client SD
 ```
 my-project/
 ├── project1.pgn.yaml      # Project configuration
+├── freeze1.pgn.yaml        # Auto-generated lock file for generator hashes
 ├── migrations/            # Schema definitions
 │   ├── 1.sql
 │   └── 2.sql
@@ -28,21 +29,32 @@ my-project/
 
 For a complete example including the generated code see the [demo project](./demo/).
 
+### Query parameters
+
+Use `$param_name` syntax in your SQL queries to define named parameters:
+
+```sql
+SELECT * FROM users WHERE id = $user_id AND name = $user_name
+```
+
+Parameters are automatically typed based on the database schema.
+
 ## Supported artifacts
 
 - [**hasql**](https://github.com/pgenie-io/haskell-hasql.gen) — Type-safe Haskell client library
 
 ## Installation
 
+### Prerequisites
+
+- **Docker** — Must be installed and running, as pGenie uses Docker containers to analyze SQL queries in a real PostgreSQL environment.
+- **Cabal** — The Haskell package manager. Install it by following the instructions on the [Cabal website](https://www.haskell.org/cabal/).
+
+### Steps
+
 1. Clone the repository: `git clone https://github.com/nikita-volkov/pgenie.git`
 
 2. Navigate to the cloned repo and run `cabal install`
-
-### Prerequisites
-
-`pGenie` requires Docker to be installed and running on your machine, as it uses Docker containers to analyze SQL queries in a real PostgreSQL environment.
-
-To install `pGenie` you need to install Cabal, which is the Haskell package manager. You can install it by following the instructions on the [Cabal website](https://www.haskell.org/cabal/).
 
 ## Usage
 

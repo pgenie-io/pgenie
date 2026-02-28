@@ -46,7 +46,11 @@ data UpdateAlbumRecordingReturningResultRow = UpdateAlbumRecordingReturningResul
     -- | Maps to @format@.
     format :: Maybe (Types.AlbumFormat),
     -- | Maps to @recording@.
-    recording :: Maybe (Types.RecordingInfo)
+    recording :: Maybe (Types.RecordingInfo),
+    -- | Maps to @tracks@.
+    tracks :: Maybe (Vector (Types.TrackInfo)),
+    -- | Maps to @disc@.
+    disc :: Maybe (Types.DiscInfo)
   }
   deriving stock (Show, Eq)
 
@@ -76,5 +80,7 @@ instance Mapping.IsStatement UpdateAlbumRecordingReturning where
           released <- Decoders.column (Decoders.nullable (Mapping.scalarDecoder))
           format <- Decoders.column (Decoders.nullable (Mapping.scalarDecoder))
           recording <- Decoders.column (Decoders.nullable (Mapping.scalarDecoder))
+          tracks <- Decoders.column (Decoders.nullable (Decoders.array (Decoders.dimension Vector.replicateM (Decoders.element (Decoders.nonNullable Mapping.scalarDecoder)))))
+          disc <- Decoders.column (Decoders.nullable (Mapping.scalarDecoder))
           pure UpdateAlbumRecordingReturningResultRow {..}
 

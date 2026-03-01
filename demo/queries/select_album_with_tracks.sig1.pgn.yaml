@@ -12,7 +12,11 @@ result:
       type: text
       not_null: true
     tracks:
-      type: track_info[]
+      type:
+        array:
+          element:
+            name: track_info
+            not_null: true
       not_null: false
     disc:
       type: disc_info

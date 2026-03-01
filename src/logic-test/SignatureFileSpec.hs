@@ -81,6 +81,39 @@ spec = do
             \      not_null: true\n"
       serialize sig `shouldBe` expected
 
+    it "serializes one-dimensional array types using nested syntax" do
+      let sig =
+            Signature
+              { parameters = [],
+                result =
+                  Just
+                    ResultSig
+                      { cardinality = CardinalityMany,
+                        columns =
+                          [ ( "tracks",
+                              ArrayFieldSig
+                                { typeName = "track_info[]",
+                                  notNull = False,
+                                  elementNotNull = False
+                                }
+                            )
+                          ]
+                      }
+              }
+          expected =
+            "parameters: {}\n\
+            \result:\n\
+            \  cardinality: many\n\
+            \  columns:\n\
+            \    tracks:\n\
+            \      type:\n\
+            \        array:\n\
+            \          element:\n\
+            \            name: track_info\n\
+            \            not_null: false\n\
+            \      not_null: false\n"
+      serialize sig `shouldBe` expected
+
   describe "tryParse" do
     it "parses all cardinality values" do
       let mkSig card =
@@ -116,6 +149,61 @@ spec = do
       let yaml =
             "parameters: {}\nresult:\n  cardinality: invalid\n  columns:\n    id:\n      type: int4\n      not_null: true\n"
       tryParse yaml `shouldSatisfy` isLeft
+
+    it "parses array types with nested element nullability" do
+      let yaml =
+            "parameters: {}\n\
+            \result:\n\
+            \  cardinality: many\n\
+            \  columns:\n\
+            \    tracks:\n\
+            \      type:\n\
+            \        array:\n\
+            \          element:\n\
+            \            name: track_info\n\
+            \            not_null: false\n\
+            \      not_null: false\n"
+      fmap (.result) (tryParse yaml)
+        `shouldBe` Right
+          ( Just
+              ResultSig
+                { cardinality = CardinalityMany,
+                  columns =
+                    [ ( "tracks",
+                        ArrayFieldSig
+                          { typeName = "track_info[]",
+                            notNull = False,
+                            elementNotNull = False
+                          }
+                      )
+                    ]
+                }
+          )
+
+    it "parses legacy array syntax" do
+      let yaml =
+            "parameters: {}\n\
+            \result:\n\
+            \  cardinality: many\n\
+            \  columns:\n\
+            \    tracks:\n\
+            \      type: track_info[]\n\
+            \      not_null: false\n"
+      fmap (.result) (tryParse yaml)
+        `shouldBe` Right
+          ( Just
+              ResultSig
+                { cardinality = CardinalityMany,
+                  columns =
+                    [ ( "tracks",
+                        FieldSig
+                          { typeName = "track_info[]",
+                            notNull = False
+                          }
+                      )
+                    ]
+                }
+          )
 
   describe "validateAndMerge" do
     it "accepts matching signatures" do
@@ -257,6 +345,62 @@ spec = do
                       { cardinality = CardinalityOne,
                         columns =
                           [ ("id", FieldSig {typeName = "int4", notNull = True})
+                          ]
+                      }
+              }
+      validateAndMerge inferred file `shouldBe` Right expected
+
+    it "keeps inferred array element nullability when file uses legacy array syntax" do
+      let inferred =
+            Signature
+              { parameters = [],
+                result =
+                  Just
+                    ResultSig
+                      { cardinality = CardinalityMany,
+                        columns =
+                          [ ( "tracks",
+                              ArrayFieldSig
+                                { typeName = "track_info[]",
+                                  notNull = False,
+                                  elementNotNull = True
+                                }
+                            )
+                          ]
+                      }
+              }
+          file =
+            Signature
+              { parameters = [],
+                result =
+                  Just
+                    ResultSig
+                      { cardinality = CardinalityMany,
+                        columns =
+                          [ ( "tracks",
+                              FieldSig
+                                { typeName = "track_info[]",
+                                  notNull = False
+                                }
+                            )
+                          ]
+                      }
+              }
+          expected =
+            Signature
+              { parameters = [],
+                result =
+                  Just
+                    ResultSig
+                      { cardinality = CardinalityMany,
+                        columns =
+                          [ ( "tracks",
+                              ArrayFieldSig
+                                { typeName = "track_info[]",
+                                  notNull = False,
+                                  elementNotNull = True
+                                }
+                            )
                           ]
                       }
               }

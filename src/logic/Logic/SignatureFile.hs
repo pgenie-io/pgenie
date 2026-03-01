@@ -31,10 +31,16 @@ data Signature = Signature
   }
   deriving stock (Eq, Show)
 
-data FieldSig = FieldSig
-  { typeName :: Text,
-    notNull :: Bool
-  }
+data FieldSig
+  = FieldSig
+      { typeName :: Text,
+        notNull :: Bool
+      }
+  | ArrayFieldSig
+      { typeName :: Text,
+        notNull :: Bool,
+        elementNotNull :: Bool
+      }
   deriving stock (Eq, Show)
 
 data ResultSig = ResultSig
@@ -72,10 +78,7 @@ fromInferred params result =
     memberToFieldEntry :: Gen.Input.Member -> (Text, FieldSig)
     memberToFieldEntry member =
       ( member.pgName,
-        FieldSig
-          { typeName = valueToTypeName member.value,
-            notNull = not member.isNullable
-          }
+        fieldSigFromValue member.value (not member.isNullable)
       )
 
     resultRowsToResultSig :: Gen.Input.ResultRows -> ResultSig
@@ -83,6 +86,21 @@ fromInferred params result =
       ResultSig
         { cardinality = cardinalityFromGenInput rr.cardinality,
           columns = map memberToFieldEntry (toList rr.columns)
+        }
+
+fieldSigFromValue :: Gen.Input.Value -> Bool -> FieldSig
+fieldSigFromValue value fieldNotNull =
+  case value.arraySettings of
+    Just settings ->
+      ArrayFieldSig
+        { typeName = valueToTypeName value,
+          notNull = fieldNotNull,
+          elementNotNull = not settings.elementIsNullable
+        }
+    Nothing ->
+      FieldSig
+        { typeName = valueToTypeName value,
+          notNull = fieldNotNull
         }
 
 -- * Cardinality conversion
@@ -214,12 +232,7 @@ serialize sig =
       "  "
         <> name
         <> ":\n"
-        <> "    type: "
-        <> field.typeName
-        <> "\n"
-        <> "    not_null: "
-        <> boolToText field.notNull
-        <> "\n"
+        <> renderField "    " field
 
     resultSection = case sig.result of
       Nothing -> ""
@@ -235,12 +248,39 @@ serialize sig =
       "    "
         <> name
         <> ":\n"
-        <> "      type: "
-        <> field.typeName
-        <> "\n"
-        <> "      not_null: "
-        <> boolToText field.notNull
-        <> "\n"
+        <> renderField "      " field
+
+    renderField :: Text -> FieldSig -> Text
+    renderField indent = \case
+      ArrayFieldSig {typeName, notNull, elementNotNull}
+        | Just (elementTypeName, 1) <- splitArrayTypeName typeName ->
+            indent
+              <> "type:\n"
+              <> indent
+              <> "  array:\n"
+              <> indent
+              <> "    element:\n"
+              <> indent
+              <> "      name: "
+              <> elementTypeName
+              <> "\n"
+              <> indent
+              <> "      not_null: "
+              <> boolToText elementNotNull
+              <> "\n"
+              <> indent
+              <> "not_null: "
+              <> boolToText notNull
+              <> "\n"
+      field ->
+        indent
+          <> "type: "
+          <> field.typeName
+          <> "\n"
+          <> indent
+          <> "not_null: "
+          <> boolToText field.notNull
+          <> "\n"
 
     boolToText True = "true"
     boolToText False = "false"
@@ -284,9 +324,47 @@ tryParse text =
       U.mappingValue
         $ U.byKeyMapping (U.CaseSensitive True)
         $ do
-          typeName <- U.atByKey "type" (U.scalarsValue [U.stringScalar U.textString])
+          parsedType <- U.atByKey "type" typeValue
           notNull <- U.atByKey "not_null" (U.scalarsValue [U.boolScalar])
-          pure FieldSig {typeName, notNull}
+          pure
+            case parsedType of
+              Left typeName ->
+                FieldSig
+                  { typeName,
+                    notNull
+                  }
+              Right (elementTypeName, elementNotNull) ->
+                ArrayFieldSig
+                  { typeName = elementTypeName <> "[]",
+                    notNull,
+                    elementNotNull
+                  }
+
+    typeValue :: U.Value (Either Text (Text, Bool))
+    typeValue =
+      U.value
+        [Left <$> U.stringScalar U.textString]
+        ( Just
+            ( U.byKeyMapping
+                (U.CaseSensitive True)
+                (Right <$> U.atByKey "array" arrayBodyValue)
+            )
+        )
+        Nothing
+
+    arrayBodyValue :: U.Value (Text, Bool)
+    arrayBodyValue =
+      U.mappingValue
+        $ U.byKeyMapping (U.CaseSensitive True)
+        $ U.atByKey "element" arrayElementValue
+
+    arrayElementValue :: U.Value (Text, Bool)
+    arrayElementValue =
+      U.mappingValue
+        $ U.byKeyMapping (U.CaseSensitive True)
+        $ (,)
+        <$> U.atByKey "name" (U.scalarsValue [U.stringScalar U.textString])
+        <*> U.atByKey "not_null" (U.scalarsValue [U.boolScalar])
 
     resultValue :: U.Value ResultSig
     resultValue =
@@ -407,8 +485,52 @@ validateField fieldPath isParam inferred file = do
                )
             <> " cannot have their not_null constraint relaxed"
         )
-    _ ->
-      Right file
+    _ -> do
+      let inferredElementNotNull = fieldElementNotNull inferred
+          fileElementNotNull = fieldElementNotNull file <|> inferredElementNotNull
+      case (inferredElementNotNull, fileElementNotNull) of
+        (Just True, Just False) ->
+          Left
+            ( mismatchError (fieldPath <> "/type/array/element/not_null")
+                $ "not_null constraint relaxed. Inferred: true. Signature file: false. "
+                <> ( if isParam
+                       then "Parameters"
+                       else "Result columns"
+                   )
+                <> " cannot have their not_null constraint relaxed"
+            )
+        _ ->
+          Right
+            (mkFieldSig file.typeName file.notNull fileElementNotNull)
+
+fieldElementNotNull :: FieldSig -> Maybe Bool
+fieldElementNotNull = \case
+  ArrayFieldSig {elementNotNull} -> Just elementNotNull
+  FieldSig {} -> Nothing
+
+mkFieldSig :: Text -> Bool -> Maybe Bool -> FieldSig
+mkFieldSig typeName notNull = \case
+  Just elementNotNull ->
+    ArrayFieldSig
+      { typeName,
+        notNull,
+        elementNotNull
+      }
+  Nothing ->
+    FieldSig
+      { typeName,
+        notNull
+      }
+
+splitArrayTypeName :: Text -> Maybe (Text, Natural)
+splitArrayTypeName typeName =
+  let (base, dims) = go typeName 0
+   in if dims > 0 && not (Text.null base) then Just (base, dims) else Nothing
+  where
+    go text dims =
+      if Text.isSuffixOf "[]" text
+        then go (Text.dropEnd 2 text) (dims + 1)
+        else (text, dims)
 
 mismatchError :: Text -> Text -> Algebra.Error
 mismatchError fieldPath message =
@@ -450,5 +572,18 @@ applyToQuery sig params result =
         { name = member.name,
           pgName = member.pgName,
           isNullable = not field.notNull,
-          value = member.value
+          value = applyArrayElementNullability field member.value
         }
+
+    applyArrayElementNullability :: FieldSig -> Gen.Input.Value -> Gen.Input.Value
+    applyArrayElementNullability field value =
+      case (fieldElementNotNull field, value.arraySettings) of
+        (Just elementNotNull, Just settings) ->
+          value
+            { Gen.Input.arraySettings =
+                Just
+                  settings
+                    { Gen.Input.elementIsNullable = not elementNotNull
+                    }
+            }
+        _ -> value

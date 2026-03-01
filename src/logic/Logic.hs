@@ -17,7 +17,6 @@ import Logic.Dsl
 import Logic.GeneratorHashes qualified as GeneratorHashes
 import Logic.Name qualified as Name
 import Logic.ProjectFile qualified as ProjectFile
-import Logic.ProjectModel qualified as ProjectModel
 import Logic.SeqScanDetector qualified as SeqScanDetector
 import Logic.SignatureFile qualified as SignatureFile
 import Logic.SqlTemplate qualified as SqlTemplate
@@ -85,7 +84,7 @@ model =
     stage "" 1 do
       projectFile <- loadProjectFile
       (genProject, _seqScanFindings) <- analyse projectFile
-      emit (ProjectModelEmitted (ProjectModel.toJsonText genProject))
+      emit (ProjectModelEmitted (to (Aeson.encodeToTextBuilder genProject)))
 
 -- * Helpers
 

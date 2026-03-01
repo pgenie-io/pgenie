@@ -277,6 +277,7 @@ library ui
   other-modules:
     Ui.Commands
     Ui.Commands.Generate
+    Ui.Commands.Model
     Ui.Commands.Sign
     Ui.Display
     Ui.Display.Memory

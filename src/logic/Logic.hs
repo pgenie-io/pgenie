@@ -1,6 +1,7 @@
 module Logic
   ( check,
     generate,
+    model,
     module Logic.Algebra,
   )
 where
@@ -76,6 +77,14 @@ generate options =
       handleIndexOptimization options indexes seqScanFindings
       generateCode projectFile genProject
       pure ()
+
+model :: (Caps m) => m ()
+model =
+  run do
+    stage "" 1 do
+      projectFile <- loadProjectFile
+      (genProject, _seqScanFindings, _indexes) <- analyse (GenerateOptions False True) projectFile
+      emit (ProjectModelEmitted (to (Aeson.encodeToTextBuilder genProject)))
 
 -- * Helpers
 

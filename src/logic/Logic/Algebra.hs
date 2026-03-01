@@ -22,6 +22,7 @@ data Event
   | StageExited [Text] Double
   | WarningEmitted Error
   | Failed Error
+  | ProjectModelEmitted Text
   deriving stock (Eq, Show)
 
 -- * States

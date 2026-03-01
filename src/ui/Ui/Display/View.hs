@@ -11,57 +11,73 @@ import TextBuilder qualified
 import TextBuilderDev qualified
 import Ui.Display.Memory (Memory (..))
 
--- | View function: event -> oldModel -> newModel -> TextBuilder
--- Renders the state transition following Elm architecture
-view :: Logic.Event -> Memory -> Memory -> TextBuilder
+-- | View function: event -> oldModel -> newModel -> (stderrOutput, stdoutOutput)
+-- Renders the state transition following Elm architecture.
+-- The first element is written to stderr (progress and diagnostic messages),
+-- the second element is written to stdout (command output such as the project model).
+view :: Logic.Event -> Memory -> Memory -> (TextBuilder, TextBuilder)
 view event oldMemory newMemory = case event of
   Logic.StageEntered path ->
-    if oldMemory.progress >= 1
-      then mempty -- Don't update if already at 100%
-      else
-        mconcat
-          [ if oldMemory.hasProgressBar
-              then clearProgressBar
-              else "",
-            if null path
-              then ""
-              else TextBuilder.intercalateMap " > " to (reverse path) <> "\n",
-            progressBar newMemory.progress newMemory.timeLeftEstimate
-          ]
+    ( if oldMemory.progress >= 1
+        then mempty -- Don't update if already at 100%
+        else
+          mconcat
+            [ if oldMemory.hasProgressBar
+                then clearProgressBar
+                else "",
+              if null path
+                then ""
+                else TextBuilder.intercalateMap " > " to (reverse path) <> "\n",
+              progressBar newMemory.progress newMemory.timeLeftEstimate
+            ],
+      mempty
+    )
   Logic.StageExited _path _progressDelta ->
-    if oldMemory.progress >= 1
-      then mempty -- Don't update progress if already at 100%
-      else
-        if oldMemory.hasProgressBar
-          then
-            mconcat
-              [ moveCursorToLineStart,
-                clearLine,
-                if newMemory.progress < 1
-                  then progressBar newMemory.progress newMemory.timeLeftEstimate
-                  else green "Done!" <> "\n"
-              ]
-          else mempty -- Don't render progress bar if it's not shown
+    ( if oldMemory.progress >= 1
+        then mempty -- Don't update progress if already at 100%
+        else
+          if oldMemory.hasProgressBar
+            then
+              mconcat
+                [ moveCursorToLineStart,
+                  clearLine,
+                  if newMemory.progress < 1
+                    then progressBar newMemory.progress newMemory.timeLeftEstimate
+                    else green "Done!" <> "\n"
+                ]
+            else mempty, -- Don't render progress bar if it's not shown
+      mempty
+    )
   Logic.WarningEmitted err ->
-    mconcat
-      [ if oldMemory.hasProgressBar
-          then clearProgressBar
-          else "",
-        report (yellow "Warning") err.path err.message err.suggestion err.details,
-        if newMemory.hasProgressBar
-          then progressBar newMemory.progress newMemory.timeLeftEstimate
-          else ""
-      ]
+    ( mconcat
+        [ if oldMemory.hasProgressBar
+            then clearProgressBar
+            else "",
+          report (yellow "Warning") err.path err.message err.suggestion err.details,
+          if newMemory.hasProgressBar
+            then progressBar newMemory.progress newMemory.timeLeftEstimate
+            else ""
+        ],
+      mempty
+    )
   Logic.Failed err ->
-    mconcat
-      [ if oldMemory.hasProgressBar
-          then clearProgressBar
-          else "",
-        report (boldRed "Error") err.path err.message err.suggestion err.details,
-        if newMemory.hasProgressBar
-          then progressBar newMemory.progress newMemory.timeLeftEstimate
-          else ""
-      ]
+    ( mconcat
+        [ if oldMemory.hasProgressBar
+            then clearProgressBar
+            else "",
+          report (boldRed "Error") err.path err.message err.suggestion err.details,
+          if newMemory.hasProgressBar
+            then progressBar newMemory.progress newMemory.timeLeftEstimate
+            else ""
+        ],
+      mempty
+    )
+  Logic.ProjectModelEmitted text ->
+    ( if oldMemory.hasProgressBar
+        then clearProgressBar
+        else "",
+      to text <> "\n"
+    )
 
 clearProgressBar :: TextBuilder
 clearProgressBar = moveCursorToLineStart <> clearLine
@@ -106,13 +122,7 @@ progressBar progress timeLeftEstimate =
           to arrow,
           empty,
           "] ",
-          percentage,
-          case timeLeftEstimate of
-            Nothing -> ""
-            Just t ->
-              " ("
-                <> TextBuilderDev.doubleFixedPoint 1 (realToFrac t :: Double)
-                <> "s left)"
+          percentage
         ]
 
 report ::

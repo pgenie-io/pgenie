@@ -22,6 +22,7 @@ main runEffect = do
   Framework.main
     "pgn"
     "pGenie CLI"
-    [ Commands.generate
+    [ Commands.generate,
+      Commands.model
     ]
     (runEffect (Display.handleEvent display))

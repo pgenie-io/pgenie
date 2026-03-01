@@ -55,6 +55,10 @@ update event memory =
       memory
         { hasProgressBar = False
         }
+    Logic.ProjectModelEmitted _text ->
+      memory
+        { hasProgressBar = False
+        }
 
 setCurrentTime :: UTCTime -> Memory -> Memory
 setCurrentTime currentTime memory =

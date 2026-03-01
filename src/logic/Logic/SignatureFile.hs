@@ -174,7 +174,7 @@ primitiveToTypeName = \case
 
 genNameToText :: Gen.Input.Name -> Text
 genNameToText name =
-  let headText = wordToText (toList name.head)
+  let headText = wordToText (toList (coerce name.head))
       tailTexts = map wordOrNumberToText name.tail
    in Text.intercalate "_" (headText : tailTexts)
   where
@@ -212,7 +212,7 @@ genNameToText name =
 
     wordOrNumberToText :: Gen.Input.WordOrNumber -> Text
     wordOrNumberToText = \case
-      Gen.Input.WordOrNumberWord w -> wordToText (toList w)
+      Gen.Input.WordOrNumberWord (Gen.Input.Word w) -> wordToText (toList w)
       Gen.Input.WordOrNumberNumber n -> Text.pack (show n)
 
 -- * Serialization

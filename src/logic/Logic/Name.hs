@@ -126,7 +126,7 @@ toGenName name =
         }
   where
     wordToGenWord :: Text -> Gen.Word
-    wordToGenWord = fromMaybe (error "Empty word") . nonEmpty . fmap textCharToWordChar . Text.unpack
+    wordToGenWord = maybe (error "Empty word") Gen.Word . nonEmpty . fmap textCharToWordChar . Text.unpack
 
     wordOrNumberFromPart :: Text -> Gen.WordOrNumber
     wordOrNumberFromPart text =

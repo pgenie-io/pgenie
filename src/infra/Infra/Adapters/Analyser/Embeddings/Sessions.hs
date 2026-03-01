@@ -65,7 +65,7 @@ adaptType type_ = do
               Just
                 Gen.Input.ArraySettings
                   { dimensionality = fromIntegral type_.dimensionality,
-                    elementIsNullable = False
+                    elementIsNullable = True
                   }
             else Nothing,
         scalar

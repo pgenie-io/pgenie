@@ -62,6 +62,14 @@ view event oldMemory newMemory = case event of
           then progressBar newMemory.progress newMemory.timeLeftEstimate
           else ""
       ]
+  Logic.ProjectModelEmitted text ->
+    mconcat
+      [ if oldMemory.hasProgressBar
+          then clearProgressBar
+          else "",
+        to text,
+        "\n"
+      ]
 
 clearProgressBar :: TextBuilder
 clearProgressBar = moveCursorToLineStart <> clearLine

@@ -106,13 +106,7 @@ progressBar progress timeLeftEstimate =
           to arrow,
           empty,
           "] ",
-          percentage,
-          case timeLeftEstimate of
-            Nothing -> ""
-            Just t ->
-              " ("
-                <> TextBuilderDev.doubleFixedPoint 1 (realToFrac t :: Double)
-                <> "s left)"
+          percentage
         ]
 
 report ::

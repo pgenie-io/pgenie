@@ -24,8 +24,10 @@ result:
       type: recording_info
       not_null: false
     tracks:
-      type: track_info[]
+      type: track_info
       not_null: false
+      dims: 1
+      element_not_null: true
     disc:
       type: disc_info
       not_null: false

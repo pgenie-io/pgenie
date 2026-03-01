@@ -1,11 +1,12 @@
 module MySpace.MusicCatalogue.Types.DiscInfo where
 
-import Data.Aeson qualified as Aeson
-import Data.Vector qualified as Vector
-import Hasql.Decoders qualified as Decoders
-import Hasql.Encoders qualified as Encoders
-import Hasql.Mapping qualified as Mapping
 import MySpace.MusicCatalogue.Prelude
+import qualified Data.Aeson as Aeson
+import qualified Data.Vector as Vector
+import qualified Hasql.Decoders as Decoders
+import qualified Hasql.Encoders as Encoders
+import qualified Hasql.Mapping as Mapping
+import qualified Hasql.Mapping as Mapping
 
 -- |
 -- Representation of the @disc_info@ user-declared PostgreSQL record type.
@@ -27,7 +28,7 @@ instance Mapping.IsScalar DiscInfo where
             (.recording) >$< Encoders.field (Encoders.nullable (Mapping.scalarEncoder))
           ]
       )
-
+  
   scalarDecoder =
     Decoders.composite
       (Just "public")
@@ -36,3 +37,4 @@ instance Mapping.IsScalar DiscInfo where
           <$> Decoders.field (Decoders.nullable (Mapping.scalarDecoder))
           <*> Decoders.field (Decoders.nullable (Mapping.scalarDecoder))
       )
+  

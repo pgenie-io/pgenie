@@ -1,20 +1,20 @@
 module MySpace.MusicCatalogue.Statements.SelectAlbumByName where
 
-import Data.Aeson qualified as Aeson
-import Data.Vector qualified as Vector
-import Hasql.Decoders qualified as Decoders
-import Hasql.Encoders qualified as Encoders
-import Hasql.Mapping qualified as Mapping
-import Hasql.Statement qualified as Statement
 import MySpace.MusicCatalogue.Prelude
-import MySpace.MusicCatalogue.Types qualified as Types
+import qualified Hasql.Statement as Statement
+import qualified Hasql.Decoders as Decoders
+import qualified Hasql.Encoders as Encoders
+import qualified Data.Aeson as Aeson
+import qualified Data.Vector as Vector
+import qualified Hasql.Mapping as Mapping
+import qualified MySpace.MusicCatalogue.Types as Types
 
 -- |
 -- Parameters for the @select_album_by_name@ query.
 --
 -- ==== SQL Template
 --
--- > select
+-- > select 
 -- >   id,
 -- >   name,
 -- >   released,
@@ -26,6 +26,7 @@ import MySpace.MusicCatalogue.Types qualified as Types
 -- ==== Source Path
 --
 -- > ./queries/select_album_by_name.sql
+--
 newtype SelectAlbumByName = SelectAlbumByName
   { -- | Maps to @name@.
     name :: Maybe (Text)
@@ -49,6 +50,7 @@ data SelectAlbumByNameResultRow = SelectAlbumByNameResultRow
     recording :: Maybe (Types.RecordingInfo)
   }
   deriving stock (Show, Eq)
+
 
 instance Mapping.IsStatement SelectAlbumByName where
   type Result SelectAlbumByName = SelectAlbumByNameResult
@@ -78,3 +80,4 @@ instance Mapping.IsStatement SelectAlbumByName where
           format <- Decoders.column (Decoders.nullable (Mapping.scalarDecoder))
           recording <- Decoders.column (Decoders.nullable (Mapping.scalarDecoder))
           pure SelectAlbumByNameResultRow {..}
+

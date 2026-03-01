@@ -1,13 +1,13 @@
 module MySpace.MusicCatalogue.Statements.SelectAlbumWithTracks where
 
-import Data.Aeson qualified as Aeson
-import Data.Vector qualified as Vector
-import Hasql.Decoders qualified as Decoders
-import Hasql.Encoders qualified as Encoders
-import Hasql.Mapping qualified as Mapping
-import Hasql.Statement qualified as Statement
 import MySpace.MusicCatalogue.Prelude
-import MySpace.MusicCatalogue.Types qualified as Types
+import qualified Hasql.Statement as Statement
+import qualified Hasql.Decoders as Decoders
+import qualified Hasql.Encoders as Encoders
+import qualified Data.Aeson as Aeson
+import qualified Data.Vector as Vector
+import qualified Hasql.Mapping as Mapping
+import qualified MySpace.MusicCatalogue.Types as Types
 
 -- |
 -- Parameters for the @select_album_with_tracks@ query.
@@ -21,6 +21,7 @@ import MySpace.MusicCatalogue.Types qualified as Types
 -- ==== Source Path
 --
 -- > ./queries/select_album_with_tracks.sql
+--
 newtype SelectAlbumWithTracks = SelectAlbumWithTracks
   { -- | Maps to @id@.
     id :: Maybe (Int64)
@@ -42,6 +43,7 @@ data SelectAlbumWithTracksResultRow = SelectAlbumWithTracksResultRow
     disc :: Maybe (Types.DiscInfo)
   }
   deriving stock (Show, Eq)
+
 
 instance Mapping.IsStatement SelectAlbumWithTracks where
   type Result SelectAlbumWithTracks = SelectAlbumWithTracksResult
@@ -65,3 +67,4 @@ instance Mapping.IsStatement SelectAlbumWithTracks where
           tracks <- Decoders.column (Decoders.nullable (Decoders.array (Decoders.dimension Vector.replicateM (Decoders.element (Decoders.nonNullable Mapping.scalarDecoder)))))
           disc <- Decoders.column (Decoders.nullable (Mapping.scalarDecoder))
           pure SelectAlbumWithTracksResultRow {..}
+

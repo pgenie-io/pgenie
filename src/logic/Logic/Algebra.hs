@@ -48,6 +48,7 @@ data SeqScanFinding = SeqScanFinding
     -- | Suggested columns to create an index on.
     suggestedIndexColumns :: [Text]
   }
+  deriving stock (Eq, Show)
 
 -- * Index info
 

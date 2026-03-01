@@ -87,6 +87,8 @@ data DropReason
   | -- | This composite index has trailing columns that are not needed by any query.
     --   The replacement columns are provided.
     ExcessiveComposite [Text]
+  | -- | This index is not used by any observed query need on the same table.
+    UnusedByQueries
   deriving stock (Eq, Show)
 
 -- * Generate options

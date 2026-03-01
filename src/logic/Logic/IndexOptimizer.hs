@@ -26,11 +26,16 @@ optimizeIndexes indexes queryNeeds =
       -- slated for removal as redundant.
       redundantNames = Set.fromList (map dropIndexName redundant)
       filteredExcessive = filter (\a -> dropIndexName a `Set.notMember` redundantNames) excessive
+      -- Don't suggest unused-index removals for indexes that are already
+      -- slated for removal by stronger structural reasons.
+      droppedByStructure = Set.fromList (map dropIndexName (redundant <> filteredExcessive))
+      unused = detectUnused indexes queryNeeds
+      filteredUnused = filter (\a -> dropIndexName a `Set.notMember` droppedByStructure) unused
       -- Collect all create-index needs from seq-scan findings that are not
       -- already satisfied by existing indexes or by indexes that result from
       -- excessive-composite replacements.
-      missing = detectMissing indexes (redundant <> filteredExcessive) queryNeeds
-   in redundant <> filteredExcessive <> missing
+      missing = detectMissing indexes (redundant <> filteredExcessive <> filteredUnused) queryNeeds
+  in redundant <> filteredExcessive <> filteredUnused <> missing
 
 dropIndexName :: IndexAction -> Text
 dropIndexName (DropIndex idx _) = idx.indexName
@@ -135,6 +140,27 @@ prefixNeeded indexCols queryCols =
       | Set.member ic qs = go (depth + 1) ics qs
       | otherwise = depth
 
+-- * Unused index detection
+
+-- | Detect indexes that do not cover any observed query need on their table.
+--
+-- This is only evaluated for tables that have at least one observed need,
+-- to avoid proposing broad deletions when there is no workload signal.
+detectUnused :: [IndexInfo] -> [(Text, [Text])] -> [IndexAction]
+detectUnused indexes queryNeeds =
+  let needsByTable = buildNeedsByTable queryNeeds
+   in [ DropIndex idx UnusedByQueries
+      | idx <- indexes,
+        not idx.isPrimary,
+        not idx.isUnique,
+        idx.indexMethod == "btree",
+        idx.predicate == Nothing,
+        Just needs <- [Map.lookup idx.tableName needsByTable],
+        let needsList = Set.toList needs,
+        not (null needsList),
+        not (any (\needCols -> needCols `isPrefixOf` idx.columns) needsList)
+      ]
+
 -- * Missing index detection
 
 -- | Suggest CREATE INDEX actions for tables that have seq-scan findings
@@ -238,6 +264,11 @@ generateMigration actions =
           <> ") is excessive; replacing with ("
           <> Text.intercalate ", " replacement
           <> ")"
+      UnusedByQueries ->
+        idx.indexName
+          <> " on ("
+          <> Text.intercalate ", " idx.columns
+          <> ") is not used by observed query needs"
 
     quoteIdent :: Text -> Text
     quoteIdent t = "\"" <> Text.replace "\"" "\"\"" t <> "\""

@@ -11,6 +11,7 @@ import Base.Prelude hiding (readFile, writeFile)
 import Control.Monad.Parallel qualified as MonadParallel
 import Data.Aeson.Text qualified as Aeson
 import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Logic.Algebra
 import Logic.Dsl
@@ -281,6 +282,14 @@ analyse options projectFile =
                   )
                   (\_ -> pure [])
 
+              let fallbackSeqScanFindings =
+                    inferSeqScanFindingsFromSql nativeTemplate
+                      & map (Name.inSnakeCase queryListed.name,)
+                  effectiveSeqScanFindings =
+                    if null querySeqScanFindings
+                      then fallbackSeqScanFindings
+                      else querySeqScanFindings
+
               result :: Maybe Gen.Input.ResultRows <-
                 let byCardinality cardinality =
                       pure case nonEmpty resultColumns of
@@ -366,7 +375,7 @@ analyse options projectFile =
                       fragments = SqlTemplate.toGenQueryFragments sqlTemplate
                     },
                   mentionedCustomTypes,
-                  querySeqScanFindings
+                  effectiveSeqScanFindings
                 )
 
         let (queries, customTypesDump, seqScanFindingsDump) = unzip3 mixedList
@@ -398,6 +407,70 @@ stagedParFor stageName nameFn items action =
     MonadParallel.forM items \item ->
       stage (nameFn item) 0 do
         action item
+
+inferSeqScanFindingsFromSql :: Text -> [SeqScanFinding]
+inferSeqScanFindingsFromSql sql =
+  case inferTableAndWhere sql of
+    Nothing -> []
+    Just (tbl, whereClause) ->
+      let cols = SeqScanDetector.extractFilterColumns whereClause
+       in if null cols
+            then []
+            else [SeqScanFinding tbl whereClause cols]
+
+inferTableAndWhere :: Text -> Maybe (Text, Text)
+inferTableAndWhere sql = do
+  let normalized =
+        sql
+          & Text.lines
+          & filter (not . ("--" `Text.isPrefixOf`) . Text.stripStart)
+          & Text.unwords
+      normalizedLower = Text.toLower normalized
+      tokens = Text.words normalized
+  guard (not (" join " `Text.isInfixOf` normalizedLower))
+  table <- inferTableName tokens
+  whereClause <- inferWhereClause tokens
+  pure (table, whereClause)
+
+inferTableName :: [Text] -> Maybe Text
+inferTableName tokens =
+  let lowerTokens = map Text.toLower tokens
+      findAfterKeyword kw = do
+        i <- elemIndex kw lowerTokens
+        token <- tokens !? (i + 1)
+        pure (normalizeTableToken token)
+   in findAfterKeyword "from"
+        <|> findAfterKeyword "update"
+        <|> (do
+              i <- elemIndex "into" lowerTokens
+              prev <- lowerTokens !? (i - 1)
+              guard (prev == "insert")
+              token <- tokens !? (i + 1)
+              pure (normalizeTableToken token)
+            )
+
+inferWhereClause :: [Text] -> Maybe Text
+inferWhereClause tokens =
+  let lowerTokens = map Text.toLower tokens
+      stopKeywords = Set.fromList ["group", "order", "limit", "returning", "union"]
+   in do
+        i <- elemIndex "where" lowerTokens
+        let rest = drop (i + 1) tokens
+            restLower = drop (i + 1) lowerTokens
+            clauseTokens = map fst (takeWhile (\(_, lowerTok) -> lowerTok `Set.notMember` stopKeywords) (zip rest restLower))
+        guard (not (null clauseTokens))
+        pure (Text.unwords clauseTokens)
+
+normalizeTableToken :: Text -> Text
+normalizeTableToken token =
+  let cleaned =
+        token
+          & Text.dropWhile (\c -> c == '"' || c == '(')
+          & Text.takeWhile (\c -> c /= '"' && c /= ')' && c /= ';' && c /= ',')
+          & Text.splitOn "."
+   in case reverse cleaned of
+        [] -> ""
+        x : _ -> x
 
 -- | Depending on the warning handling strategy this can either log the warning and continue or throw an error to stop the execution.
 warn :: Error -> Script ()
@@ -480,6 +553,12 @@ indexActionMessage (DropIndex idx reason) = case reason of
       <> " can be narrowed to ("
       <> Text.intercalate ", " replacement
       <> ")"
+  UnusedByQueries ->
+    "Redundant index: "
+      <> idx.indexName
+      <> " on "
+      <> idx.tableName
+      <> " is not used by observed query needs"
 indexActionMessage (CreateIndex tbl cols) =
   "Missing index: "
     <> tbl

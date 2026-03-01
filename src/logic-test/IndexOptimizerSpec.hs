@@ -145,6 +145,13 @@ spec = do
             result = optimizeIndexes [] queryNeeds
         result `shouldBe` [CreateIndex "album" ["format"]]
 
+      it "drops an index unused by observed query needs" do
+        let idx = mkIndex "idx_recording" "album" ["recording"] False False
+            queryNeeds = [("album", ["format"])]
+            result = optimizeIndexes [idx] queryNeeds
+            drops = [a | a@(DropIndex _ UnusedByQueries) <- result]
+        drops `shouldSatisfy` (not . null)
+
       it "does not suggest an index that already exists" do
         let idx = mkIndex "idx_format" "album" ["format"] False False
             queryNeeds = [("album", ["format"])]
@@ -163,7 +170,10 @@ spec = do
         let idx = mkIndex "idx_name" "album" ["name"] False False
             queryNeeds = [("album", ["format"])]
             result = optimizeIndexes [idx] queryNeeds
-        result `shouldBe` [CreateIndex "album" ["format"]]
+            creates = [a | a@(CreateIndex {}) <- result]
+            drops = [a | a@(DropIndex _ UnusedByQueries) <- result]
+        creates `shouldBe` [CreateIndex "album" ["format"]]
+        drops `shouldSatisfy` (not . null)
 
       it "does not suggest duplicate creates for the same columns" do
         let queryNeeds = [("album", ["format"]), ("album", ["format"])]
@@ -183,7 +193,7 @@ spec = do
             result = optimizeIndexes [idx1, idx2] queryNeeds
             drops = [a | a@(DropIndex _ _) <- result]
             creates = [a | a@(CreateIndex {}) <- result]
-        length drops `shouldBe` 1
+        length drops `shouldSatisfy` (>= 1)
         length creates `shouldBe` 1
         case creates of
           [CreateIndex tbl cols] -> do

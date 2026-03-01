@@ -16,8 +16,8 @@ import Logic.Algebra
 import Logic.Dsl
 import Logic.GeneratorHashes qualified as GeneratorHashes
 import Logic.Name qualified as Name
-import Logic.ProjectModel qualified as ProjectModel
 import Logic.ProjectFile qualified as ProjectFile
+import Logic.ProjectModel qualified as ProjectModel
 import Logic.SeqScanDetector qualified as SeqScanDetector
 import Logic.SignatureFile qualified as SignatureFile
 import Logic.SqlTemplate qualified as SqlTemplate

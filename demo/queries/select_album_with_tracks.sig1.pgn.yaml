@@ -12,12 +12,10 @@ result:
       type: text
       not_null: true
     tracks:
-      type:
-        array:
-          element:
-            name: track_info
-            not_null: true
+      type: track_info
       not_null: false
+      dims: 1
+      element_not_null: true
     disc:
       type: disc_info
       not_null: false

@@ -253,25 +253,26 @@ serialize sig =
     renderField :: Text -> FieldSig -> Text
     renderField indent = \case
       ArrayFieldSig {typeName, notNull, elementNotNull}
-        | Just (elementTypeName, 1) <- splitArrayTypeName typeName ->
+        | Just (elementTypeName, dims) <- splitArrayTypeName typeName ->
             indent
-              <> "type:\n"
-              <> indent
-              <> "  array:\n"
-              <> indent
-              <> "    element:\n"
-              <> indent
-              <> "      name: "
+              <> "type: "
               <> elementTypeName
-              <> "\n"
-              <> indent
-              <> "      not_null: "
-              <> boolToText elementNotNull
               <> "\n"
               <> indent
               <> "not_null: "
               <> boolToText notNull
               <> "\n"
+              <> indent
+              <> "dims: "
+              <> Text.pack (show dims)
+              <> "\n"
+              <> if elementNotNull
+                then
+                  indent
+                    <> "element_not_null: "
+                    <> boolToText elementNotNull
+                    <> "\n"
+                else ""
       field ->
         indent
           <> "type: "
@@ -323,34 +324,56 @@ tryParse text =
     fieldSigValue =
       U.mappingValue
         $ U.byKeyMapping (U.CaseSensitive True)
-        $ do
-          parsedType <- U.atByKey "type" typeValue
-          notNull <- U.atByKey "not_null" (U.scalarsValue [U.boolScalar])
-          pure
-            case parsedType of
-              Left typeName ->
-                FieldSig
-                  { typeName,
-                    notNull
-                  }
-              Right (elementTypeName, elementNotNull) ->
-                ArrayFieldSig
-                  { typeName = elementTypeName <> "[]",
-                    notNull,
-                    elementNotNull
-                  }
+        $ mkFieldSig
+        <$> U.atByKey "type" typeValue
+        <*> asum [Just <$> U.atByKey "dims" dimsValue, pure Nothing]
+        <*> asum [U.atByKey "element_not_null" (U.scalarsValue [U.boolScalar]), pure False]
+        <*> U.atByKey "not_null" (U.scalarsValue [U.boolScalar])
+      where
+        mkFieldSig (baseTypeName, typeDims, legacyElementNotNull) dimsOverride explicitElementNotNull notNull =
+          let dims = fromMaybe typeDims dimsOverride
+              elementNotNull = fromMaybe explicitElementNotNull legacyElementNotNull
+              typeName = baseTypeName <> Text.replicate (fromIntegral dims) "[]"
+           in if dims == 0
+                then
+                  FieldSig
+                    { typeName,
+                      notNull
+                    }
+                else
+                  ArrayFieldSig
+                    { typeName,
+                      notNull,
+                      elementNotNull
+                    }
 
-    typeValue :: U.Value (Either Text (Text, Bool))
+    typeValue :: U.Value (Text, Natural, Maybe Bool)
     typeValue =
       U.value
-        [Left <$> U.stringScalar U.textString]
+        [ U.stringScalar U.textString <&> \name ->
+            case splitArrayTypeName name of
+              Just (baseTypeName, dims) -> (baseTypeName, dims, Nothing)
+              Nothing -> (name, 0, Nothing)
+        ]
         ( Just
             ( U.byKeyMapping
                 (U.CaseSensitive True)
-                (Right <$> U.atByKey "array" arrayBodyValue)
+                ( (\(typeName, elementNotNull) -> (typeName, 1, Just elementNotNull))
+                    <$> U.atByKey "array" arrayBodyValue
+                )
             )
         )
         Nothing
+
+    dimsValue :: U.Value Natural
+    dimsValue =
+      U.scalarsValue [U.scientificScalar <&> scientificToDims]
+
+    scientificToDims scientific =
+      let integral = floor scientific :: Integer
+       in if scientific == fromInteger integral && integral >= 0
+            then fromIntegral integral
+            else 0
 
     arrayBodyValue :: U.Value (Text, Bool)
     arrayBodyValue =
@@ -491,13 +514,13 @@ validateField fieldPath isParam inferred file = do
       case (inferredElementNotNull, fileElementNotNull) of
         (Just True, Just False) ->
           Left
-            ( mismatchError (fieldPath <> "/type/array/element/not_null")
-                $ "not_null constraint relaxed. Inferred: true. Signature file: false. "
+            ( mismatchError (fieldPath <> "/element_not_null")
+                $ "element_not_null constraint relaxed. Inferred: true. Signature file: false. "
                 <> ( if isParam
                        then "Parameters"
                        else "Result columns"
                    )
-                <> " cannot have their not_null constraint relaxed"
+                <> " cannot have their element_not_null constraint relaxed"
             )
         _ ->
           Right

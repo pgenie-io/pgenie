@@ -81,7 +81,7 @@ spec = do
             \      not_null: true\n"
       serialize sig `shouldBe` expected
 
-    it "serializes one-dimensional array types using nested syntax" do
+    it "serializes one-dimensional array types using dims syntax" do
       let sig =
             Signature
               { parameters = [],
@@ -106,12 +106,9 @@ spec = do
             \  cardinality: many\n\
             \  columns:\n\
             \    tracks:\n\
-            \      type:\n\
-            \        array:\n\
-            \          element:\n\
-            \            name: track_info\n\
-            \            not_null: false\n\
-            \      not_null: false\n"
+            \      type: track_info\n\
+            \      not_null: false\n\
+            \      dims: 1\n"
       serialize sig `shouldBe` expected
 
   describe "tryParse" do
@@ -150,19 +147,17 @@ spec = do
             "parameters: {}\nresult:\n  cardinality: invalid\n  columns:\n    id:\n      type: int4\n      not_null: true\n"
       tryParse yaml `shouldSatisfy` isLeft
 
-    it "parses array types with nested element nullability" do
+    it "parses array types with dims and element_not_null" do
       let yaml =
             "parameters: {}\n\
             \result:\n\
             \  cardinality: many\n\
             \  columns:\n\
             \    tracks:\n\
-            \      type:\n\
-            \        array:\n\
-            \          element:\n\
-            \            name: track_info\n\
-            \            not_null: false\n\
-            \      not_null: false\n"
+            \      type: track_info\n\
+            \      not_null: false\n\
+            \      dims: 1\n\
+            \      element_not_null: false\n"
       fmap (.result) (tryParse yaml)
         `shouldBe` Right
           ( Just
@@ -196,9 +191,63 @@ spec = do
                 { cardinality = CardinalityMany,
                   columns =
                     [ ( "tracks",
-                        FieldSig
+                        ArrayFieldSig
                           { typeName = "track_info[]",
+                            notNull = False,
+                            elementNotNull = False
+                          }
+                      )
+                    ]
+                }
+          )
+
+    it "defaults dims to 0 and ignores element_not_null" do
+      let yaml =
+            "parameters: {}\n\
+            \result:\n\
+            \  cardinality: many\n\
+            \  columns:\n\
+            \    tracks:\n\
+            \      type: track_info\n\
+            \      not_null: false\n\
+            \      element_not_null: true\n"
+      fmap (.result) (tryParse yaml)
+        `shouldBe` Right
+          ( Just
+              ResultSig
+                { cardinality = CardinalityMany,
+                  columns =
+                    [ ( "tracks",
+                        FieldSig
+                          { typeName = "track_info",
                             notNull = False
+                          }
+                      )
+                    ]
+                }
+          )
+
+    it "defaults element_not_null to false when dims is present" do
+      let yaml =
+            "parameters: {}\n\
+            \result:\n\
+            \  cardinality: many\n\
+            \  columns:\n\
+            \    tracks:\n\
+            \      type: track_info\n\
+            \      not_null: false\n\
+            \      dims: 2\n"
+      fmap (.result) (tryParse yaml)
+        `shouldBe` Right
+          ( Just
+              ResultSig
+                { cardinality = CardinalityMany,
+                  columns =
+                    [ ( "tracks",
+                        ArrayFieldSig
+                          { typeName = "track_info[][]",
+                            notNull = False,
+                            elementNotNull = False
                           }
                       )
                     ]

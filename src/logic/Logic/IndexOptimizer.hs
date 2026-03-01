@@ -122,27 +122,18 @@ maxPrefixNeeded indexCols columnSets =
   Set.foldl' (\acc queryCols -> max acc (prefixNeeded indexCols queryCols)) 0 columnSets
 
 -- | How many leading columns of the index does this query need?
--- Returns 0 if the query columns don't match any prefix of the index.
+-- Returns 0 if the query doesn't use the first column of the index.
+-- Only counts contiguous leading prefix columns, since btree indexes
+-- can only be used left-to-right without gaps.
 prefixNeeded :: [Text] -> [Text] -> Int
 prefixNeeded indexCols queryCols =
   let querySet = Set.fromList queryCols
-      -- Walk the index columns left to right, collecting all columns
-      -- the query references. Stop at the deepest index position that
-      -- the query actually uses.
-      go _ _ [] = 0
-      go seen depth (ic : ics)
-        | Set.member ic querySet =
-            let newSeen = Set.insert ic seen
-             in if newSeen == querySet
-                  then depth
-                  else max depth (go newSeen (depth + 1) ics)
-        | not (Set.null (Set.difference querySet seen)) =
-            -- There are still query columns we haven't seen; continue
-            -- into the index in case they appear later. But this position
-            -- itself is only needed to preserve ordering.
-            go seen (depth + 1) ics
-        | otherwise = depth
-   in go Set.empty 1 indexCols
+   in go 0 indexCols querySet
+  where
+    go depth [] _ = depth
+    go depth (ic : ics) qs
+      | Set.member ic qs = go (depth + 1) ics qs
+      | otherwise = depth
 
 -- * Missing index detection
 

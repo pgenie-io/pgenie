@@ -216,6 +216,56 @@ spec = do
         length drops `shouldSatisfy` (>= 2)
         creates `shouldSatisfy` any (\case CreateIndex t c -> t == "users" && c == ["name"]; _ -> False)
 
+    -- Edge cases for composite index narrowing with multiple queries
+    describe "composite narrowing edge cases" do
+      it "only considers contiguous leading prefix for narrowing" do
+        -- Index on (a, b, c), query needs [a, c] (gap at b).
+        -- Only 1 leading column is usable, so narrow to [a].
+        let idx = mkIndex "idx_abc" "t" ["a", "b", "c"] False False
+            queryNeeds = [("t", ["a", "c"])]
+            result = optimizeIndexes [idx] queryNeeds
+            drops = [a | a@(DropIndex _ (ExcessiveComposite _)) <- result]
+        case drops of
+          [DropIndex _ (ExcessiveComposite replacement)] ->
+            replacement `shouldBe` ["a"]
+          _ -> expectationFailure "Expected ExcessiveComposite with [a]"
+
+      it "does not narrow if query uses no leading columns" do
+        -- Index on (a, b), query needs [b] alone — btree can't help with just b.
+        -- No narrowing should happen (prefix needed = 0).
+        let idx = mkIndex "idx_ab" "t" ["a", "b"] False False
+            queryNeeds = [("t", ["b"])]
+            result = optimizeIndexes [idx] queryNeeds
+            excessiveDrops = [a | a@(DropIndex _ (ExcessiveComposite _)) <- result]
+        excessiveDrops `shouldBe` []
+
+      it "handles disjoint query sets requiring separate indexes" do
+        -- Query A needs [email], Query B needs [name] on same table.
+        -- An existing index on [email, name] covers A via prefix(1),
+        -- but does NOT cover B (name is not a prefix).
+        let idx = mkIndex "idx_en" "users" ["email", "name"] False False
+            queryNeeds = [("users", ["email"]), ("users", ["name"])]
+            result = optimizeIndexes [idx] queryNeeds
+            creates = [a | a@(CreateIndex {}) <- result]
+        -- Should suggest a missing index for "name"
+        creates `shouldSatisfy` any (\case CreateIndex _ c -> c == ["name"]; _ -> False)
+
+      it "does not narrow when all columns are needed across queries" do
+        -- Three queries each using a deeper prefix.
+        let idx = mkIndex "idx_abc" "t" ["a", "b", "c"] False False
+            queryNeeds = [("t", ["a"]), ("t", ["a", "b"]), ("t", ["a", "b", "c"])]
+        optimizeIndexes [idx] queryNeeds `shouldBe` []
+
+      it "narrows to 2 when one query needs [a] and another needs [a,b] out of [a,b,c]" do
+        let idx = mkIndex "idx_abc" "t" ["a", "b", "c"] False False
+            queryNeeds = [("t", ["a"]), ("t", ["a", "b"])]
+            result = optimizeIndexes [idx] queryNeeds
+            drops = [a | a@(DropIndex _ (ExcessiveComposite _)) <- result]
+        case drops of
+          [DropIndex _ (ExcessiveComposite replacement)] ->
+            replacement `shouldBe` ["a", "b"]
+          _ -> expectationFailure "Expected ExcessiveComposite with [a, b]"
+
   describe "generateMigration" do
     it "generates DROP and CREATE statements in a single migration" do
       let actions =

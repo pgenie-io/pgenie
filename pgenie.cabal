@@ -135,7 +135,7 @@ library logic
     Logic.Algebra
     Logic.Dsl
     Logic.Name
-    Logic.RedundantIndexDetector
+    Logic.IndexOptimizer
     Logic.SeqScanDetector
     Logic.SignatureFile
     Logic.SqlTemplate
@@ -172,7 +172,7 @@ test-suite logic-test
   main-is: Main.hs
   other-modules:
     NameSpec
-    RedundantIndexDetectorSpec
+    IndexOptimizerSpec
     SeqScanDetectorSpec
     SignatureFileSpec
     SqlTemplateSpec

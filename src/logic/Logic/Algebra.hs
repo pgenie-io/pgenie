@@ -64,19 +64,28 @@ data IndexInfo = IndexInfo
   }
   deriving stock (Eq, Show)
 
--- * Redundant index detection results
+-- * Index optimization results
 
-data RedundantIndex = RedundantIndex
-  { index :: IndexInfo,
-    reason :: RedundancyReason
-  }
+-- | An action recommended by the index optimizer.
+data IndexAction
+  = -- | Drop an index that is unnecessary.
+    DropIndex IndexInfo DropReason
+  | -- | Create a new index to cover a missing access pattern.
+    CreateIndex
+      { tableName :: Text,
+        columns :: [Text]
+      }
   deriving stock (Eq, Show)
 
-data RedundancyReason
+-- | Reason why an index should be dropped.
+data DropReason
   = -- | This index's columns are a leading prefix of the superseding index's columns.
     PrefixRedundancy IndexInfo
   | -- | This index is an exact duplicate of another index.
     ExactDuplicate IndexInfo
+  | -- | This composite index has trailing columns that are not needed by any query.
+    --   The replacement columns are provided.
+    ExcessiveComposite [Text]
   deriving stock (Eq, Show)
 
 -- * Generate options

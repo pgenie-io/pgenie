@@ -16,7 +16,7 @@ import Logic.Dsl
 import Logic.GeneratorHashes qualified as GeneratorHashes
 import Logic.Name qualified as Name
 import Logic.ProjectFile qualified as ProjectFile
-import Logic.RedundantIndexDetector qualified as RedundantIndexDetector
+import Logic.IndexOptimizer qualified as IndexOptimizer
 import Logic.SeqScanDetector qualified as SeqScanDetector
 import Logic.SignatureFile qualified as SignatureFile
 import Logic.SqlTemplate qualified as SqlTemplate
@@ -72,8 +72,8 @@ generate options =
   run do
     stage "" 2 do
       projectFile <- loadProjectFile
-      (genProject, seqScanFindings) <- analyse options projectFile
-      handleSeqScanFindings options.fix seqScanFindings
+      (genProject, seqScanFindings, indexes) <- analyse options projectFile
+      handleIndexOptimization options indexes seqScanFindings
       generateCode projectFile genProject
       pure ()
 
@@ -178,7 +178,7 @@ generateCode projectFile project =
 
     pure artifacts
 
-analyse :: GenerateOptions -> ProjectFile.ProjectFile -> Script (Gen.Input.Project, [(Text, SeqScanFinding)])
+analyse :: GenerateOptions -> ProjectFile.ProjectFile -> Script (Gen.Input.Project, [(Text, SeqScanFinding)], [IndexInfo])
 analyse options projectFile =
   stage "Analysing" 2 do
     stage "Migrations" 2 do
@@ -202,28 +202,10 @@ analyse options projectFile =
           stage (Path.toText migrationListed) 0 do
             executeMigration migrationLoaded
 
-    -- Redundant index detection
-    stage "Checking indexes" 0 do
-      indexes <- getIndexes
-      let redundant = RedundantIndexDetector.detectRedundantIndexes indexes
-      unless (null redundant) do
-        when options.fix do
-          let migration = RedundantIndexDetector.generateDropMigration redundant
-          writeFile "migrations/fix_redundant_indexes.sql" migration
-          emit (WarningEmitted (Error [] "Generated migration to drop redundant indexes" (Just "Review and execute migrations/fix_redundant_indexes.sql") []))
-
-        for_ redundant \ri -> do
-          let errMsg = redundantIndexMessage ri
-          if options.allowRedundantIndexes
-            then warn (Error [] errMsg Nothing [])
-            else
-              throwError
-                ( Error
-                    []
-                    errMsg
-                    (Just "Remove the redundant index or use --allow-redundant-indexes to downgrade this to a warning")
-                    [("index", ri.index.indexName), ("table", ri.index.tableName)]
-                )
+    -- Fetch existing indexes after migrations have been applied
+    indexes <-
+      stage "Checking indexes" 0 do
+        getIndexes
 
     queriesListed <- do
       allPathsInQueriesDir <-
@@ -397,7 +379,8 @@ analyse options projectFile =
             customTypes = customTypes,
             queries = queries
           },
-        seqScanFindings
+        seqScanFindings,
+        indexes
       )
 
 stagedParFor :: Text -> (a -> Text) -> [a] -> (a -> Script b) -> Script [b]
@@ -413,18 +396,23 @@ warn =
   -- TODO: Implement conditional throwing or emission.
   emit . WarningEmitted
 
--- | Handle seq-scan findings: with --fix generate migration, otherwise fail.
-handleSeqScanFindings :: Bool -> [(Text, SeqScanFinding)] -> Script ()
-handleSeqScanFindings _ [] = pure ()
-handleSeqScanFindings fix findings
-  | fix = do
+-- | Run the unified index optimizer, combining redundant-index detection,
+-- excessive-composite narrowing, and missing-index creation into one step.
+-- When @--fix@ is set, writes a single numbered migration.
+handleIndexOptimization :: GenerateOptions -> [IndexInfo] -> [(Text, SeqScanFinding)] -> Script ()
+handleIndexOptimization options indexes seqScanFindings = do
+  let queryNeeds =
+        map (\(_, finding) -> (finding.tableName, finding.suggestedIndexColumns)) seqScanFindings
+      actions = IndexOptimizer.optimizeIndexes indexes queryNeeds
+  unless (null actions) do
+    when options.fix do
       migrationsListed <-
         listDir "migrations"
           & fmap (filter (\p -> Path.toExtensions p == ["sql"]))
           & fmap sort
       let nextMigrationNum = length migrationsListed + 1
           migrationFileName = Text.pack (show nextMigrationNum) <> ".sql"
-          migrationContent = SeqScanDetector.generateCreateIndexStatements (map snd findings)
+          migrationContent = IndexOptimizer.generateMigration actions
       case Path.maybeFromText ("migrations/" <> migrationFileName) of
         Nothing ->
           throwError
@@ -442,41 +430,54 @@ handleSeqScanFindings fix findings
                     []
                     ("Generated index migration: migrations/" <> migrationFileName)
                     (Just "Review the generated migration and re-run generate")
-                    [ ( "content",
-                        migrationContent
-                      )
-                    ]
+                    [("content", migrationContent)]
                 )
             )
-  | otherwise =
-      throwError
-        ( Error
-            []
-            "Sequential scan detected"
-            (Just "Run with --fix to generate an index migration, or manually create indexes")
-            ( findings
-                & map
-                  ( \(queryName, finding) ->
-                      ( queryName,
-                        "Seq Scan on " <> finding.tableName <> " with filter: " <> finding.filterCondition
-                      )
-                  )
-            )
-        )
 
-redundantIndexMessage :: RedundantIndex -> Text
-redundantIndexMessage ri = case ri.reason of
+    for_ actions \action -> do
+      let msg = indexActionMessage action
+      if options.allowRedundantIndexes
+        then warn (Error [] msg Nothing [])
+        else
+          throwError
+            ( Error
+                []
+                msg
+                (Just "Run with --fix to generate a migration, or use --allow-redundant-indexes to downgrade to warnings")
+                (indexActionDetails action)
+            )
+
+indexActionMessage :: IndexAction -> Text
+indexActionMessage (DropIndex idx reason) = case reason of
   ExactDuplicate other ->
     "Redundant index: "
-      <> ri.index.indexName
+      <> idx.indexName
       <> " on "
-      <> ri.index.tableName
+      <> idx.tableName
       <> " is an exact duplicate of "
       <> other.indexName
   PrefixRedundancy other ->
     "Redundant index: "
-      <> ri.index.indexName
+      <> idx.indexName
       <> " on "
-      <> ri.index.tableName
+      <> idx.tableName
       <> " is a prefix of "
       <> other.indexName
+  ExcessiveComposite replacement ->
+    "Excessive composite index: "
+      <> idx.indexName
+      <> " on "
+      <> idx.tableName
+      <> " can be narrowed to ("
+      <> Text.intercalate ", " replacement
+      <> ")"
+indexActionMessage (CreateIndex tbl cols) =
+  "Missing index: "
+    <> tbl
+    <> " needs an index on ("
+    <> Text.intercalate ", " cols
+    <> ")"
+
+indexActionDetails :: IndexAction -> [(Text, Text)]
+indexActionDetails (DropIndex idx _) = [("index", idx.indexName), ("table", idx.tableName)]
+indexActionDetails (CreateIndex tbl cols) = [("table", tbl), ("columns", Text.intercalate ", " cols)]

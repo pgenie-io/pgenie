@@ -18,7 +18,7 @@ Checks and analyzes SQL migrations and queries and generates type-safe client SD
 ```
 my-project/
 ├── project1.pgn.yaml      # Project configuration
-├── freeze1.pgn.yaml        # Auto-generated lock file for generator hashes
+├── freeze1.pgn.yaml       # Auto-generated lock file for generator hashes
 ├── migrations/            # Schema definitions
 │   ├── 1.sql
 │   └── 2.sql

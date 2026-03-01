@@ -1,6 +1,7 @@
 module Logic
   ( check,
     generate,
+    model,
     module Logic.Algebra,
   )
 where
@@ -15,6 +16,7 @@ import Logic.Algebra
 import Logic.Dsl
 import Logic.GeneratorHashes qualified as GeneratorHashes
 import Logic.Name qualified as Name
+import Logic.ProjectModel qualified as ProjectModel
 import Logic.ProjectFile qualified as ProjectFile
 import Logic.SeqScanDetector qualified as SeqScanDetector
 import Logic.SignatureFile qualified as SignatureFile
@@ -76,6 +78,14 @@ generate fix =
       handleSeqScanFindings fix seqScanFindings
       generateCode projectFile genProject
       pure ()
+
+model :: (Caps m) => m ()
+model =
+  run do
+    stage "" 1 do
+      projectFile <- loadProjectFile
+      (genProject, _seqScanFindings) <- analyse projectFile
+      emit (ProjectModelEmitted (ProjectModel.toJsonText genProject))
 
 -- * Helpers
 

@@ -144,6 +144,7 @@ library logic
     Logic.GeneratorHashes
     Logic.Name.Megaparsec
     Logic.ProjectFile
+    Logic.ProjectModel
     Logic.SyntaxAnalyser.AstInterpreter
     Logic.SyntaxAnalyser.Data
 
@@ -274,6 +275,7 @@ library ui
   other-modules:
     Ui.Commands
     Ui.Commands.Generate
+    Ui.Commands.Model
     Ui.Commands.Sign
     Ui.Display
     Ui.Display.Memory

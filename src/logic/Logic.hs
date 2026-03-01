@@ -9,12 +9,11 @@ where
 import AlgebraicPath qualified as Path
 import Base.Prelude hiding (readFile, writeFile)
 import Control.Monad.Parallel qualified as MonadParallel
-import Data.Aeson qualified as Aeson
 import Data.Aeson.Text qualified as Aeson.Text
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
 import Dhall.Core qualified as Dhall
-import Dhall.JSONToDhall qualified as DhallJson
+import Dhall.Marshal.Encode qualified as Dhall
 import Logic.Algebra
 import Logic.Dsl
 import Logic.GeneratorHashes qualified as GeneratorHashes
@@ -87,23 +86,10 @@ model dhall =
     stage "" 1 do
       projectFile <- loadProjectFile
       (genProject, _seqScanFindings) <- analyse projectFile
-      let jsonValue = Aeson.toJSON genProject
-      modelText <-
-        if dhall
-          then do
-            let schema = DhallJson.inferSchema jsonValue
-                dhallType = DhallJson.schemaToDhallType schema
-            case DhallJson.dhallFromJSON DhallJson.defaultConversion dhallType jsonValue of
-              Left err ->
-                throwError
-                  ( Error
-                      []
-                      "Failed to convert model to Dhall"
-                      (Just "This is likely a bug; please report it")
-                      [("error", Text.pack (show err))]
-                  )
-              Right dhallExpr -> pure (Dhall.pretty dhallExpr)
-          else pure (to (Aeson.Text.encodeToTextBuilder genProject))
+      let modelText =
+            if dhall
+              then Dhall.pretty (Dhall.inject.embed genProject)
+              else to (Aeson.Text.encodeToTextBuilder genProject)
       emit (ProjectModelEmitted modelText)
 
 -- * Helpers

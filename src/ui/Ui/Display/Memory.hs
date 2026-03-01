@@ -53,6 +53,8 @@ update event memory =
         }
     Logic.Failed _err ->
       memory
+        { hasProgressBar = False
+        }
 
 setCurrentTime :: UTCTime -> Memory -> Memory
 setCurrentTime currentTime memory =

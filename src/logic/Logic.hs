@@ -9,9 +9,11 @@ where
 import AlgebraicPath qualified as Path
 import Base.Prelude hiding (readFile, writeFile)
 import Control.Monad.Parallel qualified as MonadParallel
-import Data.Aeson.Text qualified as Aeson
+import Data.Aeson.Text qualified as Aeson.Text
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
+import Dhall.Core qualified as Dhall
+import Dhall.Marshal.Encode qualified as Dhall
 import Logic.Algebra
 import Logic.Dsl
 import Logic.GeneratorHashes qualified as GeneratorHashes
@@ -78,13 +80,17 @@ generate fix =
       generateCode projectFile genProject
       pure ()
 
-model :: (Caps m) => m ()
-model =
+model :: (Caps m) => Bool -> m ()
+model dhall =
   run do
     stage "" 1 do
       projectFile <- loadProjectFile
       (genProject, _seqScanFindings) <- analyse projectFile
-      emit (ProjectModelEmitted (to (Aeson.encodeToTextBuilder genProject)))
+      let modelText =
+            if dhall
+              then Dhall.pretty (Dhall.inject.embed genProject)
+              else to (Aeson.Text.encodeToTextBuilder genProject)
+      emit (ProjectModelEmitted modelText)
 
 -- * Helpers
 
@@ -135,7 +141,7 @@ generateCode projectFile project =
                         []
                         errMsg
                         (Just "Ensure the artifact configuration conforms to the format expected by the generator")
-                        [ ("config", to (Aeson.encodeToTextBuilder artifact.config))
+                        [ ("config", to (Aeson.Text.encodeToTextBuilder artifact.config))
                         ]
                     )
                 Right compileFn ->

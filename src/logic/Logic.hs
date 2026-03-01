@@ -445,7 +445,7 @@ handleIndexOptimization options indexes seqScanFindings = do
 
     for_ actions \action -> do
       let msg = indexActionMessage action
-      if options.allowRedundantIndexes
+      if options.fix || options.allowRedundantIndexes
         then warn (Error [] msg Nothing [])
         else
           throwError

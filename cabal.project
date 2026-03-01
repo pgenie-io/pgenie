@@ -24,7 +24,7 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/pgenie-io/gen-sdk
-  tag: c53d570eda1529b6f5d755af9951580157ed78dc
+  tag: 19a31987dac09d2d2e5b911517cfd676590534fd
   subdir: haskell
 
 constraints:

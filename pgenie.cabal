@@ -152,6 +152,8 @@ library logic
     aeson,
     algebraic-path,
     containers,
+    dhall,
+    dhall-json,
     foldl,
     megaparsec,
     monad-parallel,

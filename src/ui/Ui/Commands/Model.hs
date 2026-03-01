@@ -13,15 +13,22 @@ model :: (Logic.Caps m) => Command m
 model =
   Command
     { name = "model",
-      description = "Output the JSON project model transmitted to code generators",
+      description = "Output the project model transmitted to code generators",
       parser,
       execute
     }
 
 data Params = Params
+  { dhall :: Bool
+  }
 
 parser :: Opt.Parser Params
-parser = pure Params
+parser =
+  Params
+    <$> Opt.switch
+      ( Opt.long "dhall"
+          <> Opt.help "Output as a Dhall expression instead of JSON"
+      )
 
 execute :: (Logic.Caps m) => Params -> m ()
-execute _params = Logic.model
+execute params = Logic.model params.dhall

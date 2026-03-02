@@ -27,6 +27,12 @@ source-repository-package
   tag: 90fb124a75196027ad96fd4af02a7425c135fc5b
   subdir: haskell
 
+source-repository-package
+  type: git
+  location: https://github.com/nikita-volkov/dhall-haskell
+  tag: 1e296a8d1a3a163c54cbdf9ec1c71cad2e8ae359
+  subdir: dhall
+
 constraints:
   autoexporter >=2.0.0.13 && <3,
   base >=4.11 && <5,
@@ -59,10 +65,5 @@ allow-newer:
   *:base,
   *:ghc,
   *:template-haskell,
-  dhall:aeson,
-  dhall:aeson-pretty,
-  dhall:bytestring,
-  dhall:text,
-  dhall-json:aeson, 
-  dhall-json:bytestring, 
-  dhall-json:text,
+  dhall:*,
+  dhall-json:*,

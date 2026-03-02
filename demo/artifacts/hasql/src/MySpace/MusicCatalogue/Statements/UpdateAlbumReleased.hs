@@ -32,7 +32,6 @@ data UpdateAlbumReleased = UpdateAlbumReleased
 
 type UpdateAlbumReleasedResult = Int
 
-
 instance Mapping.IsStatement UpdateAlbumReleased where
   type Result UpdateAlbumReleased = UpdateAlbumReleasedResult
 

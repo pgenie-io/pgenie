@@ -54,7 +54,6 @@ data UpdateAlbumRecordingReturningResultRow = UpdateAlbumRecordingReturningResul
   }
   deriving stock (Show, Eq)
 
-
 instance Mapping.IsStatement UpdateAlbumRecordingReturning where
   type Result UpdateAlbumRecordingReturning = UpdateAlbumRecordingReturningResult
 

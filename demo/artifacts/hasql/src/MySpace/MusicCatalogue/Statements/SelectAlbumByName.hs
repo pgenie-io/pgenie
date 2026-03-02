@@ -51,7 +51,6 @@ data SelectAlbumByNameResultRow = SelectAlbumByNameResultRow
   }
   deriving stock (Show, Eq)
 
-
 instance Mapping.IsStatement SelectAlbumByName where
   type Result SelectAlbumByName = SelectAlbumByNameResult
 

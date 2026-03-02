@@ -51,7 +51,6 @@ data SelectAlbumByFormatResultRow = SelectAlbumByFormatResultRow
   }
   deriving stock (Show, Eq)
 
-
 instance Mapping.IsStatement SelectAlbumByFormat where
   type Result SelectAlbumByFormat = SelectAlbumByFormatResult
 

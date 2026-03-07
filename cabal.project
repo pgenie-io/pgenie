@@ -12,11 +12,6 @@ source-repository-package
   location: https://github.com/nikita-volkov/syntactic-class
   tag: b74373863e8bb0ef9877e0cd8dad5a3128d31818
 
-source-repository-package
-  type: git
-  location: https://github.com/nikita-volkov/fx
-  tag: 489db0ddd26a88a405d6c501d233e9d825bf5a43
-
 -- Provides `pgenie-gen`
 source-repository-package
   type: git
@@ -38,6 +33,7 @@ constraints:
   data-has ^>=0.4,
   directory ^>=1.3,
   filepath ^>=1.5.4,
+  fx ^>=0.11,
   hasql ^>=1.10.2.3,
   lawful-conversions ^>=0.3,
   megaparsec >=9 && <10,

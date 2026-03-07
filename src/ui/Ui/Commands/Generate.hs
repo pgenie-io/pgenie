@@ -14,7 +14,8 @@ generate =
     { name = "generate",
       description = "Generate code and missing signature files for the project",
       parser,
-      execute
+      execute,
+      handleOutput = \() -> pure ()
     }
 
 data Params = Params

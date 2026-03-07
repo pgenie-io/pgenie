@@ -13,7 +13,8 @@ sign =
     { name = "sign",
       description = "Generate missing type signatures in metadata files",
       parser,
-      execute
+      execute,
+      handleOutput = \() -> pure ()
     }
 
 data Params = Params

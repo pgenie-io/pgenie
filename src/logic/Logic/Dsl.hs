@@ -104,8 +104,6 @@ instance Emits Script where
             WarningEmitted (nestError err)
           Failed err ->
             Failed (nestError err)
-          ProjectModelEmitted text ->
-            ProjectModelEmitted text
      in emit nestedEvent
 
 liftWithErrs :: (forall m. (Caps m) => m a) -> Script a

@@ -7,11 +7,12 @@ import Options.Applicative qualified as Opt
 -- |
 -- Command with procedure that may be implemented in terms of abstract algebra,
 -- allowing to delegate the execution of effects out to the main function.
-data Command m = forall params. Command
+data Command m = forall params a. Command
   { name :: Text,
     description :: Text,
     parser :: Opt.Parser params,
-    execute :: params -> m ()
+    execute :: params -> m a,
+    handleOutput :: a -> IO ()
   }
 
 -- |
@@ -26,7 +27,7 @@ main ::
   -- | List of supported commands.
   [Command m] ->
   -- | Execute an effect.
-  (m () -> IO ()) ->
+  (forall a. m a -> (a -> IO ()) -> IO ()) ->
   -- | Application.
   IO ()
 main appName description commands runEffect =
@@ -46,6 +47,6 @@ main appName description commands runEffect =
       Opt.command
         (Text.unpack name)
         ( Opt.info
-            (runEffect . execute <$> parser)
+            ((\params -> runEffect (execute params) handleOutput) <$> parser)
             (Opt.progDesc (Text.unpack description))
         )

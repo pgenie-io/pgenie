@@ -5,6 +5,7 @@
 module Ui.Commands.Model (model) where
 
 import Base.Prelude
+import Data.Text.IO qualified as Text
 import Logic qualified
 import Options.Applicative qualified as Opt
 import Ui.Framework
@@ -15,7 +16,8 @@ model =
     { name = "model",
       description = "Output the project model transmitted to code generators",
       parser,
-      execute
+      execute,
+      handleOutput = Text.putStrLn
     }
 
 data Params = Params
@@ -30,5 +32,5 @@ parser =
           <> Opt.help "Output as a Dhall expression instead of JSON"
       )
 
-execute :: (Logic.Caps m) => Params -> m ()
+execute :: (Logic.Caps m) => Params -> m Text
 execute params = Logic.model params.dhall

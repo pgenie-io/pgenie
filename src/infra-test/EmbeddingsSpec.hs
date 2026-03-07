@@ -3,6 +3,8 @@ module EmbeddingsSpec (spec) where
 import Base.Prelude
 import Infra.Adapters.Analyser.Embeddings.Sessions
 import Infra.Adapters.Analyser.Sessions.Domain qualified as Domain
+import Logic.Algebra qualified as Logic
+import PGenieGen.Model.Input qualified as Gen.Input
 import Test.Hspec
 
 spec :: Spec
@@ -15,10 +17,10 @@ spec = do
                 scalar = Domain.PrimitiveScalar Domain.Int4Primitive
               }
       case adaptType arrayType of
-        Left err -> expectationFailure $ "Expected Right but got Left: " <> to err.message
-        Right value -> case value.arraySettings of
-          Nothing -> expectationFailure "Expected array settings but got Nothing"
-          Just settings -> settings.elementIsNullable `shouldBe` True
+        Left Logic.Error {message} -> expectationFailure $ "Expected Right but got Left: " <> show message
+        Right Gen.Input.Value {arraySettings = Nothing} -> expectationFailure "Expected array settings but got Nothing"
+        Right Gen.Input.Value {arraySettings = Just Gen.Input.ArraySettings {elementIsNullable}} ->
+          elementIsNullable `shouldBe` True
 
     it "does not set array settings for non-array types" do
       let scalarType =
@@ -27,5 +29,5 @@ spec = do
                 scalar = Domain.PrimitiveScalar Domain.Int4Primitive
               }
       case adaptType scalarType of
-        Left err -> expectationFailure $ "Expected Right but got Left: " <> to err.message
-        Right value -> value.arraySettings `shouldBe` Nothing
+        Left Logic.Error {message} -> expectationFailure $ "Expected Right but got Left: " <> show message
+        Right Gen.Input.Value {arraySettings} -> arraySettings `shouldBe` Nothing

@@ -1,3 +1,5 @@
+with-compiler: ghc-9.14.1
+
 packages: .
 
 source-repository-package
@@ -7,18 +9,8 @@ source-repository-package
 
 source-repository-package
   type: git
-  location: https://github.com/nikita-volkov/hasql-mapping
-  tag: 307dfb5f25ba28d8408fac3aa160ca4ba702acc9
-
-source-repository-package
-  type: git
   location: https://github.com/nikita-volkov/syntactic-class
   tag: b74373863e8bb0ef9877e0cd8dad5a3128d31818
-
-source-repository-package
-  type: git
-  location: https://github.com/nikita-volkov/fx
-  tag: 489db0ddd26a88a405d6c501d233e9d825bf5a43
 
 -- Provides `pgenie-gen`
 source-repository-package
@@ -37,9 +29,11 @@ constraints:
   autoexporter >=2.0.0.13 && <3,
   base >=4.11 && <5,
   bytestring >=0.10 && <0.13,
+  crypton ==1.0.6,
   data-has ^>=0.4,
   directory ^>=1.3,
   filepath ^>=1.5.4,
+  fx ^>=0.11,
   hasql ^>=1.10.2.3,
   lawful-conversions ^>=0.3,
   megaparsec >=9 && <10,

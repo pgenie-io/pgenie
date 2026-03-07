@@ -13,9 +13,10 @@ permissions:
   contents: read
 
 jobs:
-  build-with-latest:
+  build:
     uses: nikita-volkov/haskell-hackage-lib-github-actions-workflows/.github/workflows/build.yaml@v4
     secrets: inherit
     with:
+      ghc: 9.14.1
       skip-doctest: true
       test-options: --qc-max-success=${{ inputs.qc-max-success }}

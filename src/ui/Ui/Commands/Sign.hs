@@ -29,6 +29,6 @@ parser =
           <> Opt.help "Force generation of signatures, even if they already exist"
       )
 
-execute :: Params -> m ()
+execute :: Params -> m Text
 execute =
   error "TODO"

@@ -29,5 +29,5 @@ parser =
           <> Opt.help "Generate index migration to fix sequential scans instead of failing"
       )
 
-execute :: (Logic.Caps m) => Params -> m ()
-execute params = Logic.generate params.fix
+execute :: (Logic.Caps m) => Params -> m Text
+execute params = "" <$ Logic.generate params.fix

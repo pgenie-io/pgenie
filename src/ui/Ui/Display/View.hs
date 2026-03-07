@@ -72,12 +72,6 @@ view event oldMemory newMemory = case event of
         ],
       mempty
     )
-  Logic.ProjectModelEmitted text ->
-    ( if oldMemory.hasProgressBar
-        then clearProgressBar
-        else "",
-      to text <> "\n"
-    )
 
 clearProgressBar :: TextBuilder
 clearProgressBar = moveCursorToLineStart <> clearLine

@@ -11,7 +11,7 @@ data Command m = forall params. Command
   { name :: Text,
     description :: Text,
     parser :: Opt.Parser params,
-    execute :: params -> m ()
+    execute :: params -> m Text
   }
 
 -- |
@@ -26,7 +26,7 @@ main ::
   -- | List of supported commands.
   [Command m] ->
   -- | Execute an effect.
-  (m () -> IO ()) ->
+  (m Text -> IO ()) ->
   -- | Application.
   IO ()
 main appName description commands runEffect =

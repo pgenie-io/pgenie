@@ -80,7 +80,7 @@ generate fix =
       generateCode projectFile genProject
       pure ()
 
-model :: (Caps m) => Bool -> m ()
+model :: (Caps m) => Bool -> m Text
 model dhall =
   run do
     stage "" 1 do
@@ -90,7 +90,7 @@ model dhall =
             if dhall
               then Dhall.pretty (Dhall.inject.embed genProject)
               else to (Aeson.Text.encodeToTextBuilder genProject)
-      emit (ProjectModelEmitted modelText)
+      pure modelText
 
 -- * Helpers
 

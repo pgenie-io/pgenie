@@ -5,7 +5,6 @@
 module Ui.Commands.Model (model) where
 
 import Base.Prelude
-import Data.Text.IO qualified as Text
 import Logic qualified
 import Options.Applicative qualified as Opt
 import Ui.Framework
@@ -16,8 +15,7 @@ model =
     { name = "model",
       description = "Output the project model transmitted to code generators",
       parser,
-      execute,
-      handleOutput = Text.putStrLn
+      execute
     }
 
 data Params = Params

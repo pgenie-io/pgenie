@@ -13,8 +13,7 @@ sign =
     { name = "sign",
       description = "Generate missing type signatures in metadata files",
       parser,
-      execute,
-      handleOutput = \() -> pure ()
+      execute
     }
 
 data Params = Params
@@ -30,6 +29,6 @@ parser =
           <> Opt.help "Force generation of signatures, even if they already exist"
       )
 
-execute :: Params -> m ()
+execute :: Params -> m Text
 execute =
   error "TODO"

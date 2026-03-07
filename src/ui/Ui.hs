@@ -14,7 +14,7 @@ import Ui.Framework qualified as Framework
 main ::
   (Logic.Caps m) =>
   -- | Execute an effect with an event sink.
-  (forall a. (Logic.Event -> IO ()) -> m a -> (a -> IO ()) -> IO ()) ->
+  ((Logic.Event -> IO ()) -> m Text -> IO ()) ->
   -- | Application.
   IO ()
 main runEffect = do

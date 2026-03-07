@@ -42,7 +42,6 @@ data SelectGenreByArtistResultRow = SelectGenreByArtistResultRow
   }
   deriving stock (Show, Eq)
 
-
 instance Mapping.IsStatement SelectGenreByArtist where
   type Result SelectGenreByArtist = SelectGenreByArtistResult
 

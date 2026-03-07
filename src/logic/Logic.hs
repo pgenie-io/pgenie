@@ -9,16 +9,18 @@ where
 import AlgebraicPath qualified as Path
 import Base.Prelude hiding (readFile, writeFile)
 import Control.Monad.Parallel qualified as MonadParallel
-import Data.Aeson.Text qualified as Aeson
+import Data.Aeson.Text qualified as Aeson.Text
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as Text
+import Dhall.Core qualified as Dhall
+import Dhall.Marshal.Encode qualified as Dhall
 import Logic.Algebra
 import Logic.Dsl
 import Logic.GeneratorHashes qualified as GeneratorHashes
+import Logic.IndexOptimizer qualified as IndexOptimizer
 import Logic.Name qualified as Name
 import Logic.ProjectFile qualified as ProjectFile
-import Logic.IndexOptimizer qualified as IndexOptimizer
 import Logic.SeqScanDetector qualified as SeqScanDetector
 import Logic.SignatureFile qualified as SignatureFile
 import Logic.SqlTemplate qualified as SqlTemplate
@@ -79,13 +81,17 @@ generate options =
       generateCode projectFile genProject
       pure ()
 
-model :: (Caps m) => m ()
-model =
+model :: (Caps m) => Bool -> m ()
+model dhall =
   run do
     stage "" 1 do
       projectFile <- loadProjectFile
       (genProject, _seqScanFindings, _indexes) <- analyse (GenerateOptions False True) projectFile
-      emit (ProjectModelEmitted (to (Aeson.encodeToTextBuilder genProject)))
+      let modelText =
+            if dhall
+              then Dhall.pretty (Dhall.inject.embed genProject)
+              else to (Aeson.Text.encodeToTextBuilder genProject)
+      emit (ProjectModelEmitted modelText)
 
 -- * Helpers
 
@@ -136,7 +142,7 @@ generateCode projectFile project =
                         []
                         errMsg
                         (Just "Ensure the artifact configuration conforms to the format expected by the generator")
-                        [ ("config", to (Aeson.encodeToTextBuilder artifact.config))
+                        [ ("config", to (Aeson.Text.encodeToTextBuilder artifact.config))
                         ]
                     )
                 Right compileFn ->
@@ -441,12 +447,12 @@ inferTableName tokens =
         pure (normalizeTableToken token)
    in findAfterKeyword "from"
         <|> findAfterKeyword "update"
-        <|> (do
-              i <- elemIndex "into" lowerTokens
-              prev <- lowerTokens !? (i - 1)
-              guard (prev == "insert")
-              token <- tokens !? (i + 1)
-              pure (normalizeTableToken token)
+        <|> ( do
+                i <- elemIndex "into" lowerTokens
+                prev <- lowerTokens !? (i - 1)
+                guard (prev == "insert")
+                token <- tokens !? (i + 1)
+                pure (normalizeTableToken token)
             )
 
 inferWhereClause :: [Text] -> Maybe Text

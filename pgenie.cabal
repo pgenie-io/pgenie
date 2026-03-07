@@ -134,8 +134,8 @@ library logic
     Logic
     Logic.Algebra
     Logic.Dsl
-    Logic.Name
     Logic.IndexOptimizer
+    Logic.Name
     Logic.SeqScanDetector
     Logic.SignatureFile
     Logic.SqlTemplate
@@ -153,6 +153,7 @@ library logic
     aeson,
     algebraic-path,
     containers,
+    dhall,
     foldl,
     megaparsec,
     monad-parallel,
@@ -171,8 +172,8 @@ test-suite logic-test
   hs-source-dirs: src/logic-test
   main-is: Main.hs
   other-modules:
-    NameSpec
     IndexOptimizerSpec
+    NameSpec
     SeqScanDetectorSpec
     SignatureFileSpec
     SqlTemplateSpec

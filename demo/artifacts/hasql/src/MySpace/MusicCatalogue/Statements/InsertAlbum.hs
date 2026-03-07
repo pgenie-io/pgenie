@@ -26,11 +26,11 @@ data InsertAlbum = InsertAlbum
   { -- | Maps to @name@.
     name :: Text,
     -- | Maps to @released@.
-    released :: Maybe (Day),
+    released :: Day,
     -- | Maps to @format@.
-    format :: Maybe (Types.AlbumFormat),
+    format :: Types.AlbumFormat,
     -- | Maps to @recording@.
-    recording :: Maybe (Types.RecordingInfo)
+    recording :: Types.RecordingInfo
   }
   deriving stock (Eq, Show)
 
@@ -43,7 +43,6 @@ newtype InsertAlbumResultRow = InsertAlbumResultRow
     id :: Int64
   }
   deriving stock (Show, Eq)
-
 
 instance Mapping.IsStatement InsertAlbum where
   type Result InsertAlbum = InsertAlbumResult
@@ -58,9 +57,9 @@ instance Mapping.IsStatement InsertAlbum where
       encoder =
         mconcat
           [ (.name) >$< Encoders.param (Encoders.nonNullable (Mapping.scalarEncoder)),
-            (.released) >$< Encoders.param (Encoders.nullable (Mapping.scalarEncoder)),
-            (.format) >$< Encoders.param (Encoders.nullable (Mapping.scalarEncoder)),
-            (.recording) >$< Encoders.param (Encoders.nullable (Mapping.scalarEncoder))
+            (.released) >$< Encoders.param (Encoders.nonNullable (Mapping.scalarEncoder)),
+            (.format) >$< Encoders.param (Encoders.nonNullable (Mapping.scalarEncoder)),
+            (.recording) >$< Encoders.param (Encoders.nonNullable (Mapping.scalarEncoder))
           ]
 
       decoder =

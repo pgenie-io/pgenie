@@ -156,7 +156,7 @@ toGenQueryFragments (SqlTemplate segments) =
           return [Gen.QueryFragmentSql ("'" <> text <> "'")]
         DoubleQuotedLiteral text -> do
           return [Gen.QueryFragmentSql ("\"" <> text <> "\"")]
-    
+
     normalizeFragments :: [Gen.QueryFragment] -> [Gen.QueryFragment]
     normalizeFragments = \case
       Gen.QueryFragmentSql left : Gen.QueryFragmentSql right : rest ->

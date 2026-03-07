@@ -1,14 +1,11 @@
+with-compiler: ghc-9.14.1
+
 packages: .
 
 source-repository-package
   type: git
   location: https://github.com/nikita-volkov/hasql-dev
   tag: 76d8faaa706872e0fe9b1036aa011edd2eb9d0ed
-
-source-repository-package
-  type: git
-  location: https://github.com/nikita-volkov/hasql-mapping
-  tag: 307dfb5f25ba28d8408fac3aa160ca4ba702acc9
 
 source-repository-package
   type: git
@@ -27,10 +24,17 @@ source-repository-package
   tag: 90fb124a75196027ad96fd4af02a7425c135fc5b
   subdir: haskell
 
+source-repository-package
+  type: git
+  location: https://github.com/nikita-volkov/dhall-haskell
+  tag: 1e296a8d1a3a163c54cbdf9ec1c71cad2e8ae359
+  subdir: dhall
+
 constraints:
   autoexporter >=2.0.0.13 && <3,
   base >=4.11 && <5,
   bytestring >=0.10 && <0.13,
+  crypton ==1.0.6,
   data-has ^>=0.4,
   directory ^>=1.3,
   filepath ^>=1.5.4,
@@ -59,6 +63,5 @@ allow-newer:
   *:base,
   *:ghc,
   *:template-haskell,
-  dhall-json:aeson, 
-  dhall-json:bytestring, 
-  dhall-json:text,
+  dhall:*,
+  dhall-json:*,

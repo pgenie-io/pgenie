@@ -44,7 +44,6 @@ data SelectAlbumWithTracksResultRow = SelectAlbumWithTracksResultRow
   }
   deriving stock (Show, Eq)
 
-
 instance Mapping.IsStatement SelectAlbumWithTracks where
   type Result SelectAlbumWithTracks = SelectAlbumWithTracksResult
 

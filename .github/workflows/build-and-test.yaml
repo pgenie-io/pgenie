@@ -1,0 +1,110 @@
+name: Build and Test
+
+on:
+  workflow_call:
+    inputs:
+      os:
+        description: Runner operating system (e.g. ubuntu-latest, macos-latest, windows-latest)
+        type: string
+        required: true
+      artifact-name:
+        description: Name for the uploaded binary artifact (e.g. pgn-linux-x86_64)
+        type: string
+        required: true
+      version:
+        description: >
+          Release version (e.g. 1.2.3). When provided the cabal version is
+          updated to 0.<version> before building to follow PVP convention.
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ${{ inputs.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update version in cabal file
+        if: inputs.version != ''
+        shell: bash
+        run: perl -i -pe 's/^version:\s*\K\S+/0.${{ inputs.version }}/' pgenie.cabal
+
+      # testcontainers-postgresql (used by infra-test) needs a Docker daemon.
+      # Linux runners already include one; macOS and Windows need explicit setup.
+      - name: Set up Docker (non-Linux)
+        if: runner.os != 'Linux'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set up GHC
+        id: setup
+        uses: haskell-actions/setup@v2
+        with:
+          ghc-version: "9.14.1"
+          cabal-version: latest
+
+      - name: Update Cabal package list
+        run: cabal update
+
+      # Restore the package-store cache so that dependency compilation is
+      # skipped when unchanged.  The cache is split from the full build so
+      # that it is always saved even when later steps (tests) fail.
+      - name: Restore dependency cache
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ steps.setup.outputs.cabal-store }}
+          key: ${{ runner.os }}-ghc-${{ steps.setup.outputs.ghc-version }}-${{ hashFiles('**/*.cabal', 'cabal.project*') }}
+          restore-keys: |
+            ${{ runner.os }}-ghc-${{ steps.setup.outputs.ghc-version }}-
+
+      - name: Build dependencies
+        run: cabal build all --only-dependencies --enable-tests
+
+      # Save the cache immediately after dependencies are built so that the
+      # populated store survives even if the build or test steps fail.
+      - name: Save dependency cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ steps.setup.outputs.cabal-store }}
+          key: ${{ runner.os }}-ghc-${{ steps.setup.outputs.ghc-version }}-${{ hashFiles('**/*.cabal', 'cabal.project*') }}
+
+      - name: Build
+        run: cabal build all --enable-tests
+
+      - name: Test
+        run: cabal test all --enable-tests --test-show-details=direct
+
+      - name: Install binary
+        run: cabal install pgenie:pgn --installdir=bin --install-method=copy
+
+      - name: Rename binary (Unix)
+        if: runner.os != 'Windows'
+        run: mv bin/pgn "bin/${{ inputs.artifact-name }}"
+
+      - name: Rename binary (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: mv bin/pgn.exe "bin/${{ inputs.artifact-name }}"
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: bin/${{ inputs.artifact-name }}
+
+      - name: Build source distribution
+        if: runner.os == 'Linux'
+        run: cabal sdist
+
+      - name: Upload source distribution
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-distribution
+          path: dist-newstyle/sdist/*.tar.gz

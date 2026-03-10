@@ -13,11 +13,11 @@ source-repository-package
   tag: b74373863e8bb0ef9877e0cd8dad5a3128d31818
 
 -- Provides `pgenie-gen`
-source-repository-package
-  type: git
-  location: https://github.com/pgenie-io/gen-sdk
-  tag: 90fb124a75196027ad96fd4af02a7425c135fc5b
-  subdir: haskell
+-- source-repository-package
+--   type: git
+--   location: https://github.com/pgenie-io/gen-sdk
+--   tag: 90fb124a75196027ad96fd4af02a7425c135fc5b
+--   subdir: haskell
 
 source-repository-package
   type: git
@@ -29,6 +29,7 @@ constraints:
   autoexporter >=2.0.0.13 && <3,
   base >=4.11 && <5,
   bytestring >=0.10 && <0.13,
+  cases ^>=0.1,
   crypton ==1.0.6,
   data-has ^>=0.4,
   directory ^>=1.3,

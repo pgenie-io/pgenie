@@ -95,6 +95,83 @@ executable pgn
     pgenie:infra,
     pgenie:ui,
 
+library aeson-deriver
+  import: base
+  hs-source-dirs: src/aeson-deriver/
+  exposed-modules:
+    AesonDeriver
+
+  build-depends:
+    aeson,
+    base,
+    cases,
+    template-haskell,
+    text,
+
+library pgenie-gen
+  import: base
+  hs-source-dirs: src/pgenie-gen/
+  exposed-modules:
+    PGenieGen
+    PGenieGen.Fixtures.Project1
+    PGenieGen.Model.Input
+    PGenieGen.Model.Output
+    PGenieGen.Model.Output.Report
+
+  other-modules:
+    PGenieGen.Bundle
+    PGenieGen.Contract
+    PGenieGen.Dhall.Decode
+    PGenieGen.Dhall.Deriving
+    PGenieGen.Dhall.ExprViews
+    PGenieGen.Dhall.Orphans
+    PGenieGen.Dhall.Orphans.NonEmpty
+    PGenieGen.Dhall.Orphans.Path
+    PGenieGen.Load
+    PGenieGen.Location
+    PGenieGen.Model
+    PGenieGen.Model.Input.Name
+    PGenieGen.Model.Input.Word
+    PGenieGen.Model.Input.WordChar
+    PGenieGen.Model.Input.WordOrNumber
+    PGenieGen.Prelude
+    PGenieGen.Prelude.Path
+
+  extra-source-files:
+    src/pgenie-gen/dhall/ArraySettings.dhall
+    src/pgenie-gen/dhall/ContractVersion.dhall
+    src/pgenie-gen/dhall/Primitive.dhall
+    src/pgenie-gen/dhall/ResultRowsCardinality.dhall
+    src/pgenie-gen/dhall/Version.dhall
+
+  build-depends:
+    QuickCheck,
+    aeson,
+    algebraic-path,
+    base,
+    bytestring,
+    containers,
+    data-has,
+    dhall,
+    dhall-json,
+    hashable,
+    lawful-conversions,
+    mtl,
+    pgenie:aeson-deriver,
+    prettyprinter,
+    profunctors,
+    quickcheck-instances,
+    template-haskell,
+    text,
+    text-builder,
+    text-builder-lawful-conversions,
+    time,
+    tuple,
+    uuid,
+    vector,
+    vector-instances,
+    witherable,
+
 library base
   import: base
   hs-source-dirs: src/base/
@@ -157,7 +234,7 @@ library logic
     megaparsec,
     monad-parallel,
     pgenie:base,
-    pgenie-gen,
+    pgenie:pgenie-gen,
     postgresql-syntax,
     syntactic-class,
     text,
@@ -204,7 +281,7 @@ test-suite infra-test
     pgenie:base,
     pgenie:infra,
     pgenie:logic,
-    pgenie-gen,
+    pgenie:pgenie-gen,
 
 library infra
   import: base
@@ -255,7 +332,7 @@ library infra
     iproute,
     pgenie:base,
     pgenie:logic,
-    pgenie-gen,
+    pgenie:pgenie-gen,
     postgresql-libpq,
     resourcet,
     syntactic-class,

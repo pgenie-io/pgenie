@@ -14,6 +14,13 @@ copyright: (c) 2025, Nikita Volkov
 license: GPL-3.0-or-later
 license-file: LICENSE
 
+extra-source-files:
+  src/pgenie-gen/dhall/ArraySettings.dhall
+  src/pgenie-gen/dhall/ContractVersion.dhall
+  src/pgenie-gen/dhall/Primitive.dhall
+  src/pgenie-gen/dhall/ResultRowsCardinality.dhall
+  src/pgenie-gen/dhall/Version.dhall
+
 source-repository head
   type: git
   location: https://github.com/nikita-volkov/pgenie
@@ -136,13 +143,6 @@ library pgenie-gen
     PGenieGen.Model.Input.WordOrNumber
     PGenieGen.Prelude
     PGenieGen.Prelude.Path
-
-  extra-source-files:
-    src/pgenie-gen/dhall/ArraySettings.dhall
-    src/pgenie-gen/dhall/ContractVersion.dhall
-    src/pgenie-gen/dhall/Primitive.dhall
-    src/pgenie-gen/dhall/ResultRowsCardinality.dhall
-    src/pgenie-gen/dhall/Version.dhall
 
   build-depends:
     QuickCheck,

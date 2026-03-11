@@ -1,6 +1,7 @@
 module Logic
   ( check,
     generate,
+    manageIndexes,
     model,
     module Logic.Algebra,
   )
@@ -68,7 +69,7 @@ check :: (Caps m) => m ()
 check =
   run do
     projectFile <- loadProjectFile
-    analyse (GenerateOptions False True) projectFile
+    analyse projectFile
     pure ()
 
 generate :: (Caps m) => GenerateOptions -> m ()
@@ -76,9 +77,41 @@ generate options =
   run do
     stage "" 2 do
       projectFile <- loadProjectFile
-      (genProject, seqScanFindings, indexes) <- analyse options projectFile
-      handleIndexOptimization options indexes seqScanFindings
+      (genProject, seqScanFindings, _indexes) <- analyse projectFile
+      unless (null seqScanFindings) do
+        for_ seqScanFindings \(queryName, finding) ->
+          warn
+            ( Error
+                []
+                ( "Sequential scan detected in query '"
+                    <> queryName
+                    <> "': table '"
+                    <> finding.tableName
+                    <> "' scanned without index on ("
+                    <> Text.intercalate ", " finding.suggestedIndexColumns
+                    <> ")"
+                )
+                (Just "Run 'manage-indexes' to generate index migration")
+                [("query", queryName), ("table", finding.tableName)]
+            )
+        when options.strictSeqScans do
+          throwError
+            ( Error
+                []
+                "Sequential scans detected"
+                (Just "Run 'manage-indexes' to generate index migration, or remove --strict-seq-scans to allow warnings")
+                []
+            )
       generateCode projectFile genProject
+      pure ()
+
+manageIndexes :: (Caps m) => ManageIndexesOptions -> m ()
+manageIndexes options =
+  run do
+    stage "" 2 do
+      projectFile <- loadProjectFile
+      (_genProject, seqScanFindings, indexes) <- analyse projectFile
+      handleIndexOptimization options indexes seqScanFindings
       pure ()
 
 model :: (Caps m) => Bool -> m Text
@@ -86,7 +119,7 @@ model dhall =
   run do
     stage "" 1 do
       projectFile <- loadProjectFile
-      (genProject, _seqScanFindings, _indexes) <- analyse (GenerateOptions False True) projectFile
+      (genProject, _seqScanFindings, _indexes) <- analyse projectFile
       let modelText =
             if dhall
               then Dhall.pretty (Dhall.inject.embed genProject)
@@ -194,8 +227,8 @@ generateCode projectFile project =
 
     pure artifacts
 
-analyse :: GenerateOptions -> ProjectFile.ProjectFile -> Script (Gen.Input.Project, [(Text, SeqScanFinding)], [IndexInfo])
-analyse options projectFile =
+analyse :: ProjectFile.ProjectFile -> Script (Gen.Input.Project, [(Text, SeqScanFinding)], [IndexInfo])
+analyse projectFile =
   stage "Analysing" 2 do
     stage "Migrations" 2 do
       migrationsListed <-
@@ -487,7 +520,7 @@ warn =
 -- | Run the unified index optimizer, combining redundant-index detection,
 -- excessive-composite narrowing, and missing-index creation into one step.
 -- When @--fix@ is set, writes a single numbered migration.
-handleIndexOptimization :: GenerateOptions -> [IndexInfo] -> [(Text, SeqScanFinding)] -> Script ()
+handleIndexOptimization :: ManageIndexesOptions -> [IndexInfo] -> [(Text, SeqScanFinding)] -> Script ()
 handleIndexOptimization options indexes seqScanFindings = do
   let queryNeeds =
         map (\(_, finding) -> (finding.tableName, finding.suggestedIndexColumns)) seqScanFindings

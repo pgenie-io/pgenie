@@ -93,6 +93,13 @@ data DropReason
 -- * Generate options
 
 data GenerateOptions = GenerateOptions
+  { strictSeqScans :: Bool
+  }
+  deriving stock (Eq, Show)
+
+-- * Manage-indexes options
+
+data ManageIndexesOptions = ManageIndexesOptions
   { fix :: Bool,
     allowRedundantIndexes :: Bool
   }

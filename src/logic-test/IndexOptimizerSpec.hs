@@ -294,6 +294,48 @@ spec = do
       migration `shouldSatisfy` \t -> "CREATE INDEX ON album (name)" `Text.isInfixOf` t
       migration `shouldSatisfy` \t -> "replacing with" `Text.isInfixOf` t
 
+    it "generates empty migration for no actions" do
+      generateMigration [] `shouldSatisfy` \t -> not ("DROP" `Text.isInfixOf` t || "CREATE" `Text.isInfixOf` t)
+
+    it "handles prefix-redundancy drop with comment" do
+      let idx = mkIndex "idx_a" "users" ["email"] False False
+          superseder = mkIndex "idx_ab" "users" ["email", "name"] False False
+          actions = [DropIndex idx (PrefixRedundancy superseder)]
+          migration = generateMigration actions
+      migration `shouldSatisfy` \t -> "DROP INDEX" `Text.isInfixOf` t
+      migration `shouldSatisfy` \t -> "is a prefix of" `Text.isInfixOf` t
+
+    it "handles unused-by-queries drop with comment" do
+      let idx = mkIndex "idx_stale" "album" ["format"] False False
+          actions = [DropIndex idx UnusedByQueries]
+          migration = generateMigration actions
+      migration `shouldSatisfy` \t -> "DROP INDEX" `Text.isInfixOf` t
+      migration `shouldSatisfy` \t -> "not used by observed query needs" `Text.isInfixOf` t
+
+    it "quotes schema and index names in DROP statements" do
+      let idx = mkIndex "my-index" "album" ["name"] False False
+          actions = [DropIndex idx (ExactDuplicate idx)]
+          migration = generateMigration actions
+      migration `shouldSatisfy` \t -> "\"public\".\"my-index\"" `Text.isInfixOf` t
+
+    it "generates all sections in correct order" do
+      let redIdx = mkIndex "idx_red" "users" ["email"] False False
+          compIdx = mkIndex "idx_comp" "users" ["name", "age"] False False
+          actions =
+            [ DropIndex redIdx (ExactDuplicate (mkIndex "idx_orig" "users" ["email"] False False)),
+              DropIndex compIdx (ExcessiveComposite ["name"]),
+              CreateIndex "orders" ["status"]
+            ]
+          migration = generateMigration actions
+          -- Find positions of each section
+          findPos needle haystack = Text.length (fst (Text.breakOn needle haystack))
+          dropPos = findPos "Drop redundant" migration
+          replPos = findPos "replacement" migration
+          createPos = findPos "missing" migration
+      -- Drops section comes before replacement creates which come before missing creates
+      dropPos `shouldSatisfy` (< replPos)
+      replPos `shouldSatisfy` (< createPos)
+
 -- * Helpers
 
 mkIndex :: Text -> Text -> [Text] -> Bool -> Bool -> IndexInfo

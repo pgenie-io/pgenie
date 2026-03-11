@@ -18,27 +18,21 @@ generate =
     }
 
 data Params = Params
-  { fix :: Bool,
-    allowRedundantIndexes :: Bool
+  { strictSeqScans :: Bool
   }
 
 parser :: Opt.Parser Params
 parser =
   Params
     <$> Opt.switch
-      ( Opt.long "fix"
-          <> Opt.help "Automatically generate a fixing migration"
-      )
-    <*> Opt.switch
-      ( Opt.long "allow-redundant-indexes"
-          <> Opt.help "Downgrade redundant index errors to warnings"
+      ( Opt.long "strict-seq-scans"
+          <> Opt.help "Fail the procedure if sequential scans are detected (instead of emitting warnings)"
       )
 
 execute :: (Logic.Caps m) => Params -> m Text
 execute params =
   Logic.generate
     Logic.GenerateOptions
-      { fix = params.fix,
-        allowRedundantIndexes = params.allowRedundantIndexes
+      { strictSeqScans = params.strictSeqScans
       }
     $> ""

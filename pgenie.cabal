@@ -278,6 +278,7 @@ library ui
   other-modules:
     Ui.Commands
     Ui.Commands.Generate
+    Ui.Commands.ManageIndexes
     Ui.Commands.Model
     Ui.Commands.Sign
     Ui.Display

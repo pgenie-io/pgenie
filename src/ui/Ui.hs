@@ -23,6 +23,7 @@ main runEffect = do
     "pgn"
     "pGenie CLI"
     [ Commands.generate,
+      Commands.manageIndexes,
       Commands.model
     ]
     (runEffect (Display.handleEvent display))

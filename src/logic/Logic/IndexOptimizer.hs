@@ -35,7 +35,7 @@ optimizeIndexes indexes queryNeeds =
       -- already satisfied by existing indexes or by indexes that result from
       -- excessive-composite replacements.
       missing = detectMissing indexes (redundant <> filteredExcessive <> filteredUnused) queryNeeds
-  in redundant <> filteredExcessive <> filteredUnused <> missing
+   in redundant <> filteredExcessive <> filteredUnused <> missing
 
 dropIndexName :: IndexAction -> Text
 dropIndexName (DropIndex idx _) = idx.indexName
@@ -55,11 +55,13 @@ findRedundancies allIndexes candidate =
   let others =
         filter
           ( \other ->
-              other.indexName /= candidate.indexName
-                && other.tableName == candidate.tableName
-                && other.schemaName == candidate.schemaName
-                && other.indexMethod == candidate.indexMethod
-                && other.predicate == candidate.predicate
+              and
+                [ other.indexName /= candidate.indexName,
+                  other.tableName == candidate.tableName,
+                  other.schemaName == candidate.schemaName,
+                  other.indexMethod == candidate.indexMethod,
+                  other.predicate == candidate.predicate
+                ]
           )
           allIndexes
    in case findSuperseding candidate others of
@@ -71,7 +73,8 @@ findSuperseding candidate = go
   where
     go [] = Nothing
     go (other : rest)
-      | candidate.columns == other.columns
+      | candidate.columns
+          == other.columns
           && (other.isPrimary || candidate.indexName > other.indexName) =
           Just (ExactDuplicate other)
       | isStrictPrefix candidate.columns other.columns =

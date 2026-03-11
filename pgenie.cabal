@@ -193,10 +193,12 @@ test-suite logic-test
 test-suite infra-test
   import: test
   type: exitcode-stdio-1.0
-  hs-source-dirs: src/infra-test
+  hs-source-dirs: src/infra-test, src/infra
   main-is: Main.hs
   other-modules:
     EmbeddingsSpec
+    Infra.Adapters.Analyser.Embeddings.Sessions
+    Infra.Adapters.Analyser.Sessions.Domain
 
   build-tool-depends:
     hspec-discover:hspec-discover
@@ -204,24 +206,24 @@ test-suite infra-test
   build-depends:
     hspec,
     pgenie:base,
-    pgenie:infra,
     pgenie:logic,
     pgenie-gen,
+    vector,
 
 library infra
   import: base
   hs-source-dirs: src/infra/
   exposed-modules:
     Infra
-    Infra.Adapters.Analyser.Embeddings.Sessions
-    Infra.Adapters.Analyser.Sessions.Domain
 
   other-modules:
     Infra.Adapters.Analyser
+    Infra.Adapters.Analyser.Embeddings.Sessions
     Infra.Adapters.Analyser.Scopes.Testcontainers
     Infra.Adapters.Analyser.Scopes.Testcontainers.IO
     Infra.Adapters.Analyser.Sessions
     Infra.Adapters.Analyser.Sessions.Algebras.Procedure
+    Infra.Adapters.Analyser.Sessions.Domain
     Infra.Adapters.Analyser.Sessions.LibpqExtras.LawfulConversions
     Infra.Adapters.Analyser.Sessions.LibpqExtras.Procedures.DescribeQuery
     Infra.Adapters.Analyser.Sessions.Procedures

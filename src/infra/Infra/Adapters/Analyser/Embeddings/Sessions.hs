@@ -3,7 +3,7 @@ module Infra.Adapters.Analyser.Embeddings.Sessions where
 
 import Base.Prelude
 import Data.Vector qualified as Vector
-import Infra.Adapters.Analyser.Sessions qualified as Sessions
+import Infra.Adapters.Analyser.Sessions.Domain qualified as Sessions
 import Logic qualified
 import Logic.Name qualified as Name
 import PGenieGen.Model.Input qualified as Gen.Input

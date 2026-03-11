@@ -18,16 +18,21 @@ generate =
     }
 
 data Params = Params
-  { fix :: Bool
+  { strictSeqScans :: Bool
   }
 
 parser :: Opt.Parser Params
 parser =
   Params
     <$> Opt.switch
-      ( Opt.long "fix"
-          <> Opt.help "Generate index migration to fix sequential scans instead of failing"
+      ( Opt.long "strict-seq-scans"
+          <> Opt.help "Fail the procedure if sequential scans are detected (instead of emitting warnings)"
       )
 
 execute :: (Logic.Caps m) => Params -> m Text
-execute params = "" <$ Logic.generate params.fix
+execute params =
+  Logic.generate
+    Logic.GenerateOptions
+      { strictSeqScans = params.strictSeqScans
+      }
+    $> ""

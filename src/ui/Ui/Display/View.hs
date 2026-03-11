@@ -32,18 +32,18 @@ view event oldMemory newMemory = case event of
             ],
       mempty
     )
-  Logic.StageExited _path _progressDelta ->
+  Logic.StageExited path _progressDelta ->
     ( if oldMemory.progress >= 1
-        then mempty -- Don't update progress if already at 100%
+        then mempty -- Don't update if already at 100%
         else
           if oldMemory.hasProgressBar
             then
               mconcat
                 [ moveCursorToLineStart,
                   clearLine,
-                  if newMemory.progress < 1
-                    then progressBar newMemory.progress newMemory.timeLeftEstimate
-                    else green "Done!" <> "\n"
+                  if newMemory.progress >= 1 || null path
+                    then green "Done!" <> "\n"
+                    else progressBar newMemory.progress newMemory.timeLeftEstimate
                 ]
             else mempty, -- Don't render progress bar if it's not shown
       mempty

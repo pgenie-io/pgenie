@@ -9,7 +9,6 @@ module Logic.SignatureFile
     tryParse,
     validateAndMerge,
     applyToQuery,
-    cardinalityToGenInput,
   )
 where
 

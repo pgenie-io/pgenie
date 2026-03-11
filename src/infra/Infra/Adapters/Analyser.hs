@@ -21,6 +21,7 @@ import HasqlDev qualified
 import Infra.Adapters.Analyser.Embeddings.Sessions qualified as Embeddings.Sessions
 import Infra.Adapters.Analyser.Scopes.Testcontainers qualified
 import Infra.Adapters.Analyser.Sessions qualified as Sessions
+import Infra.Adapters.Analyser.Sessions.Procedures.GetIndexes qualified as GetIndexes
 import Logic qualified
 import TestcontainersPostgresql qualified
 
@@ -197,3 +198,6 @@ instance Logic.DbOps (Fx Device Logic.Error) where
                   fmap (foldMap onto) (Pq.getvalue result i (Pq.Col 0))
               _ -> pure []
         pure (Right rows, conn)
+
+  getIndexes =
+    HasqlDev.runSession GetIndexes.getIndexes

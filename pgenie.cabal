@@ -134,6 +134,7 @@ library logic
     Logic
     Logic.Algebra
     Logic.Dsl
+    Logic.IndexOptimizer
     Logic.Name
     Logic.SeqScanDetector
     Logic.SignatureFile
@@ -171,6 +172,7 @@ test-suite logic-test
   hs-source-dirs: src/logic-test
   main-is: Main.hs
   other-modules:
+    IndexOptimizerSpec
     NameSpec
     SeqScanDetectorSpec
     SignatureFileSpec
@@ -224,6 +226,7 @@ library infra
     Infra.Adapters.Analyser.Sessions.LibpqExtras.Procedures.DescribeQuery
     Infra.Adapters.Analyser.Sessions.Procedures
     Infra.Adapters.Analyser.Sessions.Procedures.DescribeQuery
+    Infra.Adapters.Analyser.Sessions.Procedures.GetIndexes
     Infra.Adapters.Analyser.Sessions.Procedures.ResolveColumn
     Infra.Adapters.Analyser.Sessions.Procedures.ResolveColumn.Statements
     Infra.Adapters.Analyser.Sessions.Procedures.ResolveColumn.Statements.GetAttributeByRelationAndOffset
@@ -275,6 +278,7 @@ library ui
   other-modules:
     Ui.Commands
     Ui.Commands.Generate
+    Ui.Commands.ManageIndexes
     Ui.Commands.Model
     Ui.Commands.Sign
     Ui.Display

@@ -1,6 +1,7 @@
 module Logic
   ( check,
     generate,
+    manageIndexes,
     model,
     module Logic.Algebra,
   )
@@ -11,12 +12,14 @@ import Base.Prelude hiding (readFile, writeFile)
 import Control.Monad.Parallel qualified as MonadParallel
 import Data.Aeson.Text qualified as Aeson.Text
 import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Dhall.Core qualified as Dhall
 import Dhall.Marshal.Encode qualified as Dhall
 import Logic.Algebra
 import Logic.Dsl
 import Logic.GeneratorHashes qualified as GeneratorHashes
+import Logic.IndexOptimizer qualified as IndexOptimizer
 import Logic.Name qualified as Name
 import Logic.ProjectFile qualified as ProjectFile
 import Logic.SeqScanDetector qualified as SeqScanDetector
@@ -66,18 +69,49 @@ check :: (Caps m) => m ()
 check =
   run do
     projectFile <- loadProjectFile
-    _ <- analyse projectFile
+    analyse projectFile
     pure ()
 
-generate :: (Caps m) => Bool -> m ()
-generate fix =
+generate :: (Caps m) => GenerateOptions -> m ()
+generate options =
   run do
     stage "" 2 do
       projectFile <- loadProjectFile
-      (genProject, seqScanFindings) <- do
-        analyse projectFile
-      handleSeqScanFindings fix seqScanFindings
+      (genProject, seqScanFindings, _indexes) <- analyse projectFile
+      unless (null seqScanFindings) do
+        for_ seqScanFindings \(queryName, finding) ->
+          warn
+            ( Error
+                []
+                ( "Sequential scan detected in query '"
+                    <> queryName
+                    <> "': table '"
+                    <> finding.tableName
+                    <> "' scanned without index on ("
+                    <> Text.intercalate ", " finding.suggestedIndexColumns
+                    <> ")"
+                )
+                (Just "Run 'manage-indexes' to generate index migration")
+                [("query", queryName), ("table", finding.tableName)]
+            )
+        when options.strictSeqScans do
+          throwError
+            ( Error
+                []
+                "Sequential scans detected"
+                (Just "Run 'manage-indexes' to generate index migration, or remove --strict-seq-scans to allow warnings")
+                []
+            )
       generateCode projectFile genProject
+      pure ()
+
+manageIndexes :: (Caps m) => ManageIndexesOptions -> m ()
+manageIndexes options =
+  run do
+    stage "" 2 do
+      projectFile <- loadProjectFile
+      (_genProject, seqScanFindings, indexes) <- analyse projectFile
+      handleIndexOptimization options indexes seqScanFindings
       pure ()
 
 model :: (Caps m) => Bool -> m Text
@@ -85,7 +119,7 @@ model dhall =
   run do
     stage "" 1 do
       projectFile <- loadProjectFile
-      (genProject, _seqScanFindings) <- analyse projectFile
+      (genProject, _seqScanFindings, _indexes) <- analyse projectFile
       let modelText =
             if dhall
               then Dhall.pretty (Dhall.inject.embed genProject)
@@ -193,7 +227,7 @@ generateCode projectFile project =
 
     pure artifacts
 
-analyse :: ProjectFile.ProjectFile -> Script (Gen.Input.Project, [(Text, SeqScanFinding)])
+analyse :: ProjectFile.ProjectFile -> Script (Gen.Input.Project, [(Text, SeqScanFinding)], [IndexInfo])
 analyse projectFile =
   stage "Analysing" 2 do
     stage "Migrations" 2 do
@@ -216,6 +250,11 @@ analyse projectFile =
         for migrationsLoaded \(migrationListed, migrationLoaded) -> do
           stage (Path.toText migrationListed) 0 do
             executeMigration migrationLoaded
+
+    -- Fetch existing indexes after migrations have been applied
+    indexes <-
+      stage "Checking indexes" 0 do
+        getIndexes
 
     queriesListed <- do
       allPathsInQueriesDir <-
@@ -281,6 +320,14 @@ analyse projectFile =
                       pure (map (Name.inSnakeCase queryListed.name,) findings)
                   )
                   (\_ -> pure [])
+
+              let fallbackSeqScanFindings =
+                    inferSeqScanFindingsFromSql nativeTemplate
+                      & map (Name.inSnakeCase queryListed.name,)
+                  effectiveSeqScanFindings =
+                    if null querySeqScanFindings
+                      then fallbackSeqScanFindings
+                      else querySeqScanFindings
 
               result :: Maybe Gen.Input.ResultRows <-
                 let byCardinality cardinality =
@@ -367,7 +414,7 @@ analyse projectFile =
                       fragments = SqlTemplate.toGenQueryFragments sqlTemplate
                     },
                   mentionedCustomTypes,
-                  querySeqScanFindings
+                  effectiveSeqScanFindings
                 )
 
         let (queries, customTypesDump, seqScanFindingsDump) = unzip3 mixedList
@@ -389,7 +436,8 @@ analyse projectFile =
             customTypes = customTypes,
             queries = queries
           },
-        seqScanFindings
+        seqScanFindings,
+        indexes
       )
 
 stagedParFor :: Text -> (a -> Text) -> [a] -> (a -> Script b) -> Script [b]
@@ -399,24 +447,93 @@ stagedParFor stageName nameFn items action =
       stage (nameFn item) 0 do
         action item
 
+inferSeqScanFindingsFromSql :: Text -> [SeqScanFinding]
+inferSeqScanFindingsFromSql sql =
+  case inferTableAndWhere sql of
+    Nothing -> []
+    Just (tbl, whereClause) ->
+      let cols = SeqScanDetector.extractFilterColumns whereClause
+       in if null cols
+            then []
+            else [SeqScanFinding tbl whereClause cols]
+
+inferTableAndWhere :: Text -> Maybe (Text, Text)
+inferTableAndWhere sql = do
+  let normalized =
+        sql
+          & Text.lines
+          & filter (not . ("--" `Text.isPrefixOf`) . Text.stripStart)
+          & Text.unwords
+      normalizedLower = Text.toLower normalized
+      tokens = Text.words normalized
+  guard (not (" join " `Text.isInfixOf` normalizedLower))
+  table <- inferTableName tokens
+  whereClause <- inferWhereClause tokens
+  pure (table, whereClause)
+
+inferTableName :: [Text] -> Maybe Text
+inferTableName tokens =
+  let lowerTokens = map Text.toLower tokens
+      findAfterKeyword kw = do
+        i <- elemIndex kw lowerTokens
+        token <- tokens !? (i + 1)
+        pure (normalizeTableToken token)
+   in findAfterKeyword "from"
+        <|> findAfterKeyword "update"
+        <|> ( do
+                i <- elemIndex "into" lowerTokens
+                prev <- lowerTokens !? (i - 1)
+                guard (prev == "insert")
+                token <- tokens !? (i + 1)
+                pure (normalizeTableToken token)
+            )
+
+inferWhereClause :: [Text] -> Maybe Text
+inferWhereClause tokens =
+  let lowerTokens = map Text.toLower tokens
+      stopKeywords = Set.fromList ["group", "order", "limit", "returning", "union"]
+   in do
+        i <- elemIndex "where" lowerTokens
+        let rest = drop (i + 1) tokens
+            restLower = drop (i + 1) lowerTokens
+            clauseTokens = map fst (takeWhile (\(_, lowerTok) -> lowerTok `Set.notMember` stopKeywords) (zip rest restLower))
+        guard (not (null clauseTokens))
+        pure (Text.unwords clauseTokens)
+
+normalizeTableToken :: Text -> Text
+normalizeTableToken token =
+  let cleaned =
+        token
+          & Text.dropWhile (\c -> c == '"' || c == '(')
+          & Text.takeWhile (\c -> c /= '"' && c /= ')' && c /= ';' && c /= ',')
+          & Text.splitOn "."
+   in case reverse cleaned of
+        [] -> ""
+        x : _ -> x
+
 -- | Depending on the warning handling strategy this can either log the warning and continue or throw an error to stop the execution.
 warn :: Error -> Script ()
 warn =
   -- TODO: Implement conditional throwing or emission.
   emit . WarningEmitted
 
--- | Handle seq-scan findings: with --fix generate migration, otherwise fail.
-handleSeqScanFindings :: Bool -> [(Text, SeqScanFinding)] -> Script ()
-handleSeqScanFindings _ [] = pure ()
-handleSeqScanFindings fix findings
-  | fix = do
+-- | Run the unified index optimizer, combining redundant-index detection,
+-- excessive-composite narrowing, and missing-index creation into one step.
+-- When @--fix@ is set, writes a single numbered migration.
+handleIndexOptimization :: ManageIndexesOptions -> [IndexInfo] -> [(Text, SeqScanFinding)] -> Script ()
+handleIndexOptimization options indexes seqScanFindings = do
+  let queryNeeds =
+        map (\(_, finding) -> (finding.tableName, finding.suggestedIndexColumns)) seqScanFindings
+      actions = IndexOptimizer.optimizeIndexes indexes queryNeeds
+  unless (null actions) do
+    when options.fix do
       migrationsListed <-
         listDir "migrations"
           & fmap (filter (\p -> Path.toExtensions p == ["sql"]))
           & fmap sort
       let nextMigrationNum = length migrationsListed + 1
           migrationFileName = Text.pack (show nextMigrationNum) <> ".sql"
-          migrationContent = SeqScanDetector.generateCreateIndexStatements (map snd findings)
+          migrationContent = IndexOptimizer.generateMigration actions
       case Path.maybeFromText ("migrations/" <> migrationFileName) of
         Nothing ->
           throwError
@@ -434,24 +551,60 @@ handleSeqScanFindings fix findings
                     []
                     ("Generated index migration: migrations/" <> migrationFileName)
                     (Just "Review the generated migration and re-run generate")
-                    [ ( "content",
-                        migrationContent
-                      )
-                    ]
+                    [("content", migrationContent)]
                 )
             )
-  | otherwise =
-      throwError
-        ( Error
-            []
-            "Sequential scan detected"
-            (Just "Run with --fix to generate an index migration, or manually create indexes")
-            ( findings
-                & map
-                  ( \(queryName, finding) ->
-                      ( queryName,
-                        "Seq Scan on " <> finding.tableName <> " with filter: " <> finding.filterCondition
-                      )
-                  )
+
+    for_ actions \action -> do
+      let msg = indexActionMessage action
+      if options.fix || options.allowRedundantIndexes
+        then warn (Error [] msg Nothing [])
+        else
+          throwError
+            ( Error
+                []
+                msg
+                (Just "Run with --fix to generate a migration, or use --allow-redundant-indexes to downgrade to warnings")
+                (indexActionDetails action)
             )
-        )
+
+indexActionMessage :: IndexAction -> Text
+indexActionMessage (DropIndex idx reason) = case reason of
+  ExactDuplicate other ->
+    "Redundant index: "
+      <> idx.indexName
+      <> " on "
+      <> idx.tableName
+      <> " is an exact duplicate of "
+      <> other.indexName
+  PrefixRedundancy other ->
+    "Redundant index: "
+      <> idx.indexName
+      <> " on "
+      <> idx.tableName
+      <> " is a prefix of "
+      <> other.indexName
+  ExcessiveComposite replacement ->
+    "Excessive composite index: "
+      <> idx.indexName
+      <> " on "
+      <> idx.tableName
+      <> " can be narrowed to ("
+      <> Text.intercalate ", " replacement
+      <> ")"
+  UnusedByQueries ->
+    "Redundant index: "
+      <> idx.indexName
+      <> " on "
+      <> idx.tableName
+      <> " is not used by observed query needs"
+indexActionMessage (CreateIndex tbl cols) =
+  "Missing index: "
+    <> tbl
+    <> " needs an index on ("
+    <> Text.intercalate ", " cols
+    <> ")"
+
+indexActionDetails :: IndexAction -> [(Text, Text)]
+indexActionDetails (DropIndex idx _) = [("index", idx.indexName), ("table", idx.tableName)]
+indexActionDetails (CreateIndex tbl cols) = [("table", tbl), ("columns", Text.intercalate ", " cols)]

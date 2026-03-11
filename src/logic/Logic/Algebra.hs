@@ -50,6 +50,61 @@ data SeqScanFinding = SeqScanFinding
   }
   deriving stock (Eq, Show)
 
+-- * Index info
+
+data IndexInfo = IndexInfo
+  { indexName :: Text,
+    tableName :: Text,
+    schemaName :: Text,
+    columns :: [Text],
+    isUnique :: Bool,
+    isPrimary :: Bool,
+    indexMethod :: Text,
+    predicate :: Maybe Text
+  }
+  deriving stock (Eq, Show)
+
+-- * Index optimization results
+
+-- | An action recommended by the index optimizer.
+data IndexAction
+  = -- | Drop an index that is unnecessary.
+    DropIndex IndexInfo DropReason
+  | -- | Create a new index to cover a missing access pattern.
+    CreateIndex
+      { tableName :: Text,
+        columns :: [Text]
+      }
+  deriving stock (Eq, Show)
+
+-- | Reason why an index should be dropped.
+data DropReason
+  = -- | This index's columns are a leading prefix of the superseding index's columns.
+    PrefixRedundancy IndexInfo
+  | -- | This index is an exact duplicate of another index.
+    ExactDuplicate IndexInfo
+  | -- | This composite index has trailing columns that are not needed by any query.
+    --   The replacement columns are provided.
+    ExcessiveComposite [Text]
+  | -- | This index is not used by any observed query need on the same table.
+    UnusedByQueries
+  deriving stock (Eq, Show)
+
+-- * Generate options
+
+data GenerateOptions = GenerateOptions
+  { strictSeqScans :: Bool
+  }
+  deriving stock (Eq, Show)
+
+-- * Manage-indexes options
+
+data ManageIndexesOptions = ManageIndexesOptions
+  { fix :: Bool,
+    allowRedundantIndexes :: Bool
+  }
+  deriving stock (Eq, Show)
+
 -- * Capabilities
 
 -- | Typeclasses representing capabilities required by the logic and serving as ports as per the hexagonal architecture.
@@ -63,6 +118,7 @@ class (MonadError Error m) => DbOps m where
   executeMigration :: Text -> m ()
   inferQueryTypes :: Text -> m (InferredQueryTypes, [Error])
   explainQuery :: Text -> m [Text]
+  getIndexes :: m [IndexInfo]
 
 class (MonadError Error m) => FsOps m where
   readFile :: Path -> m Text

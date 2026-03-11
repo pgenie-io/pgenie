@@ -13,6 +13,7 @@
 !/CHANGELOG.md
 !/*.cabal
 !/cabal.project
+!/cabal.project.freeze
 !/.ormolu
 
 # Unignore subtrees:

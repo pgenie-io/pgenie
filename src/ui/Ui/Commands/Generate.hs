@@ -34,10 +34,11 @@ parser =
           <> Opt.help "Downgrade redundant index errors to warnings"
       )
 
-execute :: (Logic.Caps m) => Params -> m ()
+execute :: (Logic.Caps m) => Params -> m Text
 execute params =
   Logic.generate
     Logic.GenerateOptions
       { fix = params.fix,
         allowRedundantIndexes = params.allowRedundantIndexes
       }
+    $> ""

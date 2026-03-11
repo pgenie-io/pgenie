@@ -30,5 +30,5 @@ parser =
           <> Opt.help "Output as a Dhall expression instead of JSON"
       )
 
-execute :: (Logic.Caps m) => Params -> m ()
+execute :: (Logic.Caps m) => Params -> m Text
 execute params = Logic.model params.dhall

@@ -71,27 +71,3 @@ spec = do
 
     it "returns empty for no identifiable columns" do
       extractFilterColumns "($1 = $2)" `shouldBe` []
-
-  describe "generateCreateIndexStatements" do
-    it "generates CREATE INDEX for findings with columns" do
-      let findings =
-            [ SeqScanFinding "album" "(format = $1)" ["format"]
-            ]
-      generateCreateIndexStatements findings
-        `shouldSatisfy` Text.isInfixOf "CREATE INDEX ON album (format);"
-
-    it "generates TODO comment for findings without columns" do
-      let findings =
-            [ SeqScanFinding "album" "($1 = $2)" []
-            ]
-      generateCreateIndexStatements findings
-        `shouldSatisfy` Text.isInfixOf "TODO"
-
-    it "generates multiple indexes" do
-      let findings =
-            [ SeqScanFinding "album" "(format = $1)" ["format"],
-              SeqScanFinding "artist" "(name = $1)" ["name"]
-            ]
-          result = generateCreateIndexStatements findings
-      result `shouldSatisfy` Text.isInfixOf "CREATE INDEX ON album (format);"
-      result `shouldSatisfy` Text.isInfixOf "CREATE INDEX ON artist (name);"

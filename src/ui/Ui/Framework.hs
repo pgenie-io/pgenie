@@ -23,13 +23,15 @@ main ::
   Text ->
   -- | Description of the application.
   Text ->
+  -- | Footer text shown at the bottom of the help output.
+  Text ->
   -- | List of supported commands.
   [Command m] ->
   -- | Execute an effect.
   (m Text -> IO ()) ->
   -- | Application.
   IO ()
-main appName description commands runEffect =
+main appName description footer commands runEffect =
   join (Opt.execParser parserInfo)
   where
     parserInfo =
@@ -38,7 +40,8 @@ main appName description commands runEffect =
         ( mconcat
             [ Opt.fullDesc,
               Opt.progDesc (Text.unpack description),
-              Opt.header (Text.unpack appName)
+              Opt.header (Text.unpack appName),
+              Opt.footer (Text.unpack footer)
             ]
         )
 

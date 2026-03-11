@@ -94,12 +94,12 @@ generate options =
                 (Just "Run 'manage-indexes' to generate index migration")
                 [("query", queryName), ("table", finding.tableName)]
             )
-        when options.strictSeqScans do
+        when options.failOnSeqScans do
           throwError
             ( Error
                 []
                 "Sequential scans detected"
-                (Just "Run 'manage-indexes' to generate index migration, or remove --strict-seq-scans to allow warnings")
+                (Just "Run 'manage-indexes' to generate index migration, or remove --fail-on-seq-scans to allow warnings")
                 []
             )
       generateCode projectFile genProject
@@ -114,16 +114,15 @@ manageIndexes options =
       handleIndexOptimization options indexes seqScanFindings
       pure ()
 
-model :: (Caps m) => Bool -> m Text
-model dhall =
+model :: (Caps m) => ModelFormat -> m Text
+model format =
   run do
     stage "" 1 do
       projectFile <- loadProjectFile
       (genProject, _seqScanFindings, _indexes) <- analyse projectFile
-      let modelText =
-            if dhall
-              then Dhall.pretty (Dhall.inject.embed genProject)
-              else to (Aeson.Text.encodeToTextBuilder genProject)
+      let modelText = case format of
+            ModelFormatDhall -> Dhall.pretty (Dhall.inject.embed genProject)
+            ModelFormatJson -> to (Aeson.Text.encodeToTextBuilder genProject)
       pure modelText
 
 -- * Helpers
@@ -519,21 +518,31 @@ warn =
 
 -- | Run the unified index optimizer, combining redundant-index detection,
 -- excessive-composite narrowing, and missing-index creation into one step.
--- When @--fix@ is set, writes a single numbered migration.
+-- Always writes a single numbered migration.
+-- When @--allow-redundant-indexes@ is set, DropIndex actions are emitted as
+-- warnings instead of being included in the generated migration.
 handleIndexOptimization :: ManageIndexesOptions -> [IndexInfo] -> [(Text, SeqScanFinding)] -> Script ()
 handleIndexOptimization options indexes seqScanFindings = do
   let queryNeeds =
         map (\(_, finding) -> (finding.tableName, finding.suggestedIndexColumns)) seqScanFindings
-      actions = IndexOptimizer.optimizeIndexes indexes queryNeeds
-  unless (null actions) do
-    when options.fix do
+      allActions = IndexOptimizer.optimizeIndexes indexes queryNeeds
+      (dropActions, createActions) = partition isDropAction allActions
+      migrationActions =
+        if options.allowRedundantIndexes
+          then createActions
+          else allActions
+  unless (null allActions) do
+    when options.allowRedundantIndexes do
+      for_ dropActions \action ->
+        warn (Error [] (indexActionMessage action) (Just "Use --allow-redundant-indexes to suppress removal of redundant indexes") (indexActionDetails action))
+    unless (null migrationActions) do
       migrationsListed <-
         listDir "migrations"
           & fmap (filter (\p -> Path.toExtensions p == ["sql"]))
           & fmap sort
       let nextMigrationNum = length migrationsListed + 1
           migrationFileName = Text.pack (show nextMigrationNum) <> ".sql"
-          migrationContent = IndexOptimizer.generateMigration actions
+          migrationContent = IndexOptimizer.generateMigration migrationActions
       case Path.maybeFromText ("migrations/" <> migrationFileName) of
         Nothing ->
           throwError
@@ -554,19 +563,13 @@ handleIndexOptimization options indexes seqScanFindings = do
                     [("content", migrationContent)]
                 )
             )
+    unless options.allowRedundantIndexes do
+      for_ allActions \action ->
+        warn (Error [] (indexActionMessage action) Nothing [])
 
-    for_ actions \action -> do
-      let msg = indexActionMessage action
-      if options.fix || options.allowRedundantIndexes
-        then warn (Error [] msg Nothing [])
-        else
-          throwError
-            ( Error
-                []
-                msg
-                (Just "Run with --fix to generate a migration, or use --allow-redundant-indexes to downgrade to warnings")
-                (indexActionDetails action)
-            )
+isDropAction :: IndexAction -> Bool
+isDropAction (DropIndex {}) = True
+isDropAction (CreateIndex {}) = False
 
 indexActionMessage :: IndexAction -> Text
 indexActionMessage (DropIndex idx reason) = case reason of

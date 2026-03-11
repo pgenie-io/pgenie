@@ -93,16 +93,20 @@ data DropReason
 -- * Generate options
 
 data GenerateOptions = GenerateOptions
-  { strictSeqScans :: Bool
+  { failOnSeqScans :: Bool
   }
   deriving stock (Eq, Show)
 
 -- * Manage-indexes options
 
 data ManageIndexesOptions = ManageIndexesOptions
-  { fix :: Bool,
-    allowRedundantIndexes :: Bool
+  { allowRedundantIndexes :: Bool
   }
+  deriving stock (Eq, Show)
+
+-- * Model format
+
+data ModelFormat = ModelFormatJson | ModelFormatDhall
   deriving stock (Eq, Show)
 
 -- * Capabilities

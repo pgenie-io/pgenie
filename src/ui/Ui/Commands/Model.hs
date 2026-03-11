@@ -19,16 +19,24 @@ model =
     }
 
 data Params = Params
-  { dhall :: Bool
+  { format :: Logic.ModelFormat
   }
 
 parser :: Opt.Parser Params
 parser =
   Params
-    <$> Opt.switch
-      ( Opt.long "dhall"
-          <> Opt.help "Output as a Dhall expression instead of JSON"
+    <$> Opt.option
+      readFormat
+      ( Opt.long "format"
+          <> Opt.metavar "FORMAT"
+          <> Opt.help "Output format: json or dhall"
       )
+  where
+    readFormat =
+      Opt.eitherReader \s -> case s of
+        "json" -> Right Logic.ModelFormatJson
+        "dhall" -> Right Logic.ModelFormatDhall
+        _ -> Left ("Unknown format: " <> s <> ". Expected 'json' or 'dhall'.")
 
 execute :: (Logic.Caps m) => Params -> m Text
-execute params = Logic.model params.dhall
+execute params = Logic.model params.format

@@ -17,27 +17,21 @@ manageIndexes =
     }
 
 data Params = Params
-  { fix :: Bool,
-    allowRedundantIndexes :: Bool
+  { allowRedundantIndexes :: Bool
   }
 
 parser :: Opt.Parser Params
 parser =
   Params
     <$> Opt.switch
-      ( Opt.long "fix"
-          <> Opt.help "Automatically generate a migration file with index changes"
-      )
-    <*> Opt.switch
       ( Opt.long "allow-redundant-indexes"
-          <> Opt.help "Downgrade redundant index issues to warnings instead of errors"
+          <> Opt.help "Emit warnings about redundant indexes instead of removing them"
       )
 
 execute :: (Logic.Caps m) => Params -> m Text
 execute params =
   Logic.manageIndexes
     Logic.ManageIndexesOptions
-      { fix = params.fix,
-        allowRedundantIndexes = params.allowRedundantIndexes
+      { allowRedundantIndexes = params.allowRedundantIndexes
       }
     $> ""

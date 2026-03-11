@@ -47,6 +47,23 @@ jobs:
           ghc-version: "9.14.1"
           cabal-version: latest
 
+      # On Windows, haskell-actions/setup outputs C:\sr as the cabal-store
+      # path, which is a junction (reparse-point) to the real store directory.
+      # actions/cache does not traverse junctions, so it only captures the
+      # tiny junction metadata instead of the actual package contents.
+      # We resolve the junction to the real target path here so that the
+      # cache steps below operate on the actual directory.
+      - name: Resolve cabal store path
+        id: cabal-store-path
+        shell: bash
+        run: |
+          dir="${{ steps.setup.outputs.cabal-store }}"
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            real=$(powershell.exe -NoProfile -Command "(Get-Item '$dir').Target" 2>/dev/null || true)
+            if [[ -n "$real" ]]; then dir="$real"; fi
+          fi
+          echo "path=$dir" >> $GITHUB_OUTPUT
+
       - name: Update Cabal package list
         run: cabal update
 
@@ -57,7 +74,7 @@ jobs:
         id: cache
         uses: actions/cache/restore@v4
         with:
-          path: ${{ steps.setup.outputs.cabal-store }}
+          path: ${{ steps.cabal-store-path.outputs.path }}
           key: ${{ runner.os }}-ghc-${{ steps.setup.outputs.ghc-version }}-${{ hashFiles('**/*.cabal', 'cabal.project*') }}
           restore-keys: |
             ${{ runner.os }}-ghc-${{ steps.setup.outputs.ghc-version }}-
@@ -71,7 +88,7 @@ jobs:
         if: always()
         uses: actions/cache/save@v4
         with:
-          path: ${{ steps.setup.outputs.cabal-store }}
+          path: ${{ steps.cabal-store-path.outputs.path }}
           key: ${{ runner.os }}-ghc-${{ steps.setup.outputs.ghc-version }}-${{ hashFiles('**/*.cabal', 'cabal.project*') }}
 
       - name: Build

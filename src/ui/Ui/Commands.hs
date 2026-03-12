@@ -1,10 +1,10 @@
 module Ui.Commands
-  ( generate,
+  ( analyse,
+    generate,
     manageIndexes,
-    model,
   )
 where
 
+import Ui.Commands.Analyse (analyse)
 import Ui.Commands.Generate (generate)
 import Ui.Commands.ManageIndexes (manageIndexes)
-import Ui.Commands.Model (model)

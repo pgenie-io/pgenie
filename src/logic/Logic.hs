@@ -1,8 +1,7 @@
 module Logic
-  ( check,
+  ( analyse,
     generate,
     manageIndexes,
-    model,
     module Logic.Algebra,
   )
 where
@@ -65,19 +64,18 @@ data QueriesMetadataMerged = QueriesMetadataMerged
 
 -- * API ops
 
-check :: (Caps m) => m ()
-check =
-  run do
-    projectFile <- loadProjectFile
-    analyse projectFile
-    pure ()
-
-generate :: (Caps m) => GenerateOptions -> m ()
-generate options =
+-- | Validate the project and optionally output the model.
+--
+-- Performs the same analysis and emits the same seq-scan warnings as
+-- 'generate', but does not write any artifact files.  When a format is
+-- provided the project model is also serialised and returned so the caller
+-- can write it to stdout.
+analyse :: (Caps m) => AnalyseOptions -> Maybe ModelFormat -> m Text
+analyse options maybeFormat =
   run do
     stage "" 2 do
       projectFile <- loadProjectFile
-      (genProject, seqScanFindings, _indexes) <- analyse projectFile
+      (genProject, seqScanFindings, _indexes) <- analyseProject projectFile
       unless (null seqScanFindings) do
         for_ seqScanFindings \(queryName, finding) ->
           warn
@@ -94,37 +92,62 @@ generate options =
                 (Just "Run 'manage-indexes' to generate index migration")
                 [("query", queryName), ("table", finding.tableName)]
             )
-        when options.strictSeqScans do
+        when options.failOnSeqScans do
           throwError
             ( Error
                 []
                 "Sequential scans detected"
-                (Just "Run 'manage-indexes' to generate index migration, or remove --strict-seq-scans to allow warnings")
+                (Just "Run 'manage-indexes' to generate index migration, or remove --fail-on-seq-scans to allow warnings")
+                []
+            )
+      case maybeFormat of
+        Nothing -> pure ""
+        Just ModelFormatDhall -> pure (Dhall.pretty (Dhall.inject.embed genProject))
+        Just ModelFormatJson -> pure (to (Aeson.Text.encodeToTextBuilder genProject))
+
+generate :: (Caps m) => GenerateOptions -> m ()
+generate options =
+  run do
+    stage "" 2 do
+      projectFile <- loadProjectFile
+      (genProject, seqScanFindings, _indexes) <- analyseProject projectFile
+      unless (null seqScanFindings) do
+        for_ seqScanFindings \(queryName, finding) ->
+          warn
+            ( Error
+                []
+                ( "Sequential scan detected in query '"
+                    <> queryName
+                    <> "': table '"
+                    <> finding.tableName
+                    <> "' scanned without index on ("
+                    <> Text.intercalate ", " finding.suggestedIndexColumns
+                    <> ")"
+                )
+                (Just "Run 'manage-indexes' to generate index migration")
+                [("query", queryName), ("table", finding.tableName)]
+            )
+        when options.failOnSeqScans do
+          throwError
+            ( Error
+                []
+                "Sequential scans detected"
+                (Just "Run 'manage-indexes' to generate index migration, or remove --fail-on-seq-scans to allow warnings")
                 []
             )
       generateCode projectFile genProject
       pure ()
 
-manageIndexes :: (Caps m) => ManageIndexesOptions -> m ()
+-- | Analyse the project's index usage and output the recommended migration SQL
+-- to stdout. When @--write-file@ is set, also writes the migration to a
+-- numbered file in the @migrations/@ directory.
+manageIndexes :: (Caps m) => ManageIndexesOptions -> m Text
 manageIndexes options =
   run do
     stage "" 2 do
       projectFile <- loadProjectFile
-      (_genProject, seqScanFindings, indexes) <- analyse projectFile
+      (_genProject, seqScanFindings, indexes) <- analyseProject projectFile
       handleIndexOptimization options indexes seqScanFindings
-      pure ()
-
-model :: (Caps m) => Bool -> m Text
-model dhall =
-  run do
-    stage "" 1 do
-      projectFile <- loadProjectFile
-      (genProject, _seqScanFindings, _indexes) <- analyse projectFile
-      let modelText =
-            if dhall
-              then Dhall.pretty (Dhall.inject.embed genProject)
-              else to (Aeson.Text.encodeToTextBuilder genProject)
-      pure modelText
 
 -- * Helpers
 
@@ -227,8 +250,8 @@ generateCode projectFile project =
 
     pure artifacts
 
-analyse :: ProjectFile.ProjectFile -> Script (Gen.Input.Project, [(Text, SeqScanFinding)], [IndexInfo])
-analyse projectFile =
+analyseProject :: ProjectFile.ProjectFile -> Script (Gen.Input.Project, [(Text, SeqScanFinding)], [IndexInfo])
+analyseProject projectFile =
   stage "Analysing" 2 do
     stage "Migrations" 2 do
       migrationsListed <-
@@ -519,54 +542,78 @@ warn =
 
 -- | Run the unified index optimizer, combining redundant-index detection,
 -- excessive-composite narrowing, and missing-index creation into one step.
--- When @--fix@ is set, writes a single numbered migration.
-handleIndexOptimization :: ManageIndexesOptions -> [IndexInfo] -> [(Text, SeqScanFinding)] -> Script ()
+-- Returns the migration SQL, printing it to stdout via the caller.
+-- When @--allow-redundant-indexes@ is set, DropIndex actions are emitted as
+-- warnings instead of being included in the generated migration.
+-- When @--write-file@ is set, also writes the migration to a numbered file in
+-- @migrations/@, failing if the existing files do not follow the @N.sql@
+-- naming convention.
+handleIndexOptimization :: ManageIndexesOptions -> [IndexInfo] -> [(Text, SeqScanFinding)] -> Script Text
 handleIndexOptimization options indexes seqScanFindings = do
   let queryNeeds =
         map (\(_, finding) -> (finding.tableName, finding.suggestedIndexColumns)) seqScanFindings
-      actions = IndexOptimizer.optimizeIndexes indexes queryNeeds
-  unless (null actions) do
-    when options.fix do
-      migrationsListed <-
-        listDir "migrations"
-          & fmap (filter (\p -> Path.toExtensions p == ["sql"]))
-          & fmap sort
-      let nextMigrationNum = length migrationsListed + 1
-          migrationFileName = Text.pack (show nextMigrationNum) <> ".sql"
-          migrationContent = IndexOptimizer.generateMigration actions
-      case Path.maybeFromText ("migrations/" <> migrationFileName) of
-        Nothing ->
-          throwError
-            ( Error
-                []
-                "Failed to construct migration file path"
-                Nothing
-                [("filename", migrationFileName)]
-            )
-        Just migrationPath -> do
-          writeFile migrationPath migrationContent
-          emit
-            ( WarningEmitted
-                ( Error
-                    []
-                    ("Generated index migration: migrations/" <> migrationFileName)
-                    (Just "Review the generated migration and re-run generate")
-                    [("content", migrationContent)]
-                )
-            )
+      allActions = IndexOptimizer.optimizeIndexes indexes queryNeeds
+      (dropActions, createActions) = partition isDropAction allActions
+      migrationActions =
+        if options.allowRedundantIndexes
+          then createActions
+          else allActions
+  when options.allowRedundantIndexes do
+    for_ dropActions \action ->
+      warn (Error [] (indexActionMessage action) (Just "Suppressed by --allow-redundant-indexes") (indexActionDetails action))
+  if null migrationActions
+    then pure ""
+    else do
+      let migrationContent = IndexOptimizer.generateMigration migrationActions
+      when options.writeToFile do
+        writeMigrationFile migrationContent
+      pure migrationContent
 
-    for_ actions \action -> do
-      let msg = indexActionMessage action
-      if options.fix || options.allowRedundantIndexes
-        then warn (Error [] msg Nothing [])
-        else
-          throwError
+-- | Write the migration SQL to a numbered file in @migrations/@.
+-- Fails explicitly if any existing file does not follow the @N.sql@ naming
+-- convention (i.e. the base name is not a sequence of digits).
+writeMigrationFile :: Text -> Script ()
+writeMigrationFile content = do
+  migrationsListed <-
+    listDir "migrations"
+      & fmap (filter (\p -> Path.toExtensions p == ["sql"]))
+      & fmap sort
+  for_ migrationsListed \p -> do
+    let baseName = Path.toBasename p
+    unless (not (Text.null baseName) && Text.all isDigit baseName) do
+      throwError
+        ( Error
+            []
+            ("Migration naming convention is not clear: " <> Path.toText p)
+            (Just "All migration files must follow the N.sql naming convention (e.g., 1.sql, 2.sql)")
+            [("file", Path.toText p)]
+        )
+  let nextMigrationNum = length migrationsListed + 1
+      migrationFileName = Text.pack (show nextMigrationNum) <> ".sql"
+  case Path.maybeFromText ("migrations/" <> migrationFileName) of
+    Nothing ->
+      throwError
+        ( Error
+            []
+            "Failed to construct migration file path"
+            Nothing
+            [("filename", migrationFileName)]
+        )
+    Just migrationPath -> do
+      writeFile migrationPath content
+      emit
+        ( WarningEmitted
             ( Error
                 []
-                msg
-                (Just "Run with --fix to generate a migration, or use --allow-redundant-indexes to downgrade to warnings")
-                (indexActionDetails action)
+                ("Written migration to migrations/" <> migrationFileName)
+                (Just "Review the migration and commit it")
+                []
             )
+        )
+
+isDropAction :: IndexAction -> Bool
+isDropAction (DropIndex {}) = True
+isDropAction (CreateIndex {}) = False
 
 indexActionMessage :: IndexAction -> Text
 indexActionMessage (DropIndex idx reason) = case reason of

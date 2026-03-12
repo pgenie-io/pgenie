@@ -22,8 +22,9 @@ main runEffect = do
   Framework.main
     "pgn"
     "pGenie CLI"
-    [ Commands.generate,
-      Commands.manageIndexes,
-      Commands.model
+    "Recommended workflow: analyse -> generate -> (see seq-scan warnings) -> manage-indexes -> (commit migration) -> generate"
+    [ Commands.analyse,
+      Commands.generate,
+      Commands.manageIndexes
     ]
     (runEffect (Display.handleEvent display))

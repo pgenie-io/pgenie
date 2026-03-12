@@ -18,14 +18,14 @@ generate =
     }
 
 data Params = Params
-  { strictSeqScans :: Bool
+  { failOnSeqScans :: Bool
   }
 
 parser :: Opt.Parser Params
 parser =
   Params
     <$> Opt.switch
-      ( Opt.long "strict-seq-scans"
+      ( Opt.long "fail-on-seq-scans"
           <> Opt.help "Fail the procedure if sequential scans are detected (instead of emitting warnings)"
       )
 
@@ -33,6 +33,6 @@ execute :: (Logic.Caps m) => Params -> m Text
 execute params =
   Logic.generate
     Logic.GenerateOptions
-      { strictSeqScans = params.strictSeqScans
+      { failOnSeqScans = params.failOnSeqScans
       }
     $> ""

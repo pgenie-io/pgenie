@@ -11,33 +11,32 @@ manageIndexes :: (Logic.Caps m) => Command m
 manageIndexes =
   Command
     { name = "manage-indexes",
-      description = "Generate a migration to add missing indexes and remove redundant or excessive ones",
+      description = "Output a migration to stdout that adds missing indexes and removes redundant or excessive ones",
       parser,
       execute
     }
 
 data Params = Params
-  { fix :: Bool,
-    allowRedundantIndexes :: Bool
+  { allowRedundantIndexes :: Bool,
+    writeToFile :: Bool
   }
 
 parser :: Opt.Parser Params
 parser =
   Params
     <$> Opt.switch
-      ( Opt.long "fix"
-          <> Opt.help "Automatically generate a migration file with index changes"
+      ( Opt.long "allow-redundant-indexes"
+          <> Opt.help "Emit warnings about redundant indexes instead of removing them"
       )
     <*> Opt.switch
-      ( Opt.long "allow-redundant-indexes"
-          <> Opt.help "Downgrade redundant index issues to warnings instead of errors"
+      ( Opt.long "write-file"
+          <> Opt.help "Also write the migration to a numbered file in migrations/ (fails if existing files do not follow the N.sql naming convention)"
       )
 
 execute :: (Logic.Caps m) => Params -> m Text
 execute params =
   Logic.manageIndexes
     Logic.ManageIndexesOptions
-      { fix = params.fix,
-        allowRedundantIndexes = params.allowRedundantIndexes
+      { allowRedundantIndexes = params.allowRedundantIndexes,
+        writeToFile = params.writeToFile
       }
-    $> ""

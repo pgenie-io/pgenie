@@ -90,19 +90,33 @@ data DropReason
     UnusedByQueries
   deriving stock (Eq, Show)
 
+-- * Analyse options
+
+data AnalyseOptions = AnalyseOptions
+  { failOnSeqScans :: Bool
+  }
+  deriving stock (Eq, Show)
+
 -- * Generate options
 
 data GenerateOptions = GenerateOptions
-  { strictSeqScans :: Bool
+  { failOnSeqScans :: Bool
   }
   deriving stock (Eq, Show)
 
 -- * Manage-indexes options
 
 data ManageIndexesOptions = ManageIndexesOptions
-  { fix :: Bool,
-    allowRedundantIndexes :: Bool
+  { allowRedundantIndexes :: Bool,
+    -- | When set, write the generated migration to a numbered file in the
+    -- @migrations/@ directory in addition to printing it to stdout.
+    writeToFile :: Bool
   }
+  deriving stock (Eq, Show)
+
+-- * Model format
+
+data ModelFormat = ModelFormatJson | ModelFormatDhall
   deriving stock (Eq, Show)
 
 -- * Capabilities

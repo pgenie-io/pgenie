@@ -280,6 +280,7 @@ library ui
     Ui.Commands.Model
     Ui.Display
     Ui.Display.Components.Main
+    Ui.Display.Components.Main.View
     Ui.Framework
 
   build-depends:

@@ -133,6 +133,7 @@ library logic
   exposed-modules:
     Logic
     Logic.Algebra
+    Logic.CodeGen
     Logic.Dsl
     Logic.IndexOptimizer
     Logic.Name

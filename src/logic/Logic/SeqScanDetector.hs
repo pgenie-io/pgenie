@@ -1,12 +1,25 @@
 module Logic.SeqScanDetector
-  ( detectSeqScans,
+  ( SeqScanFinding (..),
+    detectSeqScans,
     extractFilterColumns,
+    inferSeqScanFindingsFromSql,
   )
 where
 
 import Base.Prelude
+import Data.Set qualified as Set
 import Data.Text qualified as Text
-import Logic.Algebra (SeqScanFinding (..))
+
+-- | A finding of sequential scan in a query execution plan.
+data SeqScanFinding = SeqScanFinding
+  { -- | Name of the table being sequentially scanned.
+    tableName :: Text,
+    -- | The filter condition from the EXPLAIN output.
+    filterCondition :: Text,
+    -- | Suggested columns to create an index on.
+    suggestedIndexColumns :: [Text]
+  }
+  deriving stock (Eq, Show)
 
 -- | Detect sequential scans with filters from EXPLAIN text output lines.
 -- Only seq scans that have a filter condition are flagged,
@@ -82,3 +95,69 @@ extractFilterColumns condition =
       case Text.splitOn "." ident of
         [_table, col] -> col
         _ -> ident
+
+-- | Infer seq-scan findings from a SQL query text by extracting table and
+-- WHERE clause information.  This is a fallback when EXPLAIN is not available.
+inferSeqScanFindingsFromSql :: Text -> [SeqScanFinding]
+inferSeqScanFindingsFromSql sql =
+  case inferTableAndWhere sql of
+    Nothing -> []
+    Just (tbl, whereClause) ->
+      let cols = extractFilterColumns whereClause
+       in if null cols
+            then []
+            else [SeqScanFinding tbl whereClause cols]
+
+inferTableAndWhere :: Text -> Maybe (Text, Text)
+inferTableAndWhere sql = do
+  let normalized =
+        sql
+          & Text.lines
+          & filter (not . ("--" `Text.isPrefixOf`) . Text.stripStart)
+          & Text.unwords
+      normalizedLower = Text.toLower normalized
+      tokens = Text.words normalized
+  guard (not (" join " `Text.isInfixOf` normalizedLower))
+  table <- inferTableName tokens
+  whereClause <- inferWhereClause tokens
+  pure (table, whereClause)
+
+inferTableName :: [Text] -> Maybe Text
+inferTableName tokens =
+  let lowerTokens = map Text.toLower tokens
+      findAfterKeyword kw = do
+        i <- elemIndex kw lowerTokens
+        token <- tokens !? (i + 1)
+        pure (normalizeTableToken token)
+   in findAfterKeyword "from"
+        <|> findAfterKeyword "update"
+        <|> ( do
+                i <- elemIndex "into" lowerTokens
+                prev <- lowerTokens !? (i - 1)
+                guard (prev == "insert")
+                token <- tokens !? (i + 1)
+                pure (normalizeTableToken token)
+            )
+
+inferWhereClause :: [Text] -> Maybe Text
+inferWhereClause tokens =
+  let lowerTokens = map Text.toLower tokens
+      stopKeywords = Set.fromList ["group", "order", "limit", "returning", "union"]
+   in do
+        i <- elemIndex "where" lowerTokens
+        let rest = drop (i + 1) tokens
+            restLower = drop (i + 1) lowerTokens
+            clauseTokens = map fst (takeWhile (\(_, lowerTok) -> lowerTok `Set.notMember` stopKeywords) (zip rest restLower))
+        guard (not (null clauseTokens))
+        pure (Text.unwords clauseTokens)
+
+normalizeTableToken :: Text -> Text
+normalizeTableToken token =
+  let cleaned =
+        token
+          & Text.dropWhile (\c -> c == '"' || c == '(')
+          & Text.takeWhile (\c -> c /= '"' && c /= ')' && c /= ';' && c /= ',')
+          & Text.splitOn "."
+   in case reverse cleaned of
+        [] -> ""
+        x : _ -> x

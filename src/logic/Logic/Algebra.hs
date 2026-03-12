@@ -1,6 +1,7 @@
 module Logic.Algebra where
 
 import Base.Prelude hiding (readFile, writeFile)
+import Logic.IndexOptimizer (IndexInfo)
 import PGenieGen qualified as Gen
 import PGenieGen.Model.Input qualified as Gen.Input
 
@@ -36,59 +37,6 @@ data InferredParam = InferredParam
   { isNullable :: Bool,
     type_ :: Gen.Input.Value
   }
-
--- * Seq-scan detection
-
--- | A finding of sequential scan in a query execution plan.
-data SeqScanFinding = SeqScanFinding
-  { -- | Name of the table being sequentially scanned.
-    tableName :: Text,
-    -- | The filter condition from the EXPLAIN output.
-    filterCondition :: Text,
-    -- | Suggested columns to create an index on.
-    suggestedIndexColumns :: [Text]
-  }
-  deriving stock (Eq, Show)
-
--- * Index info
-
-data IndexInfo = IndexInfo
-  { indexName :: Text,
-    tableName :: Text,
-    schemaName :: Text,
-    columns :: [Text],
-    isUnique :: Bool,
-    isPrimary :: Bool,
-    indexMethod :: Text,
-    predicate :: Maybe Text
-  }
-  deriving stock (Eq, Show)
-
--- * Index optimization results
-
--- | An action recommended by the index optimizer.
-data IndexAction
-  = -- | Drop an index that is unnecessary.
-    DropIndex IndexInfo DropReason
-  | -- | Create a new index to cover a missing access pattern.
-    CreateIndex
-      { tableName :: Text,
-        columns :: [Text]
-      }
-  deriving stock (Eq, Show)
-
--- | Reason why an index should be dropped.
-data DropReason
-  = -- | This index's columns are a leading prefix of the superseding index's columns.
-    PrefixRedundancy IndexInfo
-  | -- | This index is an exact duplicate of another index.
-    ExactDuplicate IndexInfo
-  | -- | This composite index has trailing columns that are not needed by any query.
-    --   The replacement columns are provided.
-    ExcessiveComposite [Text]
-  | -- | This index is not used by any observed query need on the same table.
-    UnusedByQueries
-  deriving stock (Eq, Show)
 
 -- * Analyse options
 

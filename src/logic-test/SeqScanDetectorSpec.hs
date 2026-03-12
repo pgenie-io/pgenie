@@ -2,7 +2,6 @@ module SeqScanDetectorSpec (spec) where
 
 import Base.Prelude
 import Data.Text qualified as Text
-import Logic.Algebra (SeqScanFinding (..))
 import Logic.SeqScanDetector
 import Test.Hspec
 

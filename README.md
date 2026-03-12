@@ -60,13 +60,12 @@ Parameters are automatically typed based on the database schema.
 
 Run `pgn generate` in a directory with `project1.pgn.yaml` to generate type-safe client libraries.
 
-### First Run Notice
-
-**The first time you run pGenie it will take 2-3 minutes** while it performs initial setup:
-
-- **Docker image caching** — Downloads and caches the PostgreSQL Docker image  
-- **Code generator caching** — Downloads and caches the Dhall code for the configured generators
-
-You may notice pGenie appears to "hang" on the "Loading" stage during this initial setup. This is normal!
-
-**After the first run, subsequent executions will complete in just a few seconds.**
+> [!NOTE]
+> The first time you run pGenie it will take **2–3 minutes** while it performs initial setup:
+>
+> - Docker image caching
+> - Code generator caching
+>
+> You may notice pGenie appears to hang on the "Loading" stage during this initial setup. This is normal!
+>
+> After the first run, subsequent executions will complete in **a few seconds**.

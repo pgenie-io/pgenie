@@ -279,8 +279,10 @@ library ui
     Ui.Commands.Generate
     Ui.Commands.ManageIndexes
     Ui.Display
-    Ui.Display.Memory
-    Ui.Display.View
+    Ui.Display.Components.Main
+    Ui.Display.Components.Main.View
+    Ui.Display.Components.ProgressBar
+    Ui.Display.Components.ProgressBar.View
     Ui.Framework
 
   build-depends:

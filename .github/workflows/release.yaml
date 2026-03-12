@@ -64,7 +64,7 @@ jobs:
     uses: ./.github/workflows/build-and-test.yaml
     secrets: inherit
     with:
-      os: macos-13
+      os: macos-26-intel
       artifact-name: pgn-macos-x86_64
       version: ${{ inputs.version }}
 

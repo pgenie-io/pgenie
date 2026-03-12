@@ -279,8 +279,7 @@ library ui
     Ui.Commands.ManageIndexes
     Ui.Commands.Model
     Ui.Display
-    Ui.Display.Memory
-    Ui.Display.View
+    Ui.Display.Components.Main
     Ui.Framework
 
   build-depends:

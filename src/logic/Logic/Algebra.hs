@@ -90,6 +90,13 @@ data DropReason
     UnusedByQueries
   deriving stock (Eq, Show)
 
+-- * Analyse options
+
+data AnalyseOptions = AnalyseOptions
+  { failOnSeqScans :: Bool
+  }
+  deriving stock (Eq, Show)
+
 -- * Generate options
 
 data GenerateOptions = GenerateOptions

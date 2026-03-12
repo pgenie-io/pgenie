@@ -21,13 +21,18 @@ analyse =
     }
 
 data Params = Params
-  { format :: Maybe Logic.ModelFormat
+  { failOnSeqScans :: Bool,
+    format :: Maybe Logic.ModelFormat
   }
 
 parser :: Opt.Parser Params
 parser =
   Params
-    <$> optional
+    <$> Opt.switch
+      ( Opt.long "fail-on-seq-scans"
+          <> Opt.help "Fail the procedure if sequential scans are detected (instead of emitting warnings)"
+      )
+    <*> optional
       ( Opt.option
           readFormat
           ( Opt.long "format"
@@ -43,4 +48,7 @@ parser =
         _ -> Left ("Unknown format: " <> s <> ". Expected 'json' or 'dhall'.")
 
 execute :: (Logic.Caps m) => Params -> m Text
-execute params = Logic.analyse params.format
+execute params =
+  Logic.analyse
+    Logic.AnalyseOptions {failOnSeqScans = params.failOnSeqScans}
+    params.format

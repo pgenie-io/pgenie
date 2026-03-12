@@ -66,15 +66,40 @@ data QueriesMetadataMerged = QueriesMetadataMerged
 
 -- | Validate the project and optionally output the model.
 --
--- When no format is specified the command just runs all analysis checks and
--- exits. When a format is provided the project model is also serialised and
--- returned so the caller can write it to stdout.
-analyse :: (Caps m) => Maybe ModelFormat -> m Text
-analyse maybeFormat =
+-- Performs the same analysis and emits the same seq-scan warnings as
+-- 'generate', but does not write any artifact files.  When a format is
+-- provided the project model is also serialised and returned so the caller
+-- can write it to stdout.
+analyse :: (Caps m) => AnalyseOptions -> Maybe ModelFormat -> m Text
+analyse options maybeFormat =
   run do
-    stage "" 1 do
+    stage "" 2 do
       projectFile <- loadProjectFile
-      (genProject, _seqScanFindings, _indexes) <- analyseProject projectFile
+      (genProject, seqScanFindings, _indexes) <- analyseProject projectFile
+      unless (null seqScanFindings) do
+        for_ seqScanFindings \(queryName, finding) ->
+          warn
+            ( Error
+                []
+                ( "Sequential scan detected in query '"
+                    <> queryName
+                    <> "': table '"
+                    <> finding.tableName
+                    <> "' scanned without index on ("
+                    <> Text.intercalate ", " finding.suggestedIndexColumns
+                    <> ")"
+                )
+                (Just "Run 'manage-indexes' to generate index migration")
+                [("query", queryName), ("table", finding.tableName)]
+            )
+        when options.failOnSeqScans do
+          throwError
+            ( Error
+                []
+                "Sequential scans detected"
+                (Just "Run 'manage-indexes' to generate index migration, or remove --fail-on-seq-scans to allow warnings")
+                []
+            )
       case maybeFormat of
         Nothing -> pure ""
         Just ModelFormatDhall -> pure (Dhall.pretty (Dhall.inject.embed genProject))

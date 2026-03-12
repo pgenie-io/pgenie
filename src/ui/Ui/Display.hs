@@ -29,9 +29,7 @@ handleEvent display event = do
   oldMemory <- takeMVar display.memoryVar
   currentTime <- getCurrentTime
   let newMemory = Memory.setCurrentTime currentTime (Memory.update event oldMemory)
-      (stderrOutput, stdoutOutput) = View.view event oldMemory newMemory
-  TextIO.hPutStr stderr (to stderrOutput)
+      output = View.view event oldMemory newMemory
+  TextIO.hPutStr stderr (to output)
   hFlush stderr
-  TextIO.hPutStr stdout (to stdoutOutput)
-  hFlush stdout
   putMVar display.memoryVar newMemory

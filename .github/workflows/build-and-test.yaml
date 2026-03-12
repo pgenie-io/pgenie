@@ -61,7 +61,7 @@ jobs:
         id: setup
         uses: haskell-actions/setup@v2
         with:
-          ghc-version: "9.14.1"
+          ghc-version: 9.12.2
           cabal-version: latest
 
       # On Windows, haskell-actions/setup outputs C:\sr as the cabal-store

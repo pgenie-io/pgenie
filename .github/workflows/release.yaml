@@ -101,3 +101,22 @@ jobs:
             --title "v${{ inputs.version }}" \
             --target "${{ github.sha }}" \
             artifacts/*
+
+  # ── Post-release ─────────────────────────────────────────────────────────────
+  update-landing:
+    name: Update landing download links
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger update-download-links workflow on landing repo
+        env:
+          GH_TOKEN: ${{ secrets.LANDING_PAT }}
+        run: |
+          BASE_URL="https://github.com/${{ github.repository }}/releases/download/v${{ inputs.version }}"
+          gh workflow run update-download-links.yml \
+            --repo pgenie-io/landing \
+            --ref master \
+            --field linux_x86_64_url="${BASE_URL}/pgn-linux-x86_64" \
+            --field macos_arm64_url="${BASE_URL}/pgn-macos-arm64" \
+            --field macos_x86_64_url="${BASE_URL}/pgn-macos-x86_64" \
+            --field windows_x86_64_url="${BASE_URL}/pgn-windows-x86_64.exe"

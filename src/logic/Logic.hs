@@ -3,6 +3,8 @@ module Logic
     generate,
     manageIndexes,
     module Logic.Algebra,
+    module Logic.IndexOptimizer,
+    module Logic.SeqScanDetector,
   )
 where
 
@@ -11,24 +13,22 @@ import Base.Prelude hiding (readFile, writeFile)
 import Control.Monad.Parallel qualified as MonadParallel
 import Data.Aeson.Text qualified as Aeson.Text
 import Data.Map.Strict qualified as Map
-import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Dhall.Core qualified as Dhall
 import Dhall.Marshal.Encode qualified as Dhall
 import Logic.Algebra
+import Logic.CodeGen (generateCode)
 import Logic.Dsl
-import Logic.GeneratorHashes qualified as GeneratorHashes
+import Logic.IndexOptimizer
 import Logic.IndexOptimizer qualified as IndexOptimizer
 import Logic.Name qualified as Name
 import Logic.ProjectFile qualified as ProjectFile
+import Logic.SeqScanDetector
 import Logic.SeqScanDetector qualified as SeqScanDetector
 import Logic.SignatureFile qualified as SignatureFile
 import Logic.SqlTemplate qualified as SqlTemplate
 import Logic.SyntaxAnalyser qualified as SyntaxAnalyser
-import PGenieGen qualified as Gen
 import PGenieGen.Model.Input qualified as Gen.Input
-import PGenieGen.Model.Output qualified as Gen.Output
-import PGenieGen.Model.Output.Report qualified as Gen.Output.Report
 import SyntacticClass qualified as Syntactic
 
 -- * Intermediate (non-interface) Types
@@ -37,12 +37,6 @@ data QueryListed = QueryListed
   { name :: Name.Name,
     filePath :: Path,
     signatureFilePath :: Maybe Path
-  }
-
-data GeneratedArtifact = GeneratedArtifact
-  { name :: Text,
-    warnings :: [Gen.Output.Report],
-    filePaths :: [Path]
   }
 
 data SignatureGenerated = SignatureGenerated
@@ -151,11 +145,6 @@ manageIndexes options =
 
 -- * Helpers
 
-locationToUrl :: Gen.Location -> Text
-locationToUrl = \case
-  Gen.LocationUrl url -> url
-  Gen.LocationPath path -> Path.toText path
-
 loadProjectFile :: Script ProjectFile.ProjectFile
 loadProjectFile = do
   configContent <- readFile "project1.pgn.yaml"
@@ -174,81 +163,6 @@ loadQuerySql queryListed = do
             [("file", Path.toText queryListed.filePath), ("error", to err)]
         )
     Right res -> pure res
-
-generateCode :: ProjectFile.ProjectFile -> Gen.Input.Project -> Script [GeneratedArtifact]
-generateCode projectFile project =
-  stage "Generating" (length projectFile.artifacts) do
-    -- Load existing hashes file
-    existingHashes <- GeneratorHashes.tryLoadHashesFile
-
-    -- Load generators and collect new hashes
-    artifactsWithHashes <-
-      MonadParallel.forM projectFile.artifacts \artifact -> do
-        let name = Name.inSnakeCase artifact.name
-            genUrl = locationToUrl artifact.gen
-            maybeHash = Map.lookup genUrl existingHashes
-        stage name 2 do
-          compileFnWithHash <-
-            stage "Loading" 0 do
-              (gen, newHash) <- loadGen artifact.gen maybeHash
-              case gen artifact.config of
-                Left errMsg ->
-                  throwError
-                    ( Error
-                        []
-                        errMsg
-                        (Just "Ensure the artifact configuration conforms to the format expected by the generator")
-                        [ ("config", to (Aeson.Text.encodeToTextBuilder artifact.config))
-                        ]
-                    )
-                Right compileFn ->
-                  pure (compileFn, genUrl, newHash)
-
-          stage "Compiling" 0 do
-            let (compileFn, genUrl, newHash) = compileFnWithHash
-                output = compileFn project
-            case output.result of
-              Gen.Output.ResultErr report ->
-                throwError
-                  ( Error
-                      report.path
-                      report.message
-                      Nothing
-                      [ ( "warnings",
-                          output.warnings
-                            & map Gen.Output.Report.toWarningYamlText
-                            & Text.intercalate "\n"
-                        )
-                      ]
-                  )
-              Gen.Output.ResultOk generatedFiles -> do
-                artifactPath <- case Path.maybeFromText name of
-                  Nothing ->
-                    throwError
-                      ( Error
-                          []
-                          "Invalid artifact name"
-                          (Just "Must be in snake_case and must not start with a number")
-                          [("name", name)]
-                      )
-                  Just path ->
-                    pure ("artifacts" <> path)
-                generatedFilePaths <- for generatedFiles \file -> do
-                  let modifiedPath = artifactPath <> file.path
-                  writeFile modifiedPath file.content
-                  pure modifiedPath
-                pure ((GeneratedArtifact name output.warnings generatedFilePaths), (genUrl, newHash))
-
-    -- Extract artifacts and hashes
-    let (artifacts, hashPairs) = unzip artifactsWithHashes
-        updatedHashes = Map.union (Map.fromList hashPairs) existingHashes
-        noNewHashes = null hashPairs
-
-    -- Write updated hashes file
-    unless noNewHashes do
-      writeFile "freeze1.pgn.yaml" (GeneratorHashes.serializeHashesMap updatedHashes)
-
-    pure artifacts
 
 analyseProject :: ProjectFile.ProjectFile -> Script (Gen.Input.Project, [(Text, SeqScanFinding)], [IndexInfo])
 analyseProject projectFile =
@@ -345,7 +259,7 @@ analyseProject projectFile =
                   (\_ -> pure [])
 
               let fallbackSeqScanFindings =
-                    inferSeqScanFindingsFromSql nativeTemplate
+                    SeqScanDetector.inferSeqScanFindingsFromSql nativeTemplate
                       & map (Name.inSnakeCase queryListed.name,)
                   effectiveSeqScanFindings =
                     if null querySeqScanFindings
@@ -462,77 +376,6 @@ analyseProject projectFile =
         seqScanFindings,
         indexes
       )
-
-stagedParFor :: Text -> (a -> Text) -> [a] -> (a -> Script b) -> Script [b]
-stagedParFor stageName nameFn items action =
-  stage stageName (length items) do
-    MonadParallel.forM items \item ->
-      stage (nameFn item) 0 do
-        action item
-
-inferSeqScanFindingsFromSql :: Text -> [SeqScanFinding]
-inferSeqScanFindingsFromSql sql =
-  case inferTableAndWhere sql of
-    Nothing -> []
-    Just (tbl, whereClause) ->
-      let cols = SeqScanDetector.extractFilterColumns whereClause
-       in if null cols
-            then []
-            else [SeqScanFinding tbl whereClause cols]
-
-inferTableAndWhere :: Text -> Maybe (Text, Text)
-inferTableAndWhere sql = do
-  let normalized =
-        sql
-          & Text.lines
-          & filter (not . ("--" `Text.isPrefixOf`) . Text.stripStart)
-          & Text.unwords
-      normalizedLower = Text.toLower normalized
-      tokens = Text.words normalized
-  guard (not (" join " `Text.isInfixOf` normalizedLower))
-  table <- inferTableName tokens
-  whereClause <- inferWhereClause tokens
-  pure (table, whereClause)
-
-inferTableName :: [Text] -> Maybe Text
-inferTableName tokens =
-  let lowerTokens = map Text.toLower tokens
-      findAfterKeyword kw = do
-        i <- elemIndex kw lowerTokens
-        token <- tokens !? (i + 1)
-        pure (normalizeTableToken token)
-   in findAfterKeyword "from"
-        <|> findAfterKeyword "update"
-        <|> ( do
-                i <- elemIndex "into" lowerTokens
-                prev <- lowerTokens !? (i - 1)
-                guard (prev == "insert")
-                token <- tokens !? (i + 1)
-                pure (normalizeTableToken token)
-            )
-
-inferWhereClause :: [Text] -> Maybe Text
-inferWhereClause tokens =
-  let lowerTokens = map Text.toLower tokens
-      stopKeywords = Set.fromList ["group", "order", "limit", "returning", "union"]
-   in do
-        i <- elemIndex "where" lowerTokens
-        let rest = drop (i + 1) tokens
-            restLower = drop (i + 1) lowerTokens
-            clauseTokens = map fst (takeWhile (\(_, lowerTok) -> lowerTok `Set.notMember` stopKeywords) (zip rest restLower))
-        guard (not (null clauseTokens))
-        pure (Text.unwords clauseTokens)
-
-normalizeTableToken :: Text -> Text
-normalizeTableToken token =
-  let cleaned =
-        token
-          & Text.dropWhile (\c -> c == '"' || c == '(')
-          & Text.takeWhile (\c -> c /= '"' && c /= ')' && c /= ';' && c /= ',')
-          & Text.splitOn "."
-   in case reverse cleaned of
-        [] -> ""
-        x : _ -> x
 
 -- | Depending on the warning handling strategy this can either log the warning and continue or throw an error to stop the execution.
 warn :: Error -> Script ()

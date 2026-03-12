@@ -1,5 +1,8 @@
 module Logic.IndexOptimizer
-  ( optimizeIndexes,
+  ( IndexInfo (..),
+    IndexAction (..),
+    DropReason (..),
+    optimizeIndexes,
     generateMigration,
   )
 where
@@ -8,7 +11,46 @@ import Base.Prelude
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as Text
-import Logic.Algebra
+
+-- * Index info
+
+data IndexInfo = IndexInfo
+  { indexName :: Text,
+    tableName :: Text,
+    schemaName :: Text,
+    columns :: [Text],
+    isUnique :: Bool,
+    isPrimary :: Bool,
+    indexMethod :: Text,
+    predicate :: Maybe Text
+  }
+  deriving stock (Eq, Show)
+
+-- * Index optimization results
+
+-- | An action recommended by the index optimizer.
+data IndexAction
+  = -- | Drop an index that is unnecessary.
+    DropIndex IndexInfo DropReason
+  | -- | Create a new index to cover a missing access pattern.
+    CreateIndex
+      { tableName :: Text,
+        columns :: [Text]
+      }
+  deriving stock (Eq, Show)
+
+-- | Reason why an index should be dropped.
+data DropReason
+  = -- | This index's columns are a leading prefix of the superseding index's columns.
+    PrefixRedundancy IndexInfo
+  | -- | This index is an exact duplicate of another index.
+    ExactDuplicate IndexInfo
+  | -- | This composite index has trailing columns that are not needed by any query.
+    --   The replacement columns are provided.
+    ExcessiveComposite [Text]
+  | -- | This index is not used by any observed query need on the same table.
+    UnusedByQueries
+  deriving stock (Eq, Show)
 
 -- | Analyze existing indexes against query needs and produce a list of
 -- recommended actions: indexes to drop (redundant / excessive) and

@@ -2,7 +2,6 @@ module SeqScanDetectorSpec (spec) where
 
 import Base.Prelude
 import Data.Text qualified as Text
-import Logic.Algebra (SeqScanFinding (..))
 import Logic.SeqScanDetector
 import Test.Hspec
 
@@ -71,3 +70,36 @@ spec = do
 
     it "returns empty for no identifiable columns" do
       extractFilterColumns "($1 = $2)" `shouldBe` []
+
+  describe "inferSeqScanFindingsFromSql" do
+    it "infers findings from a simple SELECT with WHERE" do
+      let sql = "SELECT * FROM album WHERE format = $1"
+          findings = inferSeqScanFindingsFromSql sql
+      length findings `shouldBe` 1
+      case findings of
+        [f] -> do
+          f.tableName `shouldBe` "album"
+          f.suggestedIndexColumns `shouldContain` ["format"]
+        _ -> expectationFailure "Expected 1 finding"
+
+    it "returns empty for SELECT without WHERE" do
+      inferSeqScanFindingsFromSql "SELECT * FROM album" `shouldBe` []
+
+    it "returns empty for queries with JOIN" do
+      inferSeqScanFindingsFromSql "SELECT * FROM album JOIN artist ON album.artist_id = artist.id WHERE format = $1"
+        `shouldBe` []
+
+    it "infers findings from UPDATE with WHERE" do
+      let sql = "UPDATE album SET name = $1 WHERE id = $2"
+          findings = inferSeqScanFindingsFromSql sql
+      length findings `shouldBe` 1
+      case findings of
+        [f] -> do
+          f.tableName `shouldBe` "album"
+          f.suggestedIndexColumns `shouldContain` ["id"]
+        _ -> expectationFailure "Expected 1 finding"
+
+    it "strips single-line comments" do
+      let sql = "-- fetch album by format\nSELECT * FROM album WHERE format = $1"
+          findings = inferSeqScanFindingsFromSql sql
+      length findings `shouldBe` 1

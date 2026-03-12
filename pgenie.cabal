@@ -281,6 +281,8 @@ library ui
     Ui.Display
     Ui.Display.Components.Main
     Ui.Display.Components.Main.View
+    Ui.Display.Components.ProgressBar
+    Ui.Display.Components.ProgressBar.View
     Ui.Framework
 
   build-depends:

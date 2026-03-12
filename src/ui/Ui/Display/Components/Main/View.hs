@@ -1,7 +1,6 @@
 module Ui.Display.Components.Main.View
   ( eraseLine,
     printStagePath,
-    printProgressBar,
     printDone,
     printWarning,
     printError,
@@ -12,7 +11,6 @@ import Base.Prelude
 import Data.Text qualified as Text
 import TextBuilder
 import TextBuilder qualified
-import TextBuilderDev qualified
 
 -- | Erase the current terminal line in place (for overwriting a progress bar).
 eraseLine :: TextBuilder
@@ -25,27 +23,14 @@ printStagePath path =
     then mempty
     else TextBuilder.intercalateMap " > " to (reverse path) <> "\n"
 
--- | Print a progress bar on the current line.
-printProgressBar :: Double -> TextBuilder
-printProgressBar progress =
-  let width = 30
-      filledWidth = round (progress * fromIntegral width)
-      emptyWidth = width - filledWidth
-      filled = to (Text.replicate filledWidth "=")
-      arrow = if filledWidth > 0 && filledWidth < width then ">" else ""
-      empty = to (Text.replicate (emptyWidth - Text.length arrow) ".")
-      percentage = TextBuilderDev.doubleFixedPointPercent 1 progress
-   in mconcat ["[", filled, to arrow, empty, "] ", percentage]
-
 -- | Print the "Done!" completion message, replacing the current line.
 printDone :: TextBuilder
 printDone = "\r\ESC[2K" <> "\ESC[32mDone!\ESC[0m" <> "\n"
 
--- | Print a warning report, optionally followed by a refreshed progress bar.
-printWarning :: [Text] -> Text -> Maybe Text -> [(Text, Text)] -> Double -> TextBuilder
-printWarning path message suggestion details progress =
+-- | Print a warning report.
+printWarning :: [Text] -> Text -> Maybe Text -> [(Text, Text)] -> TextBuilder
+printWarning path message suggestion details =
   report ("\ESC[33mWarning\ESC[0m") path message suggestion details
-    <> printProgressBar progress
 
 -- | Print an error report.
 printError :: [Text] -> Text -> Maybe Text -> [(Text, Text)] -> TextBuilder

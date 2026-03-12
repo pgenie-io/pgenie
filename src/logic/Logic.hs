@@ -377,13 +377,6 @@ analyseProject projectFile =
         indexes
       )
 
-stagedParFor :: Text -> (a -> Text) -> [a] -> (a -> Script b) -> Script [b]
-stagedParFor stageName nameFn items action =
-  stage stageName (length items) do
-    MonadParallel.forM items \item ->
-      stage (nameFn item) 0 do
-        action item
-
 -- | Depending on the warning handling strategy this can either log the warning and continue or throw an error to stop the execution.
 warn :: Error -> Script ()
 warn =

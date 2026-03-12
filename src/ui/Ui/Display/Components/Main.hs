@@ -38,20 +38,40 @@ update event currentTime mem = case event of
       then (mem, mempty)
       else
         let mem' = setCurrentTime currentTime mem {hasProgressBar = True}
-         in (mem', View.view (View.StageEntered {clearBar = mem.hasProgressBar, path, progress = mem'.progress, timeLeft = mem'.timeLeftEstimate}))
+         in ( mem',
+              mconcat
+                [ if mem.hasProgressBar then View.eraseLine else mempty,
+                  View.printStagePath path,
+                  View.printProgressBar mem'.progress
+                ]
+            )
   Logic.StageExited path progressDelta ->
     if mem.progress >= 1 || not mem.hasProgressBar
       then (setCurrentTime currentTime mem, mempty)
       else
         let newProgress = let p = mem.progress + progressDelta in if p >= 0.999 then 1 else p
             mem' = setCurrentTime currentTime mem {progress = newProgress}
-         in (mem', View.view (View.StageExited {path, progress = newProgress, timeLeft = mem'.timeLeftEstimate}))
+         in ( mem',
+              if newProgress >= 1 || null path
+                then View.printDone
+                else View.eraseLine <> View.printProgressBar newProgress
+            )
   Logic.WarningEmitted err ->
     let mem' = setCurrentTime currentTime mem {hasProgressBar = True}
-     in (mem', View.view (View.Warning {clearBar = mem.hasProgressBar, path = err.path, message = err.message, suggestion = err.suggestion, details = err.details, progress = mem'.progress, timeLeft = mem'.timeLeftEstimate}))
+     in ( mem',
+          mconcat
+            [ if mem.hasProgressBar then View.eraseLine else mempty,
+              View.printWarning err.path err.message err.suggestion err.details mem'.progress
+            ]
+        )
   Logic.Failed err ->
     let mem' = setCurrentTime currentTime mem {hasProgressBar = False}
-     in (mem', View.view (View.Error {clearBar = mem.hasProgressBar, path = err.path, message = err.message, suggestion = err.suggestion, details = err.details}))
+     in ( mem',
+          mconcat
+            [ if mem.hasProgressBar then View.eraseLine else mempty,
+              View.printError err.path err.message err.suggestion err.details
+            ]
+        )
 
 setCurrentTime :: UTCTime -> Memory -> Memory
 setCurrentTime currentTime memory =

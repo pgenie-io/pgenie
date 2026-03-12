@@ -42,11 +42,11 @@ update event memory =
       if memory.progress >= 1
         then memory -- Don't update progress if already at 100%
         else
-          memory
-            { progress =
-                (memory.progress + progressDelta)
-                  & (\x -> if x >= 0.99999 then 1 else x) -- Avoid floating point imprecision issues
-            }
+          let newProgress = memory.progress + progressDelta
+              newProgressCapped = if newProgress >= 0.999 then 1 else newProgress -- Avoid floating point imprecision issues
+           in memory
+                { progress = newProgressCapped
+                }
     Logic.WarningEmitted _err ->
       memory
         { hasProgressBar = True

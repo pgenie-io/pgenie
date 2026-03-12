@@ -102,7 +102,7 @@ analyse options maybeFormat =
             )
       case maybeFormat of
         Nothing -> pure ""
-        Just ModelFormatDhall -> pure (Dhall.pretty (Dhall.inject.embed genProject))
+        Just ModelFormatDhall -> pure (Dhall.pretty (Dhall.cse (Dhall.denote (Dhall.inject.embed genProject))))
         Just ModelFormatJson -> pure (to (Aeson.Text.encodeToTextBuilder genProject))
 
 generate :: (Caps m) => GenerateOptions -> m ()

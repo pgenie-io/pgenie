@@ -47,6 +47,7 @@ jobs:
     with:
       os: ubuntu-latest
       artifact-name: pgn-linux-x86_64
+      test: true
 
   build-macos-x86_64:
     name: Build and test on macOS-x86_64
@@ -55,6 +56,7 @@ jobs:
     with:
       os: macos-26-intel
       artifact-name: pgn-macos-x86_64
+      test: true
 
   build-windows:
     name: Build and test on Windows-x86_64
@@ -63,3 +65,4 @@ jobs:
     with:
       os: windows-latest
       artifact-name: pgn-windows-x86_64.exe
+      test: true

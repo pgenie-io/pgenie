@@ -18,6 +18,11 @@ on:
         type: string
         required: false
         default: ""
+      test:
+        description: Run integration tests that require Docker/Postgres
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -41,10 +46,10 @@ jobs:
       # testcontainers-postgresql (used by infra-test) needs a Docker daemon.
       # Linux runners already include one; macOS and Windows need explicit setup.
       - name: Set up Docker
-        if: runner.os == 'macOS'
+        if: inputs.test == true && runner.os == 'macOS'
         uses: docker/setup-docker-action@v5
 
-      - name: Setup PostgreSQL
+      - name: Set up PostgreSQL
         if: runner.os == 'macOS'
         uses: ikalnytskyi/action-setup-postgres@v8
 
@@ -115,6 +120,7 @@ jobs:
         run: cabal build all --enable-tests
 
       - name: Test
+        if: inputs.test == true
         run: cabal test all --enable-tests --test-show-details=direct
 
       - name: Install binary

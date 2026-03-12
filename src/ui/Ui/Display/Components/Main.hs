@@ -34,28 +34,51 @@ init startTime =
 
 -- | Combined update: transitions state and produces terminal output
 update :: Logic.Event -> UTCTime -> Memory -> (Memory, TextBuilder)
-update event currentTime old =
-  let new = advance event old & setCurrentTime currentTime
-   in (new, render event old new)
-
--- State transition
-
-advance :: Logic.Event -> Memory -> Memory
-advance event memory =
-  case event of
-    Logic.StageEntered _path ->
-      memory {hasProgressBar = True}
-    Logic.StageExited _path progressDelta ->
-      if memory.progress >= 1
-        then memory
-        else
-          let newProgress = memory.progress + progressDelta
-              newProgressCapped = if newProgress >= 0.999 then 1 else newProgress
-           in memory {progress = newProgressCapped}
-    Logic.WarningEmitted _err ->
-      memory {hasProgressBar = True}
-    Logic.Failed _err ->
-      memory {hasProgressBar = False}
+update event currentTime mem = case event of
+  Logic.StageEntered path ->
+    if mem.progress >= 1
+      then (mem, mempty)
+      else
+        let mem' = setCurrentTime currentTime mem {hasProgressBar = True}
+            output =
+              mconcat
+                [ if mem.hasProgressBar then clearProgressBar else "",
+                  if null path then "" else TextBuilder.intercalateMap " > " to (reverse path) <> "\n",
+                  progressBar mem'.progress mem'.timeLeftEstimate
+                ]
+         in (mem', output)
+  Logic.StageExited path progressDelta ->
+    if mem.progress >= 1 || not mem.hasProgressBar
+      then (setCurrentTime currentTime mem, mempty)
+      else
+        let newProgress = let p = mem.progress + progressDelta in if p >= 0.999 then 1 else p
+            mem' = setCurrentTime currentTime mem {progress = newProgress}
+            output =
+              mconcat
+                [ moveCursorToLineStart,
+                  clearLine,
+                  if newProgress >= 1 || null path
+                    then green "Done!" <> "\n"
+                    else progressBar newProgress mem'.timeLeftEstimate
+                ]
+         in (mem', output)
+  Logic.WarningEmitted err ->
+    let mem' = setCurrentTime currentTime mem {hasProgressBar = True}
+        output =
+          mconcat
+            [ if mem.hasProgressBar then clearProgressBar else "",
+              report (yellow "Warning") err.path err.message err.suggestion err.details,
+              progressBar mem'.progress mem'.timeLeftEstimate
+            ]
+     in (mem', output)
+  Logic.Failed err ->
+    let mem' = setCurrentTime currentTime mem {hasProgressBar = False}
+        output =
+          mconcat
+            [ if mem.hasProgressBar then clearProgressBar else "",
+              report (boldRed "Error") err.path err.message err.suggestion err.details
+            ]
+     in (mem', output)
 
 setCurrentTime :: UTCTime -> Memory -> Memory
 setCurrentTime currentTime memory =
@@ -65,43 +88,6 @@ setCurrentTime currentTime memory =
           then Just (elapsedTime / realToFrac memory.progress - elapsedTime)
           else Nothing
    in memory {timeLeftEstimate = newTimeLeftEstimate}
-
--- Rendering
-
-render :: Logic.Event -> Memory -> Memory -> TextBuilder
-render event old new = case event of
-  Logic.StageEntered path ->
-    if old.progress >= 1
-      then mempty
-      else
-        mconcat
-          [ if old.hasProgressBar then clearProgressBar else "",
-            if null path then "" else TextBuilder.intercalateMap " > " to (reverse path) <> "\n",
-            progressBar new.progress new.timeLeftEstimate
-          ]
-  Logic.StageExited path _progressDelta ->
-    if old.progress < 1 && old.hasProgressBar
-      then
-        mconcat
-          [ moveCursorToLineStart,
-            clearLine,
-            if new.progress >= 1 || null path
-              then green "Done!" <> "\n"
-              else progressBar new.progress new.timeLeftEstimate
-          ]
-      else mempty
-  Logic.WarningEmitted err ->
-    mconcat
-      [ if old.hasProgressBar then clearProgressBar else "",
-        report (yellow "Warning") err.path err.message err.suggestion err.details,
-        if new.hasProgressBar then progressBar new.progress new.timeLeftEstimate else ""
-      ]
-  Logic.Failed err ->
-    mconcat
-      [ if old.hasProgressBar then clearProgressBar else "",
-        report (boldRed "Error") err.path err.message err.suggestion err.details,
-        if new.hasProgressBar then progressBar new.progress new.timeLeftEstimate else ""
-      ]
 
 clearProgressBar :: TextBuilder
 clearProgressBar = moveCursorToLineStart <> clearLine

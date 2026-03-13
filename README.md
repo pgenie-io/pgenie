@@ -13,21 +13,9 @@ Checks and analyzes SQL migrations and queries and generates type-safe client SD
 3. **Configure project** — Specify artifacts to generate in `project1.pgn.yaml`
 4. **Generate code** — Run `pgn generate` to produce type-safe client libraries
 
-## Example project structure
+## Demo
 
-```
-my-project/
-├── project1.pgn.yaml      # Project configuration
-├── freeze1.pgn.yaml       # Auto-generated lock file for generator hashes
-├── migrations/            # Schema definitions
-│   ├── 1.sql
-│   └── 2.sql
-└── queries/               # SQL queries
-    ├── select_user.sql
-    └── insert_user.sql
-```
-
-For a complete example including the generated code see the [demo project](./demo/).
+For a complete example including the generated code see the [demo project](https://github.com/pgenie-io/demo).
 
 ### Query parameters
 

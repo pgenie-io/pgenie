@@ -94,10 +94,10 @@ executable pgn
   other-modules: Paths_pgenie
   build-depends:
     base,
-    text,
     pgenie:base,
     pgenie:infra,
     pgenie:ui,
+    text,
 
 library base
   import: base

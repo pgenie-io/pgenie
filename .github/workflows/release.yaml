@@ -119,7 +119,7 @@ jobs:
           gh workflow run update-download-links.yml \
             --repo pgenie-io/landing \
             --ref master \
-            --field linux_x86_64_url="${BASE_URL}/pgn-linux-x86_64" \
-            --field macos_arm64_url="${BASE_URL}/pgn-macos-arm64" \
-            --field macos_x86_64_url="${BASE_URL}/pgn-macos-x86_64" \
+            --field linux_x86_64_url="${BASE_URL}/pgn-linux-x86_64.tar.gz" \
+            --field macos_arm64_url="${BASE_URL}/pgn-macos-arm64.tar.gz" \
+            --field macos_x86_64_url="${BASE_URL}/pgn-macos-x86_64.tar.gz" \
             --field windows_x86_64_url="${BASE_URL}/pgn-windows-x86_64.exe"

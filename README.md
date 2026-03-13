@@ -13,20 +13,6 @@ Checks and analyzes SQL migrations and queries and generates type-safe client SD
 3. **Configure project** — Specify artifacts to generate in `project1.pgn.yaml`
 4. **Generate code** — Run `pgn generate` to produce type-safe client libraries
 
-## Demo
-
-For a complete example including the generated code see the [demo project](https://github.com/pgenie-io/demo).
-
-### Query parameters
-
-Use `$param_name` syntax in your SQL queries to define named parameters:
-
-```sql
-SELECT * FROM users WHERE id = $user_id AND name = $user_name
-```
-
-Parameters are automatically typed based on the database schema.
-
 ## Supported artifacts
 
 - [**hasql**](https://github.com/pgenie-io/haskell-hasql.gen) — Type-safe Haskell client library
@@ -57,3 +43,17 @@ Run `pgn generate` in a directory with `project1.pgn.yaml` to generate type-safe
 > You may notice pGenie appears to hang on the "Loading" stage during this initial setup. This is normal!
 >
 > After the first run, subsequent executions will complete in **a few seconds**.
+
+### Demo
+
+For a complete example including the generated code see the [demo project](https://github.com/pgenie-io/demo).
+
+### Query parameters
+
+Use `$param_name` syntax in your SQL queries to define named parameters:
+
+```sql
+SELECT * FROM users WHERE id = $user_id AND name = $user_name
+```
+
+Parameters are automatically typed based on the database schema.

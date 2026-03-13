@@ -53,6 +53,43 @@ jobs:
         if: runner.os == 'macOS'
         uses: ikalnytskyi/action-setup-postgres@v8
 
+      # Link libpq (and its OpenSSL dependencies) statically so that the
+      # produced binary does not hard-code a Homebrew-specific dylib path and
+      # therefore runs on any macOS system without a PostgreSQL installation.
+      - name: Configure static libpq linking (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Locate the static libpq archive installed by action-setup-postgres.
+          LIBPQ_A=$(find /opt/homebrew /usr/local -name "libpq.a" \
+                      -not -path "*/include/*" 2>/dev/null | head -1)
+          [ -n "$LIBPQ_A" ] || { echo "ERROR: libpq.a not found"; exit 1; }
+          echo "libpq.a: $LIBPQ_A"
+
+          # Locate OpenSSL static libs (required by libpq).
+          OPENSSL_LIB=$(brew --prefix openssl)/lib
+
+          # Build a static-only directory so the macOS linker picks .a over
+          # .dylib when resolving -lpq, -lssl and -lcrypto.
+          mkdir -p /tmp/static-libs
+          cp "$LIBPQ_A"                   /tmp/static-libs/
+          [ -f "$OPENSSL_LIB/libssl.a"   ] && cp "$OPENSSL_LIB/libssl.a"   /tmp/static-libs/
+          [ -f "$OPENSSL_LIB/libcrypto.a"] && cp "$OPENSSL_LIB/libcrypto.a" /tmp/static-libs/
+          ls -la /tmp/static-libs/
+
+          # Instruct cabal to search the static-only directory first.
+          # extra-libraries adds -lssl/-lcrypto so the linker resolves the
+          # symbols that libpq.a itself imports from OpenSSL.
+          cat >> cabal.project.local << 'EOF'
+          package postgresql-libpq
+            extra-lib-dirs: /tmp/static-libs
+          package pgenie
+            extra-lib-dirs: /tmp/static-libs
+            extra-libraries: ssl crypto
+          EOF
+
       - name: Install Windows deps
         if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2
@@ -128,14 +165,26 @@ jobs:
 
       - name: Rename binary (Unix)
         if: runner.os != 'Windows'
-        run: mv bin/pgn "bin/${{ inputs.artifact-name }}"
+        shell: bash
+        run: |
+          chmod +x bin/pgn
+          mv bin/pgn "bin/${{ inputs.artifact-name }}"
+          tar -czf "bin/${{ inputs.artifact-name }}.tar.gz" -C bin "${{ inputs.artifact-name }}"
 
       - name: Rename binary (Windows)
         if: runner.os == 'Windows'
         shell: bash
         run: mv bin/pgn.exe "bin/${{ inputs.artifact-name }}"
 
-      - name: Upload binary artifact
+      - name: Upload binary artifact (Unix)
+        if: runner.os != 'Windows'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: bin/${{ inputs.artifact-name }}.tar.gz
+
+      - name: Upload binary artifact (Windows)
+        if: runner.os == 'Windows'
         uses: actions/upload-artifact@v7
         with:
           name: ${{ inputs.artifact-name }}

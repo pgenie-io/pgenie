@@ -25,18 +25,23 @@ main ::
   Text ->
   -- | Footer text shown at the bottom of the help output.
   Text ->
+  -- | Version string shown by @--version@.
+  Text ->
   -- | List of supported commands.
   [Command m] ->
   -- | Execute an effect.
   (m Text -> IO ()) ->
   -- | Application.
   IO ()
-main appName description footer commands runEffect =
+main appName description footer version commands runEffect =
   join (Opt.execParser parserInfo)
   where
     parserInfo =
       Opt.info
-        (Opt.helper <*> Opt.hsubparser (foldMap runCommand commands))
+        ( Opt.helper
+            <*> Opt.infoOption (Text.unpack version) (Opt.long "version" <> Opt.short 'V' <> Opt.help "Show version")
+            <*> Opt.hsubparser (foldMap runCommand commands)
+        )
         ( mconcat
             [ Opt.fullDesc,
               Opt.progDesc (Text.unpack description),

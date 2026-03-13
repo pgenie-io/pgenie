@@ -90,7 +90,11 @@ executable pgn
   import: executable
   hs-source-dirs: src/pgn/
   main-is: Main.hs
+  autogen-modules: Paths_pgenie
+  other-modules: Paths_pgenie
   build-depends:
+    base,
+    text,
     pgenie:base,
     pgenie:infra,
     pgenie:ui,

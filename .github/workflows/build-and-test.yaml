@@ -62,32 +62,50 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Locate the static libpq archive installed by action-setup-postgres.
-          LIBPQ_A=$(find /opt/homebrew /usr/local -name "libpq.a" \
-                      -not -path "*/include/*" 2>/dev/null | head -1)
-          [ -n "$LIBPQ_A" ] || { echo "ERROR: libpq.a not found"; exit 1; }
-          echo "libpq.a: $LIBPQ_A"
+          # Install the standalone PostgreSQL client library.  The full server
+          # installed by action-setup-postgres does not ship libpq.a in newer
+          # Homebrew formula versions (PostgreSQL 17+ dropped the static
+          # archive), so we install the dedicated client-only formula which
+          # always provides a static archive.
+          brew install libpq
 
-          # Locate OpenSSL static libs (required by libpq).
-          OPENSSL_LIB=$(brew --prefix openssl)/lib
+          LIBPQ_PREFIX=$(brew --prefix libpq)
+          OPENSSL_PREFIX=$(brew --prefix openssl@3)
 
-          # Build a static-only directory so the macOS linker picks .a over
-          # .dylib when resolving -lpq, -lssl and -lcrypto.
+          LIBPQ_A="$LIBPQ_PREFIX/lib/libpq.a"
+          LIBSSL_A="$OPENSSL_PREFIX/lib/libssl.a"
+          LIBCRYPTO_A="$OPENSSL_PREFIX/lib/libcrypto.a"
+
+          echo "libpq.a:     $LIBPQ_A"
+          echo "libssl.a:    $LIBSSL_A"
+          echo "libcrypto.a: $LIBCRYPTO_A"
+
+          for f in "$LIBPQ_A" "$LIBSSL_A" "$LIBCRYPTO_A"; do
+            [ -f "$f" ] || { echo "ERROR: $f not found"; exit 1; }
+          done
+
+          # Build a static-only directory (no .dylib files) so the macOS
+          # linker resolves -lpq from libpq.a before it can find a Homebrew
+          # .dylib in the paths that postgresql-libpq injects via pg_config.
           mkdir -p /tmp/static-libs
-          cp "$LIBPQ_A"                   /tmp/static-libs/
-          [ -f "$OPENSSL_LIB/libssl.a"   ] && cp "$OPENSSL_LIB/libssl.a"   /tmp/static-libs/
-          [ -f "$OPENSSL_LIB/libcrypto.a"] && cp "$OPENSSL_LIB/libcrypto.a" /tmp/static-libs/
+          cp "$LIBPQ_A" /tmp/static-libs/
           ls -la /tmp/static-libs/
 
-          # Instruct cabal to search the static-only directory first.
-          # extra-libraries adds -lssl/-lcrypto so the linker resolves the
-          # symbols that libpq.a itself imports from OpenSSL.
-          cat >> cabal.project.local << 'EOF'
+          # Configure cabal:
+          # - postgresql-libpq: point to the keg-only libpq headers so the C
+          #   binding compiles against the correct API; add /tmp/static-libs so
+          #   that the -lpq flag this package contributes resolves to libpq.a.
+          # - pgenie (final executable): also add /tmp/static-libs for -lpq,
+          #   then pass libssl.a and libcrypto.a directly to the linker via
+          #   -optl so that the macOS linker cannot silently prefer a Homebrew
+          #   OpenSSL .dylib when processing the extra -L paths from pg_config.
+          cat >> cabal.project.local << EOF
           package postgresql-libpq
+            extra-include-dirs: $LIBPQ_PREFIX/include
             extra-lib-dirs: /tmp/static-libs
           package pgenie
             extra-lib-dirs: /tmp/static-libs
-            extra-libraries: ssl crypto
+            ghc-options: -optl$LIBSSL_A -optl$LIBCRYPTO_A
           EOF
 
       - name: Install Windows deps
@@ -162,6 +180,19 @@ jobs:
 
       - name: Install binary
         run: cabal install pgenie:pgn --installdir=bin --install-method=copy
+
+      # Smoke-test the freshly built binary before packaging it.  This catches
+      # linker issues (e.g. missing dylibs on macOS) that would otherwise only
+      # surface after the artifact has been downloaded by end-users.
+      - name: Validate binary (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: ./bin/pgn --version
+
+      - name: Validate binary (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: ./bin/pgn.exe --version
 
       - name: Rename binary (Unix)
         if: runner.os != 'Windows'

@@ -18,7 +18,7 @@ manageIndexes =
 
 data Params = Params
   { allowRedundantIndexes :: Bool,
-    writeToFile :: Bool
+    addMigration :: Bool
   }
 
 parser :: Opt.Parser Params
@@ -29,7 +29,7 @@ parser =
           <> Opt.help "Emit warnings about redundant indexes instead of removing them"
       )
     <*> Opt.switch
-      ( Opt.long "write-file"
+      ( Opt.long "add-migration"
           <> Opt.help "Also write the migration to a numbered file in migrations/ (fails if existing files do not follow the N.sql naming convention)"
       )
 
@@ -38,5 +38,5 @@ execute params =
   Logic.manageIndexes
     Logic.ManageIndexesOptions
       { allowRedundantIndexes = params.allowRedundantIndexes,
-        writeToFile = params.writeToFile
+        addMigration = params.addMigration
       }

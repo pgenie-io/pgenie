@@ -110,7 +110,7 @@ data ManageIndexesOptions = ManageIndexesOptions
   { allowRedundantIndexes :: Bool,
     -- | When set, write the generated migration to a numbered file in the
     -- @migrations/@ directory in addition to printing it to stdout.
-    writeToFile :: Bool
+    addMigration :: Bool
   }
   deriving stock (Eq, Show)
 

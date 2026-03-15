@@ -139,7 +139,7 @@ generate options =
       pure ()
 
 -- | Analyse the project's index usage and output the recommended migration SQL
--- to stdout. When @--write-file@ is set, also writes the migration to a
+-- to stdout. When @--add-migration@ is set, also writes the migration to a
 -- numbered file in the @migrations/@ directory.
 manageIndexes :: (Caps m) => ManageIndexesOptions -> m Text
 manageIndexes options =
@@ -545,7 +545,7 @@ warn =
 -- Returns the migration SQL, printing it to stdout via the caller.
 -- When @--allow-redundant-indexes@ is set, DropIndex actions are emitted as
 -- warnings instead of being included in the generated migration.
--- When @--write-file@ is set, also writes the migration to a numbered file in
+-- When @--add-migration@ is set, also writes the migration to a numbered file in
 -- @migrations/@, failing if the existing files do not follow the @N.sql@
 -- naming convention.
 handleIndexOptimization :: ManageIndexesOptions -> [IndexInfo] -> [(Text, SeqScanFinding)] -> Script Text
@@ -565,7 +565,7 @@ handleIndexOptimization options indexes seqScanFindings = do
     then pure ""
     else do
       let migrationContent = IndexOptimizer.generateMigration migrationActions
-      when options.writeToFile do
+      when options.addMigration do
         writeMigrationFile migrationContent
       pure migrationContent
 

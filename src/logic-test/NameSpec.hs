@@ -1,8 +1,8 @@
 module NameSpec (spec) where
 
-import Base.Prelude
 import Logic.Name
 import Test.Hspec
+import Utils.Prelude
 
 spec :: Spec
 spec = do

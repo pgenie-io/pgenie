@@ -4,11 +4,11 @@ module Logic.IndexOptimizer
   )
 where
 
-import Base.Prelude
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Logic.Algebra
+import Utils.Prelude
 
 -- | Analyze existing indexes against query needs and produce a list of
 -- recommended actions: indexes to drop (redundant / excessive) and

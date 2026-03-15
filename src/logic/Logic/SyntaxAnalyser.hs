@@ -4,11 +4,11 @@ module Logic.SyntaxAnalyser
   )
 where
 
-import Base.Prelude
 import Data.Text qualified as Text
 import Logic.SyntaxAnalyser.AstInterpreter qualified as AstInterpreter
 import Logic.SyntaxAnalyser.Data as Data
 import PostgresqlSyntax.Parsing qualified as Parsing
+import Utils.Prelude
 
 resolveText :: Text -> Either Text QuerySyntaxAnalysis
 resolveText sql =

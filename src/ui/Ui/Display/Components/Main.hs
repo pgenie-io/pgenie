@@ -5,10 +5,10 @@ module Ui.Display.Components.Main
   )
 where
 
-import Base.Prelude hiding (init)
 import Logic.Algebra qualified as Logic
 import Ui.Display.Components.Main.View qualified as View
 import Ui.Display.Components.ProgressBar qualified as ProgressBar
+import Utils.Prelude hiding (init)
 
 -- | Display state
 data Memory = Memory

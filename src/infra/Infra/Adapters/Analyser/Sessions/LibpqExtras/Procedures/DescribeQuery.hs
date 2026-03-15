@@ -20,11 +20,11 @@ module Infra.Adapters.Analyser.Sessions.LibpqExtras.Procedures.DescribeQuery
   )
 where
 
-import Base.Prelude
 import Data.Attoparsec.ByteString.Char8 qualified as AttoparsecBs
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.LibPQ qualified as Pq
 import Infra.Adapters.Analyser.Sessions.LibpqExtras.LawfulConversions ()
+import Utils.Prelude
 
 type Context =
   Pq.Connection

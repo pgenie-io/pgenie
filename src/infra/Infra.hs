@@ -3,12 +3,12 @@ module Infra
   )
 where
 
-import Base.Prelude
 import Data.Text qualified as Text
 import Data.Text.IO qualified as TextIO
 import Fx
 import Infra.Adapters.Main qualified as MainAdapter
 import Logic qualified
+import Utils.Prelude
 
 run :: (Logic.Event -> IO ()) -> Fx MainAdapter.Device Logic.Error Text -> IO ()
 run emitEvent fx = do

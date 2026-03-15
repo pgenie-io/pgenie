@@ -6,7 +6,6 @@ module Logic.Dsl
 where
 
 import AlgebraicPath qualified as Path
-import Base.Prelude hiding (readFile, writeFile)
 import Control.Monad.Parallel qualified as MonadParallel
 import Data.Aeson.Text qualified as Aeson
 import Data.Map.Strict qualified as Map
@@ -22,6 +21,7 @@ import PGenieGen.Model.Input qualified as Gen.Input
 import PGenieGen.Model.Output qualified as Gen.Output
 import PGenieGen.Model.Output.Report qualified as Gen.Output.Report
 import SyntacticClass qualified as Syntactic
+import Utils.Prelude hiding (readFile, writeFile)
 
 run :: (Caps m) => Script a -> m a
 run (Script f) = f 1 []

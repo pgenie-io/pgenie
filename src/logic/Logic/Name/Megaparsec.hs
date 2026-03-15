@@ -1,9 +1,9 @@
 module Logic.Name.Megaparsec where
 
-import Base.Prelude hiding (many)
 import Data.Text qualified as Text
 import Text.Megaparsec
 import Text.Megaparsec.Char
+import Utils.Prelude hiding (many)
 
 type Parser = Parsec Void Text
 

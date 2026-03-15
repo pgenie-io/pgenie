@@ -1,10 +1,10 @@
 module Main (main) where
 
-import Base.Prelude
 import Data.Text qualified as Text
 import Infra qualified
 import Paths_pgenie qualified as Paths
 import Ui qualified
+import Utils.Prelude
 
 main :: IO ()
 main =

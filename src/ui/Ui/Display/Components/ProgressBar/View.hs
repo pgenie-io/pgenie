@@ -3,10 +3,10 @@ module Ui.Display.Components.ProgressBar.View
   )
 where
 
-import Base.Prelude
 import Data.Text qualified as Text
 import TextBuilder
 import TextBuilderDev qualified
+import Utils.Prelude
 
 render :: Double -> TextBuilder
 render progress =

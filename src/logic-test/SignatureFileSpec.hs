@@ -1,8 +1,8 @@
 module SignatureFileSpec (spec) where
 
-import Base.Prelude
 import Logic.SignatureFile
 import Test.Hspec
+import Utils.Prelude
 
 spec :: Spec
 spec = do

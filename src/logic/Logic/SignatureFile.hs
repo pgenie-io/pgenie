@@ -13,13 +13,13 @@ module Logic.SignatureFile
 where
 
 import AlgebraicPath qualified as Path
-import Base.Prelude hiding (readFile, writeFile)
 import Control.Foldl qualified as Fold
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Logic.Algebra qualified as Algebra
 import PGenieGen.Model.Input qualified as Gen.Input
+import Utils.Prelude hiding (readFile, writeFile)
 import YamlUnscrambler qualified as U
 
 -- * Types

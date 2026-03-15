@@ -3,11 +3,11 @@ module Ui
   )
 where
 
-import Base.Prelude
 import Logic qualified
 import Ui.Commands qualified as Commands
 import Ui.Display qualified as Display
 import Ui.Framework qualified as Framework
+import Utils.Prelude
 
 -- |
 -- Construct an application by specifying the runtime.

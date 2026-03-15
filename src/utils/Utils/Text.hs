@@ -1,7 +1,7 @@
-module Base.Text where
+module Utils.Text where
 
-import Base.Prelude
 import Data.Text qualified as Text
+import Utils.Prelude
 
 pointToLocation :: Text -> Int -> Text
 pointToLocation queryText errorPos =

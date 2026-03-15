@@ -1,4 +1,4 @@
-module Base.Prelude
+module Utils.Prelude
   ( module Exports,
   )
 where

@@ -3,10 +3,10 @@
 -- Forces the intended use of the application. The user has no option not to generate the signature files.
 module Ui.Commands.Generate (generate) where
 
-import Base.Prelude
 import Logic qualified
 import Options.Applicative qualified as Opt
 import Ui.Framework
+import Utils.Prelude
 
 generate :: (Logic.Caps m) => Command m
 generate =

@@ -1,12 +1,12 @@
 module SqlTemplateSpec (spec) where
 
-import Base.Prelude
 import Data.Text qualified as Text
 import Logic.SqlTemplate
 import Test.Hspec
 import Test.Hspec.QuickCheck
 import Test.QuickCheck
 import Text.Megaparsec qualified as Megaparsec
+import Utils.Prelude
 
 spec :: Spec
 spec = do

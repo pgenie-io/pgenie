@@ -2,9 +2,9 @@
 
 module Logic.SyntaxAnalyser.AstInterpreter where
 
-import Base.Prelude
 import Logic.SyntaxAnalyser.Data
 import PostgresqlSyntax.Ast qualified as Ast
+import Utils.Prelude
 
 preparableStmtQuerySyntaxAnalysis :: Ast.PreparableStmt -> Either Text QuerySyntaxAnalysis
 preparableStmtQuerySyntaxAnalysis preparableStmt =

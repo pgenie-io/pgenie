@@ -1,8 +1,8 @@
 module Logic.Algebra where
 
-import Base.Prelude hiding (readFile, writeFile)
 import PGenieGen qualified as Gen
 import PGenieGen.Model.Input qualified as Gen.Input
+import Utils.Prelude hiding (readFile, writeFile)
 
 -- * Error
 

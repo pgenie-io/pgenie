@@ -4,8 +4,6 @@ module Infra.Adapters.Analyser
   )
 where
 
-import Base.Prelude
-import Base.Text qualified
 import Data.Text qualified as Text
 import Database.PostgreSQL.LibPQ qualified as Pq
 import Fx
@@ -24,6 +22,8 @@ import Infra.Adapters.Analyser.Sessions qualified as Sessions
 import Infra.Adapters.Analyser.Sessions.Procedures.GetIndexes qualified as GetIndexes
 import Logic qualified
 import TestcontainersPostgresql qualified
+import Utils.Prelude
+import Utils.Text qualified
 
 newtype Device = Device Hasql.Pool.Pool
 
@@ -85,7 +85,7 @@ adaptPoolUsageError err = case err of
           details =
             catMaybes
               [ Just ("code", errorCode),
-                Just ("sql", maybe sql (\position -> Base.Text.pointToLocation sql position) position),
+                Just ("sql", maybe sql (\position -> Utils.Text.pointToLocation sql position) position),
                 ("details",) <$> details
               ]
         }

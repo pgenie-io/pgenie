@@ -6,8 +6,8 @@ module Ui.Display.Components.ProgressBar
   )
 where
 
-import Base.Prelude hiding (init)
 import Ui.Display.Components.ProgressBar.View qualified as View
+import Utils.Prelude hiding (init)
 
 data Memory = Memory
   { progress :: Double,

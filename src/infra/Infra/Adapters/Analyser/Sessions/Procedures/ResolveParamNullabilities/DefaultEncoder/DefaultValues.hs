@@ -1,8 +1,8 @@
 module Infra.Adapters.Analyser.Sessions.Procedures.ResolveParamNullabilities.DefaultEncoder.DefaultValues where
 
-import Base.Prelude
 import Data.Aeson qualified as Aeson
 import Data.IP qualified as Iproute
+import Utils.Prelude
 
 netAddr :: Iproute.IPRange
 netAddr = read "192.0.2.1/24"

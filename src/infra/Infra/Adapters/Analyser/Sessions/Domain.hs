@@ -1,6 +1,6 @@
 module Infra.Adapters.Analyser.Sessions.Domain where
 
-import Base.Prelude hiding (Enum)
+import Utils.Prelude hiding (Enum)
 
 data Query = Query
   { params :: Vector Param,

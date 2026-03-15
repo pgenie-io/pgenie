@@ -1,8 +1,8 @@
 module Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements.SelectEnumLabels where
 
-import Base.Prelude
 import Hasql.Mapping.IsStatement
 import Hasql.TH
+import Utils.Prelude
 
 data SelectEnumLabelsParams = SelectEnumLabelsParams
   { -- | The object identifier of the type.

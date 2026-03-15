@@ -2,8 +2,8 @@
 
 module Infra.Adapters.Analyser.Sessions.LibpqExtras.LawfulConversions where
 
-import Base.Prelude
 import Database.PostgreSQL.LibPQ qualified as Pq
+import Utils.Prelude
 
 -- * Oid
 

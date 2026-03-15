@@ -84,11 +84,39 @@ jobs:
             [ -f "$f" ] || { echo "ERROR: $f not found"; exit 1; }
           done
 
+          # Homebrew's libpq is compiled with GSSAPI support using MIT Kerberos
+          # (krb5).  We must also link those libraries statically to prevent the
+          # produced binary from depending on Homebrew's libgssapi_krb5.dylib,
+          # which is absent on clean macOS installations.
+          brew install krb5
+
+          KRB5_PREFIX=$(brew --prefix krb5)
+
           # Build a static-only directory (no .dylib files) so the macOS
-          # linker resolves -lpq from libpq.a before it can find a Homebrew
-          # .dylib in the paths that postgresql-libpq injects via pg_config.
+          # linker resolves every -l flag from .a files before it can find a
+          # Homebrew .dylib in the paths that postgresql-libpq injects via
+          # pg_config.
           mkdir -p /tmp/static-libs
           cp "$LIBPQ_A" /tmp/static-libs/
+
+          # Collect MIT Kerberos static archives into the static-only directory
+          # and accumulate the corresponding -optl flags in dependency order
+          # (consumers before providers: gssapi → krb5 → k5crypto → support).
+          KRB5_STATIC_OPTL=""
+          for krb5_lib in \
+            "$KRB5_PREFIX/lib/libgssapi_krb5.a" \
+            "$KRB5_PREFIX/lib/libkrb5.a" \
+            "$KRB5_PREFIX/lib/libk5crypto.a" \
+            "$KRB5_PREFIX/lib/libkrb5support.a" \
+            "$KRB5_PREFIX/lib/libcom_err.a"; do
+            if [ -f "$krb5_lib" ]; then
+              cp "$krb5_lib" /tmp/static-libs/
+              KRB5_STATIC_OPTL="$KRB5_STATIC_OPTL -optl$krb5_lib"
+              echo "Copied $(basename "$krb5_lib")"
+            else
+              echo "WARNING: $krb5_lib not found"
+            fi
+          done
           ls -la /tmp/static-libs/
 
           # Configure cabal:
@@ -96,16 +124,17 @@ jobs:
           #   binding compiles against the correct API; add /tmp/static-libs so
           #   that the -lpq flag this package contributes resolves to libpq.a.
           # - pgenie (final executable): also add /tmp/static-libs for -lpq,
-          #   then pass libssl.a and libcrypto.a directly to the linker via
-          #   -optl so that the macOS linker cannot silently prefer a Homebrew
-          #   OpenSSL .dylib when processing the extra -L paths from pg_config.
+          #   then pass all static archives directly to the linker via -optl so
+          #   that the macOS linker cannot silently prefer a Homebrew .dylib when
+          #   processing the extra -L paths from pg_config.  Kerberos archives
+          #   come before OpenSSL because they depend on it.
           cat >> cabal.project.local << EOF
           package postgresql-libpq
             extra-include-dirs: $LIBPQ_PREFIX/include
             extra-lib-dirs: /tmp/static-libs
           package pgenie
             extra-lib-dirs: /tmp/static-libs
-            ghc-options: -optl$LIBSSL_A -optl$LIBCRYPTO_A
+            ghc-options:$KRB5_STATIC_OPTL -optl$LIBSSL_A -optl$LIBCRYPTO_A
           EOF
 
       - name: Install Windows deps
@@ -187,7 +216,25 @@ jobs:
       - name: Validate binary (Unix)
         if: runner.os != 'Windows'
         shell: bash
-        run: ./bin/pgn --version
+        run: |
+          ./bin/pgn --version
+          # On macOS, additionally verify the binary has no dependencies on
+          # non-system (Homebrew) dynamic libraries that would be absent on a
+          # clean macOS installation.  This check fails with the current binary
+          # and passes once static linking is correct, giving us an early
+          # signal before the artifact is even uploaded.
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            echo "=== Dynamic library dependencies ==="
+            otool -L bin/pgn
+            non_system=$(otool -L bin/pgn | tail -n +2 | awk '{print $1}' | \
+              grep -vE '^(/usr/lib/|/System/Library/|@)' || true)
+            if [[ -n "$non_system" ]]; then
+              echo "::error::Binary has non-system dynamic library dependencies:"
+              echo "$non_system"
+              exit 1
+            fi
+            echo "Binary only depends on system libraries ✓"
+          fi
 
       - name: Validate binary (Windows)
         if: runner.os == 'Windows'
@@ -224,3 +271,40 @@ jobs:
       - name: Build source distribution
         if: runner.os == 'Linux'
         run: cabal sdist
+
+  # Download the uploaded artifact on a fresh runner and execute it.  This
+  # simulates what a user does after downloading the binary from a GitHub
+  # release: the runner starts without the Homebrew packages that were
+  # installed in the build job, so any accidental dynamic dependency on a
+  # Homebrew library (e.g. libgssapi_krb5.dylib) is exposed here.
+  validate-artifact:
+    needs: build
+    if: contains(inputs.os, 'macos')
+    runs-on: ${{ inputs.os }}
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4.1.3
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: artifact
+
+      - name: Extract binary
+        shell: bash
+        run: |
+          cd artifact
+          tar -xzf "${{ inputs.artifact-name }}.tar.gz"
+          ls -la
+
+      - name: Remove quarantine attribute (macOS security)
+        shell: bash
+        run: |
+          # macOS quarantines files downloaded via a browser or curl; remove the
+          # extended attribute so Gatekeeper does not block execution.  In CI
+          # the attribute is typically absent, but this mirrors what end-users
+          # must do after downloading the binary from a GitHub release page.
+          xattr -d com.apple.quarantine "artifact/${{ inputs.artifact-name }}" 2>/dev/null || true
+
+      - name: Validate downloaded binary
+        shell: bash
+        run: |
+          "artifact/${{ inputs.artifact-name }}" --version

@@ -185,7 +185,7 @@ instance Logic.DbOps (Fx Device Logic.Error) where
   explainQuery sql =
     HasqlDev.runSession do
       Hasql.Session.onLibpqConnection \conn -> do
-        let explainSql = to ("EXPLAIN (GENERIC_PLAN) " <> sql) :: ByteString
+        let explainSql = encodeUtf8 ("EXPLAIN (GENERIC_PLAN) " <> sql) :: ByteString
         maybeResult <- Pq.exec conn explainSql
         rows <- case maybeResult of
           Nothing -> pure []
@@ -195,7 +195,7 @@ instance Logic.DbOps (Fx Device Logic.Error) where
               Pq.TuplesOk -> do
                 numRows <- Pq.ntuples result
                 forM [0 .. numRows - 1] \i ->
-                  fmap (foldMap onto) (Pq.getvalue result i (Pq.Col 0))
+                  fmap (foldMap decodeUtf8Lenient) (Pq.getvalue result i (Pq.Col 0))
               _ -> pure []
         pure (Right rows, conn)
 

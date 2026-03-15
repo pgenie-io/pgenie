@@ -119,6 +119,7 @@ library base
     mtl,
     profunctors,
     quickcheck-instances,
+    relations,
     syntactic-class,
     text,
     text-builder,

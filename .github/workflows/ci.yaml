@@ -66,3 +66,26 @@ jobs:
       os: windows-latest
       artifact-name: pgn-windows-x86_64.exe
       test: true
+
+  # ── Stack build (ensures stack.yaml stays up to date) ───────────────────────
+  build-stack:
+    name: Build and test via Stack
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: haskell-actions/setup@v2
+        with:
+          enable-stack: true
+          stack-no-global: true
+
+      - name: Cache Stack dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.stack
+          key: ${{ runner.os }}-stack-${{ hashFiles('stack.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-stack-
+
+      - name: Run tests via Stack
+        run: stack test

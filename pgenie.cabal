@@ -201,10 +201,13 @@ test-suite infra-test
   hs-source-dirs: src/infra-test
   main-is: Main.hs
   other-modules:
+    InferQueryTypesSpec
+
   build-tool-depends:
     hspec-discover:hspec-discover
 
   build-depends:
+    fx,
     hspec,
     pgenie:infra,
     pgenie:logic,
@@ -216,9 +219,9 @@ library infra
   hs-source-dirs: src/infra/
   exposed-modules:
     Infra
+    Infra.Adapters.Analyser
 
   other-modules:
-    Infra.Adapters.Analyser
     Infra.Adapters.Analyser.Embeddings.Sessions
     Infra.Adapters.Analyser.Scopes.Testcontainers
     Infra.Adapters.Analyser.Scopes.Testcontainers.IO

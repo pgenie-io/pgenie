@@ -307,5 +307,4 @@ jobs:
       - name: Validate downloaded binary
         shell: bash
         run: |
-          chmod +x "artifact/${{ inputs.artifact-name }}"
           "artifact/${{ inputs.artifact-name }}" --version

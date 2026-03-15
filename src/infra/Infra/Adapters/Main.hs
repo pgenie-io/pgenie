@@ -5,13 +5,13 @@ module Infra.Adapters.Main
 where
 
 import AlgebraicPath qualified as Path
-import Base.Prelude
 import Data.Text.IO qualified as Text
 import Fx
 import Infra.Adapters.Analyser qualified as Analyser
 import Logic qualified
 import PGenieGen qualified as Gen
 import System.Directory qualified as Directory
+import Utils.Prelude
 
 data Device = Device
   { emitEvent :: Logic.Event -> IO (),

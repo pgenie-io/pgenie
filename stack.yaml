@@ -1,0 +1,26 @@
+resolver: nightly-2026-03-15
+allow-newer: true
+allow-newer-deps:
+  - aeson-optics
+  - dhall-json
+extra-deps:
+  - {github: nikita-volkov/dhall-haskell, commit: c3264e5ed34566b66badb301211847ac4f78e697, subdirs: [dhall]}
+  - {github: nikita-volkov/hasql-dev, commit: 76d8faaa706872e0fe9b1036aa011edd2eb9d0ed}
+  - {github: nikita-volkov/relations, commit: fac9e0445677a6493f1954f491921c5a7442cd58}
+  - {github: nikita-volkov/syntactic-class, commit: b74373863e8bb0ef9877e0cd8dad5a3128d31818}
+  - {github: pgenie-io/gen-sdk, commit: c7d07a6e5eb072ed4a1bcb472b4b7ba6d596c8e3, subdirs: [haskell]}
+  - aeson-optics-1.2.1
+  - algebraic-path-0.1.0.1
+  - dhall-json-1.7.12
+  - fx-0.11
+  - hasql-1.10.3
+  - hasql-mapping-0.1
+  - hasql-pool-1.4.2
+  - hasql-th-0.5
+  - hasql-transaction-1.2.2
+  - lawful-conversions-0.4.0
+  - postgresql-binary-0.15.0.1
+  - testcontainers-0.5.2.0
+  - testcontainers-postgresql-0.2.0.1
+  - text-builder-lawful-conversions-0.1.4.1
+  - text-builder-time-0.1

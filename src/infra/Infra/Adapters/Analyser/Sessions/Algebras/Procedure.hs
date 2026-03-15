@@ -1,9 +1,9 @@
 module Infra.Adapters.Analyser.Sessions.Algebras.Procedure where
 
-import Base.Prelude
 import Hasql.Mapping.IsStatement qualified as Hasql
 import HasqlDev qualified as Hasql
 import TextBuilder qualified
+import Utils.Prelude
 
 class Procedure params where
   type ProcedureResult params

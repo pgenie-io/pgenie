@@ -14,13 +14,13 @@ module Logic.Name
   )
 where
 
-import Base.Prelude
 import Data.Text qualified as Text
 import Data.Vector qualified as Vector
 import Logic.Name.Megaparsec qualified as Megaparsec
 import PGenieGen.Model.Input qualified as Gen
 import Test.QuickCheck qualified as Qc
 import TextBuilder qualified
+import Utils.Prelude
 
 -- |
 -- Normalized name. Sequence of lowercase words separated by hyphens.

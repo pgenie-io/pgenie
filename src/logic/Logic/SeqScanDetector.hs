@@ -4,9 +4,9 @@ module Logic.SeqScanDetector
   )
 where
 
-import Base.Prelude
 import Data.Text qualified as Text
 import Logic.Algebra (SeqScanFinding (..))
+import Utils.Prelude
 
 -- | Detect sequential scans with filters from EXPLAIN text output lines.
 -- Only seq scans that have a filter condition are flagged,

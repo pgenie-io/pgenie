@@ -9,13 +9,13 @@ module Infra.Adapters.Analyser.Sessions
   )
 where
 
-import Base.Prelude hiding (Enum)
 import Data.Vector qualified as Vector
 import HasqlDev qualified
 import Infra.Adapters.Analyser.Sessions.Algebras.Procedure qualified as Procedure
 import Infra.Adapters.Analyser.Sessions.Domain
 import Infra.Adapters.Analyser.Sessions.Procedures qualified as Procedures
 import SyntacticClass qualified as Syntactic
+import Utils.Prelude hiding (Enum)
 
 inferTypes ::
   Text ->

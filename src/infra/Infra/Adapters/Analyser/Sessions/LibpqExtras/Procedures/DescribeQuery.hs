@@ -20,11 +20,11 @@ module Infra.Adapters.Analyser.Sessions.LibpqExtras.Procedures.DescribeQuery
   )
 where
 
-import Base.Prelude
 import Data.Attoparsec.ByteString.Char8 qualified as AttoparsecBs
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.LibPQ qualified as Pq
 import Infra.Adapters.Analyser.Sessions.LibpqExtras.LawfulConversions ()
+import Utils.Prelude
 
 type Context =
   Pq.Connection
@@ -72,7 +72,7 @@ data ResultColumn = ResultColumn
 -- | Specific execution.
 io :: Pq.Connection -> Params -> IO (Either Error Result)
 io conn params = runExceptT do
-  res <- lift $ Pq.prepare conn "" (to params.query) Nothing
+  res <- lift $ Pq.prepare conn "" (encodeUtf8 params.query) Nothing
   res <- case res of
     Nothing -> throwError ConnectionError
     Just res -> return res
@@ -110,7 +110,7 @@ readResultColumns res = do
     name <- pure case name of
       Nothing -> error "Oops! Trying to access a missing column"
       Just "?column?" -> Nothing
-      Just name -> maybeFrom name
+      Just name -> either (const Nothing) Just (decodeUtf8 name)
     typeOid <- fmap to $ Pq.ftype res col
     typeMod <- Pq.fmod res col
     tableOid <- fmap to $ Pq.ftable res col
@@ -119,8 +119,8 @@ readResultColumns res = do
 
 readResultErrorDetails :: Pq.Result -> IO Error
 readResultErrorDetails res = do
-  code <- foldMap onto <$> Pq.resultErrorField res Pq.DiagSqlstate
-  message <- foldMap onto <$> Pq.resultErrorField res Pq.DiagMessagePrimary
+  code <- foldMap decodeUtf8Lenient <$> Pq.resultErrorField res Pq.DiagSqlstate
+  message <- foldMap decodeUtf8Lenient <$> Pq.resultErrorField res Pq.DiagMessagePrimary
   position <- mapMaybe parseInt <$> Pq.resultErrorField res Pq.DiagStatementPosition
   pure (ResultError code message position)
   where

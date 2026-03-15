@@ -1,10 +1,10 @@
 module SeqScanDetectorSpec (spec) where
 
-import Base.Prelude
 import Data.Text qualified as Text
 import Logic.Algebra (SeqScanFinding (..))
 import Logic.SeqScanDetector
 import Test.Hspec
+import Utils.Prelude
 
 spec :: Spec
 spec = do

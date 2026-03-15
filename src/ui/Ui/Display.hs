@@ -5,10 +5,10 @@ module Ui.Display
   )
 where
 
-import Base.Prelude
 import Data.Text.IO qualified as TextIO
 import Logic.Algebra qualified as Logic
 import Ui.Display.Components.Main qualified as Main
+import Utils.Prelude
 
 -- | Display device for managing progress and event rendering
 data Display = Display

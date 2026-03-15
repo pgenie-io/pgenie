@@ -1,8 +1,8 @@
 module SyntaxAnalyserSpec (spec) where
 
-import Base.Prelude
 import Logic.SyntaxAnalyser
 import Test.Hspec
+import Utils.Prelude
 
 spec :: Spec
 spec = do

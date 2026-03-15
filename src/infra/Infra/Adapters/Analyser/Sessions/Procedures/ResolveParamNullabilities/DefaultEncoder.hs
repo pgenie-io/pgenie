@@ -3,11 +3,11 @@ module Infra.Adapters.Analyser.Sessions.Procedures.ResolveParamNullabilities.Def
   )
 where
 
-import Base.Prelude hiding (Enum, fromEnum)
 import Data.Vector qualified as Vector
 import Hasql.Encoders qualified as Encoders
 import Infra.Adapters.Analyser.Sessions.Domain
 import Infra.Adapters.Analyser.Sessions.Procedures.ResolveParamNullabilities.DefaultEncoder.DefaultValues qualified as DefaultValues
+import Utils.Prelude hiding (Enum, fromEnum)
 
 fromType :: Type -> Maybe (Encoders.Value ())
 fromType (Type dimensionality scalar) = do

@@ -1,8 +1,8 @@
 module Ui.Framework where
 
-import Base.Prelude
 import Data.Text qualified as Text
 import Options.Applicative qualified as Opt
+import Utils.Prelude
 
 -- |
 -- Command with procedure that may be implemented in terms of abstract algebra,

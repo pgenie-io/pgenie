@@ -6,10 +6,10 @@
 -- for using the application as a source of analysis data.
 module Ui.Commands.Analyse (analyse) where
 
-import Base.Prelude
 import Logic qualified
 import Options.Applicative qualified as Opt
 import Ui.Framework
+import Utils.Prelude
 
 analyse :: (Logic.Caps m) => Command m
 analyse =

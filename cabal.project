@@ -12,11 +12,16 @@ source-repository-package
   location: https://github.com/nikita-volkov/syntactic-class
   tag: b74373863e8bb0ef9877e0cd8dad5a3128d31818
 
+source-repository-package
+  type: git
+  location: https://github.com/nikita-volkov/relations
+  tag: fac9e0445677a6493f1954f491921c5a7442cd58
+
 -- Provides `pgenie-gen`
 source-repository-package
   type: git
   location: https://github.com/pgenie-io/gen-sdk
-  tag: 90fb124a75196027ad96fd4af02a7425c135fc5b
+  tag: c7d07a6e5eb072ed4a1bcb472b4b7ba6d596c8e3
   subdir: haskell
 
 source-repository-package
@@ -35,7 +40,7 @@ constraints:
   filepath ^>=1.5.4,
   fx ^>=0.11,
   hasql ^>=1.10.2.3,
-  lawful-conversions ^>=0.3,
+  lawful-conversions ^>=0.4,
   megaparsec >=9 && <10,
   monad-parallel ^>=0.8,
   mtl >=2.3.1 && <3,

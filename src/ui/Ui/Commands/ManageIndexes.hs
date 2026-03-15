@@ -2,10 +2,10 @@
 -- indexes and remove redundant or excessive ones.
 module Ui.Commands.ManageIndexes (manageIndexes) where
 
-import Base.Prelude
 import Logic qualified
 import Options.Applicative qualified as Opt
 import Ui.Framework
+import Utils.Prelude
 
 manageIndexes :: (Logic.Caps m) => Command m
 manageIndexes =

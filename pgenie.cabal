@@ -94,17 +94,17 @@ executable pgn
   other-modules: Paths_pgenie
   build-depends:
     base,
-    pgenie:base,
     pgenie:infra,
     pgenie:ui,
+    pgenie:utils,
     text,
 
-library base
+library utils
   import: base
-  hs-source-dirs: src/base/
+  hs-source-dirs: src/utils/
   exposed-modules:
-    Base.Prelude
-    Base.Text
+    Utils.Prelude
+    Utils.Text
 
   build-depends:
     QuickCheck,
@@ -119,6 +119,7 @@ library base
     mtl,
     profunctors,
     quickcheck-instances,
+    relations,
     syntactic-class,
     text,
     text-builder,
@@ -161,7 +162,7 @@ library logic
     foldl,
     megaparsec,
     monad-parallel,
-    pgenie:base,
+    pgenie:utils,
     pgenie-gen,
     postgresql-syntax,
     syntactic-class,
@@ -190,8 +191,8 @@ test-suite logic-test
     QuickCheck,
     hspec,
     megaparsec,
-    pgenie:base,
     pgenie:logic,
+    pgenie:utils,
     text,
 
 test-suite infra-test
@@ -205,9 +206,9 @@ test-suite infra-test
 
   build-depends:
     hspec,
-    pgenie:base,
     pgenie:infra,
     pgenie:logic,
+    pgenie:utils,
     pgenie-gen,
 
 library infra
@@ -258,8 +259,8 @@ library infra
     hasql-pool,
     hasql-th,
     iproute,
-    pgenie:base,
     pgenie:logic,
+    pgenie:utils,
     pgenie-gen,
     postgresql-libpq,
     resourcet,
@@ -291,8 +292,8 @@ library ui
 
   build-depends:
     optparse-applicative,
-    pgenie:base,
     pgenie:logic,
+    pgenie:utils,
     text,
     text-builder,
     text-builder-dev,

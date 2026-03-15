@@ -3,7 +3,6 @@ module Infra.Adapters.Analyser.Sessions.Procedures.ResolveParamNullabilities
   )
 where
 
-import Base.Prelude
 import Data.Vector qualified as Vector
 import Hasql.Decoders qualified as Decoders
 import Hasql.Encoders qualified as Encoders
@@ -15,6 +14,7 @@ import Infra.Adapters.Analyser.Sessions.Algebras.Procedure
 import Infra.Adapters.Analyser.Sessions.Domain
 import Infra.Adapters.Analyser.Sessions.Procedures.ResolveParamNullabilities.DefaultEncoder qualified as DefaultEncoder
 import SyntacticClass qualified as Syntactic
+import Utils.Prelude
 
 data ResolveParamNullabilities = ResolveParamNullabilities
   { query :: Text,

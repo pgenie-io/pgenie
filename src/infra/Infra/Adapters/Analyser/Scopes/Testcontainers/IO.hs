@@ -1,11 +1,11 @@
 module Infra.Adapters.Analyser.Scopes.Testcontainers.IO where
 
-import Base.Prelude
 import Control.Monad.Trans.Resource qualified as ResourceT
 import Control.Monad.Trans.Resource.Internal qualified as ResourceT
 import Data.Acquire qualified as ResourceT
 import TestContainers qualified as Tc
 import TestContainers.Monad qualified as Tc
+import Utils.Prelude
 
 acquire :: Tc.TestContainer a -> IO (a, ResourceT.InternalState)
 acquire startContainers = do

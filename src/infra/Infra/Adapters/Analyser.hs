@@ -4,8 +4,6 @@ module Infra.Adapters.Analyser
   )
 where
 
-import Base.Prelude
-import Base.Text qualified
 import Data.Text qualified as Text
 import Database.PostgreSQL.LibPQ qualified as Pq
 import Fx
@@ -24,6 +22,8 @@ import Infra.Adapters.Analyser.Sessions qualified as Sessions
 import Infra.Adapters.Analyser.Sessions.Procedures.GetIndexes qualified as GetIndexes
 import Logic qualified
 import TestcontainersPostgresql qualified
+import Utils.Prelude
+import Utils.Text qualified
 
 newtype Device = Device Hasql.Pool.Pool
 
@@ -85,7 +85,7 @@ adaptPoolUsageError err = case err of
           details =
             catMaybes
               [ Just ("code", errorCode),
-                Just ("sql", maybe sql (\position -> Base.Text.pointToLocation sql position) position),
+                Just ("sql", maybe sql (\position -> Utils.Text.pointToLocation sql position) position),
                 ("details",) <$> details
               ]
         }
@@ -185,7 +185,7 @@ instance Logic.DbOps (Fx Device Logic.Error) where
   explainQuery sql =
     HasqlDev.runSession do
       Hasql.Session.onLibpqConnection \conn -> do
-        let explainSql = to ("EXPLAIN (GENERIC_PLAN) " <> sql) :: ByteString
+        let explainSql = encodeUtf8 ("EXPLAIN (GENERIC_PLAN) " <> sql) :: ByteString
         maybeResult <- Pq.exec conn explainSql
         rows <- case maybeResult of
           Nothing -> pure []
@@ -195,7 +195,7 @@ instance Logic.DbOps (Fx Device Logic.Error) where
               Pq.TuplesOk -> do
                 numRows <- Pq.ntuples result
                 forM [0 .. numRows - 1] \i ->
-                  fmap (foldMap onto) (Pq.getvalue result i (Pq.Col 0))
+                  fmap (foldMap decodeUtf8Lenient) (Pq.getvalue result i (Pq.Col 0))
               _ -> pure []
         pure (Right rows, conn)
 

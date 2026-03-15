@@ -1,8 +1,8 @@
 module Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements.SelectAttributes where
 
-import Base.Prelude
 import Hasql.Mapping.IsStatement
 import Hasql.TH
+import Utils.Prelude
 
 data SelectAttributesParams = SelectAttributesParams
   { -- | The object identifier of the type.

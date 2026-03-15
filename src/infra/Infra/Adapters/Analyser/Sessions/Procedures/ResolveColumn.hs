@@ -4,10 +4,10 @@ module Infra.Adapters.Analyser.Sessions.Procedures.ResolveColumn
   )
 where
 
-import Base.Prelude
 import Infra.Adapters.Analyser.Sessions.Algebras.Procedure
 import Infra.Adapters.Analyser.Sessions.Procedures.ResolveColumn.Statements qualified as Statements
 import SyntacticClass qualified as Syntactic
+import Utils.Prelude
 
 data ResolveColumn = ResolveColumn
   { relationOid :: Int32,

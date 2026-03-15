@@ -1,6 +1,6 @@
 module Logic.SyntaxAnalyser.Data where
 
-import Base.Prelude
+import Utils.Prelude
 
 data RowAmount
   = SpecificRowAmount Int

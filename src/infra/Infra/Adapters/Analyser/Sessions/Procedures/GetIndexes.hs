@@ -1,10 +1,10 @@
 module Infra.Adapters.Analyser.Sessions.Procedures.GetIndexes where
 
-import Base.Prelude
 import Hasql.Decoders qualified as Decoders
 import Hasql.Session qualified as Session
 import Hasql.Statement qualified as Statement
 import Logic qualified
+import Utils.Prelude
 
 -- | Fetch all user-defined indexes from the database.
 getIndexes :: Session.Session [Logic.IndexInfo]

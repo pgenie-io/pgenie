@@ -5,8 +5,6 @@ module Infra.Adapters.Analyser.Sessions.Procedures.DescribeQuery
   )
 where
 
-import Base.Prelude
-import Base.Text qualified
 import Data.Text qualified as Text
 import Data.Vector qualified as Vector
 import Hasql.Session qualified
@@ -14,6 +12,8 @@ import HasqlDev qualified
 import Infra.Adapters.Analyser.Sessions.Algebras.Procedure
 import Infra.Adapters.Analyser.Sessions.LibpqExtras.Procedures.DescribeQuery qualified as LibpqExtras
 import SyntacticClass qualified as Syntactic
+import Utils.Prelude
+import Utils.Text qualified
 
 data DescribeQuery = DescribeQuery
   { query :: Text
@@ -73,6 +73,6 @@ instance Procedure DescribeQuery where
                   Just ("message", Syntactic.toText message),
                   case position of
                     Nothing -> Just ("sql", query)
-                    Just pos -> Just ("sql", Base.Text.pointToLocation query pos)
+                    Just pos -> Just ("sql", Utils.Text.pointToLocation query pos)
                 ]
             )

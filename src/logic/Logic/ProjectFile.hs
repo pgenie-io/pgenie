@@ -1,7 +1,6 @@
 module Logic.ProjectFile where
 
 import AlgebraicPath qualified as Path
-import Base.Prelude hiding (Version)
 import Control.Foldl qualified as Fold
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Key qualified as Key
@@ -12,6 +11,7 @@ import Logic.Algebra qualified as Algebra
 import Logic.Name qualified as Name
 import PGenieGen qualified as Gen
 import PGenieGen.Model.Input qualified as Gen
+import Utils.Prelude hiding (Version)
 import YamlUnscrambler qualified as U
 
 data ProjectFile = ProjectFile

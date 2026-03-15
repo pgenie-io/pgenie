@@ -3,11 +3,11 @@ module Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid
   )
 where
 
-import Base.Prelude hiding (Enum)
 import Infra.Adapters.Analyser.Sessions.Algebras.Procedure
 import Infra.Adapters.Analyser.Sessions.Domain as Domain
 import Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements qualified as Statements
 import SyntacticClass qualified as Syntactic
+import Utils.Prelude hiding (Enum)
 
 data ResolveTypeByOid = ResolveTypeByOid
   { oid :: Int32

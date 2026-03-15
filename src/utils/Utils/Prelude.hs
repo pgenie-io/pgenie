@@ -1,4 +1,4 @@
-module Base.Prelude
+module Utils.Prelude
   ( module Exports,
   )
 where
@@ -80,6 +80,7 @@ import GHC.IO.Exception as Exports
 import LawfulConversions as Exports
 import Numeric as Exports
 import Numeric.Natural as Exports (Natural)
+import Relations as Exports
 import SyntacticClass as Exports (Syntactic)
 import System.Environment as Exports
 import System.Exit as Exports

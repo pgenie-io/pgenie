@@ -20,12 +20,15 @@ Pre-built binaries are available for common platforms. See the **[Installation G
 
 #### Prerequisites
 
-- **GHC 9.12.2** — The Glasgow Haskell Compiler. Install it with [GHCup](https://www.haskell.org/ghcup/): `ghcup install ghc 9.12.2`
 - **Docker** — Must be installed and running. pGenie uses Docker to analyze SQL in a real PostgreSQL environment.
 
 #### Using Stack
 
-[Stack](https://docs.haskellstack.org/en/stable) is the quickest way to build and install pGenie from source:
+**Stack** is the quickest way to build and install pGenie from source.
+
+1. [Install `Stack`](https://docs.haskellstack.org/en/stable)
+
+2. Clone the repository and build:
 
 ```bash
 git clone https://github.com/pgenie-io/pgenie.git
@@ -33,11 +36,13 @@ cd pgenie
 stack install
 ```
 
-Stack manages the GHC toolchain automatically. See the [Stack documentation](https://docs.haskellstack.org/en/stable) for more details.
-
 #### Using Cabal
 
-[Cabal](https://www.haskell.org/cabal/) is the preferred option for Haskell developers already familiar with the ecosystem:
+**Cabal** is the preferred option for Haskell developers already familiar with the ecosystem:
+
+1. [Install `Cabal`](https://www.haskell.org/cabal/)
+
+2. Clone the repository and build:
 
 ```bash
 git clone https://github.com/pgenie-io/pgenie.git
@@ -45,9 +50,3 @@ cd pgenie
 cabal update
 cabal install
 ```
-
-See the [Cabal documentation](https://cabal.readthedocs.io/en/stable/) for more details.
-
-## Supported Artifacts
-
-- [**hasql**](https://github.com/pgenie-io/haskell-hasql.gen) — Type-safe Haskell client library for [hasql](https://hackage.haskell.org/package/hasql)

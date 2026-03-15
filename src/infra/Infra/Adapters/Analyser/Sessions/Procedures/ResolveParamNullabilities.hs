@@ -49,7 +49,15 @@ instance Procedure ResolveParamNullabilities where
             tryError attempt >>= \case
               Right () -> goWithNullable
               Left (Hasql.Errors.StatementSessionError _ _ _ _ _ (Hasql.Errors.ServerStatementError (Hasql.Errors.ServerError "23502" _ _ _ _))) ->
-                goWithNonNullable
+                -- When a not-null violation occurs with the current parameter
+                -- set to null, verify it is indeed caused by *this* parameter
+                -- being null by retrying with a non-null value.  If that also
+                -- triggers a 23502, the violation originates elsewhere — most
+                -- likely an INSERT that omits a NOT NULL column that has no
+                -- DEFAULT.
+                tryError nonNullAttempt >>= \case
+                  Right () -> goWithNonNullable
+                  Left confirmedErr -> throwError confirmedErr
               Left err -> throwError err
             where
               goWithNullable =
@@ -72,6 +80,18 @@ instance Procedure ResolveParamNullabilities where
                       encoder =
                         determinedParamsEncoder
                           <> headNullParamsEncoder
+                          <> foldMap nonNullParamsEncoder remainingValueEncodersTail
+                      decoder =
+                        Decoders.noResult
+              nonNullAttempt =
+                Session.statement () statement
+                where
+                  statement =
+                    Statement.unpreparable params.query encoder decoder
+                    where
+                      encoder =
+                        determinedParamsEncoder
+                          <> nonNullParamsEncoder remainingValueEncodersHead
                           <> foldMap nonNullParamsEncoder remainingValueEncodersTail
                       decoder =
                         Decoders.noResult

@@ -23,9 +23,7 @@ spec = describe "inferQueryTypes" do
       -- inferring all parameters as NOT NULL.
       inferQueryTypes insertAlbumSql
     case result of
-      Left err -> do
-        print err
-        pure ()
+      Left _ -> pure ()
       Right _ -> expectationFailure "Expected inference to fail because disc is NOT NULL and omitted from the INSERT, but it succeeded"
 
 -- | Run an action against a fresh throwaway PostgreSQL container.

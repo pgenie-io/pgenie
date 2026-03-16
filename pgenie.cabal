@@ -213,6 +213,7 @@ test-suite infra-test
     pgenie:logic,
     pgenie:utils,
     pgenie-gen,
+    text,
 
 library infra
   import: base

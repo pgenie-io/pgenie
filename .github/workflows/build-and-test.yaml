@@ -102,6 +102,14 @@ jobs:
           # Collect MIT Kerberos static archives into the static-only directory
           # and accumulate the corresponding -optl flags in dependency order
           # (consumers before providers: gssapi → krb5 → k5crypto → support).
+          #
+          # We use "-force_load <archive>" (macOS ld64's equivalent of GNU ld's
+          # --whole-archive) for every Kerberos archive.  Without it, GHC's
+          # default "-flat_namespace -undefined suppress" link flags cause the
+          # linker to leave symbols such as _GSS_C_NT_HOSTBASED_SERVICE as
+          # undefined dynamic-lookup entries instead of pulling them from the
+          # static archive — they then fail to resolve at runtime on a clean
+          # macOS machine where MIT Kerberos is absent.
           KRB5_STATIC_OPTL=""
           for krb5_lib in \
             "$KRB5_PREFIX/lib/libgssapi_krb5.a" \
@@ -111,7 +119,7 @@ jobs:
             "$KRB5_PREFIX/lib/libcom_err.a"; do
             if [ -f "$krb5_lib" ]; then
               cp "$krb5_lib" /tmp/static-libs/
-              KRB5_STATIC_OPTL="$KRB5_STATIC_OPTL -optl$krb5_lib"
+              KRB5_STATIC_OPTL="$KRB5_STATIC_OPTL -optl-force_load -optl$krb5_lib"
               echo "Copied $(basename "$krb5_lib")"
             else
               echo "WARNING: $krb5_lib not found"
@@ -127,14 +135,15 @@ jobs:
           #   then pass all static archives directly to the linker via -optl so
           #   that the macOS linker cannot silently prefer a Homebrew .dylib when
           #   processing the extra -L paths from pg_config.  Kerberos archives
-          #   come before OpenSSL because they depend on it.
+          #   come before OpenSSL because they depend on it.  All archives are
+          #   passed with -force_load (see comment above).
           cat >> cabal.project.local << EOF
           package postgresql-libpq
             extra-include-dirs: $LIBPQ_PREFIX/include
             extra-lib-dirs: /tmp/static-libs
           package pgenie
             extra-lib-dirs: /tmp/static-libs
-            ghc-options:$KRB5_STATIC_OPTL -optl$LIBSSL_A -optl$LIBCRYPTO_A
+            ghc-options:$KRB5_STATIC_OPTL -optl-force_load -optl$LIBPQ_A -optl-force_load -optl$LIBSSL_A -optl-force_load -optl$LIBCRYPTO_A
           EOF
 
       - name: Install Windows deps
@@ -295,6 +304,22 @@ jobs:
               echo "$bad_rpaths"
               exit 1
             fi
+            # Scan for undefined GSSAPI/Kerberos symbols.  GHC on macOS links
+            # with -flat_namespace -undefined suppress, which turns undefined
+            # references into dynamic lookups instead of pulling them from a
+            # static archive.  If _GSS_C_NT_HOSTBASED_SERVICE or similar
+            # symbols appear as undefined (U) here, the binary will crash at
+            # runtime on a clean macOS machine where MIT Kerberos is absent,
+            # even though otool -L looks clean.
+            echo "=== Undefined GSSAPI/Kerberos symbols ==="
+            undef_gss=$(nm -u "bin/pgn" 2>/dev/null \
+              | grep -iE 'gss|krb5|kerberos|k5crypto' || true)
+            if [[ -n "$undef_gss" ]]; then
+              echo "::error::Binary has undefined GSSAPI/Kerberos symbols (will crash on clean macOS):"
+              echo "$undef_gss"
+              exit 1
+            fi
+            echo "No undefined GSSAPI/Kerberos symbols ✓"
             echo "Binary only depends on system libraries ✓"
           fi
 
@@ -388,4 +413,16 @@ jobs:
       - name: Validate downloaded binary
         shell: bash
         run: |
+          # Check for undefined GSSAPI/Kerberos symbols.  If any are present
+          # the binary will crash at runtime on a clean macOS machine even
+          # though the dynamic library check (otool -L) looks clean.
+          echo "=== Undefined GSSAPI/Kerberos symbols ==="
+          undef_gss=$(nm -u "artifact/${{ inputs.artifact-name }}" 2>/dev/null \
+            | grep -iE 'gss|krb5|kerberos|k5crypto' || true)
+          if [[ -n "$undef_gss" ]]; then
+            echo "::error::Binary has undefined GSSAPI/Kerberos symbols (will crash on clean macOS):"
+            echo "$undef_gss"
+            exit 1
+          fi
+          echo "No undefined GSSAPI/Kerberos symbols ✓"
           "artifact/${{ inputs.artifact-name }}" --version

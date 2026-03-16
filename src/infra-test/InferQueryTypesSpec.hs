@@ -1,5 +1,6 @@
 module InferQueryTypesSpec (spec) where
 
+import Data.Text qualified as Text
 import Fx
 import Infra.Adapters.Analyser qualified as Analyser
 import Logic.Algebra
@@ -23,7 +24,14 @@ spec = describe "inferQueryTypes" do
       -- inferring all parameters as NOT NULL.
       inferQueryTypes insertAlbumSql
     case result of
-      Left _ -> pure ()
+      Left err -> do
+        -- The error should carry an actionable suggestion naming the missing column.
+        err.suggestion `shouldSatisfy` \s -> case s of
+          Just txt -> Text.isInfixOf "disc" txt
+          Nothing -> False
+        -- Internal "Failing row contains ..." detail must not be exposed.
+        let detailValues = map snd err.details
+        detailValues `shouldSatisfy` all (not . Text.isInfixOf "Failing row contains")
       Right _ -> expectationFailure "Expected inference to fail because disc is NOT NULL and omitted from the INSERT, but it succeeded"
 
 -- | Run an action against a fresh throwaway PostgreSQL container.

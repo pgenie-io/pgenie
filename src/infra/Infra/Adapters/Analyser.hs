@@ -81,14 +81,32 @@ adaptPoolUsageError err = case err of
       Logic.Error
         { path = [],
           message = message,
-          suggestion = hint,
+          suggestion = derivedSuggestion,
           details =
             catMaybes
               [ Just ("code", errorCode),
-                Just ("sql", maybe sql (\position -> Utils.Text.pointToLocation sql position) position),
-                ("details",) <$> details
+                Just ("sql", maybe sql (\pos -> Utils.Text.pointToLocation sql pos) position),
+                extraDetails
               ]
         }
+      where
+        (derivedSuggestion, extraDetails) = case errorCode of
+          "23502" ->
+            -- not_null_violation: the server-level details contain internal
+            -- "Failing row contains ..." info which is not useful to the user.
+            -- Derive an actionable suggestion from the error message instead.
+            (Just (notNullViolationSuggestion message), Nothing)
+          _ ->
+            (hint, ("details",) <$> details)
+
+    notNullViolationSuggestion :: Text -> Text
+    notNullViolationSuggestion message =
+      case Text.stripPrefix "null value in column \"" message of
+        Just rest ->
+          let col = Text.takeWhile (/= '"') rest
+           in "Add \"" <> col <> "\" to the INSERT column list, or define a DEFAULT value for the column in the schema"
+        Nothing ->
+          "Add all NOT NULL columns to the INSERT statement, or define DEFAULT values for them in the schema"
 
 adaptTestcontainersError :: SomeException -> Logic.Error
 adaptTestcontainersError err =

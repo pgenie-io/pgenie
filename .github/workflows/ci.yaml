@@ -49,6 +49,15 @@ jobs:
       artifact-name: pgn-linux-x86_64
       test: true
 
+  build-macos-arm64:
+    name: Build and test on macOS-arm64
+    uses: ./.github/workflows/build-and-test.yaml
+    secrets: inherit
+    with:
+      os: macos-latest
+      artifact-name: pgn-macos-arm64
+      test: false # Because we don't know how to install Docker in GitHub Actions on this platform. Still we verify that the binary builds fine at least.
+
   build-macos-x86_64:
     name: Build and test on macOS-x86_64
     uses: ./.github/workflows/build-and-test.yaml

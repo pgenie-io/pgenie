@@ -92,58 +92,87 @@ jobs:
 
           KRB5_PREFIX=$(brew --prefix krb5)
 
-          # Build a static-only directory (no .dylib files) so the macOS
-          # linker resolves every -l flag from .a files before it can find a
-          # Homebrew .dylib in the paths that postgresql-libpq injects via
-          # pg_config.
-          mkdir -p /tmp/static-libs
-          cp "$LIBPQ_A" /tmp/static-libs/
-
-          # Collect MIT Kerberos static archives into the static-only directory
-          # and accumulate the corresponding -optl flags in dependency order
-          # (consumers before providers: gssapi → krb5 → k5crypto → support).
-          #
-          # We use "-force_load <archive>" (macOS ld64's equivalent of GNU ld's
-          # --whole-archive) for every Kerberos archive.  Without it, GHC's
-          # default "-flat_namespace -undefined suppress" link flags cause the
-          # linker to leave symbols such as _GSS_C_NT_HOSTBASED_SERVICE as
-          # undefined dynamic-lookup entries instead of pulling them from the
-          # static archive — they then fail to resolve at runtime on a clean
-          # macOS machine where MIT Kerberos is absent.
-          KRB5_STATIC_OPTL=""
+          # Verify kerberos archives exist.
           for krb5_lib in \
             "$KRB5_PREFIX/lib/libgssapi_krb5.a" \
             "$KRB5_PREFIX/lib/libkrb5.a" \
             "$KRB5_PREFIX/lib/libk5crypto.a" \
             "$KRB5_PREFIX/lib/libkrb5support.a" \
             "$KRB5_PREFIX/lib/libcom_err.a"; do
-            if [ -f "$krb5_lib" ]; then
-              cp "$krb5_lib" /tmp/static-libs/
-              KRB5_STATIC_OPTL="$KRB5_STATIC_OPTL -optl-force_load -optl$krb5_lib"
-              echo "Copied $(basename "$krb5_lib")"
-            else
-              echo "WARNING: $krb5_lib not found"
-            fi
+            [ -f "$krb5_lib" ] || { echo "ERROR: $krb5_lib not found"; exit 1; }
           done
+
+          # Pre-link ALL C dependencies (libpq, MIT Kerberos, OpenSSL) into a
+          # single relocatable object file using "ld -r".
+          #
+          # WHY NOT -force_load in GHC's link step?
+          # GHC on macOS links executables with "-flat_namespace -undefined
+          # suppress".  Even if an archive is passed with -force_load, the
+          # linker sees references from libpq.a to GSSAPI symbols BEFORE those
+          # symbols' definitions from libgssapi_krb5.a are processed (due to
+          # left-to-right ordering), and immediately converts them to flat-
+          # namespace dynamic lookups.  When MIT Kerberos is absent from the
+          # end-user's machine the lookup fails at runtime.
+          #
+          # The pre-link approach is reliable because:
+          #  1. "ld -r" runs WITHOUT -flat_namespace/-undefined suppress.
+          #  2. -force_load inside the "ld -r" step forces all archive objects
+          #     to be included and all cross-archive references (libpq → kerberos)
+          #     are fully resolved inside that step.
+          #  3. The resulting .o file has _gss_acquire_cred,
+          #     _GSS_C_NT_HOSTBASED_SERVICE, etc. as DEFINED symbols.
+          #  4. When GHC links pgn and includes this .o via -optl, those symbols
+          #     are already defined and can never become flat-namespace lookups.
+          echo "Pre-linking C dependencies into /tmp/pgenie_c_deps.o ..."
+          ld -r -arch "$(uname -m)" -o /tmp/pgenie_c_deps.o \
+            -force_load "$LIBPQ_A" \
+            -force_load "$KRB5_PREFIX/lib/libgssapi_krb5.a" \
+            -force_load "$KRB5_PREFIX/lib/libkrb5.a" \
+            -force_load "$KRB5_PREFIX/lib/libk5crypto.a" \
+            -force_load "$KRB5_PREFIX/lib/libkrb5support.a" \
+            -force_load "$KRB5_PREFIX/lib/libcom_err.a" \
+            -force_load "$LIBSSL_A" \
+            -force_load "$LIBCRYPTO_A"
+          echo "Pre-link done: $(ls -lh /tmp/pgenie_c_deps.o)"
+
+          # Verify the key GSSAPI symbols are DEFINED (not undefined) in the
+          # pre-linked object.  An empty or missing symbol here would mean the
+          # archive was not found or was corrupt.
+          defined_gss=$(nm /tmp/pgenie_c_deps.o 2>/dev/null | \
+            grep -vE '^\s*(U|u) ' | grep -iE 'gss_acquire_cred|GSS_C_NT_HOSTBASED' || true)
+          if [[ -z "$defined_gss" ]]; then
+            echo "ERROR: expected GSSAPI symbols not found as defined in pre-linked object"
+            nm /tmp/pgenie_c_deps.o | grep -iE 'gss|krb5' | head -20 || true
+            exit 1
+          fi
+          echo "GSSAPI symbols confirmed defined in pre-linked object ✓"
+          echo "$defined_gss"
+
+          # Provide /tmp/static-libs so the -lpq flag that postgresql-libpq
+          # injects via pg_config resolves to a static archive rather than
+          # libpq.dylib.  We only need libpq.a here; all of its symbols (and
+          # the kerberos/OpenSSL ones it depends on) are already embedded in
+          # /tmp/pgenie_c_deps.o, so duplicate-symbol resolution on macOS will
+          # silently prefer the .o's definitions.
+          mkdir -p /tmp/static-libs
+          cp "$LIBPQ_A" /tmp/static-libs/
           ls -la /tmp/static-libs/
 
           # Configure cabal:
           # - postgresql-libpq: point to the keg-only libpq headers so the C
           #   binding compiles against the correct API; add /tmp/static-libs so
-          #   that the -lpq flag this package contributes resolves to libpq.a.
-          # - pgenie (final executable): also add /tmp/static-libs for -lpq,
-          #   then pass all static archives directly to the linker via -optl so
-          #   that the macOS linker cannot silently prefer a Homebrew .dylib when
-          #   processing the extra -L paths from pg_config.  Kerberos archives
-          #   come before OpenSSL because they depend on it.  All archives are
-          #   passed with -force_load (see comment above).
+          #   that the -lpq flag this package contributes resolves to libpq.a
+          #   (not libpq.dylib) when building the Haskell wrapper library.
+          # - pgenie (final executable): pass the pre-linked C object directly
+          #   to the linker so all C symbols are already defined before GHC
+          #   applies its -flat_namespace/-undefined suppress flags.
           cat >> cabal.project.local << EOF
           package postgresql-libpq
             extra-include-dirs: $LIBPQ_PREFIX/include
             extra-lib-dirs: /tmp/static-libs
           package pgenie
             extra-lib-dirs: /tmp/static-libs
-            ghc-options:$KRB5_STATIC_OPTL -optl-force_load -optl$LIBPQ_A -optl-force_load -optl$LIBSSL_A -optl-force_load -optl$LIBCRYPTO_A
+            ghc-options: -optl/tmp/pgenie_c_deps.o
           EOF
 
       - name: Install Windows deps
@@ -217,16 +246,18 @@ jobs:
         run: cabal test all --enable-tests --test-show-details=direct
 
       # Remove Homebrew libpq and MIT Kerberos dylibs so the macOS linker
-      # can only pick up the static archives we prepared in /tmp/static-libs.
+      # can only pick up /tmp/static-libs when resolving -lpq.
       # This step deliberately runs AFTER cabal build (and optional tests)
       # because GHC's dynamic-too compilation mode needs to dlopen the
-      # dynamic libpq from the PostgreSQL server install, which itself
-      # depends on the Kerberos dylibs.  Deleting the dylibs earlier breaks
-      # that compilation phase (as was discovered in CI).  At this point all
-      # Haskell compilation is complete, so it is safe to remove the dylibs.
-      # We then force a re-link of just the pgn executable (by removing its
-      # build artifact) so that the final binary is produced without any
-      # Homebrew dylib in the linker search path.
+      # dynamic libpq from the PostgreSQL server install during the build.
+      # Deleting the dylibs earlier breaks that compilation phase (as was
+      # discovered in CI).  At this point all Haskell compilation is
+      # complete, so it is safe to remove the dylibs.  We then force a
+      # re-link of the pgn executable (by removing its build artifact) so
+      # the final binary is validated with the dylibs absent.
+      # Note: GSSAPI symbols are statically embedded via the pre-linked
+      # /tmp/pgenie_c_deps.o object created in the setup step, so the
+      # binary does not need kerberos dylibs at runtime.
       - name: Relink pgn with static libraries (macOS)
         if: runner.os == 'macOS'
         shell: bash

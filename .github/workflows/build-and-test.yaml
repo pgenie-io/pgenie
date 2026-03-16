@@ -119,19 +119,6 @@ jobs:
           done
           ls -la /tmp/static-libs/
 
-          # The macOS linker always prefers a .dylib over a .a when both
-          # exist in the same directory.  pkg-config injects -L flags for
-          # the Homebrew krb5 and libpq prefixes, which contain both kinds
-          # of file.  If the .dylib files remain, the linker silently picks
-          # them even though we also pass the .a archives via -optl.
-          # Removing the .dylib files forces every -l lookup in those
-          # directories to resolve to the static archive, so the final
-          # binary carries no runtime dependency on Homebrew MIT Kerberos.
-          echo "Removing Homebrew dynamic libraries to force static linking..."
-          find "$KRB5_PREFIX/lib" "$LIBPQ_PREFIX/lib" \
-            -maxdepth 1 -name '*.dylib' -print -delete
-          echo "Done."
-
           # Configure cabal:
           # - postgresql-libpq: point to the keg-only libpq headers so the C
           #   binding compiles against the correct API; add /tmp/static-libs so
@@ -219,6 +206,48 @@ jobs:
       - name: Test
         if: inputs.test == true
         run: cabal test all --enable-tests --test-show-details=direct
+
+      # Remove Homebrew libpq and MIT Kerberos dylibs so the macOS linker
+      # can only pick up the static archives we prepared in /tmp/static-libs.
+      # This step deliberately runs AFTER cabal build (and optional tests)
+      # because GHC's dynamic-too compilation mode needs to dlopen the
+      # dynamic libpq from the PostgreSQL server install, which itself
+      # depends on the Kerberos dylibs.  Deleting the dylibs earlier breaks
+      # that compilation phase (as was discovered in CI).  At this point all
+      # Haskell compilation is complete, so it is safe to remove the dylibs.
+      # We then force a re-link of just the pgn executable (by removing its
+      # build artifact) so that the final binary is produced without any
+      # Homebrew dylib in the linker search path.
+      - name: Relink pgn with static libraries (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Delete all libpq and MIT Kerberos dylibs from every Homebrew
+          # location (the dedicated libpq formula, the postgresql@XX server
+          # install, and the krb5 formula).  We use broad find patterns so
+          # this step stays correct as Homebrew formula versions change.
+          # Use "brew --prefix" for the Homebrew root so this works on both
+          # ARM64 (/opt/homebrew) and Intel x86_64 (/usr/local) runners.
+          HOMEBREW_ROOT="$(brew --prefix)"
+          echo "Removing Homebrew libpq and Kerberos dylibs from $HOMEBREW_ROOT..."
+          find "$HOMEBREW_ROOT" -maxdepth 5 \( \
+            -name 'libpq*.dylib'           \
+            -o -name 'libgssapi_krb5*.dylib' \
+            -o -name 'libkrb5*.dylib'      \
+            -o -name 'libk5crypto*.dylib'  \
+            -o -name 'libkrb5support*.dylib' \
+            -o -name 'libcom_err*.dylib'   \
+          \) -print -delete
+          echo "Done removing dylibs."
+
+          # Force cabal to re-link the pgn executable by removing its
+          # build artifact.  All compiled .o files remain intact so cabal
+          # only runs the final link step — it does not recompile anything
+          # and therefore does not need to dlopen any C library.
+          find dist-newstyle -path "*/x/pgn/build/pgn/pgn" -delete
+          cabal build pgenie:exe:pgn
 
       - name: Install binary
         run: cabal install pgenie:pgn --installdir=bin --install-method=copy

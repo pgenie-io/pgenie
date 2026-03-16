@@ -119,6 +119,19 @@ jobs:
           done
           ls -la /tmp/static-libs/
 
+          # The macOS linker always prefers a .dylib over a .a when both
+          # exist in the same directory.  pkg-config injects -L flags for
+          # the Homebrew krb5 and libpq prefixes, which contain both kinds
+          # of file.  If the .dylib files remain, the linker silently picks
+          # them even though we also pass the .a archives via -optl.
+          # Removing the .dylib files forces every -l lookup in those
+          # directories to resolve to the static archive, so the final
+          # binary carries no runtime dependency on Homebrew MIT Kerberos.
+          echo "Removing Homebrew dynamic libraries to force static linking..."
+          find "$KRB5_PREFIX/lib" "$LIBPQ_PREFIX/lib" \
+            -maxdepth 1 -name '*.dylib' -print -delete
+          echo "Done."
+
           # Configure cabal:
           # - postgresql-libpq: point to the keg-only libpq headers so the C
           #   binding compiles against the correct API; add /tmp/static-libs so
@@ -226,11 +239,31 @@ jobs:
           if [[ "$RUNNER_OS" == "macOS" ]]; then
             echo "=== Dynamic library dependencies ==="
             otool -L bin/pgn
+            # Allow only paths that are guaranteed to exist on every macOS
+            # installation: /usr/lib/, /System/Library/, and @executable_path/
+            # or @loader_path/ (self-relative bundled dylibs).
+            # @rpath/ is intentionally NOT allowed here: it is resolved at
+            # load time via LC_RPATH entries, which often point to Homebrew
+            # directories.  Such a dependency would silently pass on CI
+            # (where Homebrew is present) but fail on a user's clean Mac.
             non_system=$(otool -L bin/pgn | tail -n +2 | awk '{print $1}' | \
-              grep -vE '^(/usr/lib/|/System/Library/|@)' || true)
+              grep -vE '^(/usr/lib/|/System/Library/|@(executable|loader)_path/)' || true)
             if [[ -n "$non_system" ]]; then
               echo "::error::Binary has non-system dynamic library dependencies:"
               echo "$non_system"
+              exit 1
+            fi
+            # Also scan LC_RPATH entries: an @rpath dep is harmless only if
+            # no @rpath-based libraries appear above, but a stray Homebrew
+            # rpath indicates an incomplete static-link setup.
+            echo "=== LC_RPATH entries ==="
+            bad_rpaths=$(otool -l bin/pgn \
+              | awk '/cmd LC_RPATH/{f=1} f && /^ *path /{print $2; f=0}' \
+              | grep -vE '^(/usr/lib/|/System/Library/|/Library/Developer/|@(executable|loader)_path/|/tmp/)' \
+              || true)
+            if [[ -n "$bad_rpaths" ]]; then
+              echo "::error::Binary has rpaths pointing to non-system directories:"
+              echo "$bad_rpaths"
               exit 1
             fi
             echo "Binary only depends on system libraries ✓"
@@ -272,11 +305,12 @@ jobs:
         if: runner.os == 'Linux'
         run: cabal sdist
 
-  # Download the uploaded artifact on a fresh runner and execute it.  This
-  # simulates what a user does after downloading the binary from a GitHub
-  # release: the runner starts without the Homebrew packages that were
-  # installed in the build job, so any accidental dynamic dependency on a
-  # Homebrew library (e.g. libgssapi_krb5.dylib) is exposed here.
+  # Download the uploaded artifact on a fresh runner and execute it.
+  # This simulates what a user does after downloading the binary from a
+  # GitHub release.  Crucially, before running the binary we remove any
+  # Homebrew MIT Kerberos libraries that happen to be pre-installed on the
+  # runner image: end-user Macs do not have them, and if the binary carries
+  # a dynamic dependency on libgssapi_krb5.dylib it must fail here.
   validate-artifact:
     needs: build
     if: contains(inputs.os, 'macos')
@@ -303,6 +337,24 @@ jobs:
           # the attribute is typically absent, but this mirrors what end-users
           # must do after downloading the binary from a GitHub release page.
           xattr -d com.apple.quarantine "artifact/${{ inputs.artifact-name }}" 2>/dev/null || true
+
+      - name: Remove Homebrew MIT Kerberos (simulate clean macOS)
+        shell: bash
+        run: |
+          # macOS GitHub Actions runners come with Homebrew and many of its
+          # packages pre-installed, including MIT Kerberos (krb5) as a
+          # transitive dependency of other tools.  A distributed binary must
+          # not depend on it because end-user machines won't have it.
+          # Remove the dylibs now so that any dynamic dependency on
+          # libgssapi_krb5.dylib causes an immediate load-time failure here,
+          # reproducing exactly what the end user would see.
+          KRB5_PREFIX="$(brew --prefix krb5 2>/dev/null || true)"
+          if [[ -n "$KRB5_PREFIX" && -d "$KRB5_PREFIX/lib" ]]; then
+            find "$KRB5_PREFIX/lib" -maxdepth 1 -name '*.dylib' -print -delete
+            echo "Removed MIT Kerberos dylibs from $KRB5_PREFIX/lib"
+          else
+            echo "MIT Kerberos not found via Homebrew – nothing to remove"
+          fi
 
       - name: Validate downloaded binary
         shell: bash

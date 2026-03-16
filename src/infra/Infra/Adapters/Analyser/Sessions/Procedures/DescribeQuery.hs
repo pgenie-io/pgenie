@@ -67,9 +67,10 @@ instance Procedure DescribeQuery where
           crash ["Connection error"] []
         LibpqExtras.ResultError code message position ->
           crash
-            [Syntactic.toTextBuilder message]
+            ["Broken query"]
             ( catMaybes
                 [ Just ("code", Syntactic.toText code),
+                  Just ("message", Syntactic.toText message),
                   case position of
                     Nothing -> Just ("sql", query)
                     Just pos -> Just ("sql", Utils.Text.pointToLocation query pos)

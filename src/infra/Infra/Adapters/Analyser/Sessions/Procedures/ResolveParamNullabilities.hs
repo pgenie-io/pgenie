@@ -3,6 +3,7 @@ module Infra.Adapters.Analyser.Sessions.Procedures.ResolveParamNullabilities
   )
 where
 
+import Data.Text qualified as Text
 import Data.Vector qualified as Vector
 import Hasql.Decoders qualified as Decoders
 import Hasql.Encoders qualified as Encoders
@@ -35,7 +36,14 @@ instance Procedure ResolveParamNullabilities where
               [ ("type", Syntactic.toText (show type_))
               ]
           Just encoder -> pure encoder
-    nullabilities <- Vector.fromList <$> Hasql.runSession (go mempty (Vector.toList encoders) [])
+    goResult <- Hasql.runSession (go mempty (Vector.toList encoders) [])
+    nullabilities <- case goResult of
+      Right bools -> pure (Vector.fromList bools)
+      Left violationMessage ->
+        crashWithSuggestion
+          ["The INSERT omits a NOT NULL column that has no DEFAULT value"]
+          (notNullViolationSuggestion violationMessage)
+          []
     return
       ( Vector.zipWith
           (\type_ nullable -> Param {nullable, type_})
@@ -57,6 +65,13 @@ instance Procedure ResolveParamNullabilities where
                 -- DEFAULT.
                 tryError nonNullAttempt >>= \case
                   Right () -> goWithNonNullable
+                  Left (Hasql.Errors.StatementSessionError _ _ _ _ _ (Hasql.Errors.ServerStatementError (Hasql.Errors.ServerError "23502" confirmedMessage _ _ _))) ->
+                    -- Confirmed: the 23502 is not caused by the current
+                    -- parameter but by a missing NOT NULL column in the INSERT.
+                    -- Return the server message so the caller can produce a
+                    -- helpful suggestion without depending on OS-specific error
+                    -- propagation paths.
+                    return (Left confirmedMessage)
                   Left confirmedErr -> throwError confirmedErr
               Left err -> throwError err
             where
@@ -95,7 +110,16 @@ instance Procedure ResolveParamNullabilities where
                           <> foldMap nonNullParamsEncoder remainingValueEncodersTail
                       decoder =
                         Decoders.noResult
-          _ -> return $ reverse nullabilities
+          _ -> return (Right (reverse nullabilities))
+
+notNullViolationSuggestion :: Text -> Text
+notNullViolationSuggestion message =
+  case Text.stripPrefix "null value in column \"" message of
+    Just rest ->
+      let col = Text.takeWhile (/= '"') rest
+       in "Add \"" <> col <> "\" to the INSERT column list, or define a DEFAULT value for the column in the schema"
+    Nothing ->
+      "Add all NOT NULL columns to the INSERT statement, or define DEFAULT values for them in the schema"
 
 nullParamsEncoder :: Encoders.Value () -> Encoders.Params ()
 nullParamsEncoder =

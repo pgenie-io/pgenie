@@ -74,7 +74,7 @@ jobs:
     with:
       os: windows-latest
       artifact-name: pgn-windows-x86_64.exe
-      test: true
+      test: false # Docker is not available on standard Windows GitHub Actions runners, so the infra-test suite (which uses testcontainers) cannot run there.
 
   # ── Stack build (ensures stack.yaml stays up to date) ───────────────────────
   build-stack:

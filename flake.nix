@@ -14,23 +14,36 @@
         pkgs = import nixpkgs { inherit system; };
 
         # OpenSSL built with static archives (.a files) included.
+        # Used only for the final cabal link step, NOT for building libpq itself.
         openssl-static = pkgs.openssl.override { static = true; };
 
-        # libpq built with static archives retained.
+        # libpq built against the regular dynamic OpenSSL so that PostgreSQL's
+        # own macOS linker check passes.
         #
-        # Notes:
+        # Background: PostgreSQL's build system runs a check
+        # (src/interfaces/libpq/Makefile, target libpq-refs-stamp) that verifies
+        # libpq.dylib does NOT reference _atexit or _pthread_exit.  When libpq is
+        # compiled against a *static* OpenSSL, those symbols from the OpenSSL
+        # static archive end up in libpq.dylib, causing the check to fail.
+        # Building against dynamic OpenSSL avoids this because those symbols stay
+        # inside libssl.dylib and are not embedded in libpq.dylib.
+        #
+        # The libpq.a static archive contains only libpq's own compiled objects;
+        # its OpenSSL symbol references are resolved at Cabal link time when we
+        # supply the static OpenSSL archives via -optl flags.  This means the
+        # compiled libpq.a is ABI-compatible with static or dynamic OpenSSL
+        # (same version, same nixpkgs revision).
+        #
+        # Other notes:
         #   - gssSupport is disabled to avoid a dependency on Kerberos static
         #     libraries, which are not reliably available on macOS CI runners.
         #     pgenie connects using password authentication, so GSSAPI / Kerberos
         #     is not required at runtime.
-        #   - PostgreSQL's build system always builds both shared and static
-        #     libraries.  nixpkgs' default postInstall removes the static
-        #     archives on non-static platforms; overriding it to a no-op keeps
-        #     them in the $dev output so we can copy them into the static-only
-        #     library directory below.
+        #   - nixpkgs' default postInstall removes the static archives on
+        #     non-static platforms; overriding it to a no-op keeps them in the
+        #     $dev output so we can copy them into the static-only directory below.
         libpq-static = (pkgs.libpq.override {
           gssSupport = false;
-          openssl = openssl-static;
         }).overrideAttrs (_: {
           postInstall = "";
         });

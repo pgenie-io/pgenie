@@ -272,6 +272,13 @@ jobs:
         if: runner.os == 'Linux'
         run: cabal sdist
 
+      - name: Upload source distribution
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-distribution
+          path: dist-newstyle/sdist/pgenie-*.tar.gz
+
   # Download the uploaded artifact on a fresh runner and execute it.  This
   # simulates what a user does after downloading the binary from a GitHub
   # release: the runner starts without the Homebrew packages that were

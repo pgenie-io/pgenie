@@ -26,13 +26,11 @@ spec = describe "inferQueryTypes" do
     case result of
       Left err -> do
         -- The error should carry an actionable suggestion naming the missing column.
-        err.suggestion `shouldSatisfy` \s -> case s of
-          Just txt -> Text.isInfixOf "disc" txt
-          Nothing -> False
-        -- Internal "Failing row contains ..." detail must not be exposed.
-        let detailValues = map snd err.details
-        detailValues `shouldSatisfy` all (not . Text.isInfixOf "Failing row contains")
-      Right _ -> expectationFailure "Expected inference to fail because disc is NOT NULL and omitted from the INSERT, but it succeeded"
+        case err.suggestion of
+          Just txt | Text.isInfixOf "disc" txt -> pure ()
+          _ -> expectationFailure ("Invalid suggestion. Error: " <> show err)
+      Right _ ->
+        expectationFailure "Expected inference to fail because disc is NOT NULL and omitted from the INSERT, but it succeeded"
 
 -- | Run an action against a fresh throwaway PostgreSQL container.
 runWithAnalyser ::

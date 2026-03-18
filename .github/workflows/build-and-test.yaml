@@ -149,21 +149,6 @@ jobs:
           fi
           echo "path=$dir" >> $GITHUB_OUTPUT
 
-      # Restore the package-store cache so that dependency compilation is
-      # skipped when unchanged.  The cache is split from the full build so
-      # that it is always saved even when later steps (tests) fail.
-      - name: Restore dependency cache
-        id: cache
-        uses: actions/cache/restore@v5
-        with:
-          path: ${{ steps.cabal-store-path.outputs.path }}
-          key: ${{ runner.os }}-${{ steps.system-info.outputs.release }}-ghc-${{ steps.setup.outputs.ghc-version }}-${{ hashFiles('**/*.cabal', 'cabal.project*') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ steps.system-info.outputs.release }}-ghc-${{ steps.setup.outputs.ghc-version }}-
-
-      - name: Update Cabal package list
-        run: cabal update
-
       # On macOS, the linker stamps the *host* OS version as the binary's
       # minimum required macOS version (LC_BUILD_VERSION minos) unless told
       # otherwise.  The GitHub Actions macOS runners are currently macOS 14,
@@ -175,9 +160,40 @@ jobs:
       #   dyld[pid]: missing symbol called   (followed by Abort trap: 6)
       # because dyld4 loads the binary but treats unresolvable macOS-14-only
       # symbols as NULL weak stubs that crash on first call.
+      #
+      # IMPORTANT: this step MUST come before "Restore dependency cache" so
+      # that MACOSX_DEPLOYMENT_TARGET is included in the cache key.  GHC
+      # compiles Haskell packages into .dylib files whose LC_BUILD_VERSION
+      # minos is determined by the deployment target at compile time.  If the
+      # cached packages were built without this setting (minos = host macOS
+      # version, e.g. 26.0) but the final binary is linked with minos=12.0,
+      # macOS's dynamic linker initialises the two inconsistently, causing a
+      # segfault when libpq is first used.  Including the deployment target in
+      # the cache key ensures the cache is invalidated whenever the target
+      # changes, so all packages and the binary share the same minos value.
       - name: Set macOS deployment target
         if: runner.os == 'macOS'
         run: echo "MACOSX_DEPLOYMENT_TARGET=12.0" >> $GITHUB_ENV
+
+      # Restore the package-store cache so that dependency compilation is
+      # skipped when unchanged.  The cache is split from the full build so
+      # that it is always saved even when later steps (tests) fail.
+      #
+      # The cache key includes MACOSX_DEPLOYMENT_TARGET (empty on non-macOS)
+      # so that a change to the deployment target forces a cache miss and
+      # recompilation, keeping all .dylib minos values consistent with the
+      # final binary.
+      - name: Restore dependency cache
+        id: cache
+        uses: actions/cache/restore@v5
+        with:
+          path: ${{ steps.cabal-store-path.outputs.path }}
+          key: ${{ runner.os }}-${{ steps.system-info.outputs.release }}-ghc-${{ steps.setup.outputs.ghc-version }}-${{ env.MACOSX_DEPLOYMENT_TARGET }}-${{ hashFiles('**/*.cabal', 'cabal.project*') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ steps.system-info.outputs.release }}-ghc-${{ steps.setup.outputs.ghc-version }}-${{ env.MACOSX_DEPLOYMENT_TARGET }}-
+
+      - name: Update Cabal package list
+        run: cabal update
 
       - name: Build dependencies
         run: cabal build --only-dependencies --enable-tests

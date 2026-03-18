@@ -21,6 +21,7 @@ Pre-built binaries are available for common platforms. See the **[Installation G
 #### Prerequisites
 
 - **Docker** — Must be installed and running. pGenie uses Docker to analyze SQL in a real PostgreSQL environment.
+- **libpq** — Required for building the Haskell bindings to PostgreSQL. On Debian/Ubuntu, install with `sudo apt-get install libpq-dev`, on macOS with `brew install libpq`.
 
 #### Using Stack
 

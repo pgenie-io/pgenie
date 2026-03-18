@@ -48,6 +48,7 @@ jobs:
       artifact-name: pgn-linux-x86_64
       version: ${{ inputs.version }}
       test: true
+      e2e: true
 
   build-macos-arm64:
     name: Build and test (macOS-arm64)
@@ -69,6 +70,7 @@ jobs:
       artifact-name: pgn-macos-x86_64
       version: ${{ inputs.version }}
       test: false # CI fails on infra tests for some reason. Disabling until fixed.
+      e2e: true
 
   # ── Publish ──────────────────────────────────────────────────────────────────
   release:

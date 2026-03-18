@@ -48,6 +48,7 @@ jobs:
       os: ubuntu-latest
       artifact-name: pgn-linux-x86_64
       test: true
+      e2e: true
 
   build-macos-arm64:
     name: Build and test on macOS-arm64
@@ -66,6 +67,7 @@ jobs:
       os: macos-26-intel
       artifact-name: pgn-macos-x86_64
       test: false # CI fails on infra tests for some reason. Disabling until fixed.
+      e2e: true
 
   # ── Stack build (ensures stack.yaml stays up to date) ───────────────────────
   build-stack:

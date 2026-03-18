@@ -23,6 +23,11 @@ on:
         type: boolean
         required: false
         default: false
+      e2e:
+        description: Run end-to-end tests that require Docker/Postgres
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -300,34 +305,25 @@ jobs:
           tar -xzf "${{ inputs.artifact-name }}.tar.gz"
           ls -la
 
+      - name: Run basic check on the binary
+        run: |
+          "$GITHUB_WORKSPACE/artifact/${{ inputs.artifact-name }}" --version
+
       - name: Checkout demo project
+        if: inputs.e2e == true
         uses: actions/checkout@v6
         with:
           repository: pgenie-io/demo
           ref: 3fd8694f8f77c46e99c5b2d16a88f63b0d6aa21b
           path: demo
 
+      - name: Set up Docker
+        if: inputs.e2e == true && runner.os == 'macOS'
+        uses: docker/setup-docker-action@v5
+
       - name: Run end-to-end test
-        if: runner.os != 'macOS'
+        if: inputs.e2e == true
         shell: bash
         run: |
           cd "$GITHUB_WORKSPACE/demo"
           "$GITHUB_WORKSPACE/artifact/${{ inputs.artifact-name }}" generate
-
-      - name: Run end-to-end test (macOS - known broken binary)
-        if: runner.os == 'macOS'
-        shell: bash
-        run: |
-          set +e
-          output=$("$GITHUB_WORKSPACE/artifact/${{ inputs.artifact-name }}" generate 2>&1)
-          exit_code=$?
-          set -e
-          echo "pgn generate exit code: $exit_code"
-          echo "Output:"
-          echo "$output"
-          if echo "$output" | grep -qF "missing symbol called"; then
-            echo "pgn generate failed with the known macOS missing-symbol error (expected)"
-          else
-            echo "ERROR: pgn generate failed with an unexpected error on macOS"
-            exit $exit_code
-          fi

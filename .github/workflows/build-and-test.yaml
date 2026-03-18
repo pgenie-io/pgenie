@@ -297,12 +297,12 @@ jobs:
 
   # Download the uploaded artifact on a fresh runner and execute it.  This
   # simulates what a user does after downloading the binary from a GitHub
-  # release: the runner starts without the Homebrew packages that were
-  # installed in the build job, so any accidental dynamic dependency on a
-  # Homebrew library (e.g. libgssapi_krb5.dylib) is exposed here.
+  # release: the runner starts in a clean state without any of the build
+  # dependencies cached, so this validates that the artifact is truly
+  # self-contained and does not rely on any undeclared dependencies that
+  # happened to be present in the build environment.
   validate-artifact:
     needs: build
-    if: contains(inputs.os, 'macos')
     runs-on: ${{ inputs.os }}
     steps:
       - name: Download artifact
@@ -318,16 +318,5 @@ jobs:
           tar -xzf "${{ inputs.artifact-name }}.tar.gz"
           ls -la
 
-      - name: Remove quarantine attribute (macOS security)
-        shell: bash
-        run: |
-          # macOS quarantines files downloaded via a browser or curl; remove the
-          # extended attribute so Gatekeeper does not block execution.  In CI
-          # the attribute is typically absent, but this mirrors what end-users
-          # must do after downloading the binary from a GitHub release page.
-          xattr -d com.apple.quarantine "artifact/${{ inputs.artifact-name }}" 2>/dev/null || true
-
       - name: Validate downloaded binary
-        shell: bash
-        run: |
-          "artifact/${{ inputs.artifact-name }}" --version
+        run: artifact/${{ inputs.artifact-name }} --version

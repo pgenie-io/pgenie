@@ -190,7 +190,7 @@ jobs:
         run: cabal update
 
       - name: Build dependencies
-        run: cabal build all --only-dependencies --enable-tests
+        run: cabal build --only-dependencies --enable-tests
 
       # Save the cache immediately after dependencies are built so that the
       # populated store survives even if the build or test steps fail.
@@ -201,11 +201,11 @@ jobs:
           key: ${{ steps.cache.outputs.cache-primary-key }}
 
       - name: Build
-        run: cabal build all --enable-tests
+        run: cabal build --enable-tests
 
       - name: Test
         if: inputs.test == true
-        run: cabal test all --enable-tests --test-show-details=direct
+        run: cabal test --enable-tests --test-show-details=direct -j1
 
       - name: Install binary
         run: cabal install pgenie:pgn --installdir=bin --install-method=copy

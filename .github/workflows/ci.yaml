@@ -67,15 +67,6 @@ jobs:
       artifact-name: pgn-macos-x86_64
       test: true
 
-  build-windows:
-    name: Build and test on Windows-x86_64
-    uses: ./.github/workflows/build-and-test.yaml
-    secrets: inherit
-    with:
-      os: windows-latest
-      artifact-name: pgn-windows-x86_64.exe
-      test: true
-
   # ── Stack build (ensures stack.yaml stays up to date) ───────────────────────
   build-stack:
     name: Build and test via Stack

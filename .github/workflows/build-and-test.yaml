@@ -53,88 +53,58 @@ jobs:
         if: runner.os == 'macOS'
         uses: ikalnytskyi/action-setup-postgres@v8
 
-      # Link libpq (and its OpenSSL dependencies) statically so that the
-      # produced binary does not hard-code a Homebrew-specific dylib path and
-      # therefore runs on any macOS system without a PostgreSQL installation.
-      - name: Configure static libpq linking (macOS)
+      # Install Nix to provide reproducible, version-pinned static archives
+      # for libpq and OpenSSL (see flake.nix).  Previous Homebrew-based
+      # approaches were fragile because Homebrew's formulae do not reliably
+      # ship the static archives (.a files) needed for all transitive
+      # dependencies (e.g. the Kerberos libraries pulled in by GSSAPI support
+      # in libpq are sometimes absent).  The Nix derivation compiles libpq
+      # without GSSAPI/Kerberos, eliminating that class of failure.
+      - name: Install Nix
+        if: runner.os == 'macOS'
+        uses: nixbuild/nix-quick-install-action@v34
+
+      # Cache the Nix store to avoid rebuilding the static library derivation
+      # on every CI run.  The cache key is invalidated whenever the Nix
+      # flake inputs (flake.nix / flake.lock) change.
+      - name: Cache Nix store
+        if: runner.os == 'macOS'
+        uses: nix-community/cache-nix-action@v6
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.nix', 'flake.lock') }}
+          purge: true
+          purge-prefixes: nix-${{ runner.os }}-
+          purge-created: 0
+          purge-primary-key: never
+          gc-max-store-size: 1G
+
+      # Build a Nix derivation that contains ONLY static archives (.a files)
+      # for libpq and OpenSSL plus the libpq headers.  Because no .dylib files
+      # are present in that directory, the macOS linker cannot silently fall
+      # back to dynamic versions when cabal's extra-lib-dirs points there.
+      - name: Configure static libpq linking via Nix (macOS)
         if: runner.os == 'macOS'
         shell: bash
         run: |
           set -euo pipefail
-
-          # Install the standalone PostgreSQL client library.  The full server
-          # installed by action-setup-postgres does not ship libpq.a in newer
-          # Homebrew formula versions (PostgreSQL 17+ dropped the static
-          # archive), so we install the dedicated client-only formula which
-          # always provides a static archive.
-          brew install libpq
-
-          LIBPQ_PREFIX=$(brew --prefix libpq)
-          OPENSSL_PREFIX=$(brew --prefix openssl@3)
-
-          LIBPQ_A="$LIBPQ_PREFIX/lib/libpq.a"
-          LIBSSL_A="$OPENSSL_PREFIX/lib/libssl.a"
-          LIBCRYPTO_A="$OPENSSL_PREFIX/lib/libcrypto.a"
-
-          echo "libpq.a:     $LIBPQ_A"
-          echo "libssl.a:    $LIBSSL_A"
-          echo "libcrypto.a: $LIBCRYPTO_A"
-
-          for f in "$LIBPQ_A" "$LIBSSL_A" "$LIBCRYPTO_A"; do
-            [ -f "$f" ] || { echo "ERROR: $f not found"; exit 1; }
-          done
-
-          # Homebrew's libpq is compiled with GSSAPI support using MIT Kerberos
-          # (krb5).  We must also link those libraries statically to prevent the
-          # produced binary from depending on Homebrew's libgssapi_krb5.dylib,
-          # which is absent on clean macOS installations.
-          brew install krb5
-
-          KRB5_PREFIX=$(brew --prefix krb5)
-
-          # Build a static-only directory (no .dylib files) so the macOS
-          # linker resolves every -l flag from .a files before it can find a
-          # Homebrew .dylib in the paths that postgresql-libpq injects via
-          # pg_config.
-          mkdir -p /tmp/static-libs
-          cp "$LIBPQ_A" /tmp/static-libs/
-
-          # Collect MIT Kerberos static archives into the static-only directory
-          # and accumulate the corresponding -optl flags in dependency order
-          # (consumers before providers: gssapi → krb5 → k5crypto → support).
-          KRB5_STATIC_OPTL=""
-          for krb5_lib in \
-            "$KRB5_PREFIX/lib/libgssapi_krb5.a" \
-            "$KRB5_PREFIX/lib/libkrb5.a" \
-            "$KRB5_PREFIX/lib/libk5crypto.a" \
-            "$KRB5_PREFIX/lib/libkrb5support.a" \
-            "$KRB5_PREFIX/lib/libcom_err.a"; do
-            if [ -f "$krb5_lib" ]; then
-              cp "$krb5_lib" /tmp/static-libs/
-              KRB5_STATIC_OPTL="$KRB5_STATIC_OPTL -optl$krb5_lib"
-              echo "Copied $(basename "$krb5_lib")"
-            else
-              echo "WARNING: $krb5_lib not found"
-            fi
-          done
-          ls -la /tmp/static-libs/
+          nix build .#macos-static-deps --out-link /tmp/pgenie-static-deps
+          STATIC_DEPS=/tmp/pgenie-static-deps
+          echo "Static deps path: $STATIC_DEPS"
+          ls -la "$STATIC_DEPS/lib/"
 
           # Configure cabal:
-          # - postgresql-libpq: point to the keg-only libpq headers so the C
-          #   binding compiles against the correct API; add /tmp/static-libs so
-          #   that the -lpq flag this package contributes resolves to libpq.a.
-          # - pgenie (final executable): also add /tmp/static-libs for -lpq,
-          #   then pass all static archives directly to the linker via -optl so
-          #   that the macOS linker cannot silently prefer a Homebrew .dylib when
-          #   processing the extra -L paths from pg_config.  Kerberos archives
-          #   come before OpenSSL because they depend on it.
+          # - postgresql-libpq: use the Nix-built libpq headers and the
+          #   static-only library directory so -lpq resolves to libpq.a.
+          # - pgenie (final executable): same static-only dir for -lpq, plus
+          #   explicit -optl flags so the macOS linker is forced to use the
+          #   OpenSSL static archives and cannot fall back to shared ones.
           cat >> cabal.project.local << EOF
           package postgresql-libpq
-            extra-include-dirs: $LIBPQ_PREFIX/include
-            extra-lib-dirs: /tmp/static-libs
+            extra-include-dirs: $STATIC_DEPS/include
+            extra-lib-dirs: $STATIC_DEPS/lib
           package pgenie
-            extra-lib-dirs: /tmp/static-libs
-            ghc-options:$KRB5_STATIC_OPTL -optl$LIBSSL_A -optl$LIBCRYPTO_A
+            extra-lib-dirs: $STATIC_DEPS/lib
+            ghc-options: -optl$STATIC_DEPS/lib/libssl.a -optl$STATIC_DEPS/lib/libcrypto.a
           EOF
 
       - name: Install Windows deps

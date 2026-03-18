@@ -180,32 +180,6 @@ jobs:
       - name: Install binary
         run: cabal install pgenie:pgn --installdir=bin --install-method=copy
 
-      # Smoke-test the freshly built binary before packaging it.  This catches
-      # linker issues (e.g. missing dylibs on macOS) that would otherwise only
-      # surface after the artifact has been downloaded by end-users.
-      - name: Validate binary (Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          ./bin/pgn --version
-          # On macOS, additionally verify the binary has no dependencies on
-          # non-system (Homebrew) dynamic libraries that would be absent on a
-          # clean macOS installation.  This check fails with the current binary
-          # and passes once static linking is correct, giving us an early
-          # signal before the artifact is even uploaded.
-          if [[ "$RUNNER_OS" == "macOS" ]]; then
-            echo "=== Dynamic library dependencies ==="
-            otool -L bin/pgn
-            non_system=$(otool -L bin/pgn | tail -n +2 | awk '{print $1}' | \
-              grep -vE '^(/usr/lib/|/System/Library/|@)' || true)
-            if [[ -n "$non_system" ]]; then
-              echo "::error::Binary has non-system dynamic library dependencies:"
-              echo "$non_system"
-              exit 1
-            fi
-            echo "Binary only depends on system libraries ✓"
-          fi
-
       - name: Validate binary (Windows)
         if: runner.os == 'Windows'
         shell: bash

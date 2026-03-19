@@ -1,5 +1,5 @@
 {
-  description = "pgenie - macOS static build dependencies for CI";
+  description = "pgenie - static build dependencies for CI";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
@@ -26,7 +26,9 @@
         # compiled against a *static* OpenSSL, those symbols from the OpenSSL
         # static archive end up in libpq.dylib, causing the check to fail.
         # Building against dynamic OpenSSL avoids this because those symbols stay
-        # inside libssl.dylib and are not embedded in libpq.dylib.
+        # inside libssl.dylib and are not embedded in libpq.dylib.  (This check
+        # is macOS-specific but using the same build approach on Linux keeps the
+        # two platforms consistent.)
         #
         # The libpq.a static archive contains only libpq's own compiled objects;
         # its OpenSSL symbol references are resolved at Cabal link time when we
@@ -36,7 +38,7 @@
         #
         # Other notes:
         #   - gssSupport is disabled to avoid a dependency on Kerberos static
-        #     libraries, which are not reliably available on macOS CI runners.
+        #     libraries, which are not reliably available on CI runners.
         #     pgenie connects using password authentication, so GSSAPI / Kerberos
         #     is not required at runtime.
         #   - nixpkgs' default postInstall removes the static archives on
@@ -51,10 +53,10 @@
         # A directory containing ONLY static archives (.a files) and the libpq
         # headers needed by the postgresql-libpq Haskell package.
         #
-        # Because there are no .dylib files here, the macOS linker cannot
+        # Because there are no .dylib/.so files here, the linker cannot
         # silently resolve -lpq, -lssl, or -lcrypto to shared libraries when
         # cabal's extra-lib-dirs is pointed at this directory.
-        macos-static-deps = pkgs.runCommand "pgenie-macos-static-deps" { } ''
+        static-deps = pkgs.runCommand "pgenie-static-deps" { } ''
           set -euo pipefail
           mkdir -p $out/lib $out/include
 
@@ -71,8 +73,9 @@
 
       in
       {
-        packages.macos-static-deps = macos-static-deps;
-        packages.default = macos-static-deps;
+        packages.macos-static-deps = static-deps;
+        packages.linux-static-deps = static-deps;
+        packages.default = static-deps;
       }
     );
 }

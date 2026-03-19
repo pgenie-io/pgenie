@@ -36,6 +36,53 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      # Install Nix to provide reproducible, version-pinned static archives
+      # for libpq and OpenSSL (see flake.nix).  The Nix derivation compiles
+      # libpq without GSSAPI/Kerberos, eliminating that class of failure.
+      - name: Install Nix
+        uses: nixbuild/nix-quick-install-action@v34
+
+      # Cache the Nix store to avoid rebuilding the static library derivation
+      # on every CI run.  The cache key is invalidated whenever the Nix flake
+      # inputs (flake.nix / flake.lock) change.
+      - name: Cache Nix store
+        uses: nix-community/cache-nix-action@v6
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.nix', 'flake.lock') }}
+          purge: true
+          purge-prefixes: nix-${{ runner.os }}-
+          purge-created: 0
+          purge-primary-key: never
+          gc-max-store-size: 1G
+
+      # Build a Nix derivation that contains ONLY static archives (.a files)
+      # for libpq and OpenSSL plus the libpq headers.  Because there are no
+      # .so files here, the Linux linker finds the .a files first and links
+      # those libraries statically into the final binary.
+      - name: Configure static libpq linking via Nix
+        shell: bash
+        run: |
+          set -euo pipefail
+          nix build .#linux-static-deps --out-link /tmp/pgenie-static-deps
+          STATIC_DEPS=/tmp/pgenie-static-deps
+          echo "Static deps path: $STATIC_DEPS"
+          ls -la "$STATIC_DEPS/lib/"
+
+          # Configure cabal:
+          # - postgresql-libpq: use the Nix-built libpq headers and the
+          #   static-only library directory so -lpq resolves to libpq.a.
+          # - pgenie (final executable): same static-only dir for -lpq, plus
+          #   explicit -optl flags to pass the OpenSSL static archives directly
+          #   to the linker so they are always linked statically.
+          cat >> cabal.project.local << EOF
+          package postgresql-libpq
+            extra-include-dirs: $STATIC_DEPS/include
+            extra-lib-dirs: $STATIC_DEPS/lib
+          package pgenie
+            extra-lib-dirs: $STATIC_DEPS/lib
+            ghc-options: -optl$STATIC_DEPS/lib/libssl.a -optl$STATIC_DEPS/lib/libcrypto.a
+          EOF
+
       - name: Build and test
         uses: ./.github/actions/build-and-test
         with:

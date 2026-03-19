@@ -1,0 +1,57 @@
+name: Build and Test (Linux)
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: >
+          Release version in SemVer (e.g. 1.2.3). When provided the version in
+          cabal-file is updated to 0.<version> before building to follow PVP
+          convention.
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  sdist:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up build tools
+        id: setup
+        uses: haskell-actions/setup@v2
+        
+      - name: Update version in cabal file
+        if: inputs.version != ''
+        shell: bash
+        run: perl -i -pe 's/^version:\s*\K\S+/0.${{ inputs.version }}/' pgenie.cabal
+
+      - name: Build source distribution and capture path
+        id: sdist
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Run cabal sdist and capture its output
+          cabal sdist 2>&1 | tee sdist-output.txt
+
+          # Extract the line after the 'Wrote tarball sdist to' message
+          FILE=$(awk '/Wrote tarball sdist to/{getline; print; exit}' sdist-output.txt || true)
+          if [[ -z "$FILE" ]]; then
+            echo "ERROR: sdist path not found in cabal output" >&2
+            echo "sdist_path=" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          echo "sdist_path=$FILE" >> $GITHUB_OUTPUT
+
+      - name: Upload source distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-distribution
+          path: ${{ steps.sdist.outputs.sdist_path }}

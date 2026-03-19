@@ -14,61 +14,29 @@ permissions:
   contents: read
 
 jobs:
-  # ── Format check ────────────────────────────────────────────────────────────
-  # Run ormolu and cabal-gild; fail if either would change any files.
-  # Auto-committing is intentionally omitted so developers must fix formatting
-  # locally before merging.
-  format:
-    name: Check formatting
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Format Cabal
-        uses: nikita-volkov/cabal-gild.github-action@v3
-
-      - name: Format Haskell
-        uses: nikita-volkov/ormolu.github-action@v3
-        with:
-          dirs: src
-
-      - name: Fail if formatting is incorrect
-        run: |
-          git diff --exit-code || {
-            echo "::error::Formatting is incorrect. Run 'ormolu' and 'cabal-gild' locally, then commit the fixes."
-            exit 1
-          }
-
-  # ── Platform builds (run in parallel with the format check) ─────────────────
-  build-linux:
-    name: Build and test on Linux-x86_64
-    uses: ./.github/workflows/build-and-test-linux.yaml
+  check-formatting:
+    uses: ./.github/workflows/check-formatting.yaml
     secrets: inherit
-    with:
-      artifact-name: pgn-linux-x86_64
-      test: true
-      e2e: true
+
+  build-linux:
+    uses: ./.github/workflows/build-linux.yaml
+    secrets: inherit
 
   build-macos-arm64:
     name: Build and test on macOS-arm64
-    uses: ./.github/workflows/build-and-test-macos.yaml
+    uses: ./.github/workflows/build-macos-arm64.yaml
     secrets: inherit
-    with:
-      os: macos-latest
-      artifact-name: pgn-macos-arm64
-      test: false # Because we don't know how to install Docker in GitHub Actions on this platform. Still we verify that the binary builds fine at least.
 
-  build-macos-x86_64:
-    name: Build and test on macOS-x86_64
-    uses: ./.github/workflows/build-and-test-macos.yaml
+  build-macos-x64:
+    name: Build and test on macOS-x64
+    uses: ./.github/workflows/build-macos-x64.yaml
     secrets: inherit
-    with:
-      os: macos-26-intel
-      artifact-name: pgn-macos-x86_64
-      test: false # CI fails on infra tests for some reason. Disabling until fixed.
-      e2e: true
 
-  # ── Stack build (ensures stack.yaml stays up to date) ───────────────────────
+  sdist:
+    name: Build sdist
+    uses: ./.github/workflows/sdist.yaml
+    secrets: inherit
+
   build-stack:
     name: Build and test via Stack
     runs-on: ubuntu-latest
@@ -81,7 +49,7 @@ jobs:
           stack-no-global: true
 
       - name: Cache Stack dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.stack
           key: ${{ runner.os }}-stack-${{ hashFiles('stack.yaml') }}

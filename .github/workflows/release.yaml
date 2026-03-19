@@ -12,7 +12,6 @@ permissions:
   contents: write
 
 jobs:
-  # ── Pre-flight checks ────────────────────────────────────────────────────────
   validate:
     name: Validate release
     runs-on: ubuntu-latest
@@ -35,46 +34,41 @@ jobs:
             exit 1
           fi
 
-  # ── Platform builds ──────────────────────────────────────────────────────────
-  # Each build job updates the cabal version to 0.<version> before compiling so
-  # the released artifacts carry the correct version metadata.
   build-linux:
-    name: Build and test (Linux-x86_64)
+    name: Build and test (Linux-x64)
     needs: validate
-    uses: ./.github/workflows/build-and-test-linux.yaml
+    uses: ./.github/workflows/build-linux.yaml
     secrets: inherit
     with:
-      artifact-name: pgn-linux-x86_64
       version: ${{ inputs.version }}
-      test: true
-      e2e: true
 
   build-macos-arm64:
     name: Build and test (macOS-arm64)
     needs: validate
-    uses: ./.github/workflows/build-and-test-macos.yaml
+    uses: ./.github/workflows/build-macos-arm64.yaml
     secrets: inherit
     with:
-      os: macos-latest
-      artifact-name: pgn-macos-arm64
       version: ${{ inputs.version }}
 
-  build-macos-x86_64:
-    name: Build and test (macOS-x86_64)
+  build-macos-x64:
+    name: Build and test (macOS-x64)
     needs: validate
-    uses: ./.github/workflows/build-and-test-macos.yaml
+    uses: ./.github/workflows/build-macos-x64.yaml
     secrets: inherit
     with:
-      os: macos-26-intel
-      artifact-name: pgn-macos-x86_64
       version: ${{ inputs.version }}
-      test: false # CI fails on infra tests for some reason. Disabling until fixed.
-      e2e: true
+
+  sdist:
+    name: Build sdist
+    uses: ./.github/workflows/sdist.yaml
+    secrets: inherit
+    with:
+      version: ${{ inputs.version }}
 
   # ── Publish ──────────────────────────────────────────────────────────────────
   release:
     name: Create GitHub release
-    needs: [build-linux, build-macos-arm64, build-macos-x86_64]
+    needs: [build-linux, build-macos-arm64, build-macos-x64]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

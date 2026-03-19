@@ -1,0 +1,84 @@
+name: Build
+description: >
+  Haskell build, dependency-cache, test, and binary-installation steps shared
+  across all platform workflows.
+
+inputs:
+  version:
+    description: >
+      Release version in SemVer (e.g. 1.2.3). When provided the version in
+      cabal-file is updated to 0.<version> before building to follow PVP
+      convention.
+    required: false
+    default: ""
+  test-integration:
+    description: Run integration tests that require Docker/Postgres (pass 'true' or 'false')
+    required: false
+    default: "false"
+
+outputs:
+  binary-path:
+    description: Path to the produced binary inside the workspace
+    value: ${{ steps.install.outputs.binary-path }}
+
+runs:
+  using: composite
+  steps:
+    - name: GitHub Actions runner OS system information
+      uses: kenchan0130/actions-system-info@v1.4.0
+      id: system-info
+
+    - name: Set up build tools
+      id: setup
+      uses: haskell-actions/setup@v2
+
+    - name: Update version in cabal file
+      if: inputs.version != ''
+      shell: bash
+      run: perl -i -pe 's/^version:\s*\K\S+/0.${{ inputs.version }}/' pgenie.cabal
+
+    - name: Configure
+      shell: bash
+      run: cabal configure --enable-tests --enable-benchmarks
+
+    - name: Generate the plan
+      shell: bash
+      run: cabal build all --dry-run --enable-tests
+
+    - name: Restore cached dependencies
+      uses: actions/cache/restore@v5
+      id: cache
+      env:
+        key: ${{ runner.os }}-${{ steps.system-info.outputs.release }}-${{ steps.setup.outputs.cabal-version }}-${{ steps.setup.outputs.ghc-version }}-${{ github.job }}
+      with:
+        path: ${{ steps.setup.outputs.cabal-store }}
+        key: ${{ env.key }}-${{ hashFiles('**/plan.json') }}
+        restore-keys: ${{ env.key }}
+
+    - name: Install dependencies
+      shell: bash
+      run: cabal build all --only-dependencies --enable-tests -j +RTS -A128m -n2m -N -RTS
+
+    - name: Save dependencies cache
+      uses: actions/cache/save@v5
+      if: ${{ steps.cache.outputs.cache-primary-key != steps.cache.outputs.cache-matched-key }}
+      with:
+        path: ${{ steps.setup.outputs.cabal-store }}
+        key: ${{ steps.cache.outputs.cache-primary-key }}
+
+    - name: Build
+      shell: bash
+      run: cabal build --enable-tests
+
+    - name: Test
+      if: inputs.test-integration == 'true'
+      shell: bash
+      run: cabal test --enable-tests --test-show-details=direct -j1
+
+    - name: Install binary
+      id: install
+      shell: bash
+      run: |
+        cabal install pgenie:pgn --installdir=bin --install-method=copy
+        path="$(pwd)/bin/pgn"
+        echo "binary-path=$path" >> $GITHUB_OUTPUT

@@ -1,0 +1,26 @@
+name: Check Formatting
+
+on:
+  workflow_call:
+
+jobs:
+  check-formatting:
+    name: Check formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Format Cabal
+        uses: nikita-volkov/cabal-gild.github-action@v3
+
+      - name: Format Haskell
+        uses: nikita-volkov/ormolu.github-action@v3
+        with:
+          dirs: src
+
+      - name: Fail if formatting is incorrect
+        run: |
+          git diff --exit-code || {
+            echo "::error::Formatting is incorrect. Run 'ormolu' and 'cabal-gild' locally, then commit the fixes."
+            exit 1
+          }

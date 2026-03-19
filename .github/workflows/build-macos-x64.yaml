@@ -1,16 +1,8 @@
-name: Build and Test (macOS)
+name: Build (macOS-x64)
 
 on:
   workflow_call:
     inputs:
-      os:
-        description: Runner operating system (e.g. macos-latest, macos-26-intel)
-        type: string
-        required: true
-      artifact-name:
-        description: Name for the uploaded binary artifact (e.g. pgn-macos-arm64)
-        type: string
-        required: true
       version:
         description: >
           Release version in SemVer (e.g. 1.2.3). When provided the version in
@@ -19,23 +11,16 @@ on:
         type: string
         required: false
         default: ""
-      test:
-        description: Run integration tests that require Docker/Postgres
-        type: boolean
-        required: false
-        default: false
-      e2e:
-        description: Run end-to-end tests that require Docker/Postgres
-        type: boolean
-        required: false
-        default: false
 
 permissions:
   contents: read
 
+env:
+  artifact-name: pgn-macos-x64
+
 jobs:
   build:
-    runs-on: ${{ inputs.os }}
+    runs-on: macos-15-intel
 
     steps:
       - uses: actions/checkout@v6
@@ -43,7 +28,6 @@ jobs:
       # testcontainers-postgresql (used by infra-test) needs a Docker daemon.
       # macOS runners need explicit setup.
       - name: Set up Docker
-        if: inputs.test == true
         uses: docker/setup-docker-action@v5
 
       - name: Set up PostgreSQL
@@ -100,90 +84,50 @@ jobs:
             ghc-options: -optl$STATIC_DEPS/lib/libssl.a -optl$STATIC_DEPS/lib/libcrypto.a
           EOF
 
-      # On macOS, the linker stamps the *host* OS version as the binary's
-      # minimum required macOS version (LC_BUILD_VERSION minos) unless told
-      # otherwise.  The GitHub Actions macOS runners are currently macOS 14,
-      # so without this setting the released binary would require macOS 14+.
-      # Setting MACOSX_DEPLOYMENT_TARGET=12.0 makes the binary run on macOS 12
-      # (Monterey) and later, which is the oldest widely-used Apple-supported
-      # release for Apple Silicon.
-      - name: Set macOS deployment target
-        shell: bash
-        run: echo "MACOSX_DEPLOYMENT_TARGET=12.0" >> $GITHUB_ENV
-
       - name: Build and test
-        uses: ./.github/actions/build-and-test
+        id: build
+        uses: ./.github/actions/build
         with:
           version: ${{ inputs.version }}
-          artifact-name: ${{ inputs.artifact-name }}
-          test: ${{ inputs.test }}
+          artifact-name: ${{ env.artifact-name }}
+          test-integration: true
 
-      - name: Rename binary
+      - name: Package
         shell: bash
         run: |
-          chmod +x bin/pgn
-          mv bin/pgn "bin/${{ inputs.artifact-name }}"
-          tar -czf "bin/${{ inputs.artifact-name }}.tar.gz" -C bin "${{ inputs.artifact-name }}"
-
-      # Verify the macOS binary targets the expected minimum OS version.
-      # The "Set macOS deployment target" step above sets minos=12.0; if that
-      # step is ever accidentally removed, this check will catch it before
-      # release.
-      - name: Validate macOS minimum version (minos=12.0)
-        shell: bash
-        run: |
-          minos=$(otool -l "bin/${{ inputs.artifact-name }}" \
-            | awk '/LC_BUILD_VERSION/{f=1} f && /minos/{print $2; f=0}')
-          echo "Binary minos: $minos"
-          if [[ "$minos" != "12.0" ]]; then
-            echo "::error::Expected minos 12.0 but got $minos."
-            echo "::error::Ensure MACOSX_DEPLOYMENT_TARGET=12.0 is exported"
-            echo "::error::before cabal build (see 'Set macOS deployment target' step)."
-            exit 1
-          fi
+          dir="$(dirname "${{ steps.build.outputs.binary-path }}")"
+          file="$(basename "${{ steps.build.outputs.binary-path }}")"
+          tar -czf "${{ env.artifact-name }}.tar.gz" -C "$dir" "$file"
 
       - name: Upload binary artifact
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ inputs.artifact-name }}
-          path: bin/${{ inputs.artifact-name }}.tar.gz
+          name: ${{ env.artifact-name }}
+          path: ${{ env.artifact-name }}.tar.gz
 
-  # Download the uploaded artifact on a fresh runner and run the full
-  # artifact-generation workflow against the demo project.  This simulates
-  # what a real user does after downloading the binary from a GitHub release:
-  # the runner starts in a clean state without any of the build dependencies
-  # cached, so this validates that the artifact is truly self-contained and
-  # does not rely on any undeclared dependencies that happened to be present
-  # in the build environment.
-  #
-  # NOTE: The macOS binary is currently broken and crashes with
-  #   "dyld: missing symbol called" when pgn-generate is executed.
-  # The macOS step detects this known failure and reports it without
-  # failing the job, so that CI remains green while the issue is tracked.
   validate-artifact:
     needs: build
-    runs-on: ${{ inputs.os }}
+    runs-on: macos-15-intel
 
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v4.1.3
+        uses: actions/download-artifact@v8
         with:
-          name: ${{ inputs.artifact-name }}
+          name: ${{ env.artifact-name }}
           path: artifact
 
       - name: Extract binary
         shell: bash
         run: |
           cd artifact
-          tar -xzf "${{ inputs.artifact-name }}.tar.gz"
+          tar -xzf "${{ env.artifact-name }}.tar.gz"
           ls -la
 
       - name: Run basic check on the binary
         run: |
-          "$GITHUB_WORKSPACE/artifact/${{ inputs.artifact-name }}" --version
+          "$GITHUB_WORKSPACE/artifact/pgn" --version
 
       - name: Checkout demo project
-        if: inputs.e2e == true
         uses: actions/checkout@v6
         with:
           repository: pgenie-io/demo
@@ -191,12 +135,10 @@ jobs:
           path: demo
 
       - name: Set up Docker
-        if: inputs.e2e == true
         uses: docker/setup-docker-action@v5
 
       - name: Run end-to-end test
-        if: inputs.e2e == true
         shell: bash
         run: |
           cd "$GITHUB_WORKSPACE/demo"
-          "$GITHUB_WORKSPACE/artifact/${{ inputs.artifact-name }}" generate
+          "$GITHUB_WORKSPACE/artifact/pgn" generate

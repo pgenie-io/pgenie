@@ -1,0 +1,88 @@
+name: Build and Test (Linux)
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: >
+          Release version in SemVer (e.g. 1.2.3). When provided the version in
+          cabal-file is updated to 0.<version> before building to follow PVP
+          convention.
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+env:
+  artifact-name: pgn-linux-x64
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build
+        id: build
+        uses: ./.github/actions/build
+        with:
+          version: ${{ inputs.version }}
+          test-integration: true
+
+      - name: Package
+        shell: bash
+        run: |
+          dir="$(dirname "${{ steps.build.outputs.binary-path }}")"
+          file="$(basename "${{ steps.build.outputs.binary-path }}")"
+          tar -czf "${{ env.artifact-name }}.tar.gz" -C "$dir" "$file"
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.artifact-name }}
+          path: ${{ env.artifact-name }}.tar.gz
+
+  # Download the uploaded artifact on a fresh runner and run the full
+  # artifact-generation workflow against the demo project.  This simulates
+  # what a real user does after downloading the binary from a GitHub release:
+  # the runner starts in a clean state without any of the build dependencies
+  # cached, so this validates that the artifact is truly self-contained and
+  # does not rely on any undeclared dependencies that happened to be present
+  # in the build environment.
+  validate-artifact:
+    needs: build
+    runs-on: ubuntu-slim
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.artifact-name }}
+          path: artifact
+
+      - name: Extract binary
+        shell: bash
+        run: |
+          cd artifact
+          tar -xzf "${{ env.artifact-name }}.tar.gz"
+          ls -la
+
+      - name: Run basic check on the binary
+        run: |
+          "$GITHUB_WORKSPACE/artifact/pgn" --version
+
+      - name: Checkout demo project
+        uses: actions/checkout@v6
+        with:
+          repository: pgenie-io/demo
+          ref: 3fd8694f8f77c46e99c5b2d16a88f63b0d6aa21b
+          path: demo
+
+      - name: Run end-to-end test
+        shell: bash
+        run: |
+          cd "$GITHUB_WORKSPACE/demo"
+          "$GITHUB_WORKSPACE/artifact/pgn" generate

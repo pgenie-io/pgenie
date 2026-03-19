@@ -30,58 +30,30 @@ jobs:
       - name: Set up Docker
         uses: docker/setup-docker-action@v5
 
-      - name: Set up PostgreSQL
-        uses: ikalnytskyi/action-setup-postgres@v8
+      - name: Install libpq
+        run: brew install libpq
 
-      # Install Nix to provide reproducible, version-pinned static archives
-      # for libpq and OpenSSL (see flake.nix).  Previous Homebrew-based
-      # approaches were fragile because Homebrew's formulae do not reliably
-      # ship the static archives (.a files) needed for all transitive
-      # dependencies (e.g. the Kerberos libraries pulled in by GSSAPI support
-      # in libpq are sometimes absent).  The Nix derivation compiles libpq
-      # without GSSAPI/Kerberos, eliminating that class of failure.
-      - name: Install Nix
-        uses: nixbuild/nix-quick-install-action@v34
-
-      # Cache the Nix store to avoid rebuilding the static library derivation
-      # on every CI run.  The cache key is invalidated whenever the Nix flake
-      # inputs (flake.nix / flake.lock) change.
-      - name: Cache Nix store
-        uses: nix-community/cache-nix-action@v6
-        with:
-          primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.nix', 'flake.lock') }}
-          purge: true
-          purge-prefixes: nix-${{ runner.os }}-
-          purge-created: 0
-          purge-primary-key: never
-          gc-max-store-size: 1G
-
-      # Build a Nix derivation that contains ONLY static archives (.a files)
-      # for libpq and OpenSSL plus the libpq headers.  Because no .dylib files
-      # are present in that directory, the macOS linker cannot silently fall
-      # back to dynamic versions when cabal's extra-lib-dirs points there.
-      - name: Configure static libpq linking via Nix
+      # libpq from Homebrew is keg-only and not in the default search paths,
+      # so we tell cabal and postgresql-libpq where to find the headers and
+      # library.  We also embed the Homebrew rpath into the pgenie executable
+      # so that the distributed binary finds libpq without extra environment
+      # variables – Homebrew distributions declare libpq as a dependency and
+      # install it at this standard location.
+      - name: Configure cabal for Homebrew libpq
         shell: bash
         run: |
-          set -euo pipefail
-          nix build .#macos-static-deps --out-link /tmp/pgenie-static-deps
-          STATIC_DEPS=/tmp/pgenie-static-deps
-          echo "Static deps path: $STATIC_DEPS"
-          ls -la "$STATIC_DEPS/lib/"
+          # libpq is keg-only; make pg_config and pkg-config metadata visible
+          # to the postgresql-libpq build (it uses autoconf to find PostgreSQL).
+          echo "/usr/local/opt/libpq/bin" >> $GITHUB_PATH
+          echo "PKG_CONFIG_PATH=/usr/local/opt/libpq/lib/pkgconfig" >> $GITHUB_ENV
 
-          # Configure cabal:
-          # - postgresql-libpq: use the Nix-built libpq headers and the
-          #   static-only library directory so -lpq resolves to libpq.a.
-          # - pgenie (final executable): same static-only dir for -lpq, plus
-          #   explicit -optl flags so the macOS linker is forced to use the
-          #   OpenSSL static archives and cannot fall back to shared ones.
-          cat >> cabal.project.local << EOF
+          cat >> cabal.project.local << 'EOF'
           package postgresql-libpq
-            extra-include-dirs: $STATIC_DEPS/include
-            extra-lib-dirs: $STATIC_DEPS/lib
+            extra-include-dirs: /usr/local/opt/libpq/include
+            extra-lib-dirs: /usr/local/opt/libpq/lib
           package pgenie
-            extra-lib-dirs: $STATIC_DEPS/lib
-            ghc-options: -optl$STATIC_DEPS/lib/libssl.a -optl$STATIC_DEPS/lib/libcrypto.a
+            extra-lib-dirs: /usr/local/opt/libpq/lib
+            ghc-options: -optl-Wl,-rpath,/usr/local/opt/libpq/lib
           EOF
 
       - name: Build and test
@@ -89,7 +61,6 @@ jobs:
         uses: ./.github/actions/build
         with:
           version: ${{ inputs.version }}
-          artifact-name: ${{ env.artifact-name }}
           test-integration: true
 
       - name: Package
@@ -110,6 +81,9 @@ jobs:
     runs-on: macos-15-intel
 
     steps:
+      - name: Install libpq
+        run: brew install libpq
+
       - name: Download artifact
         uses: actions/download-artifact@v8
         with:

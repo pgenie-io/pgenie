@@ -37,6 +37,11 @@ jobs:
       - name: Configure cabal for Homebrew libpq
         shell: bash
         run: |
+          # libpq is keg-only; make pg_config and pkg-config metadata visible
+          # to the postgresql-libpq build (it uses autoconf to find PostgreSQL).
+          echo "/opt/homebrew/opt/libpq/bin" >> $GITHUB_PATH
+          echo "PKG_CONFIG_PATH=/opt/homebrew/opt/libpq/lib/pkgconfig" >> $GITHUB_ENV
+
           cat >> cabal.project.local << 'EOF'
           package postgresql-libpq
             extra-include-dirs: /opt/homebrew/opt/libpq/include

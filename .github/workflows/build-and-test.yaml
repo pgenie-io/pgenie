@@ -290,7 +290,7 @@ jobs:
   # failing the job, so that CI remains green while the issue is tracked.
   validate-artifact:
     needs: build
-    runs-on: ${{ inputs.os }}
+    runs-on: ${{ (inputs.os == 'ubuntu-latest') && 'ubuntu-slim' || inputs.os }}
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4.1.3

@@ -60,6 +60,7 @@ jobs:
 
   sdist:
     name: Build sdist
+    needs: validate
     uses: ./.github/workflows/sdist.yaml
     secrets: inherit
     with:
@@ -68,7 +69,7 @@ jobs:
   # ── Publish ──────────────────────────────────────────────────────────────────
   release:
     name: Create GitHub release
-    needs: [build-linux, build-macos-arm64, build-macos-x64]
+    needs: [build-linux, build-macos-arm64, build-macos-x64, sdist]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

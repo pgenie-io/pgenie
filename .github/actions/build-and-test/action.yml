@@ -1,0 +1,101 @@
+name: Build and Test (Common)
+description: >
+  Haskell build, dependency-cache, test, and binary-installation steps shared
+  across all platform workflows.
+
+inputs:
+  version:
+    description: >
+      Release version in SemVer (e.g. 1.2.3). When provided the version in
+      cabal-file is updated to 0.<version> before building to follow PVP
+      convention.
+    required: false
+    default: ""
+  artifact-name:
+    description: Name for the binary artifact (e.g. pgn-linux-x86_64)
+    required: true
+  test:
+    description: Run integration tests that require Docker/Postgres (pass 'true' or 'false')
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: GitHub Actions runner OS system information
+      uses: kenchan0130/actions-system-info@v1.4.0
+      id: system-info
+
+    - name: Update version in cabal file
+      if: inputs.version != ''
+      shell: bash
+      run: perl -i -pe 's/^version:\s*\K\S+/0.${{ inputs.version }}/' pgenie.cabal
+
+    - name: Set up GHC
+      id: setup
+      uses: haskell-actions/setup@v2
+      with:
+        ghc-version: 9.12.2
+        cabal-version: latest
+
+    # On Windows, haskell-actions/setup outputs C:\sr as the cabal-store path,
+    # which is a junction (reparse-point) to the real store directory.
+    # actions/cache does not traverse junctions, so it only captures the tiny
+    # junction metadata instead of the actual package contents.  We resolve the
+    # junction to the real target path here so that the cache steps below
+    # operate on the actual directory.
+    - name: Resolve cabal store path
+      id: cabal-store-path
+      shell: bash
+      run: |
+        dir="${{ steps.setup.outputs.cabal-store }}"
+        if [[ "${{ runner.os }}" == "Windows" ]]
+        then
+          real=$(powershell.exe -NoProfile -Command "(Get-Item '$dir').Target" 2>/dev/null || true)
+          if [[ -n "$real" ]]
+          then
+            dir="$real"
+          fi
+        fi
+        echo "path=$dir" >> $GITHUB_OUTPUT
+
+    # Restore the package-store cache so that dependency compilation is skipped
+    # when unchanged.  The cache is split from the full build so that it is
+    # always saved even when later steps (tests) fail.
+    - name: Restore dependency cache
+      id: cache
+      uses: actions/cache/restore@v5
+      with:
+        path: ${{ steps.cabal-store-path.outputs.path }}
+        key: ${{ runner.os }}-${{ steps.system-info.outputs.release }}-ghc-${{ steps.setup.outputs.ghc-version }}-${{ hashFiles('**/*.cabal', 'cabal.project*') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ steps.system-info.outputs.release }}-ghc-${{ steps.setup.outputs.ghc-version }}-
+
+    - name: Update Cabal package list
+      shell: bash
+      run: cabal update
+
+    - name: Build dependencies
+      shell: bash
+      run: cabal build --only-dependencies --enable-tests
+
+    # Save the cache immediately after dependencies are built so that the
+    # populated store survives even if the build or test steps fail.
+    - name: Save dependency cache
+      uses: actions/cache/save@v5
+      with:
+        path: ${{ steps.cabal-store-path.outputs.path }}
+        key: ${{ steps.cache.outputs.cache-primary-key }}
+
+    - name: Build
+      shell: bash
+      run: cabal build --enable-tests
+
+    - name: Test
+      if: inputs.test == 'true'
+      shell: bash
+      run: cabal test --enable-tests --test-show-details=direct -j1
+
+    - name: Install binary
+      shell: bash
+      run: cabal install pgenie:pgn --installdir=bin --install-method=copy

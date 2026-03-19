@@ -13,6 +13,9 @@ maintainer: Nikita Volkov <nikita.y.volkov@mail.ru>
 copyright: (c) 2025, Nikita Volkov
 license: GPL-3.0-or-later
 license-file: LICENSE
+extra-source-files:
+  README.md
+  cabal.project
 
 source-repository head
   type: git

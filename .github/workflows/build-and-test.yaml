@@ -54,8 +54,25 @@ jobs:
         if: inputs.test == true && runner.os == 'macOS'
         uses: docker/setup-docker-action@v5
 
+      # Set up a system PostgreSQL instance only when running integration
+      # tests that connect to it directly (inputs.test == true).
+      #
+      # IMPORTANT: do NOT run this step for macOS builds that only use
+      # the Nix-provided static libpq.  `ikalnytskyi/action-setup-postgres`
+      # runs `brew link postgresql@18`, which creates 800+ symlinks in
+      # /usr/local/lib/ (the Homebrew prefix) including
+      # /usr/local/lib/libpq.dylib.  On macOS Intel, /usr/local/lib/ is in
+      # the linker's default search path and is searched *before* any
+      # explicit -L paths added by cabal's extra-lib-dirs.  This causes
+      # `ld -lpq` to resolve to the Homebrew dynamic libpq.dylib instead of
+      # our Nix-built static libpq.a, so the final binary is dynamically
+      # linked against Homebrew's libpq.  That libpq brings in Homebrew's
+      # own dynamic OpenSSL (libssl.3.dylib, libcrypto.3.dylib) at runtime,
+      # while our binary *also* has static OpenSSL embedded via the -optl
+      # flags below — two OpenSSL instances in one process → memory
+      # corruption → SIGSEGV at the first SQL connection.
       - name: Set up PostgreSQL
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && inputs.test == true
         uses: ikalnytskyi/action-setup-postgres@v8
 
       # Install Nix to provide reproducible, version-pinned static archives
@@ -100,16 +117,25 @@ jobs:
           # Configure cabal:
           # - postgresql-libpq: use the Nix-built libpq headers and the
           #   static-only library directory so -lpq resolves to libpq.a.
-          # - pgenie (final executable): same static-only dir for -lpq, plus
-          #   explicit -optl flags so the macOS linker is forced to use the
-          #   OpenSSL static archives and cannot fall back to shared ones.
+          #   Now that system PostgreSQL is not installed (no brew link),
+          #   there is no competing /usr/local/lib/libpq.dylib and -lpq
+          #   correctly finds our static libpq.a.
+          # - pgenie (final executable): pass libssl.a and libcrypto.a via
+          #   -Wl,-force_load so the macOS linker includes ALL archive
+          #   members, not just those reachable from explicit symbol
+          #   references.  This is required for OpenSSL 3.x: the provider
+          #   registration constructors live in archive members with no
+          #   external callers; without -force_load they are silently omitted,
+          #   leaving OpenSSL's provider table empty → SIGSEGV on first call.
           cat >> cabal.project.local << EOF
           package postgresql-libpq
             extra-include-dirs: $STATIC_DEPS/include
             extra-lib-dirs: $STATIC_DEPS/lib
           package pgenie
             extra-lib-dirs: $STATIC_DEPS/lib
-            ghc-options: -optl$STATIC_DEPS/lib/libssl.a -optl$STATIC_DEPS/lib/libcrypto.a
+            ghc-options:
+              -optl-Wl,-force_load,$STATIC_DEPS/lib/libssl.a
+              -optl-Wl,-force_load,$STATIC_DEPS/lib/libcrypto.a
           EOF
 
       - name: Install Windows deps
@@ -246,6 +272,25 @@ jobs:
             exit 1
           fi
 
+      # Verify the macOS binary does NOT dynamically link libpq, libssl, or
+      # libcrypto.  Those must be statically embedded via the -force_load
+      # flags above.  If they appear here it means the linker fell back to a
+      # dynamic version (e.g. from a Homebrew installation), which would
+      # cause two OpenSSL instances in one process → SIGSEGV at first SQL.
+      - name: Validate macOS static linking (no dynamic libpq/ssl/crypto)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          echo "Dynamic library dependencies:"
+          otool -L "bin/${{ inputs.artifact-name }}"
+          if otool -L "bin/${{ inputs.artifact-name }}" | grep -qE 'libpq|libssl|libcrypto'; then
+            echo "::error::Binary unexpectedly links libpq/libssl/libcrypto dynamically."
+            echo "::error::Ensure 'Set up PostgreSQL' is not installing a competing system libpq"
+            echo "::error::and that -Wl,-force_load flags are used for the static archives."
+            exit 1
+          fi
+          echo "OK: libpq/libssl/libcrypto are statically embedded."
+
       - name: Rename binary (Windows)
         if: runner.os == 'Windows'
         shell: bash
@@ -299,11 +344,6 @@ jobs:
   # cached, so this validates that the artifact is truly self-contained and
   # does not rely on any undeclared dependencies that happened to be present
   # in the build environment.
-  #
-  # NOTE: The macOS binary is currently broken and crashes with
-  #   "dyld: missing symbol called" when pgn-generate is executed.
-  # The macOS step detects this known failure and reports it without
-  # failing the job, so that CI remains green while the issue is tracked.
   validate-artifact:
     needs: build
     runs-on: ${{ inputs.os }}

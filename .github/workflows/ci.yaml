@@ -42,17 +42,16 @@ jobs:
   # ── Platform builds (run in parallel with the format check) ─────────────────
   build-linux:
     name: Build and test on Linux-x86_64
-    uses: ./.github/workflows/build-and-test.yaml
+    uses: ./.github/workflows/build-and-test-linux.yaml
     secrets: inherit
     with:
-      os: ubuntu-latest
       artifact-name: pgn-linux-x86_64
       test: true
       e2e: true
 
   build-macos-arm64:
     name: Build and test on macOS-arm64
-    uses: ./.github/workflows/build-and-test.yaml
+    uses: ./.github/workflows/build-and-test-macos.yaml
     secrets: inherit
     with:
       os: macos-latest
@@ -61,7 +60,7 @@ jobs:
 
   build-macos-x86_64:
     name: Build and test on macOS-x86_64
-    uses: ./.github/workflows/build-and-test.yaml
+    uses: ./.github/workflows/build-and-test-macos.yaml
     secrets: inherit
     with:
       os: macos-26-intel

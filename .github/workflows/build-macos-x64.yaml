@@ -30,9 +30,6 @@ jobs:
       - name: Set up Docker
         uses: docker/setup-docker-action@v5
 
-      - name: Set up PostgreSQL
-        uses: ikalnytskyi/action-setup-postgres@v8
-
       - name: Install libpq
         run: brew install libpq
 

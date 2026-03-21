@@ -110,6 +110,39 @@ typeOidTable =
     (4534, Type 0 (PrimitiveScalar TstzmultirangePrimitive)),
     (4535, Type 0 (PrimitiveScalar DatemultirangePrimitive)),
     (4536, Type 0 (PrimitiveScalar Int8multirangePrimitive)),
+    -- varchar — OID 1043, array OID 1015
+    (1043, Type 0 (PrimitiveScalar VarcharPrimitive)),
+    -- bpchar (char(n)) — OID 1042, array OID 1014
+    (1042, Type 0 (PrimitiveScalar BpcharPrimitive)),
+    -- bit — OID 1560, array OID 1561
+    (1560, Type 0 (PrimitiveScalar BitPrimitive)),
+    -- varbit — OID 1562, array OID 1563
+    (1562, Type 0 (PrimitiveScalar VarbitPrimitive)),
+    -- tsvector — OID 3614, array OID 3643
+    (3614, Type 0 (PrimitiveScalar TsvectorPrimitive)),
+    -- tsquery — OID 3615, array OID 3645
+    (3615, Type 0 (PrimitiveScalar TsqueryPrimitive)),
+    -- point — OID 600, array OID 1017
+    (600, Type 0 (PrimitiveScalar PointPrimitive)),
+    -- line — OID 628, array OID 629
+    (628, Type 0 (PrimitiveScalar LinePrimitive)),
+    -- lseg — OID 601, array OID 1018
+    (601, Type 0 (PrimitiveScalar LsegPrimitive)),
+    -- box — OID 603, array OID 1020
+    (603, Type 0 (PrimitiveScalar BoxPrimitive)),
+    -- path — OID 602, array OID 1019
+    (602, Type 0 (PrimitiveScalar PathPrimitive)),
+    -- polygon — OID 604, array OID 1027
+    (604, Type 0 (PrimitiveScalar PolygonPrimitive)),
+    -- circle — OID 718, array OID 719
+    (718, Type 0 (PrimitiveScalar CirclePrimitive)),
+    -- pg_snapshot — OID 5038, array OID 5039
+    (5038, Type 0 (PrimitiveScalar PgSnapshotPrimitive)),
+    -- pg_lsn — OID 3220, array OID 3221
+    (3220, Type 0 (PrimitiveScalar PgLsnPrimitive)),
+    -- name — OID 19, array OID 1003
+    (19, Type 0 (PrimitiveScalar NamePrimitive)),
+    -- hstore has no static OIDs (extension type); resolved dynamically via SelectTypeParams
     (1001, Type 1 (PrimitiveScalar ByteaPrimitive)),
     (1002, Type 1 (PrimitiveScalar CharPrimitive)),
     (1016, Type 1 (PrimitiveScalar Int8Primitive)),
@@ -146,5 +179,37 @@ typeOidTable =
     (6152, Type 1 (PrimitiveScalar TsmultirangePrimitive)),
     (6153, Type 1 (PrimitiveScalar TstzmultirangePrimitive)),
     (6155, Type 1 (PrimitiveScalar DatemultirangePrimitive)),
-    (6157, Type 1 (PrimitiveScalar Int8multirangePrimitive))
+    (6157, Type 1 (PrimitiveScalar Int8multirangePrimitive)),
+    -- varchar array OID 1015
+    (1015, Type 1 (PrimitiveScalar VarcharPrimitive)),
+    -- bpchar array OID 1014
+    (1014, Type 1 (PrimitiveScalar BpcharPrimitive)),
+    -- bit array OID 1561
+    (1561, Type 1 (PrimitiveScalar BitPrimitive)),
+    -- varbit array OID 1563
+    (1563, Type 1 (PrimitiveScalar VarbitPrimitive)),
+    -- tsvector array OID 3643
+    (3643, Type 1 (PrimitiveScalar TsvectorPrimitive)),
+    -- tsquery array OID 3645
+    (3645, Type 1 (PrimitiveScalar TsqueryPrimitive)),
+    -- point array OID 1017
+    (1017, Type 1 (PrimitiveScalar PointPrimitive)),
+    -- line array OID 629
+    (629, Type 1 (PrimitiveScalar LinePrimitive)),
+    -- lseg array OID 1018
+    (1018, Type 1 (PrimitiveScalar LsegPrimitive)),
+    -- box array OID 1020
+    (1020, Type 1 (PrimitiveScalar BoxPrimitive)),
+    -- path array OID 1019
+    (1019, Type 1 (PrimitiveScalar PathPrimitive)),
+    -- polygon array OID 1027
+    (1027, Type 1 (PrimitiveScalar PolygonPrimitive)),
+    -- circle array OID 719
+    (719, Type 1 (PrimitiveScalar CirclePrimitive)),
+    -- pg_snapshot array OID 5039
+    (5039, Type 1 (PrimitiveScalar PgSnapshotPrimitive)),
+    -- pg_lsn array OID 3221
+    (3221, Type 1 (PrimitiveScalar PgLsnPrimitive)),
+    -- name array OID 1003
+    (1003, Type 1 (PrimitiveScalar NamePrimitive))
   ]

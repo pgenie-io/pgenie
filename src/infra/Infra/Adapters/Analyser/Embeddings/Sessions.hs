@@ -119,6 +119,23 @@ adaptPrimitive = \case
   Sessions.TstzrangePrimitive -> Gen.Input.PrimitiveTstzrange
   Sessions.UuidPrimitive -> Gen.Input.PrimitiveUuid
   Sessions.XmlPrimitive -> Gen.Input.PrimitiveXml
+  Sessions.VarcharPrimitive -> Gen.Input.PrimitiveVarchar
+  Sessions.BpcharPrimitive -> Gen.Input.PrimitiveBpchar
+  Sessions.BitPrimitive -> Gen.Input.PrimitiveBit
+  Sessions.VarbitPrimitive -> Gen.Input.PrimitiveVarbit
+  Sessions.TsvectorPrimitive -> Gen.Input.PrimitiveTsvector
+  Sessions.TsqueryPrimitive -> Gen.Input.PrimitiveTsquery
+  Sessions.PointPrimitive -> Gen.Input.PrimitivePoint
+  Sessions.LinePrimitive -> Gen.Input.PrimitiveLine
+  Sessions.LsegPrimitive -> Gen.Input.PrimitiveLseg
+  Sessions.BoxPrimitive -> Gen.Input.PrimitiveBox
+  Sessions.PathPrimitive -> Gen.Input.PrimitivePath
+  Sessions.PolygonPrimitive -> Gen.Input.PrimitivePolygon
+  Sessions.CirclePrimitive -> Gen.Input.PrimitiveCircle
+  Sessions.PgSnapshotPrimitive -> Gen.Input.PrimitivePgSnapshot
+  Sessions.PgLsnPrimitive -> Gen.Input.PrimitivePgLsn
+  Sessions.NamePrimitive -> Gen.Input.PrimitiveName
+  Sessions.HstorePrimitive -> Gen.Input.PrimitiveHstore
 
 collectCustomTypes :: Sessions.Query -> Embed [Gen.Input.CustomType]
 collectCustomTypes query = do

@@ -131,6 +131,27 @@ fromPrimitive = \case
   TstzrangePrimitive -> Nothing
   UuidPrimitive -> Just $ Encoders.uuid $< read "00000000-0000-0000-0000-000000000000"
   XmlPrimitive -> Nothing
+  -- varchar and bpchar use text wire encoding
+  VarcharPrimitive -> Just $ Encoders.text $< mempty
+  BpcharPrimitive -> Just $ Encoders.text $< mempty
+  -- name uses text wire encoding
+  NamePrimitive -> Just $ Encoders.text $< mempty
+  -- no suitable default encoder for these types
+  BitPrimitive -> Nothing
+  VarbitPrimitive -> Nothing
+  TsvectorPrimitive -> Nothing
+  TsqueryPrimitive -> Nothing
+  PointPrimitive -> Nothing
+  LinePrimitive -> Nothing
+  LsegPrimitive -> Nothing
+  BoxPrimitive -> Nothing
+  PathPrimitive -> Nothing
+  PolygonPrimitive -> Nothing
+  CirclePrimitive -> Nothing
+  PgSnapshotPrimitive -> Nothing
+  PgLsnPrimitive -> Nothing
+  -- hstore requires an extension; no static encoding available
+  HstorePrimitive -> Nothing
 
 fromComposite :: Composite -> Maybe (Encoders.Value ())
 fromComposite (Composite schemaName name fields) = do

@@ -170,6 +170,23 @@ primitiveToTypeName = \case
   Gen.Input.PrimitiveTstzrange -> "tstzrange"
   Gen.Input.PrimitiveUuid -> "uuid"
   Gen.Input.PrimitiveXml -> "xml"
+  Gen.Input.PrimitiveVarchar -> "varchar"
+  Gen.Input.PrimitiveBpchar -> "bpchar"
+  Gen.Input.PrimitiveBit -> "bit"
+  Gen.Input.PrimitiveVarbit -> "varbit"
+  Gen.Input.PrimitiveTsvector -> "tsvector"
+  Gen.Input.PrimitiveTsquery -> "tsquery"
+  Gen.Input.PrimitivePoint -> "point"
+  Gen.Input.PrimitiveLine -> "line"
+  Gen.Input.PrimitiveLseg -> "lseg"
+  Gen.Input.PrimitiveBox -> "box"
+  Gen.Input.PrimitivePath -> "path"
+  Gen.Input.PrimitivePolygon -> "polygon"
+  Gen.Input.PrimitiveCircle -> "circle"
+  Gen.Input.PrimitivePgSnapshot -> "pg_snapshot"
+  Gen.Input.PrimitivePgLsn -> "pg_lsn"
+  Gen.Input.PrimitiveName -> "name"
+  Gen.Input.PrimitiveHstore -> "hstore"
 
 genNameToText :: Gen.Input.Name -> Text
 genNameToText name =

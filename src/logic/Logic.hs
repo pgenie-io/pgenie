@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
+
 module Logic
   ( analyse,
     generate,
@@ -43,23 +45,6 @@ data GeneratedArtifact = GeneratedArtifact
   { name :: Text,
     warnings :: [Gen.Output.Report],
     filePaths :: [Path]
-  }
-
-data SignatureGenerated = SignatureGenerated
-  { filePath :: Path,
-    replaced :: Bool
-  }
-
-data QuerySignature
-  = QuerySignature
-      -- | Parameters of the query.
-      [Gen.Input.Member]
-      -- | Result of the query.
-      (Maybe Gen.Input.ResultRows)
-
-data QueriesMetadataMerged = QueriesMetadataMerged
-  { queries :: [Gen.Input.Query],
-    customTypes :: [Gen.Input.CustomType]
   }
 
 -- * API ops

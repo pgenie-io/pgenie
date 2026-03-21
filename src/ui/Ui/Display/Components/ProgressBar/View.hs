@@ -11,7 +11,7 @@ import Utils.Prelude
 render :: Double -> TextBuilder
 render progress =
   let width = 30
-      filledWidth = round (progress * fromIntegral width)
+      filledWidth = round (progress * width)
       emptyWidth = width - filledWidth
       filled = to (Text.replicate filledWidth "=")
       arrow = if filledWidth > 0 && filledWidth < width then ">" else ""

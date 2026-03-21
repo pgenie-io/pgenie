@@ -5,22 +5,9 @@ module Logic.Dsl
   )
 where
 
-import AlgebraicPath qualified as Path
 import Control.Monad.Parallel qualified as MonadParallel
-import Data.Aeson.Text qualified as Aeson
-import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
 import Logic.Algebra
-import Logic.GeneratorHashes qualified as GeneratorHashes
-import Logic.Name qualified as Name
-import Logic.ProjectFile qualified as ProjectFile
-import Logic.SqlTemplate qualified as SqlTemplate
-import Logic.SyntaxAnalyser qualified as SyntaxAnalyser
-import PGenieGen qualified as Gen
-import PGenieGen.Model.Input qualified as Gen.Input
-import PGenieGen.Model.Output qualified as Gen.Output
-import PGenieGen.Model.Output.Report qualified as Gen.Output.Report
-import SyntacticClass qualified as Syntactic
 import Utils.Prelude hiding (readFile, writeFile)
 
 run :: (Caps m) => Script a -> m a

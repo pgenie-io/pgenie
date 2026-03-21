@@ -5,7 +5,6 @@ module Infra.Adapters.Analyser.Sessions.Procedures.DescribeQuery
   )
 where
 
-import Data.Text qualified as Text
 import Data.Vector qualified as Vector
 import Hasql.Session qualified
 import HasqlDev qualified

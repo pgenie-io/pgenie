@@ -34,7 +34,7 @@ stripComments = Text.unlines . map stripLineComment . removeBlockComments . Text
     processLine inComment line =
       case (inComment, Text.breakOn "/*" line, Text.breakOn "*/" line) of
         -- We're in a comment, look for end
-        (True, _, (beforeEnd, afterEnd)) ->
+        (True, _, (_beforeEnd, afterEnd)) ->
           if Text.null afterEnd
             then (True, "")
             else processLine False (Text.drop 2 afterEnd)

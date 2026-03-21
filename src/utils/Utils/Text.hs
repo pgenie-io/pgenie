@@ -13,7 +13,7 @@ pointToLocation queryText errorPos =
     findErrorLocation :: [Text] -> Int -> (Int, Int)
     findErrorLocation lines errorPos = go lines 1 0
       where
-        go [] currentPos _ = (length lines, 1)
+        go [] _ _ = (length lines, 1)
         go (line : rest) currentPos lineIdx =
           let lineLength = Text.length line
               lineEnd = currentPos + lineLength

@@ -9,7 +9,6 @@ where
 
 import Data.Text qualified as Text
 import TextBuilder
-import TextBuilder qualified
 import Utils.Prelude
 
 -- | Erase the current terminal line in place (for overwriting a progress bar).

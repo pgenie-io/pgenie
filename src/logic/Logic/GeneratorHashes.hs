@@ -9,7 +9,6 @@ import Control.Foldl qualified as Fold
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
 import Logic.Algebra qualified as Algebra
-import PGenieGen qualified as Gen
 import Utils.Prelude hiding (readFile, writeFile)
 import YamlUnscrambler qualified as U
 

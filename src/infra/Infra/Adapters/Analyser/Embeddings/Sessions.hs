@@ -136,6 +136,8 @@ adaptPrimitive = \case
   Sessions.PgLsnPrimitive -> Gen.Input.PrimitivePgLsn
   Sessions.NamePrimitive -> Gen.Input.PrimitiveName
   Sessions.HstorePrimitive -> Gen.Input.PrimitiveHstore
+  Sessions.CitextPrimitive -> Gen.Input.PrimitiveCitext
+  Sessions.OidPrimitive -> Gen.Input.PrimitiveOid
 
 collectCustomTypes :: Sessions.Query -> Embed [Gen.Input.CustomType]
 collectCustomTypes query = do

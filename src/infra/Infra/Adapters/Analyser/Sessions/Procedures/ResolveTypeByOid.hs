@@ -34,7 +34,16 @@ instance Procedure ResolveTypeByOid where
             inContext ["type:", Syntactic.toTextBuilder type_.name] do
               case type_.elementTypeOid of
                 0 -> case type_.type_ of
-                  "b" -> crash ["Base types are not supported"] []
+                  "b" ->
+                    case type_.name of
+                      "hstore" -> pure (Type 0 (PrimitiveScalar HstorePrimitive))
+                      "citext" -> pure (Type 0 (PrimitiveScalar CitextPrimitive))
+                      _ ->
+                        crash
+                          ["Unknown base type"]
+                          [ ("schema", Syntactic.toText type_.schemaName),
+                            ("name", Syntactic.toText type_.name)
+                          ]
                   "c" -> do
                     fields <- runStatementByParams Statements.SelectAttributesParams {oid}
                     fields <- forM fields $ \(Statements.SelectAttributesResultRow fieldName fieldTypeOid (fromIntegral -> fieldDims) _) ->
@@ -142,7 +151,8 @@ typeOidTable =
     (3220, Type 0 (PrimitiveScalar PgLsnPrimitive)),
     -- name — OID 19, array OID 1003
     (19, Type 0 (PrimitiveScalar NamePrimitive)),
-    -- hstore has no static OIDs (extension type); resolved dynamically via SelectTypeParams
+    -- oid — OID 26, array OID 1028
+    (26, Type 0 (PrimitiveScalar OidPrimitive)),
     (1001, Type 1 (PrimitiveScalar ByteaPrimitive)),
     (1002, Type 1 (PrimitiveScalar CharPrimitive)),
     (1016, Type 1 (PrimitiveScalar Int8Primitive)),
@@ -211,5 +221,7 @@ typeOidTable =
     -- pg_lsn array OID 3221
     (3221, Type 1 (PrimitiveScalar PgLsnPrimitive)),
     -- name array OID 1003
-    (1003, Type 1 (PrimitiveScalar NamePrimitive))
+    (1003, Type 1 (PrimitiveScalar NamePrimitive)),
+    -- oid array OID 1028
+    (1028, Type 1 (PrimitiveScalar OidPrimitive))
   ]

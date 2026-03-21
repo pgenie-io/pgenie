@@ -140,8 +140,12 @@ data Primitive
     PgLsnPrimitive
   | -- | name — OID 19, array OID 1003
     NamePrimitive
+  | -- | oid — OID 26, array OID 1028
+    OidPrimitive
   | -- | hstore — extension type, no static OIDs
     HstorePrimitive
+  | -- | citext — extension type, no static OIDs
+    CitextPrimitive
   deriving stock (Show, Eq)
 
 data Composite = Composite

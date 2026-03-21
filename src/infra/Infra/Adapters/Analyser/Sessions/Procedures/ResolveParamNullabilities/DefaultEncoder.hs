@@ -150,8 +150,9 @@ fromPrimitive = \case
   CirclePrimitive -> Nothing
   PgSnapshotPrimitive -> Nothing
   PgLsnPrimitive -> Nothing
-  -- hstore requires an extension; no static encoding available
   HstorePrimitive -> Nothing
+  CitextPrimitive -> Just $ Encoders.text $< mempty
+  OidPrimitive -> Just $ Encoders.oid $< 0
 
 fromComposite :: Composite -> Maybe (Encoders.Value ())
 fromComposite (Composite schemaName name fields) = do

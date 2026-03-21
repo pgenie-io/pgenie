@@ -187,6 +187,8 @@ primitiveToTypeName = \case
   Gen.Input.PrimitivePgLsn -> "pg_lsn"
   Gen.Input.PrimitiveName -> "name"
   Gen.Input.PrimitiveHstore -> "hstore"
+  Gen.Input.PrimitiveCitext -> "citext"
+  Gen.Input.PrimitiveOid -> "oid"
 
 genNameToText :: Gen.Input.Name -> Text
 genNameToText name =

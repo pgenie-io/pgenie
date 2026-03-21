@@ -22,7 +22,7 @@ analyse =
 
 data Params = Params
   { failOnSeqScans :: Bool,
-    format :: Maybe Logic.ModelFormat
+    output :: Maybe Logic.ModelFormat
   }
 
 parser :: Opt.Parser Params
@@ -35,8 +35,8 @@ parser =
     <*> optional
       ( Opt.option
           readFormat
-          ( Opt.long "format"
-              <> Opt.metavar "FORMAT"
+          ( Opt.long "output"
+              <> Opt.metavar "OUTPUT"
               <> Opt.help "Also output the project model in the given format: json or dhall"
           )
       )
@@ -51,4 +51,4 @@ execute :: (Logic.Caps m) => Params -> m Text
 execute params =
   Logic.analyse
     Logic.AnalyseOptions {failOnSeqScans = params.failOnSeqScans}
-    params.format
+    params.output

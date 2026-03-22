@@ -238,26 +238,29 @@ generateCode projectFile project =
 analyseProject :: ProjectFile.ProjectFile -> Script (Gen.Input.Project, [(Text, SeqScanFinding)], [IndexInfo])
 analyseProject projectFile =
   stage "Analysing" 2 do
-    stage "Migrations" 2 do
-      migrationsListed <-
-        listDir "migrations"
-          & fmap (filter (\p -> Path.toExtensions p == ["sql"]))
-          & fmap sort
-          & fmap (fmap ("migrations" <>))
+    migrationsLoaded <-
+      stage "Migrations" 2 do
+        migrationsListed <-
+          listDir "migrations"
+            & fmap (filter (\p -> Path.toExtensions p == ["sql"]))
+            & fmap sort
+            & fmap (fmap ("migrations" <>))
 
-      let migrationsCount = length migrationsListed
+        let migrationsCount = length migrationsListed
 
-      migrationsLoaded <-
-        stage "Loading" migrationsCount do
-          MonadParallel.forM migrationsListed \migrationListed -> do
+        loaded <-
+          stage "Loading" migrationsCount do
+            MonadParallel.forM migrationsListed \migrationListed -> do
+              stage (Path.toText migrationListed) 0 do
+                migrationLoaded <- readFile migrationListed
+                pure (migrationListed, migrationLoaded)
+
+        stage "Executing" migrationsCount do
+          for loaded \(migrationListed, migrationLoaded) -> do
             stage (Path.toText migrationListed) 0 do
-              migrationLoaded <- readFile migrationListed
-              pure (migrationListed, migrationLoaded)
+              executeMigration migrationLoaded
 
-      stage "Executing" migrationsCount do
-        for migrationsLoaded \(migrationListed, migrationLoaded) -> do
-          stage (Path.toText migrationListed) 0 do
-            executeMigration migrationLoaded
+        pure loaded
 
     -- Fetch existing indexes after migrations have been applied
     indexes <-
@@ -442,7 +445,16 @@ analyseProject projectFile =
             name = Name.toGenName projectFile.name,
             version = projectFile.version,
             customTypes = customTypes,
-            queries = queries
+            queries = queries,
+            migrations =
+              migrationsLoaded
+                & fmap
+                  ( \(migrationPath, migrationSql) ->
+                      Gen.Input.Migration
+                        { name = Path.toBasename migrationPath,
+                          sql = migrationSql
+                        }
+                  )
           },
         seqScanFindings,
         indexes

@@ -53,16 +53,16 @@ packages:
 - completed:
     name: pgenie-gen
     pantry-tree:
-      sha256: ad61449e66c0a241d7331e3dc859b61c889237f6770ed037cdf0d35690ac821f
-      size: 2018
-    sha256: 980c2d4c1a3be231ebcd557818528d6359d233eeef6ec90cebf912ab163c6550
-    size: 26673
+      sha256: f23bf2114a7448997ea4930465cd640d537fcbed766d0917144b5e977304737b
+      size: 2077
+    sha256: 1a66004939f798d7e2503013c904fc41eb16a0102e0d66d338ded7fbc7ddb218
+    size: 28399
     subdir: haskell
-    url: https://github.com/pgenie-io/gen-sdk/archive/c7d07a6e5eb072ed4a1bcb472b4b7ba6d596c8e3.tar.gz
+    url: https://github.com/pgenie-io/gen-sdk/archive/v0.2.0.tar.gz
     version: '0'
   original:
     subdir: haskell
-    url: https://github.com/pgenie-io/gen-sdk/archive/c7d07a6e5eb072ed4a1bcb472b4b7ba6d596c8e3.tar.gz
+    url: https://github.com/pgenie-io/gen-sdk/archive/v0.2.0.tar.gz
 - completed:
     hackage: aeson-optics-1.2.1@sha256:f0dc0ffba23baed6ee93e3ca91e1630c4da38eee46c56c28f3b264f376c361c0,1551
     pantry-tree:

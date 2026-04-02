@@ -144,10 +144,10 @@ tryFromYaml text = do
     configValue :: U.Value (Maybe Aeson.Value)
     configValue =
       U.nullableValue
-        [ U.stringScalar (fmap Aeson.String U.textString),
-          U.nullScalar Aeson.Null,
+        [ U.nullScalar Aeson.Null,
           U.boolScalar <&> Aeson.Bool,
-          U.scientificScalar <&> Aeson.Number
+          U.scientificScalar <&> Aeson.Number,
+          U.stringScalar (fmap Aeson.String U.textString)
         ]
         (Just configMapping)
         (Just configSequence)
@@ -166,10 +166,10 @@ tryFromYaml text = do
 
         deeperValue =
           U.value
-            [ U.stringScalar (fmap Aeson.String U.textString),
-              U.nullScalar Aeson.Null,
+            [ U.nullScalar Aeson.Null,
               U.boolScalar <&> Aeson.Bool,
-              U.scientificScalar <&> Aeson.Number
+              U.scientificScalar <&> Aeson.Number,
+              U.stringScalar (fmap Aeson.String U.textString)
             ]
             (Just configMapping)
             (Just configSequence)

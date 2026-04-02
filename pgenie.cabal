@@ -147,12 +147,12 @@ library logic
     Logic.SeqScanDetector
     Logic.SignatureFile
     Logic.SqlTemplate
+    Logic.ProjectFile
     Logic.SyntaxAnalyser
 
   other-modules:
     Logic.GeneratorHashes
     Logic.Name.Megaparsec
-    Logic.ProjectFile
     Logic.SyntaxAnalyser.AstInterpreter
     Logic.SyntaxAnalyser.Data
 
@@ -182,6 +182,7 @@ test-suite logic-test
   other-modules:
     IndexOptimizerSpec
     NameSpec
+    ProjectFileSpec
     SeqScanDetectorSpec
     SignatureFileSpec
     SqlTemplateSpec
@@ -192,6 +193,7 @@ test-suite logic-test
 
   build-depends:
     QuickCheck,
+    aeson,
     hspec,
     megaparsec,
     pgenie:logic,

@@ -29,8 +29,9 @@ spec = do
         Left err ->
           expectationFailure ("Parse failed: " <> show err)
         Right pf -> do
-          length pf.artifacts `shouldBe` 1
-          let art = head pf.artifacts
+          art <- case pf.artifacts of
+            [art] -> pure art
+            _ -> fail "Expected exactly one artifact"
           art.config
             `shouldBe` Just
               ( Aeson.Object

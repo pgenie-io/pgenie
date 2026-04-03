@@ -323,4 +323,3 @@ test-suite ui-test
     pgenie:utils,
     text,
     text-builder,
-    time,

@@ -13,7 +13,8 @@ import Utils.Prelude hiding (init)
 -- | Display state
 data Memory = Memory
   { startTime :: UTCTime,
-    progressBar :: Maybe ProgressBar.Memory
+    progressBar :: Maybe ProgressBar.Memory,
+    isCompleted :: Bool
   }
   deriving stock (Eq, Show)
 
@@ -21,16 +22,17 @@ init :: UTCTime -> Memory
 init startTime =
   Memory
     { startTime,
-      progressBar = Nothing
+      progressBar = Nothing,
+      isCompleted = False
     }
 
 -- | Combined update: transitions state and produces terminal output
 update :: Logic.Event -> UTCTime -> Memory -> (Memory, TextBuilder)
-update event currentTime mem = case event of
-  Logic.StageEntered path ->
-    case mem.progressBar of
-      Just pb | ProgressBar.isDone pb -> (mem, mempty)
-      _ ->
+update event currentTime mem =
+  if mem.isCompleted
+    then (mem, mempty)
+    else case event of
+      Logic.StageEntered path ->
         let (pb', pbOutput) =
               ProgressBar.update
                 0
@@ -44,36 +46,33 @@ update event currentTime mem = case event of
                   pbOutput
                 ]
             )
-  Logic.StageExited path progressDelta ->
-    case mem.progressBar of
-      Nothing -> (mem, mempty)
-      Just pb | ProgressBar.isDone pb -> (mem, mempty)
-      Just pb ->
-        let (pb', pbOutput) = ProgressBar.update progressDelta currentTime pb
+      Logic.StageExited path progressDelta ->
+        case mem.progressBar of
+          Nothing -> (mem, mempty)
+          Just pb ->
+            let (pb', pbOutput) = ProgressBar.update progressDelta currentTime pb
+                mem' = mem {progressBar = Just pb'}
+             in if null path
+                  then (mem' {isCompleted = True}, View.printDone)
+                  else (mem', View.eraseLine <> pbOutput)
+      Logic.WarningEmitted err ->
+        let (pb', pbOutput) =
+              ProgressBar.update
+                0
+                currentTime
+                (fromMaybe (ProgressBar.init mem.startTime) mem.progressBar)
             mem' = mem {progressBar = Just pb'}
          in ( mem',
-              if ProgressBar.isDone pb' || null path
-                then View.printDone
-                else View.eraseLine <> pbOutput
+              mconcat
+                [ if isJust mem.progressBar then View.eraseLine else mempty,
+                  View.printWarning err.path err.message err.suggestion err.details,
+                  pbOutput
+                ]
             )
-  Logic.WarningEmitted err ->
-    let (pb', pbOutput) =
-          ProgressBar.update
-            0
-            currentTime
-            (fromMaybe (ProgressBar.init mem.startTime) mem.progressBar)
-        mem' = mem {progressBar = Just pb'}
-     in ( mem',
+      Logic.Failed err ->
+        ( mem {progressBar = Nothing},
           mconcat
             [ if isJust mem.progressBar then View.eraseLine else mempty,
-              View.printWarning err.path err.message err.suggestion err.details,
-              pbOutput
+              View.printError err.path err.message err.suggestion err.details
             ]
         )
-  Logic.Failed err ->
-    ( mem {progressBar = Nothing},
-      mconcat
-        [ if isJust mem.progressBar then View.eraseLine else mempty,
-          View.printError err.path err.message err.suggestion err.details
-        ]
-    )

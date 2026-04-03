@@ -284,6 +284,8 @@ library ui
   hs-source-dirs: src/ui/
   exposed-modules:
     Ui
+    Ui.Display.Components.Main
+    Ui.Display.Components.Main.View
 
   other-modules:
     Ui.Commands
@@ -291,8 +293,6 @@ library ui
     Ui.Commands.Generate
     Ui.Commands.ManageIndexes
     Ui.Display
-    Ui.Display.Components.Main
-    Ui.Display.Components.Main.View
     Ui.Display.Components.ProgressBar
     Ui.Display.Components.ProgressBar.View
     Ui.Framework
@@ -304,3 +304,23 @@ library ui
     text,
     text-builder,
     text-builder-dev,
+
+test-suite ui-test
+  import: test
+  type: exitcode-stdio-1.0
+  hs-source-dirs: src/ui-test
+  main-is: Main.hs
+  other-modules:
+    Ui.Display.Components.MainSpec
+
+  build-tool-depends:
+    hspec-discover:hspec-discover
+
+  build-depends:
+    hspec,
+    pgenie:logic,
+    pgenie:ui,
+    pgenie:utils,
+    text,
+    text-builder,
+    time,

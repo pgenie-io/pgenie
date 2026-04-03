@@ -144,10 +144,10 @@ library logic
     Logic.Dsl
     Logic.IndexOptimizer
     Logic.Name
+    Logic.ProjectFile
     Logic.SeqScanDetector
     Logic.SignatureFile
     Logic.SqlTemplate
-    Logic.ProjectFile
     Logic.SyntaxAnalyser
 
   other-modules:

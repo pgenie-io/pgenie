@@ -237,7 +237,7 @@ generateCode projectFile project =
 
 analyseProject :: ProjectFile.ProjectFile -> Script (Gen.Input.Project, [(Text, SeqScanFinding)], [IndexInfo])
 analyseProject projectFile =
-  stage "Analysing" 2 do
+  stage "Analysing" 3 do
     migrationsLoaded <-
       stage "Migrations" 2 do
         migrationsListed <-

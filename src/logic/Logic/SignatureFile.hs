@@ -284,13 +284,10 @@ serialize sig =
               <> "dims: "
               <> Text.pack (show dims)
               <> "\n"
-              <> if elementNotNull
-                then
-                  indent
-                    <> "element_not_null: "
-                    <> boolToText elementNotNull
-                    <> "\n"
-                else ""
+              <> indent
+              <> "element_not_null: "
+              <> boolToText elementNotNull
+              <> "\n"
       field ->
         indent
           <> "type: "

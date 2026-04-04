@@ -108,7 +108,8 @@ spec = do
             \    tracks:\n\
             \      type: track_info\n\
             \      not_null: false\n\
-            \      dims: 1\n"
+            \      dims: 1\n\
+            \      element_not_null: false\n"
       serialize sig `shouldBe` expected
 
   describe "tryParse" do

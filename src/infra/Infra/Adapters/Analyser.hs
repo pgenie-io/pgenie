@@ -114,8 +114,8 @@ adaptTestcontainersError err =
       details = []
     }
 
-scope :: (Logic.Event -> IO ()) -> Fx.Scope Logic.Error Device
-scope emitEvent = do
+scope :: Text -> (Logic.Event -> IO ()) -> Fx.Scope Logic.Error Device
+scope postgresTag emitEvent = do
   acquire $ runTotalIO \() -> emitEvent (Logic.StageEntered ["Starting Container"])
   (host, port) <-
     first
@@ -123,7 +123,7 @@ scope emitEvent = do
       ( Infra.Adapters.Analyser.Scopes.Testcontainers.testContainer
           ( TestcontainersPostgresql.setup
               TestcontainersPostgresql.Config
-                { tagName = "postgres:18",
+                { tagName = postgresTag,
                   auth = TestcontainersPostgresql.TrustAuth,
                   forwardLogs = False
                 }

@@ -1,19 +1,14 @@
-module Logic.Algebra where
+module Logic.Algebra
+  ( module Logic.Algebra,
+    Error (..),
+  )
+where
 
+import Logic.Error (Error (..))
+import Logic.ProjectFile (ProjectFile)
 import PGenieGen qualified as Gen
 import PGenieGen.Model.Input qualified as Gen.Input
 import Utils.Prelude hiding (readFile, writeFile)
-
--- * Error
-
--- | Error report.
-data Error = Error
-  { path :: [Text],
-    message :: Text,
-    suggestion :: Maybe Text,
-    details :: [(Text, Text)]
-  }
-  deriving stock (Eq, Show)
 
 -- * Event
 
@@ -125,6 +120,8 @@ data ModelFormat = ModelFormatJson | ModelFormatDhall
 --
 -- They allow to implement the overall orchestration logic in a way that is decoupled from specific implementations of these capabilities, making it easier to test and maintain.
 -- We simply state what we need for the logic to work and provide an interface for the implementations to conform to.
+
+-- | Emission of events for observability.
 class (Monad m) => Emits m where
   emit :: Event -> m ()
 
@@ -148,9 +145,13 @@ class (MonadError Error m) => LoadsGen m where
     -- | Action producing the gen along with its integrity hash.
     m (Gen.Gen, Text)
 
+class (Monad m) => LoadsProjectFile m where
+  loadProjectFile :: m ProjectFile
+
 -- | Combined capabilities required by the logic.
 type Caps m =
   ( MonadParallel m,
+    LoadsProjectFile m,
     LoadsGen m,
     DbOps m,
     FsOps m,

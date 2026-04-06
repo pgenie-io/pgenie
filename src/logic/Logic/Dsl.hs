@@ -8,6 +8,7 @@ where
 import Control.Monad.Parallel qualified as MonadParallel
 import Data.Text qualified as Text
 import Logic.Algebra
+import Logic.Error qualified as Error
 import Utils.Prelude hiding (readFile, writeFile)
 
 run :: (Caps m) => Script a -> m a
@@ -42,9 +43,7 @@ instance MonadParallel.MonadParallel Script where
 
 instance MonadError Error Script where
   throwError e = Script \_ path ->
-    let newPath = path <> e.path
-        newError = e {path = newPath}
-     in throwError newError
+    throwError (Error.nest path e)
 
   catchError (Script f) handler =
     Script \p q -> catchError (f p q) (\e -> let Script h = handler e in h p q)
@@ -81,25 +80,24 @@ instance LoadsGen Script where
 instance Emits Script where
   emit event = Script \maxProgress path ->
     let nestStagePath stagePath = stagePath <> path
-        nestError err =
-          err {path = nestStagePath err.path}
         nestedEvent = case event of
           StageEntered stagePath ->
             StageEntered (nestStagePath stagePath)
           StageExited stagePath remainingProgress ->
             StageExited (nestStagePath stagePath) (remainingProgress * maxProgress)
           WarningEmitted err ->
-            WarningEmitted (nestError err)
+            WarningEmitted (Error.nest path err)
           Failed err ->
-            Failed (nestError err)
+            Failed (Error.nest path err)
      in emit nestedEvent
+
+instance LoadsProjectFile Script where
+  loadProjectFile = liftWithErrs loadProjectFile
 
 liftWithErrs :: (forall m. (Caps m) => m a) -> Script a
 liftWithErrs ma = Script \_ path ->
   catchError ma \e ->
-    let newPath = path <> e.path
-        newError = e {path = newPath}
-     in throwError newError
+    throwError (Error.nest path e)
 
 -- |
 -- - Reports progress.

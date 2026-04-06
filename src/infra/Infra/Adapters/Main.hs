@@ -5,17 +5,20 @@ module Infra.Adapters.Main
 where
 
 import AlgebraicPath qualified as Path
+import Data.Text qualified as Text
 import Data.Text.IO qualified as Text
 import Fx
 import Infra.Adapters.Analyser qualified as Analyser
 import Logic qualified
+import Logic.ProjectFile qualified as ProjectFile
 import PGenieGen qualified as Gen
 import System.Directory qualified as Directory
 import Utils.Prelude
 
 data Device = Device
   { emitEvent :: Logic.Event -> IO (),
-    analyser :: Analyser.Device
+    analyser :: Analyser.Device,
+    projectFile :: ProjectFile.ProjectFile
   }
 
 scope :: (Logic.Event -> IO ()) -> Fx.Scope Logic.Error Device
@@ -27,11 +30,27 @@ scope emitEvent = do
           otherEvent
       halvedEmitEvent =
         emitEvent . halveEvent
-  analyser <- Analyser.scope halvedEmitEvent
+
+  projectFile <-
+    let path = "project1.pgn.yaml"
+     in acquire do
+          liftFileOp
+            "Failed to load project file"
+            path
+            (Text.readFile (Path.toFilePath path))
+
+  projectFile <- ProjectFile.tryFromYaml projectFile
+
+  let postgresTag = case projectFile.postgres of
+        Nothing -> "postgres:18"
+        Just postgres -> "postgres:" <> Text.pack (show postgres)
+
+  analyser <- Analyser.scope postgresTag halvedEmitEvent
   pure
     Device
       { emitEvent = halvedEmitEvent,
-        analyser
+        analyser,
+        projectFile
       }
 
 instance Logic.Emits (Fx Device Logic.Error) where
@@ -98,7 +117,11 @@ instance Logic.LoadsGen (Fx Device Logic.Error) where
               }
         )
 
-liftFileOp :: Text -> Path -> IO a -> Fx Device Logic.Error a
+instance Logic.LoadsProjectFile (Fx Device Logic.Error) where
+  loadProjectFile =
+    runTotalIO \dev -> pure dev.projectFile
+
+liftFileOp :: Text -> Path -> IO a -> Fx env Logic.Error a
 liftFileOp errMessage path action =
   runExceptionalIO (const action)
     & first

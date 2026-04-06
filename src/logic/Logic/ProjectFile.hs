@@ -7,7 +7,7 @@ import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Text qualified as Text
 import Data.Vector qualified as Vector
-import Logic.Algebra qualified as Algebra
+import Logic.Error qualified as Error
 import Logic.Name qualified as Name
 import PGenieGen qualified as Gen
 import PGenieGen.Model.Input qualified as Gen
@@ -18,7 +18,8 @@ data ProjectFile = ProjectFile
   { space :: Name.Name,
     name :: Name.Name,
     version :: Gen.Version,
-    artifacts :: [Artifact]
+    artifacts :: [Artifact],
+    postgres :: Maybe Int
   }
 
 data Artifact = Artifact
@@ -27,12 +28,12 @@ data Artifact = Artifact
     config :: Maybe Aeson.Value
   }
 
-tryFromYaml :: (MonadError Algebra.Error m) => Text -> m ProjectFile
+tryFromYaml :: (MonadError Error.Error m) => Text -> m ProjectFile
 tryFromYaml text = do
   case U.parseText projectFileValue text of
     Left errMsg ->
       throwError
-        Algebra.Error
+        Error.Error
           { path = ["project1.pgn.yaml"],
             message = errMsg,
             suggestion = Just "Check YAML syntax and required fields",
@@ -49,7 +50,16 @@ tryFromYaml text = do
           name <- U.atByKey "name" nameValue
           version <- U.atByKey "version" versionValue
           artifacts <- U.atByKey "artifacts" artifactsValue
-          return ProjectFile {space, name, version, artifacts}
+          postgres <-
+            optional
+              ( U.atByKey
+                  "postgres"
+                  ( U.scalarsValue
+                      [ U.boundedIntegerScalar (U.Signed False) U.DecimalNumeralSystem
+                      ]
+                  )
+              )
+          return ProjectFile {space, name, version, artifacts, postgres}
 
     nameValue :: U.Value Name.Name
     nameValue =

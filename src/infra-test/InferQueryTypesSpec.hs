@@ -38,7 +38,7 @@ runWithAnalyser ::
   IO (Either Error a)
 runWithAnalyser action =
   action
-    & scoping (Analyser.scope (const (pure ())))
+    & scoping (Analyser.scope "postgres:18" (const (pure ())))
     & exposeErr
     & Fx.runFx
 

@@ -15,6 +15,11 @@ source-repository-package
   location: https://github.com/nikita-volkov/relations
   tag: fac9e0445677a6493f1954f491921c5a7442cd58
 
+source-repository-package
+  type: git
+  location: https://github.com/nikita-volkov/fx
+  tag: 94f7abab15c35ecdb27f3d71a9eb3e9090f00ad1
+
 -- Provides `pgenie-gen`
 source-repository-package
   type: git

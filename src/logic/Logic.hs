@@ -141,11 +141,6 @@ locationToUrl = \case
   Gen.LocationUrl url -> url
   Gen.LocationPath path -> Path.toText path
 
-loadProjectFile :: Script ProjectFile.ProjectFile
-loadProjectFile = do
-  configContent <- readFile "project1.pgn.yaml"
-  ProjectFile.tryFromYaml configContent
-
 loadQuerySql :: QueryListed -> Script SqlTemplate.SqlTemplate
 loadQuerySql queryListed = do
   sql <- readFile queryListed.filePath

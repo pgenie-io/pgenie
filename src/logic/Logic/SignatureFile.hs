@@ -17,7 +17,7 @@ import Control.Foldl qualified as Fold
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as Text
-import Logic.Algebra qualified as Algebra
+import Logic.Error qualified as Error
 import PGenieGen.Model.Input qualified as Gen.Input
 import Utils.Prelude hiding (readFile, writeFile)
 import YamlUnscrambler qualified as U
@@ -439,7 +439,7 @@ validateAndMerge ::
   Signature ->
   -- | File signature.
   Signature ->
-  Either Algebra.Error Signature
+  Either Error.Error Signature
 validateAndMerge inferred file = do
   validatedParams <- validateFields "parameters" True inferred.parameters file.parameters
   validatedResult <- case (inferred.result, file.result) of
@@ -469,7 +469,7 @@ validateFields ::
   [(Text, FieldSig)] ->
   -- | File fields.
   [(Text, FieldSig)] ->
-  Either Algebra.Error [(Text, FieldSig)]
+  Either Error.Error [(Text, FieldSig)]
 validateFields section isParam inferred file = do
   let inferredNames = Set.fromList (map fst inferred)
       fileNames = Set.fromList (map fst file)
@@ -487,7 +487,7 @@ validateFields section isParam inferred file = do
     validated <- validateField (section <> "/" <> name) isParam inf fil
     Right (name, validated)
 
-validateResult :: ResultSig -> ResultSig -> Either Algebra.Error ResultSig
+validateResult :: ResultSig -> ResultSig -> Either Error.Error ResultSig
 validateResult inferred file = do
   validatedColumns <- validateFields "result/columns" False inferred.columns file.columns
   -- Cardinality: user can change freely, use file's value.
@@ -502,7 +502,7 @@ validateField ::
   FieldSig ->
   -- | From file.
   FieldSig ->
-  Either Algebra.Error FieldSig
+  Either Error.Error FieldSig
 validateField fieldPath isParam inferred file = do
   unless (inferred.typeName == file.typeName) do
     Left
@@ -570,9 +570,9 @@ splitArrayTypeName typeName =
         then go (Text.dropEnd 2 text) (dims + 1)
         else (text, dims)
 
-mismatchError :: Text -> Text -> Algebra.Error
+mismatchError :: Text -> Text -> Error.Error
 mismatchError fieldPath message =
-  Algebra.Error
+  Error.Error
     { path = [],
       message = "Signature mismatch at " <> fieldPath <> ": " <> message,
       suggestion = Just "Update the signature file or fix the query",

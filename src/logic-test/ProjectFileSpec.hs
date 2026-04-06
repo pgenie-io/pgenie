@@ -3,7 +3,6 @@ module ProjectFileSpec (spec) where
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
-import Data.Text qualified as Text
 import Logic.Error qualified as Error
 import Logic.ProjectFile
 import Test.Hspec
@@ -14,16 +13,14 @@ spec = do
   describe "tryFromYaml" do
     it "parses boolean config values as Aeson.Bool, not Aeson.String" do
       let yaml =
-            Text.unlines
-              [ "space: my_space",
-                "name: music_catalogue",
-                "version: 1.0.0",
-                "artifacts:",
-                "  java:",
-                "    gen: https://raw.githubusercontent.com/pgenie-io/java.gen/v0.1.2/gen/Gen.dhall",
-                "    config:",
-                "      useOptional: true"
-              ]
+            "space: my_space\n\
+            \name: music_catalogue\n\
+            \version: 1.0.0\n\
+            \artifacts:\n\
+            \  java:\n\
+            \    gen: https://raw.githubusercontent.com/pgenie-io/java.gen/v0.1.2/gen/Gen.dhall\n\
+            \    config:\n\
+            \      useOptional: true"
           result = tryFromYaml yaml :: Either Error.Error ProjectFile
       case result of
         Left err ->
@@ -39,30 +36,26 @@ spec = do
               )
     it "leaves image unset when not specified" do
       let yaml =
-            Text.unlines
-              [ "space: my_space",
-                "name: music_catalogue",
-                "version: 1.0.0",
-                "artifacts:",
-                "  java:",
-                "    gen: https://raw.githubusercontent.com/pgenie-io/java.gen/v0.1.2/gen/Gen.dhall"
-              ]
+            "space: my_space\n\
+            \name: music_catalogue\n\
+            \version: 1.0.0\n\
+            \artifacts:\n\
+            \  java:\n\
+            \    gen: https://raw.githubusercontent.com/pgenie-io/java.gen/v0.1.2/gen/Gen.dhall"
           result = tryFromYaml yaml :: Either Error.Error ProjectFile
       case result of
         Left err -> expectationFailure ("Parse failed: " <> show err)
-        Right pf -> pf.image `shouldBe` Nothing
+        Right pf -> pf.postgres `shouldBe` Nothing
     it "parses an explicit image setting" do
       let yaml =
-            Text.unlines
-              [ "space: my_space",
-                "name: music_catalogue",
-                "version: 1.0.0",
-                "image: postgres:15",
-                "artifacts:",
-                "  java:",
-                "    gen: https://raw.githubusercontent.com/pgenie-io/java.gen/v0.1.2/gen/Gen.dhall"
-              ]
+            "space: my_space\n\
+            \name: music_catalogue\n\
+            \version: 1.0.0\n\
+            \postgres: 15\n\
+            \artifacts:\n\
+            \  java:\n\
+            \    gen: https://raw.githubusercontent.com/pgenie-io/java.gen/v0.1.2/gen/Gen.dhall"
           result = tryFromYaml yaml :: Either Error.Error ProjectFile
       case result of
         Left err -> expectationFailure ("Parse failed: " <> show err)
-        Right pf -> pf.image `shouldBe` Just "postgres:15"
+        Right pf -> pf.postgres `shouldBe` Just 15

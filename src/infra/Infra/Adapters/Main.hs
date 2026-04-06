@@ -5,6 +5,7 @@ module Infra.Adapters.Main
 where
 
 import AlgebraicPath qualified as Path
+import Data.Text qualified as Text
 import Data.Text.IO qualified as Text
 import Fx
 import Infra.Adapters.Analyser qualified as Analyser
@@ -40,9 +41,9 @@ scope emitEvent = do
 
   projectFile <- ProjectFile.tryFromYaml projectFile
 
-  let postgresTag = case projectFile.image of
+  let postgresTag = case projectFile.postgres of
         Nothing -> "postgres:18"
-        Just image -> image
+        Just postgres -> "postgres:" <> Text.pack (show postgres)
 
   analyser <- Analyser.scope postgresTag halvedEmitEvent
   pure

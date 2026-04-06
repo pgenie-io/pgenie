@@ -33,7 +33,10 @@ scope emitEvent = do
       content <- Text.readFile "project1.pgn.yaml"
       return $ case (ProjectFile.tryFromYaml content :: Either Logic.Error ProjectFile.ProjectFile) of
         Left _ -> "postgres:18"
-        Right pf -> pf.postgresql
+        Right pf ->
+          case pf.image of
+            Nothing -> "postgres:18"
+            Just image -> image
     return $ either (const "postgres:18") id result
   analyser <- Analyser.scope postgresTag halvedEmitEvent
   pure

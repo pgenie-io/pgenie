@@ -37,7 +37,7 @@ spec = do
               ( Aeson.Object
                   (KeyMap.fromList [(Key.fromText "useOptional", Aeson.Bool True)])
               )
-    it "defaults postgresql to postgres:18 when not specified" do
+    it "leaves image unset when not specified" do
       let yaml =
             Text.unlines
               [ "space: my_space",
@@ -50,14 +50,14 @@ spec = do
           result = tryFromYaml yaml :: Either Algebra.Error ProjectFile
       case result of
         Left err -> expectationFailure ("Parse failed: " <> show err)
-        Right pf -> pf.postgresql `shouldBe` "postgres:18"
-    it "parses an explicit postgresql setting" do
+        Right pf -> pf.image `shouldBe` Nothing
+    it "parses an explicit image setting" do
       let yaml =
             Text.unlines
               [ "space: my_space",
                 "name: music_catalogue",
                 "version: 1.0.0",
-                "postgresql: postgres:15",
+                "image: postgres:15",
                 "artifacts:",
                 "  java:",
                 "    gen: https://raw.githubusercontent.com/pgenie-io/java.gen/v0.1.2/gen/Gen.dhall"
@@ -65,4 +65,4 @@ spec = do
           result = tryFromYaml yaml :: Either Algebra.Error ProjectFile
       case result of
         Left err -> expectationFailure ("Parse failed: " <> show err)
-        Right pf -> pf.postgresql `shouldBe` "postgres:15"
+        Right pf -> pf.image `shouldBe` Just "postgres:15"

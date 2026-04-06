@@ -37,3 +37,32 @@ spec = do
               ( Aeson.Object
                   (KeyMap.fromList [(Key.fromText "useOptional", Aeson.Bool True)])
               )
+    it "defaults postgresql to postgres:18 when not specified" do
+      let yaml =
+            Text.unlines
+              [ "space: my_space",
+                "name: music_catalogue",
+                "version: 1.0.0",
+                "artifacts:",
+                "  java:",
+                "    gen: https://raw.githubusercontent.com/pgenie-io/java.gen/v0.1.2/gen/Gen.dhall"
+              ]
+          result = tryFromYaml yaml :: Either Algebra.Error ProjectFile
+      case result of
+        Left err -> expectationFailure ("Parse failed: " <> show err)
+        Right pf -> pf.postgresql `shouldBe` "postgres:18"
+    it "parses an explicit postgresql setting" do
+      let yaml =
+            Text.unlines
+              [ "space: my_space",
+                "name: music_catalogue",
+                "version: 1.0.0",
+                "postgresql: postgres:15",
+                "artifacts:",
+                "  java:",
+                "    gen: https://raw.githubusercontent.com/pgenie-io/java.gen/v0.1.2/gen/Gen.dhall"
+              ]
+          result = tryFromYaml yaml :: Either Algebra.Error ProjectFile
+      case result of
+        Left err -> expectationFailure ("Parse failed: " <> show err)
+        Right pf -> pf.postgresql `shouldBe` "postgres:15"

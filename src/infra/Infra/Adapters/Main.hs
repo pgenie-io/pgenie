@@ -9,6 +9,7 @@ import Data.Text.IO qualified as Text
 import Fx
 import Infra.Adapters.Analyser qualified as Analyser
 import Logic qualified
+import Logic.ProjectFile qualified as ProjectFile
 import PGenieGen qualified as Gen
 import System.Directory qualified as Directory
 import Utils.Prelude
@@ -27,7 +28,14 @@ scope emitEvent = do
           otherEvent
       halvedEmitEvent =
         emitEvent . halveEvent
-  analyser <- Analyser.scope halvedEmitEvent
+  postgresTag <- acquire $ runTotalIO $ \() -> do
+    result <- try @SomeException $ do
+      content <- Text.readFile "project1.pgn.yaml"
+      return $ case (ProjectFile.tryFromYaml content :: Either Logic.Error ProjectFile.ProjectFile) of
+        Left _ -> "postgres:18"
+        Right pf -> pf.postgresql
+    return $ either (const "postgres:18") id result
+  analyser <- Analyser.scope postgresTag halvedEmitEvent
   pure
     Device
       { emitEvent = halvedEmitEvent,

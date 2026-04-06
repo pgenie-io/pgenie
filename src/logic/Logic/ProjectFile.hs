@@ -18,7 +18,8 @@ data ProjectFile = ProjectFile
   { space :: Name.Name,
     name :: Name.Name,
     version :: Gen.Version,
-    artifacts :: [Artifact]
+    artifacts :: [Artifact],
+    postgresql :: Text
   }
 
 data Artifact = Artifact
@@ -49,7 +50,12 @@ tryFromYaml text = do
           name <- U.atByKey "name" nameValue
           version <- U.atByKey "version" versionValue
           artifacts <- U.atByKey "artifacts" artifactsValue
-          return ProjectFile {space, name, version, artifacts}
+          postgresql <-
+            asum
+              [ U.atByKey "postgresql" (U.scalarsValue [U.stringScalar U.textString]),
+                pure "postgres:18"
+              ]
+          return ProjectFile {space, name, version, artifacts, postgresql}
 
     nameValue :: U.Value Name.Name
     nameValue =

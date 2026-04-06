@@ -12,7 +12,7 @@ extra-deps:
   - aeson-optics-1.2.1
   - algebraic-path-0.1.0.1
   - dhall-json-1.7.12
-  - fx-0.11
+  - fx-0.11.1
   - hasql-1.10.3
   - hasql-mapping-0.1
   - hasql-pool-1.4.2

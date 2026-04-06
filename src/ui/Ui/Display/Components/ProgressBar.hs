@@ -33,9 +33,7 @@ update delta currentTime mem =
   let newProgress =
         mem.progress + delta
       newProgressNormalized =
-        if newProgress >= 0.999
-          then 1
-          else newProgress
+        min 0.999 newProgress
       elapsedTime =
         currentTime `diffUTCTime` mem.startTime
       newTimeLeftEstimate =

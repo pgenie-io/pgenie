@@ -27,16 +27,7 @@ containsDone tb = View.printDone == tb || Text.isInfixOf (TextBuilder.toText Vie
 
 spec :: Spec
 spec = do
-  -- The infrastructure scope emits two StageExited events during startup:
-  --   StageExited ["Starting Container"] 0.9  →  halved →  0.45
-  --   StageExited ["Connecting"]         0.1  →  halved →  0.05
-  -- Combined with analysis events (~0.375), the total accumulated progress
-  -- approaches 0.875 before any generators run.  Each generator "Loading"
-  -- leaf stage then contributes ~0.0417.  With 3 generators the progress
-  -- exceeds 0.999 in the middle of the second generator's "Loading" stage,
-  -- causing isDone to fire prematurely and "Done!" to be displayed while
-  -- generators 2 and 3 are still running.
-  describe "update" do
+  describe "progress handling" do
     it "does not show Done while generators are still in progress" do
       let -- Scope infrastructure events (already halved, as received by Main.update)
           scopeEvents =
@@ -69,8 +60,7 @@ spec = do
 
           gen2PartialEvents =
             [ Logic.StageEntered ["gen2", "Generating"],
-              -- gen2 Loading completes — this is the event that pushes progress
-              -- over 0.999 with the current buggy code, triggering isDone prematurely
+              -- gen2 Loading completes while later generators are still compiling.
               Logic.StageExited ["Loading", "gen2", "Generating"] 0.0417
             ]
 
@@ -89,6 +79,11 @@ spec = do
       -- None of the outputs before all generators complete should contain "Done!"
       mapM_
         (\out -> containsDone out `shouldBe` False)
+        outputsBeforeAllDone
+
+      -- And none should claim 100% before the final root completion event.
+      mapM_
+        (\out -> Text.isInfixOf "100.0%" (TextBuilder.toText out) `shouldBe` False)
         outputsBeforeAllDone
 
     it "shows Done exactly once, after the root stage exits" do

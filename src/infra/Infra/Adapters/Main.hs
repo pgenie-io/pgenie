@@ -16,7 +16,8 @@ import Utils.Prelude
 
 data Device = Device
   { emitEvent :: Logic.Event -> IO (),
-    analyser :: Analyser.Device
+    analyser :: Analyser.Device,
+    projectFile :: ProjectFile.ProjectFile
   }
 
 scope :: (Logic.Event -> IO ()) -> Fx.Scope Logic.Error Device
@@ -28,21 +29,27 @@ scope emitEvent = do
           otherEvent
       halvedEmitEvent =
         emitEvent . halveEvent
-  postgresTag <- acquire $ runTotalIO $ \() -> do
-    result <- try @SomeException $ do
-      content <- Text.readFile "project1.pgn.yaml"
-      return $ case (ProjectFile.tryFromYaml content :: Either Logic.Error ProjectFile.ProjectFile) of
-        Left _ -> "postgres:18"
-        Right pf ->
-          case pf.image of
-            Nothing -> "postgres:18"
-            Just image -> image
-    return $ either (const "postgres:18") id result
+
+  projectFile <-
+    let path = "project1.pgn.yaml"
+     in acquire do
+          liftFileOp
+            "Failed to load project file"
+            path
+            (Text.readFile (Path.toFilePath path))
+
+  projectFile <- ProjectFile.tryFromYaml projectFile
+
+  let postgresTag = case projectFile.image of
+        Nothing -> "postgres:18"
+        Just image -> image
+
   analyser <- Analyser.scope postgresTag halvedEmitEvent
   pure
     Device
       { emitEvent = halvedEmitEvent,
-        analyser
+        analyser,
+        projectFile
       }
 
 instance Logic.Emits (Fx Device Logic.Error) where
@@ -109,7 +116,11 @@ instance Logic.LoadsGen (Fx Device Logic.Error) where
               }
         )
 
-liftFileOp :: Text -> Path -> IO a -> Fx Device Logic.Error a
+instance Logic.LoadsProjectFile (Fx Device Logic.Error) where
+  loadProjectFile =
+    runTotalIO \dev -> pure dev.projectFile
+
+liftFileOp :: Text -> Path -> IO a -> Fx env Logic.Error a
 liftFileOp errMessage path action =
   runExceptionalIO (const action)
     & first

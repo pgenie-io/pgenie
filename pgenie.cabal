@@ -142,6 +142,7 @@ library logic
     Logic
     Logic.Algebra
     Logic.Dsl
+    Logic.Error
     Logic.IndexOptimizer
     Logic.Name
     Logic.ProjectFile

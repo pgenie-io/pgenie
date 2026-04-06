@@ -4,7 +4,7 @@ import Data.Aeson qualified as Aeson
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Text qualified as Text
-import Logic.Algebra qualified as Algebra
+import Logic.Error qualified as Error
 import Logic.ProjectFile
 import Test.Hspec
 import Utils.Prelude
@@ -24,7 +24,7 @@ spec = do
                 "    config:",
                 "      useOptional: true"
               ]
-          result = tryFromYaml yaml :: Either Algebra.Error ProjectFile
+          result = tryFromYaml yaml :: Either Error.Error ProjectFile
       case result of
         Left err ->
           expectationFailure ("Parse failed: " <> show err)
@@ -47,7 +47,7 @@ spec = do
                 "  java:",
                 "    gen: https://raw.githubusercontent.com/pgenie-io/java.gen/v0.1.2/gen/Gen.dhall"
               ]
-          result = tryFromYaml yaml :: Either Algebra.Error ProjectFile
+          result = tryFromYaml yaml :: Either Error.Error ProjectFile
       case result of
         Left err -> expectationFailure ("Parse failed: " <> show err)
         Right pf -> pf.image `shouldBe` Nothing
@@ -62,7 +62,7 @@ spec = do
                 "  java:",
                 "    gen: https://raw.githubusercontent.com/pgenie-io/java.gen/v0.1.2/gen/Gen.dhall"
               ]
-          result = tryFromYaml yaml :: Either Algebra.Error ProjectFile
+          result = tryFromYaml yaml :: Either Error.Error ProjectFile
       case result of
         Left err -> expectationFailure ("Parse failed: " <> show err)
         Right pf -> pf.image `shouldBe` Just "postgres:15"

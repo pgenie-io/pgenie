@@ -260,6 +260,7 @@ library infra
     aeson,
     algebraic-path,
     attoparsec,
+    base,
     directory,
     fx,
     hasql,

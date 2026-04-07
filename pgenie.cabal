@@ -304,7 +304,6 @@ library ui
     pgenie:utils,
     text,
     text-builder,
-    text-builder-dev,
 
 test-suite ui-test
   import: test

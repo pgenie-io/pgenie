@@ -57,7 +57,7 @@ jobs:
   # in the build environment.
   validate-artifact:
     needs: build
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
 
     steps:
       - name: Install libpq

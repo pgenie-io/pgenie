@@ -143,8 +143,8 @@ collectCustomTypes :: Sessions.Query -> Embed [Gen.Input.CustomType]
 collectCustomTypes query = do
   paramTypes <- traverse (collectFromType . (.type_)) (Vector.toList query.params)
   resultTypes <- traverse (collectFromType . (.type_)) (Vector.toList query.resultColumns)
-  pure
-    $ nubBy
+  pure $
+    nubBy
       (\a b -> a.pgName == b.pgName)
       (concat paramTypes <> concat resultTypes)
 

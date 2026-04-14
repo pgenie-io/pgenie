@@ -71,7 +71,7 @@ fromPrimitiveText = \case
   PointPrimitive -> Just "(0,0)"
   LinePrimitive -> Just "{1,0,0}"
   LsegPrimitive -> Just "[(0,0),(1,1)]"
-  BoxPrimitive -> Just "((0,0),(1,1))"
+  BoxPrimitive -> Just "(1,1),(0,0)"
   Box2DPrimitive -> Just "BOX(1 2,5 6)"
   Box3DPrimitive -> Just "BOX3D(1 2 3,5 6 5)"
   PathPrimitive -> Just "[(0,0),(1,1)]"

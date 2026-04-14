@@ -3,6 +3,7 @@ module Infra.Adapters.Analyser.Sessions.Procedures.ResolveParamNullabilities
   )
 where
 
+import Data.Attoparsec.ByteString.Char8 qualified as AttoparsecBs
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.LibPQ qualified as Pq
 import Hasql.Errors qualified
@@ -100,6 +101,9 @@ instance Procedure ResolveParamNullabilities where
       readSessionError result = do
         code <- foldMap decodeUtf8Lenient <$> Pq.resultErrorField result Pq.DiagSqlstate
         message <- foldMap decodeUtf8Lenient <$> Pq.resultErrorField result Pq.DiagMessagePrimary
+        detail <- fmap decodeUtf8Lenient <$> Pq.resultErrorField result Pq.DiagMessageDetail
+        hint <- fmap decodeUtf8Lenient <$> Pq.resultErrorField result Pq.DiagMessageHint
+        position <- mapMaybe parseInt <$> Pq.resultErrorField result Pq.DiagStatementPosition
         pure
           ( Hasql.Errors.StatementSessionError
               0
@@ -107,8 +111,14 @@ instance Procedure ResolveParamNullabilities where
               params.query
               []
               False
-              (Hasql.Errors.ServerStatementError (Hasql.Errors.ServerError code message Nothing Nothing Nothing))
+              (Hasql.Errors.ServerStatementError (Hasql.Errors.ServerError code message detail hint position))
           )
+        where
+          parseInt :: ByteString -> Maybe Int
+          parseInt bs =
+            bs
+              & AttoparsecBs.parseOnly (AttoparsecBs.decimal <* AttoparsecBs.endOfInput)
+              & either (const Nothing) Just
 
       toLibpqParameters :: [Bool] -> [ByteString] -> [Maybe (Pq.Oid, ByteString, Pq.Format)]
       toLibpqParameters nullabilities parameterBytes =

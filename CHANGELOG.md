@@ -1,3 +1,13 @@
+# v0.4.0
+
+## Non-breaking changes
+
+- Add support for query `idempotent` flag in signature files. It will be transferred to the code gens and may be used for automatic retries in the generated code.
+
+## Fixes
+
+- A bug in analysis fixed that caused the app to fail with "unsupported type" for many types that were actually supported.
+
 # v0.3.0
 
 ## Non-breaking changes

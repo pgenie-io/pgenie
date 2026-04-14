@@ -1,3 +1,9 @@
+# v0.3.0
+
+## Non-breaking changes
+
+- Add support for the "ltree" type.
+
 # v0.2.1
 
 ## Fixes

@@ -7,6 +7,7 @@
 ## Fixes
 
 - A bug in analysis fixed that caused the app to fail with "unsupported type" for many types that were actually supported.
+- A bug in the name parser that caused names with adjacent letters and digits to cause error.
 
 # v0.3.0
 

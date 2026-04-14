@@ -15,13 +15,20 @@ complete parser = parser <* eof
 
 parts :: Parser [Text]
 parts = do
-  firstWord <-
-    Text.cons
-      <$> satisfy isAsciiLower
-      <*> takeWhileP (Just "part tail") (\c -> isAsciiLower c || isDigit c)
-
+  firstWord <- wordPart
   tail <- many do
     _ <- char '_'
-    takeWhileP (Just "tail part") (\c -> isAsciiLower c || isDigit c)
+    tailPart
 
   return (firstWord : tail)
+  where
+    wordPart =
+      Text.cons
+        <$> satisfy isAsciiLower
+        <*> takeWhileP (Just "word tail") isAsciiLower
+
+    tailPart =
+      asum
+        [ takeWhile1P (Just "number tail part") isDigit,
+          wordPart
+        ]

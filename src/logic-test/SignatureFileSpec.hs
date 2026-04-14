@@ -1,5 +1,6 @@
 module SignatureFileSpec (spec) where
 
+import Data.Text qualified as Text
 import Logic.Name qualified as Name
 import Logic.SignatureFile
 import PGenieGen.Model.Input qualified as Gen.Input
@@ -143,9 +144,21 @@ spec = do
 
           genName :: Text -> Gen.Input.Name
           genName text =
-            case Name.tryFromText text of
+            case Name.tryFromText (normalizeForGenName text) of
               Right name -> Name.toGenName name
               Left err -> error (show err)
+            where
+              normalizeForGenName =
+                Text.intercalate "_"
+                  . concatMap splitAlphaNumericRuns
+                  . filter (not . Text.null)
+                  . Text.splitOn "_"
+                  . Text.replace "-" "_"
+                  . Text.toLower
+
+              splitAlphaNumericRuns chunk =
+                Text.pack
+                  <$> groupBy (\left right -> isDigit left == isDigit right) (Text.unpack chunk)
 
           primitiveValue :: Gen.Input.Primitive -> Gen.Input.Value
           primitiveValue primitive =

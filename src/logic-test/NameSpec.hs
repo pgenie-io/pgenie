@@ -50,3 +50,11 @@ spec = do
       let result = tryFromText "album-format"
       result `shouldSatisfy` isRight
       fmap toText result `shouldBe` Right "album_format"
+
+    it "parses numeric tail parts" do
+      let result = tryFromText "album_2024"
+      result `shouldSatisfy` isRight
+      fmap toText result `shouldBe` Right "album_2024"
+
+    it "rejects mixed alphanumeric parts" do
+      tryFromText "box2d" `shouldSatisfy` isLeft

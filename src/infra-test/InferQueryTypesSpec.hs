@@ -124,15 +124,94 @@ spec = describe "inferQueryTypes" do
                  ]
     ltreeTableQueryTypes.mentionedCustomTypes `shouldBe` []
 
+  it "infers PostGIS types from casted queries and table columns" do
+    let postgisImage :: Text
+        postgisImage = "postgis/postgis:18-3.6"
+
+        createPostgisExtension :: Text
+        createPostgisExtension = "create extension if not exists postgis;"
+
+        postgisQuery :: Text
+        postgisQuery =
+          "select $1::geometry as geom, $2::geography as geog, $3::box2d as bbox2d, $4::box3d as bbox3d, $5::geometry[] as geom_array"
+
+        postgisTableMigration :: Text
+        postgisTableMigration =
+          "create table places (\
+          \  geom geometry not null,\
+          \  geog geography null,\
+          \  bbox2d box2d null,\
+          \  bbox3d box3d null\
+          \);"
+
+        selectPostgisTableQuery :: Text
+        selectPostgisTableQuery = "select geom, geog, bbox2d, bbox3d from places"
+
+    (postgisQueryTypes, postgisTableQueryTypes) <-
+      withDockerDefaultPlatform "linux/amd64"
+        $ expectRight
+        =<< runWithAnalyserOn postgisImage do
+          executeMigration createPostgisExtension
+          executeMigration postgisTableMigration
+          postgisQueryTypes <- fst <$> inferQueryTypes postgisQuery
+          postgisTableQueryTypes <- fst <$> inferQueryTypes selectPostgisTableQuery
+          pure (postgisQueryTypes, postgisTableQueryTypes)
+
+    map (\param -> (param.isNullable, param.type_)) postgisQueryTypes.params
+      `shouldBe` [ (True, primitiveValue Gen.Input.PrimitiveGeometry),
+                   (True, primitiveValue Gen.Input.PrimitiveGeography),
+                   (True, primitiveValue Gen.Input.PrimitiveBox2D),
+                   (True, primitiveValue Gen.Input.PrimitiveBox3D),
+                   (True, arrayValue 1 Gen.Input.PrimitiveGeometry)
+                 ]
+    map (\column -> (column.pgName, column.isNullable, column.value)) postgisQueryTypes.resultColumns
+      `shouldBe` [ ("geom", True, primitiveValue Gen.Input.PrimitiveGeometry),
+                   ("geog", True, primitiveValue Gen.Input.PrimitiveGeography),
+                   ("bbox2d", True, primitiveValue Gen.Input.PrimitiveBox2D),
+                   ("bbox3d", True, primitiveValue Gen.Input.PrimitiveBox3D),
+                   ("geom_array", True, arrayValue 1 Gen.Input.PrimitiveGeometry)
+                 ]
+    postgisQueryTypes.mentionedCustomTypes `shouldBe` []
+
+    postgisTableQueryTypes.params `shouldBe` []
+    map (\column -> (column.pgName, column.isNullable, column.value)) postgisTableQueryTypes.resultColumns
+      `shouldBe` [ ("geom", False, primitiveValue Gen.Input.PrimitiveGeometry),
+                   ("geog", True, primitiveValue Gen.Input.PrimitiveGeography),
+                   ("bbox2d", True, primitiveValue Gen.Input.PrimitiveBox2D),
+                   ("bbox3d", True, primitiveValue Gen.Input.PrimitiveBox3D)
+                 ]
+    postgisTableQueryTypes.mentionedCustomTypes `shouldBe` []
+
 -- | Run an action against a fresh throwaway PostgreSQL container.
 runWithAnalyser ::
   Fx Analyser.Device Error a ->
   IO (Either Error a)
-runWithAnalyser action =
+runWithAnalyser =
+  runWithAnalyserOn "postgres:18"
+
+runWithAnalyserOn ::
+  Text ->
+  Fx Analyser.Device Error a ->
+  IO (Either Error a)
+runWithAnalyserOn postgresImage action =
   action
-    & scoping (Analyser.scope "postgres:18" (const (pure ())))
+    & scoping (Analyser.scope postgresImage (const (pure ())))
     & exposeErr
     & Fx.runFx
+
+withDockerDefaultPlatform :: String -> IO a -> IO a
+withDockerDefaultPlatform platform =
+  bracket acquire restore . const
+  where
+    acquire = do
+      previousPlatform <- lookupEnv "DOCKER_DEFAULT_PLATFORM"
+      setEnv "DOCKER_DEFAULT_PLATFORM" platform
+      pure previousPlatform
+
+    restore previousPlatform =
+      case previousPlatform of
+        Just value -> setEnv "DOCKER_DEFAULT_PLATFORM" value
+        Nothing -> unsetEnv "DOCKER_DEFAULT_PLATFORM"
 
 expectRight :: (Show err) => Either err a -> IO a
 expectRight = \case

@@ -53,16 +53,16 @@ packages:
 - completed:
     name: pgenie-gen
     pantry-tree:
-      sha256: f23bf2114a7448997ea4930465cd640d537fcbed766d0917144b5e977304737b
-      size: 2077
-    sha256: 1a66004939f798d7e2503013c904fc41eb16a0102e0d66d338ded7fbc7ddb218
-    size: 28399
+      sha256: a5bf10df29b1494a7d8ba6a948380a1965580b95aa2d1112bf7a7ea4c83c989d
+      size: 2078
+    sha256: 29601241b7b07c4b09ad18ce40d734dd52652aa20ada4923c44555ae23a277f7
+    size: 30749
     subdir: haskell
-    url: https://github.com/pgenie-io/gen-sdk/archive/v0.2.0.tar.gz
+    url: https://github.com/pgenie-io/gen-sdk/archive/v0.4.0.tar.gz
     version: '0'
   original:
     subdir: haskell
-    url: https://github.com/pgenie-io/gen-sdk/archive/v0.2.0.tar.gz
+    url: https://github.com/pgenie-io/gen-sdk/archive/v0.4.0.tar.gz
 - completed:
     hackage: aeson-optics-1.2.1@sha256:f0dc0ffba23baed6ee93e3ca91e1630c4da38eee46c56c28f3b264f376c361c0,1551
     pantry-tree:
@@ -85,12 +85,12 @@ packages:
   original:
     hackage: dhall-json-1.7.12
 - completed:
-    hackage: fx-0.11@sha256:d3c0536d053ee132420d2d28d8f826797cfc51962e18a136a96771710fa8217e,2528
+    hackage: fx-0.11.1@sha256:5d9302a391f004f37bb9c865e1ab1472050ddefc485f09ccddb1ecb6023aeb2f,2530
     pantry-tree:
-      sha256: b68c82a1474c02ad6d6d7b64502fe5f8af7e7c9deb5968c271eb5dbe4dedcd5c
+      sha256: 5ad69892cd8e1ae04990ce65b8776ae2770e4364c1daa4250d84805db535cde4
       size: 566
   original:
-    hackage: fx-0.11
+    hackage: fx-0.11.1
 - completed:
     hackage: hasql-1.10.3@sha256:f1e9d616ed73290096a75271d01d9f5490b30ee26dca1cbe604afbd4827c24e8,9971
     pantry-tree:

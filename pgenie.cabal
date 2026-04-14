@@ -245,8 +245,7 @@ library infra
     Infra.Adapters.Analyser.Sessions.Procedures.ResolveColumn.Statements
     Infra.Adapters.Analyser.Sessions.Procedures.ResolveColumn.Statements.GetAttributeByRelationAndOffset
     Infra.Adapters.Analyser.Sessions.Procedures.ResolveParamNullabilities
-    Infra.Adapters.Analyser.Sessions.Procedures.ResolveParamNullabilities.DefaultEncoder
-    Infra.Adapters.Analyser.Sessions.Procedures.ResolveParamNullabilities.DefaultEncoder.DefaultValues
+    Infra.Adapters.Analyser.Sessions.Procedures.ResolveParamNullabilities.DefaultTextualValue
     Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid
     Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements
     Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements.SelectAttributes
@@ -259,7 +258,6 @@ library infra
     autoexporter:autoexporter
 
   build-depends:
-    aeson,
     algebraic-path,
     attoparsec,
     base,
@@ -270,7 +268,6 @@ library infra
     hasql-mapping,
     hasql-pool,
     hasql-th,
-    iproute,
     pgenie:logic,
     pgenie:utils,
     pgenie-gen,

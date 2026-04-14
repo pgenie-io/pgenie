@@ -4,15 +4,13 @@ module Infra.Adapters.Analyser.Sessions.Procedures.ResolveParamNullabilities
 where
 
 import Data.Vector qualified as Vector
-import Hasql.Decoders qualified as Decoders
-import Hasql.Encoders qualified as Encoders
+import Database.PostgreSQL.LibPQ qualified as Pq
 import Hasql.Errors qualified
 import Hasql.Session qualified as Session
-import Hasql.Statement qualified as Statement
 import HasqlDev qualified as Hasql
 import Infra.Adapters.Analyser.Sessions.Algebras.Procedure
 import Infra.Adapters.Analyser.Sessions.Domain
-import Infra.Adapters.Analyser.Sessions.Procedures.ResolveParamNullabilities.DefaultEncoder qualified as DefaultEncoder
+import Infra.Adapters.Analyser.Sessions.Procedures.ResolveParamNullabilities.DefaultTextualValue qualified as DefaultTextualValue
 import SyntacticClass qualified as Syntactic
 import Utils.Prelude
 
@@ -25,17 +23,18 @@ data ResolveParamNullabilities = ResolveParamNullabilities
 instance Procedure ResolveParamNullabilities where
   type ProcedureResult ResolveParamNullabilities = Vector Param
   runProcedure params = do
-    encoders <- Vector.iforM params.paramTypes \index type_ ->
+    parameterBytes <- Vector.iforM params.paramTypes \index type_ ->
       inContext
         ["param:", Syntactic.toTextBuilder (show index)]
-        case DefaultEncoder.fromType type_ of
+        case DefaultTextualValue.fromType type_ of
           Nothing ->
             crash
               ["Unsupported type"]
               [ ("type", Syntactic.toText (show type_))
               ]
-          Just encoder -> pure encoder
-    nullabilities <- Vector.fromList <$> Hasql.runSession (go mempty (Vector.toList encoders) [])
+          Just text -> pure (encodeUtf8 text)
+    let parameterBytesList = Vector.toList parameterBytes
+    nullabilities <- Vector.fromList <$> Hasql.runSession (go parameterBytesList [] parameterBytesList [])
     return
       ( Vector.zipWith
           (\type_ nullable -> Param {nullable, type_})
@@ -43,16 +42,16 @@ instance Procedure ResolveParamNullabilities where
           nullabilities
       )
     where
-      go !determinedParamsEncoder !remainingValueEncoders !nullabilities =
-        case remainingValueEncoders of
-          remainingValueEncodersHead : remainingValueEncodersTail ->
+      go !allParameterBytes !determinedNullabilities !remainingParameterBytes !nullabilities =
+        case remainingParameterBytes of
+          _remainingParameterBytesHead : remainingParameterBytesTail ->
             tryError attempt >>= \case
               Right () -> goWithNullable
               Left (Hasql.Errors.StatementSessionError _ _ _ _ _ (Hasql.Errors.ServerStatementError (Hasql.Errors.ServerError "23502" _ _ _ _))) ->
                 -- When a not-null violation occurs with the current parameter
                 -- set to null, verify it is indeed caused by *this* parameter
-                -- being null by retrying with a non-null value.  If that also
-                -- triggers a 23502, the violation originates elsewhere — most
+                -- being null by retrying with a non-null value. If that also
+                -- triggers a 23502, the violation originates elsewhere - most
                 -- likely an INSERT that omits a NOT NULL column that has no
                 -- DEFAULT.
                 tryError nonNullAttempt >>= \case
@@ -62,45 +61,62 @@ instance Procedure ResolveParamNullabilities where
             where
               goWithNullable =
                 go
-                  (determinedParamsEncoder <> headNullParamsEncoder)
-                  remainingValueEncodersTail
+                  allParameterBytes
+                  (True : determinedNullabilities)
+                  remainingParameterBytesTail
                   (True : nullabilities)
               goWithNonNullable =
                 go
-                  (determinedParamsEncoder <> nonNullParamsEncoder remainingValueEncodersHead)
-                  remainingValueEncodersTail
+                  allParameterBytes
+                  (False : determinedNullabilities)
+                  remainingParameterBytesTail
                   (False : nullabilities)
-              headNullParamsEncoder = nullParamsEncoder remainingValueEncodersHead
               attempt =
-                Session.statement () statement
-                where
-                  statement =
-                    Statement.unpreparable params.query encoder decoder
-                    where
-                      encoder =
-                        determinedParamsEncoder
-                          <> headNullParamsEncoder
-                          <> foldMap nonNullParamsEncoder remainingValueEncodersTail
-                      decoder =
-                        Decoders.noResult
+                executeAttempt
+                  (toLibpqParameters (reverse determinedNullabilities ++ [True] ++ replicate (length remainingParameterBytesTail) False) allParameterBytes)
               nonNullAttempt =
-                Session.statement () statement
-                where
-                  statement =
-                    Statement.unpreparable params.query encoder decoder
-                    where
-                      encoder =
-                        determinedParamsEncoder
-                          <> nonNullParamsEncoder remainingValueEncodersHead
-                          <> foldMap nonNullParamsEncoder remainingValueEncodersTail
-                      decoder =
-                        Decoders.noResult
-          _ -> return $ reverse nullabilities
+                executeAttempt
+                  (toLibpqParameters (reverse determinedNullabilities ++ [False] ++ replicate (length remainingParameterBytesTail) False) allParameterBytes)
+          [] -> return $ reverse nullabilities
 
-nullParamsEncoder :: Encoders.Value () -> Encoders.Params ()
-nullParamsEncoder =
-  contramap (const Nothing) . Encoders.param . Encoders.nullable
+      executeAttempt :: [Maybe (Pq.Oid, ByteString, Pq.Format)] -> Session.Session ()
+      executeAttempt parameterValues =
+        Session.onLibpqConnection \connection -> do
+          result <- Pq.execParams connection (encodeUtf8 params.query) parameterValues Pq.Text
+          case result of
+            Nothing -> pure (Left (Hasql.Errors.DriverSessionError "libpq execParams returned Nothing"), connection)
+            Just result -> do
+              status <- Pq.resultStatus result
+              case status of
+                Pq.CommandOk -> pure (Right (), connection)
+                Pq.EmptyQuery -> pure (Right (), connection)
+                Pq.TuplesOk -> pure (Right (), connection)
+                Pq.SingleTuple -> pure (Right (), connection)
+                _ -> do
+                  sessionError <- readSessionError result
+                  pure (Left sessionError, connection)
 
-nonNullParamsEncoder :: Encoders.Value () -> Encoders.Params ()
-nonNullParamsEncoder =
-  Encoders.param . Encoders.nonNullable
+      readSessionError :: Pq.Result -> IO Hasql.Errors.SessionError
+      readSessionError result = do
+        code <- foldMap decodeUtf8Lenient <$> Pq.resultErrorField result Pq.DiagSqlstate
+        message <- foldMap decodeUtf8Lenient <$> Pq.resultErrorField result Pq.DiagMessagePrimary
+        pure
+          ( Hasql.Errors.StatementSessionError
+              0
+              0
+              params.query
+              []
+              False
+              (Hasql.Errors.ServerStatementError (Hasql.Errors.ServerError code message Nothing Nothing Nothing))
+          )
+
+      toLibpqParameters :: [Bool] -> [ByteString] -> [Maybe (Pq.Oid, ByteString, Pq.Format)]
+      toLibpqParameters nullabilities parameterBytes =
+        zipWith
+          ( \isNullable parameterByte ->
+              if isNullable
+                then Nothing
+                else Just (Pq.invalidOid, parameterByte, Pq.Text)
+          )
+          nullabilities
+          parameterBytes

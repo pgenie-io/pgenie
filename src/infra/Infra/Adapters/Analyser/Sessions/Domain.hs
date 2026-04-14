@@ -128,8 +128,14 @@ data Primitive
     LsegPrimitive
   | -- | box — OID 603, array OID 1020
     BoxPrimitive
+  | -- | box2d — PostGIS extension type
+    Box2DPrimitive
+  | -- | box3d — PostGIS extension type
+    Box3DPrimitive
   | -- | path — OID 602, array OID 1019
     PathPrimitive
+  | -- | ltree — extension type, no static OIDs
+    LtreePrimitive
   | -- | polygon — OID 604, array OID 1027
     PolygonPrimitive
   | -- | circle — OID 718, array OID 719
@@ -146,6 +152,10 @@ data Primitive
     HstorePrimitive
   | -- | citext — extension type, no static OIDs
     CitextPrimitive
+  | -- | geometry — PostGIS extension type
+    GeometryPrimitive
+  | -- | geography — PostGIS extension type
+    GeographyPrimitive
   deriving stock (Show, Eq)
 
 data Composite = Composite

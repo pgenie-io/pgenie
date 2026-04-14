@@ -26,11 +26,13 @@ data InferredQueryTypes = InferredQueryTypes
     resultColumns :: [Gen.Input.Member],
     mentionedCustomTypes :: [Gen.Input.CustomType]
   }
+  deriving stock (Eq, Show)
 
 data InferredParam = InferredParam
   { isNullable :: Bool,
     type_ :: Gen.Input.Value
   }
+  deriving stock (Eq, Show)
 
 -- * Seq-scan detection
 

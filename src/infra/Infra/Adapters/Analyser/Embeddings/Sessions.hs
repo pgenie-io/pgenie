@@ -129,7 +129,10 @@ adaptPrimitive = \case
   Sessions.LinePrimitive -> Gen.Input.PrimitiveLine
   Sessions.LsegPrimitive -> Gen.Input.PrimitiveLseg
   Sessions.BoxPrimitive -> Gen.Input.PrimitiveBox
+  Sessions.Box2DPrimitive -> Gen.Input.PrimitiveBox2D
+  Sessions.Box3DPrimitive -> Gen.Input.PrimitiveBox3D
   Sessions.PathPrimitive -> Gen.Input.PrimitivePath
+  Sessions.LtreePrimitive -> Gen.Input.PrimitiveLtree
   Sessions.PolygonPrimitive -> Gen.Input.PrimitivePolygon
   Sessions.CirclePrimitive -> Gen.Input.PrimitiveCircle
   Sessions.PgSnapshotPrimitive -> Gen.Input.PrimitivePgSnapshot
@@ -137,6 +140,8 @@ adaptPrimitive = \case
   Sessions.NamePrimitive -> Gen.Input.PrimitiveName
   Sessions.HstorePrimitive -> Gen.Input.PrimitiveHstore
   Sessions.CitextPrimitive -> Gen.Input.PrimitiveCitext
+  Sessions.GeometryPrimitive -> Gen.Input.PrimitiveGeometry
+  Sessions.GeographyPrimitive -> Gen.Input.PrimitiveGeography
   Sessions.OidPrimitive -> Gen.Input.PrimitiveOid
 
 collectCustomTypes :: Sessions.Query -> Embed [Gen.Input.CustomType]

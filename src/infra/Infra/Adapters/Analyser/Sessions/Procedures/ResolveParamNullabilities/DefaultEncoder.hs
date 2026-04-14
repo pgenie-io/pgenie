@@ -153,6 +153,11 @@ fromPrimitive = \case
   HstorePrimitive -> Nothing
   CitextPrimitive -> Just $ Encoders.text $< mempty
   OidPrimitive -> Just $ Encoders.oid $< 0
+  LtreePrimitive -> Just $ Encoders.text $< "Top.Science"
+  Box2DPrimitive -> Nothing
+  Box3DPrimitive -> Nothing
+  GeographyPrimitive -> Nothing
+  GeometryPrimitive -> Nothing
 
 fromComposite :: Composite -> Maybe (Encoders.Value ())
 fromComposite (Composite schemaName name fields) = do

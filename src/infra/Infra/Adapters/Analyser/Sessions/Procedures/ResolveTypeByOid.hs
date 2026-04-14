@@ -38,6 +38,11 @@ instance Procedure ResolveTypeByOid where
                     case type_.name of
                       "hstore" -> pure (Type 0 (PrimitiveScalar HstorePrimitive))
                       "citext" -> pure (Type 0 (PrimitiveScalar CitextPrimitive))
+                      "ltree" -> pure (Type 0 (PrimitiveScalar LtreePrimitive))
+                      "box2d" -> pure (Type 0 (PrimitiveScalar Box2DPrimitive))
+                      "box3d" -> pure (Type 0 (PrimitiveScalar Box3DPrimitive))
+                      "geometry" -> pure (Type 0 (PrimitiveScalar GeometryPrimitive))
+                      "geography" -> pure (Type 0 (PrimitiveScalar GeographyPrimitive))
                       _ ->
                         crash
                           ["Unknown base type"]

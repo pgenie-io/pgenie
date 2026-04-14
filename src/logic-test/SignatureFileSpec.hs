@@ -1,6 +1,8 @@
 module SignatureFileSpec (spec) where
 
+import Logic.Name qualified as Name
 import Logic.SignatureFile
+import PGenieGen.Model.Input qualified as Gen.Input
 import Test.Hspec
 import Utils.Prelude
 
@@ -111,6 +113,73 @@ spec = do
             \      dims: 1\n\
             \      element_not_null: false\n"
       serialize sig `shouldBe` expected
+
+  describe "fromInferred" do
+    it "maps extension primitives to signature type names" do
+      let member :: Text -> Bool -> Gen.Input.Value -> Gen.Input.Member
+          member pgName isNullable value =
+            Gen.Input.Member
+              { name = genName pgName,
+                pgName,
+                isNullable,
+                value
+              }
+
+          genName :: Text -> Gen.Input.Name
+          genName text =
+            case Name.tryFromText text of
+              Right name -> Name.toGenName name
+              Left err -> error (show err)
+
+          primitiveValue :: Gen.Input.Primitive -> Gen.Input.Value
+          primitiveValue primitive =
+            Gen.Input.Value
+              { arraySettings = Nothing,
+                scalar = Gen.Input.ScalarPrimitive primitive
+              }
+
+          arrayValue :: Natural -> Gen.Input.Primitive -> Gen.Input.Value
+          arrayValue dimensionality primitive =
+            Gen.Input.Value
+              { arraySettings =
+                  Just
+                    Gen.Input.ArraySettings
+                      { dimensionality,
+                        elementIsNullable = True
+                      },
+                scalar = Gen.Input.ScalarPrimitive primitive
+              }
+
+          sig =
+            fromInferred
+              [ member "ltree_path" False (primitiveValue Gen.Input.PrimitiveLtree),
+                member "citext_name" True (primitiveValue Gen.Input.PrimitiveCitext),
+                member "tags" True (primitiveValue Gen.Input.PrimitiveHstore),
+                member "box2d" True (primitiveValue Gen.Input.PrimitiveBox2D),
+                member "box3d" True (primitiveValue Gen.Input.PrimitiveBox3D),
+                member "geom" False (primitiveValue Gen.Input.PrimitiveGeometry),
+                member "geog_array" True (arrayValue 1 Gen.Input.PrimitiveGeography)
+              ]
+              Nothing
+      sig
+        `shouldBe` Signature
+          { parameters =
+              [ ("ltree_path", FieldSig {typeName = "ltree", notNull = True}),
+                ("citext_name", FieldSig {typeName = "citext", notNull = False}),
+                ("tags", FieldSig {typeName = "hstore", notNull = False}),
+                ("box2d", FieldSig {typeName = "box2d", notNull = False}),
+                ("box3d", FieldSig {typeName = "box3d", notNull = False}),
+                ("geom", FieldSig {typeName = "geometry", notNull = True}),
+                ( "geog_array",
+                  ArrayFieldSig
+                    { typeName = "geography[]",
+                      notNull = False,
+                      elementNotNull = False
+                    }
+                )
+              ],
+            result = Nothing
+          }
 
   describe "tryParse" do
     it "parses all cardinality values" do

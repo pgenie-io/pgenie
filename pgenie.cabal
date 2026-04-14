@@ -199,6 +199,7 @@ test-suite logic-test
     megaparsec,
     pgenie:logic,
     pgenie:utils,
+    pgenie-gen,
     text,
 
 test-suite infra-test
@@ -218,6 +219,7 @@ test-suite infra-test
     pgenie:infra,
     pgenie:logic,
     pgenie:utils,
+    pgenie-gen,
     text,
 
 library infra

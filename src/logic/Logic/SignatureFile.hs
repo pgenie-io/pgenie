@@ -180,7 +180,10 @@ primitiveToTypeName = \case
   Gen.Input.PrimitiveLine -> "line"
   Gen.Input.PrimitiveLseg -> "lseg"
   Gen.Input.PrimitiveBox -> "box"
+  Gen.Input.PrimitiveBox2D -> "box2d"
+  Gen.Input.PrimitiveBox3D -> "box3d"
   Gen.Input.PrimitivePath -> "path"
+  Gen.Input.PrimitiveLtree -> "ltree"
   Gen.Input.PrimitivePolygon -> "polygon"
   Gen.Input.PrimitiveCircle -> "circle"
   Gen.Input.PrimitivePgSnapshot -> "pg_snapshot"
@@ -188,6 +191,8 @@ primitiveToTypeName = \case
   Gen.Input.PrimitiveName -> "name"
   Gen.Input.PrimitiveHstore -> "hstore"
   Gen.Input.PrimitiveCitext -> "citext"
+  Gen.Input.PrimitiveGeometry -> "geometry"
+  Gen.Input.PrimitiveGeography -> "geography"
   Gen.Input.PrimitiveOid -> "oid"
 
 genNameToText :: Gen.Input.Name -> Text

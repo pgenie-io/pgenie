@@ -16,19 +16,23 @@ complete parser = parser <* eof
 parts :: Parser [Text]
 parts = do
   firstWord <- wordPart
-  tail <- many do
-    _ <- char '_'
+  tailParts <- many do
+    _ <- optional separator
     tailPart
 
-  return (firstWord : tail)
+  pure (firstWord : tailParts)
   where
+    separator =
+      char '_' <|> char '-'
+
     wordPart =
-      Text.cons
-        <$> satisfy isAsciiLower
-        <*> takeWhileP (Just "word tail") isAsciiLower
+      Text.toLower <$> takeWhile1P (Just "word part") isAsciiLetter
 
     tailPart =
       asum
         [ takeWhile1P (Just "number tail part") isDigit,
           wordPart
         ]
+
+    isAsciiLetter character =
+      isAsciiLower character || isAsciiUpper character

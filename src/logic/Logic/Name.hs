@@ -26,8 +26,9 @@ import Utils.Prelude
 -- Normalized name backed by the gen-sdk model.
 --
 -- A name consists of a lowercase head word followed by lowercase words or
--- natural numbers, separated by underscores. Hyphens in input are normalized
--- to underscores, and input is lowercased before parsing.
+-- natural numbers, separated by underscores. Parsing normalizes letter case,
+-- treats hyphens as separators, and splits adjacent letter and digit runs into
+-- separate parts.
 --
 -- It can be converted to various casing formats, such as camelCase, PascalCase, snake_case, etc.
 newtype Name = Name Gen.Name
@@ -173,12 +174,7 @@ toGenName (Name name) = name
 
 tryFromText :: Text -> Either Text Name
 tryFromText text =
-  Megaparsec.toTextParser megaparsecOf (normalizeInput text)
-  where
-    -- \| Normalize input text to snake_case format.
-    -- Converts to lowercase and replaces hyphens with underscores.
-    normalizeInput :: Text -> Text
-    normalizeInput = Text.toLower . Text.replace "-" "_"
+  Megaparsec.toTextParser megaparsecOf text
 
 megaparsecOf :: Megaparsec.Parser Name
 megaparsecOf = do

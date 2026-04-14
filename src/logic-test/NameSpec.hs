@@ -56,5 +56,6 @@ spec = do
       result `shouldSatisfy` isRight
       fmap toText result `shouldBe` Right "album_2024"
 
-    it "rejects mixed alphanumeric parts" do
-      tryFromText "box2d" `shouldSatisfy` isLeft
+    it "treats mixed alphanumeric parts as multiple parts" do
+      tryFromText "box2d" `shouldBe` Right "box_2_d"
+      tryFromText "float8" `shouldBe` Right "float_8"

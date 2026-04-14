@@ -3,6 +3,7 @@
 ## Non-breaking changes
 
 - Add support for query `idempotent` flag in signature files. It will be transferred to the code gens and may be used for automatic retries in the generated code.
+- More precise cardinality analysis based on AST
 
 ## Fixes
 

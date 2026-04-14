@@ -12,7 +12,8 @@ spec = do
     it "roundtrips a signature with parameters and result" do
       let sig =
             Signature
-              { parameters =
+              { idempotent = False,
+                parameters =
                   [ ("format", FieldSig {typeName = "uuid", notNull = False}),
                     ("name", FieldSig {typeName = "text", notNull = True})
                   ],
@@ -32,7 +33,8 @@ spec = do
     it "roundtrips a signature with empty parameters" do
       let sig =
             Signature
-              { parameters = [],
+              { idempotent = False,
+                parameters = [],
                 result =
                   Just
                     ResultSig
@@ -47,9 +49,19 @@ spec = do
     it "roundtrips a signature with no result" do
       let sig =
             Signature
-              { parameters =
+              { idempotent = False,
+                parameters =
                   [ ("id", FieldSig {typeName = "int8", notNull = True})
                   ],
+                result = Nothing
+              }
+      tryParse (serialize sig) `shouldBe` Right sig
+
+    it "roundtrips a signature with idempotent true" do
+      let sig =
+            Signature
+              { idempotent = True,
+                parameters = [],
                 result = Nothing
               }
       tryParse (serialize sig) `shouldBe` Right sig
@@ -58,7 +70,8 @@ spec = do
     it "produces expected YAML format" do
       let sig =
             Signature
-              { parameters =
+              { idempotent = False,
+                parameters =
                   [ ("format", FieldSig {typeName = "uuid", notNull = False})
                   ],
                 result =
@@ -71,7 +84,8 @@ spec = do
                       }
               }
           expected =
-            "parameters:\n\
+            "idempotent: false\n\
+            \parameters:\n\
             \  format:\n\
             \    type: uuid\n\
             \    not_null: false\n\
@@ -86,7 +100,8 @@ spec = do
     it "serializes one-dimensional array types using dims syntax" do
       let sig =
             Signature
-              { parameters = [],
+              { idempotent = False,
+                parameters = [],
                 result =
                   Just
                     ResultSig
@@ -103,7 +118,8 @@ spec = do
                       }
               }
           expected =
-            "parameters: {}\n\
+            "idempotent: false\n\
+            \parameters: {}\n\
             \result:\n\
             \  cardinality: many\n\
             \  columns:\n\
@@ -163,7 +179,8 @@ spec = do
               Nothing
       sig
         `shouldBe` Signature
-          { parameters =
+          { idempotent = False,
+            parameters =
               [ ("ltree_path", FieldSig {typeName = "ltree", notNull = True}),
                 ("citext_name", FieldSig {typeName = "citext", notNull = False}),
                 ("tags", FieldSig {typeName = "hstore", notNull = False}),
@@ -216,6 +233,21 @@ spec = do
       let yaml =
             "parameters: {}\nresult:\n  cardinality: invalid\n  columns:\n    id:\n      type: int4\n      not_null: true\n"
       tryParse yaml `shouldSatisfy` isLeft
+
+    it "parses explicit idempotent values" do
+      fmap (.idempotent) (tryParse "idempotent: true\nparameters: {}\n")
+        `shouldBe` Right True
+      fmap (.idempotent) (tryParse "idempotent: false\nparameters: {}\n")
+        `shouldBe` Right False
+
+    it "defaults idempotent to false when omitted" do
+      tryParse "parameters: {}\n"
+        `shouldBe` Right
+          Signature
+            { idempotent = False,
+              parameters = [],
+              result = Nothing
+            }
 
     it "parses array types with dims and element_not_null" do
       let yaml =
@@ -328,7 +360,8 @@ spec = do
     it "accepts matching signatures" do
       let sig =
             Signature
-              { parameters =
+              { idempotent = False,
+                parameters =
                   [ ("x", FieldSig {typeName = "int4", notNull = False})
                   ],
                 result =
@@ -345,14 +378,16 @@ spec = do
     it "allows parameter not_null to be made stricter (false -> true)" do
       let inferred =
             Signature
-              { parameters =
+              { idempotent = False,
+                parameters =
                   [ ("x", FieldSig {typeName = "int4", notNull = False})
                   ],
                 result = Nothing
               }
           file =
             Signature
-              { parameters =
+              { idempotent = False,
+                parameters =
                   [ ("x", FieldSig {typeName = "int4", notNull = True})
                   ],
                 result = Nothing
@@ -362,14 +397,16 @@ spec = do
     it "rejects parameter not_null relaxation (true -> false)" do
       let inferred =
             Signature
-              { parameters =
+              { idempotent = False,
+                parameters =
                   [ ("x", FieldSig {typeName = "int4", notNull = True})
                   ],
                 result = Nothing
               }
           file =
             Signature
-              { parameters =
+              { idempotent = False,
+                parameters =
                   [ ("x", FieldSig {typeName = "int4", notNull = False})
                   ],
                 result = Nothing
@@ -379,7 +416,8 @@ spec = do
     it "rejects result column not_null relaxation (true -> false)" do
       let inferred =
             Signature
-              { parameters = [],
+              { idempotent = False,
+                parameters = [],
                 result =
                   Just
                     ResultSig
@@ -391,7 +429,8 @@ spec = do
               }
           file =
             Signature
-              { parameters = [],
+              { idempotent = False,
+                parameters = [],
                 result =
                   Just
                     ResultSig
@@ -406,7 +445,8 @@ spec = do
     it "allows result column not_null to be made stricter (false -> true)" do
       let inferred =
             Signature
-              { parameters = [],
+              { idempotent = False,
+                parameters = [],
                 result =
                   Just
                     ResultSig
@@ -418,7 +458,8 @@ spec = do
               }
           file =
             Signature
-              { parameters = [],
+              { idempotent = False,
+                parameters = [],
                 result =
                   Just
                     ResultSig
@@ -433,7 +474,8 @@ spec = do
     it "allows cardinality to be changed freely" do
       let inferred =
             Signature
-              { parameters = [],
+              { idempotent = False,
+                parameters = [],
                 result =
                   Just
                     ResultSig
@@ -445,7 +487,8 @@ spec = do
               }
           file =
             Signature
-              { parameters = [],
+              { idempotent = False,
+                parameters = [],
                 result =
                   Just
                     ResultSig
@@ -457,7 +500,8 @@ spec = do
               }
           expected =
             Signature
-              { parameters = [],
+              { idempotent = False,
+                parameters = [],
                 result =
                   Just
                     ResultSig
@@ -469,10 +513,26 @@ spec = do
               }
       validateAndMerge inferred file `shouldBe` Right expected
 
+    it "preserves idempotence from the file signature" do
+      let inferred =
+            Signature
+              { idempotent = False,
+                parameters = [],
+                result = Nothing
+              }
+          file =
+            Signature
+              { idempotent = True,
+                parameters = [],
+                result = Nothing
+              }
+      validateAndMerge inferred file `shouldBe` Right file
+
     it "keeps inferred array element nullability when file uses legacy array syntax" do
       let inferred =
             Signature
-              { parameters = [],
+              { idempotent = False,
+                parameters = [],
                 result =
                   Just
                     ResultSig
@@ -490,7 +550,8 @@ spec = do
               }
           file =
             Signature
-              { parameters = [],
+              { idempotent = False,
+                parameters = [],
                 result =
                   Just
                     ResultSig
@@ -507,7 +568,8 @@ spec = do
               }
           expected =
             Signature
-              { parameters = [],
+              { idempotent = False,
+                parameters = [],
                 result =
                   Just
                     ResultSig
@@ -528,14 +590,16 @@ spec = do
     it "rejects type mismatch in parameters" do
       let inferred =
             Signature
-              { parameters =
+              { idempotent = False,
+                parameters =
                   [ ("x", FieldSig {typeName = "int4", notNull = False})
                   ],
                 result = Nothing
               }
           file =
             Signature
-              { parameters =
+              { idempotent = False,
+                parameters =
                   [ ("x", FieldSig {typeName = "int8", notNull = False})
                   ],
                 result = Nothing
@@ -545,7 +609,8 @@ spec = do
     it "rejects type mismatch in result columns" do
       let inferred =
             Signature
-              { parameters = [],
+              { idempotent = False,
+                parameters = [],
                 result =
                   Just
                     ResultSig
@@ -557,7 +622,8 @@ spec = do
               }
           file =
             Signature
-              { parameters = [],
+              { idempotent = False,
+                parameters = [],
                 result =
                   Just
                     ResultSig
@@ -572,14 +638,16 @@ spec = do
     it "rejects parameter name mismatch" do
       let inferred =
             Signature
-              { parameters =
+              { idempotent = False,
+                parameters =
                   [ ("x", FieldSig {typeName = "int4", notNull = False})
                   ],
                 result = Nothing
               }
           file =
             Signature
-              { parameters =
+              { idempotent = False,
+                parameters =
                   [ ("y", FieldSig {typeName = "int4", notNull = False})
                   ],
                 result = Nothing
@@ -589,7 +657,8 @@ spec = do
     it "rejects result section mismatch (present vs absent)" do
       let inferred =
             Signature
-              { parameters = [],
+              { idempotent = False,
+                parameters = [],
                 result =
                   Just
                     ResultSig
@@ -601,7 +670,8 @@ spec = do
               }
           file =
             Signature
-              { parameters = [],
+              { idempotent = False,
+                parameters = [],
                 result = Nothing
               }
       validateAndMerge inferred file `shouldSatisfy` isLeft

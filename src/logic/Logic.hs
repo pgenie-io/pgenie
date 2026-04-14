@@ -386,7 +386,7 @@ analyseProject projectFile =
               let sigPath = SignatureFile.signatureFilePath queryListed.filePath
                   inferredSig = SignatureFile.fromInferred interpretedParams result
 
-              (finalParams, finalResult) <- do
+              (finalParams, finalResult, finalIdempotent) <- do
                 maybeSigContent <-
                   catchError
                     (Just <$> readFile sigPath)
@@ -394,7 +394,7 @@ analyseProject projectFile =
                 case maybeSigContent of
                   Nothing -> do
                     writeFile sigPath (SignatureFile.serialize inferredSig)
-                    pure (interpretedParams, result)
+                    pure (interpretedParams, result, inferredSig.idempotent)
                   Just sigContent -> do
                     fileSig <- case SignatureFile.tryParse sigContent of
                       Left err ->
@@ -409,12 +409,15 @@ analyseProject projectFile =
                     case SignatureFile.validateAndMerge inferredSig fileSig of
                       Left err -> throwError err
                       Right mergedSig ->
-                        pure (SignatureFile.applyToQuery mergedSig interpretedParams result)
+                        let (mergedParams, mergedResult) =
+                              SignatureFile.applyToQuery mergedSig interpretedParams result
+                         in pure (mergedParams, mergedResult, mergedSig.idempotent)
 
               pure
                 ( Gen.Input.Query
                     { name = Name.toGenName queryListed.name,
                       srcPath = queryListed.filePath,
+                      idempotent = finalIdempotent,
                       params = finalParams,
                       result = finalResult,
                       fragments = SqlTemplate.toGenQueryFragments sqlTemplate

@@ -25,7 +25,8 @@ import YamlUnscrambler qualified as U
 -- * Types
 
 data Signature = Signature
-  { parameters :: [(Text, FieldSig)],
+  { idempotent :: Bool,
+    parameters :: [(Text, FieldSig)],
     result :: Maybe ResultSig
   }
   deriving stock (Eq, Show)
@@ -70,7 +71,8 @@ signatureFilePath queryPath =
 fromInferred :: [Gen.Input.Member] -> Maybe Gen.Input.ResultRows -> Signature
 fromInferred params result =
   Signature
-    { parameters = map memberToFieldEntry params,
+    { idempotent = False,
+      parameters = map memberToFieldEntry params,
       result = fmap resultRowsToResultSig result
     }
   where
@@ -243,8 +245,13 @@ genNameToText name =
 -- | Serialize a signature to YAML text.
 serialize :: Signature -> Text
 serialize sig =
-  parametersSection <> resultSection
+  idempotentSection <> parametersSection <> resultSection
   where
+    idempotentSection =
+      "idempotent: "
+        <> boolToText sig.idempotent
+        <> "\n"
+
     parametersSection =
       "parameters:"
         <> if null sig.parameters
@@ -323,6 +330,11 @@ tryParse text =
       U.mappingValue
         $ U.byKeyMapping (U.CaseSensitive True)
         $ do
+          idempotent <-
+            asum
+              [ U.atByKey "idempotent" (U.scalarsValue [U.boolScalar]),
+                pure False
+              ]
           parameters <-
             asum
               [ U.atByKey "parameters" parametersValue,
@@ -333,7 +345,7 @@ tryParse text =
               [ fmap Just (U.atByKey "result" resultValue),
                 pure Nothing
               ]
-          pure Signature {parameters, result}
+          pure Signature {idempotent, parameters, result}
 
     parametersValue :: U.Value [(Text, FieldSig)]
     parametersValue =
@@ -463,7 +475,7 @@ validateAndMerge inferred file = do
         )
     (Just inferredResult, Just fileResult) ->
       fmap Just (validateResult inferredResult fileResult)
-  Right Signature {parameters = validatedParams, result = validatedResult}
+  Right Signature {idempotent = file.idempotent, parameters = validatedParams, result = validatedResult}
 
 validateFields ::
   -- | Section name for error messages.

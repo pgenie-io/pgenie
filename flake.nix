@@ -40,7 +40,7 @@
             "https://github.com/pgenie-io/gen-sdk"."v0.4.0" =
               "sha256-ABzzpi701lY+rq7TuYKTvu3T6YdwvDACjcrxNeGx9bQ=";
             "https://github.com/nikita-volkov/dhall-haskell"."c3264e5ed34566b66badb301211847ac4f78e697" =
-              "sha256-2VQG7Xdoa3H+4XhqW7Flh78ZcOCOqJYqOwWHd/JwgIE=";
+              "sha256-yBoNWnMEA0a7eVHyzoRo60GYl5wZoI9uHeoDvDQuQko=";
           };
 
           shell.tools = {

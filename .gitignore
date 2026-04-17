@@ -17,6 +17,8 @@
 !/.ormolu
 !/stack.yaml
 !/stack.yaml.lock
+!/flake.nix
+!/flake.lock
 
 # Unignore subtrees:
 !/.github/

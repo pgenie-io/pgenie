@@ -54,6 +54,10 @@
 
         flake = project.flake { };
       in
-      flake
+      flake // {
+        packages = flake.packages // {
+          default = flake.packages."pgenie:exe:pgn";
+        };
+      }
     );
 }

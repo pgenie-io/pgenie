@@ -28,4 +28,4 @@ jobs:
             allow-import-from-derivation = true
 
       - name: Build pgn executable
-        run: nix build .#pgn --print-build-logs
+        run: nix build .#"pgenie:exe:pgn" --print-build-logs

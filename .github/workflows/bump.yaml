@@ -1,0 +1,73 @@
+name: Bump Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Semantic version component to increment
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: patch
+
+permissions:
+  contents: write
+
+jobs:
+  compute-version:
+    name: Compute next version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Fetch tags
+        shell: bash
+        run: git fetch --tags --force --prune
+
+      - name: Compute next SemVer
+        id: bump
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          latest_tag="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n1)"
+          if [[ -z "$latest_tag" ]]; then
+            latest_version="0.0.0"
+          else
+            latest_version="${latest_tag#v}"
+          fi
+
+          IFS=. read -r major minor patch <<< "$latest_version"
+
+          case "${{ inputs.bump }}" in
+            patch)
+              patch=$((patch + 1))
+              ;;
+            minor)
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            major)
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+          esac
+
+          version="${major}.${minor}.${patch}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  release:
+    name: Run release workflow
+    needs: compute-version
+    uses: ./.github/workflows/release.yaml
+    secrets: inherit
+    with:
+      version: ${{ needs.compute-version.outputs.version }}

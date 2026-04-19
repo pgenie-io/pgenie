@@ -30,7 +30,8 @@ main ::
   -- | List of supported commands.
   [Command m] ->
   -- | Execute an effect.
-  (m Text -> IO ()) ->
+  -- The first argument is the optional database URL supplied via @--database-url@.
+  (Maybe Text -> m Text -> IO ()) ->
   -- | Application.
   IO ()
 main appName description footer version commands runEffect =
@@ -40,7 +41,16 @@ main appName description footer version commands runEffect =
       Opt.info
         ( Opt.helper
             <*> Opt.infoOption (Text.unpack version) (Opt.long "version" <> Opt.short 'V' <> Opt.help "Show version")
-            <*> Opt.hsubparser (foldMap runCommand commands)
+            <*> ( (\dbUrl action -> action dbUrl)
+                    <$> optional
+                      ( Opt.strOption
+                          ( Opt.long "database-url"
+                              <> Opt.metavar "URL"
+                              <> Opt.help "PostgreSQL connection string (libpq key=value or URI). When supplied, pGenie connects to this running server instead of starting a Docker container."
+                          )
+                      )
+                    <*> Opt.hsubparser (foldMap runCommand commands)
+                )
         )
         ( mconcat
             [ Opt.fullDesc,
@@ -54,6 +64,6 @@ main appName description footer version commands runEffect =
       Opt.command
         (Text.unpack name)
         ( Opt.info
-            (runEffect . execute <$> parser)
+            ((\params dbUrl -> runEffect dbUrl (execute params)) <$> parser)
             (Opt.progDesc (Text.unpack description))
         )

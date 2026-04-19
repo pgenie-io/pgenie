@@ -15,8 +15,8 @@ main ::
   (Logic.Caps m) =>
   -- | Version string for @--version@ (SemVer, without the PVP @0.@ prefix).
   Text ->
-  -- | Execute an effect with an event sink.
-  ((Logic.Event -> IO ()) -> m Text -> IO ()) ->
+  -- | Execute an effect with an event sink and an optional database URL.
+  ((Logic.Event -> IO ()) -> Maybe Text -> m Text -> IO ()) ->
   -- | Application.
   IO ()
 main version runEffect = do
@@ -30,4 +30,4 @@ main version runEffect = do
       Commands.generate,
       Commands.manageIndexes
     ]
-    (runEffect (Display.handleEvent display))
+    (\dbUrl -> runEffect (Display.handleEvent display) dbUrl)

@@ -21,8 +21,8 @@ data Device = Device
     projectFile :: ProjectFile.ProjectFile
   }
 
-scope :: (Logic.Event -> IO ()) -> Fx.Scope Logic.Error Device
-scope emitEvent = do
+scope :: (Logic.Event -> IO ()) -> Maybe Text -> Fx.Scope Logic.Error Device
+scope emitEvent maybeDatabaseUrl = do
   let halveEvent = \case
         Logic.StageExited path progress ->
           Logic.StageExited path (progress / 2)
@@ -41,11 +41,15 @@ scope emitEvent = do
 
   projectFile <- ProjectFile.tryFromYaml projectFile
 
-  let postgresTag = case projectFile.postgres of
-        Nothing -> "postgres:18"
-        Just postgres -> "postgres:" <> Text.pack (show postgres)
+  let targetMajorVersion = fromMaybe 18 projectFile.postgres
+      source = case maybeDatabaseUrl of
+        Nothing ->
+          let postgresTag = "postgres:" <> Text.pack (show targetMajorVersion)
+           in Analyser.DockerSource {postgresTag}
+        Just url ->
+          Analyser.RunningServerSource {connectionUrl = url, targetMajorVersion}
 
-  analyser <- Analyser.scope postgresTag halvedEmitEvent
+  analyser <- Analyser.scope source halvedEmitEvent
   pure
     Device
       { emitEvent = halvedEmitEvent,

@@ -1,6 +1,8 @@
 module InferQueryTypesSpec (spec) where
 
 import Data.Text qualified as Text
+import Data.Text.Encoding qualified as TextEncoding
+import Database.PostgreSQL.LibPQ qualified as Pq
 import Fx
 import Infra.Adapters.Analyser qualified as Analyser
 import Logic.Algebra
@@ -195,6 +197,67 @@ spec = describe "inferQueryTypes" do
                  ]
     postgisTableQueryTypes.mentionedCustomTypes `shouldBe` []
 
+  describe "running-server mode (requires DATABASE_URL env var)" do
+    it "succeeds with a matching server version" do
+      mUrl <- lookupEnv "DATABASE_URL"
+      case mUrl of
+        Nothing -> pendingWith "DATABASE_URL not set"
+        Just urlStr -> do
+          let url = Text.pack urlStr
+          result <- runWithAnalyserViaUrl url 18 do
+            executeMigration "create table t (id int4 primary key);"
+            fst <$> inferQueryTypes "select id from t"
+          case result of
+            Left err -> expectationFailure ("Expected success but got error: " <> show err)
+            Right queryTypes -> length queryTypes.resultColumns `shouldBe` 1
+
+    it "fails with a clear error when the server version does not match the project target" do
+      mUrl <- lookupEnv "DATABASE_URL"
+      case mUrl of
+        Nothing -> pendingWith "DATABASE_URL not set"
+        Just urlStr -> do
+          let url = Text.pack urlStr
+          -- Use a target version of 1, which will never match any real server.
+          result <- runWithAnalyserViaUrl url 1 (pure ())
+          case result of
+            Right _ -> expectationFailure "Expected a version mismatch error"
+            Left err -> do
+              err.message `shouldSatisfy` Text.isInfixOf "does not match the project target version"
+              err.details `shouldSatisfy` any (\(k, _) -> k == "target")
+
+    it "leaves no temporary database behind after a successful run" do
+      mUrl <- lookupEnv "DATABASE_URL"
+      case mUrl of
+        Nothing -> pendingWith "DATABASE_URL not set"
+        Just urlStr -> do
+          let url = Text.pack urlStr
+          _ <- runWithAnalyserViaUrl url 18 do
+            executeMigration "create table cleanup_check (id int4);"
+          remaining <- listPgenieTempDbs urlStr
+          remaining `shouldBe` []
+
+    it "leaves no temporary database behind after a failed run" do
+      mUrl <- lookupEnv "DATABASE_URL"
+      case mUrl of
+        Nothing -> pendingWith "DATABASE_URL not set"
+        Just urlStr -> do
+          let url = Text.pack urlStr
+          _ <- runWithAnalyserViaUrl url 18 do
+            -- Deliberate failure after the temp DB has been created.
+            throwError
+              Error
+                { path = [],
+                  message = "deliberate test failure",
+                  suggestion = Nothing,
+                  details = []
+                }
+          remaining <- listPgenieTempDbs urlStr
+          remaining `shouldBe` []
+
+-- ---------------------------------------------------------------------------
+-- Helpers
+-- ---------------------------------------------------------------------------
+
 -- | Run an action against a fresh throwaway PostgreSQL container.
 runWithAnalyser ::
   Fx Analyser.Device Error a ->
@@ -208,9 +271,49 @@ runWithAnalyserOn ::
   IO (Either Error a)
 runWithAnalyserOn postgresImage action =
   action
-    & scoping (Analyser.scope postgresImage (const (pure ())))
+    & scoping (Analyser.scope (Analyser.DockerSource {postgresTag = postgresImage}) (const (pure ())))
     & exposeErr
     & Fx.runFx
+
+-- | Run an action via the running-server path (no Docker).
+runWithAnalyserViaUrl ::
+  Text ->
+  Int ->
+  Fx Analyser.Device Error a ->
+  IO (Either Error a)
+runWithAnalyserViaUrl url targetMajorVersion action =
+  action
+    & scoping
+      ( Analyser.scope
+          (Analyser.RunningServerSource {connectionUrl = url, targetMajorVersion})
+          (const (pure ()))
+      )
+    & exposeErr
+    & Fx.runFx
+
+-- | List the names of any leftover @pgenie_*@ databases on the server.
+-- Used to verify that temporary databases are cleaned up.
+listPgenieTempDbs :: String -> IO [String]
+listPgenieTempDbs urlStr = do
+  conn <- Pq.connectdb (TextEncoding.encodeUtf8 (Text.pack urlStr))
+  st <- Pq.status conn
+  names <-
+    if st /= Pq.ConnectionOk
+      then pure []
+      else do
+        mResult <- Pq.exec conn "SELECT datname FROM pg_database WHERE datname LIKE 'pgenie_%'"
+        case mResult of
+          Nothing -> pure []
+          Just res -> do
+            rst <- Pq.resultStatus res
+            if rst /= Pq.TuplesOk
+              then pure []
+              else do
+                n <- Pq.ntuples res
+                forM [0 .. n - 1] \i ->
+                  fmap (maybe "" (Text.unpack . TextEncoding.decodeUtf8Lenient)) (Pq.getvalue res i 0)
+  Pq.finish conn
+  pure names
 
 withDockerDefaultPlatform :: String -> IO a -> IO a
 withDockerDefaultPlatform platform =

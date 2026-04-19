@@ -64,6 +64,8 @@ pgn --database-url "host=localhost port=5432 user=myuser password=mypass dbname=
 
 Both URI format (`postgresql://...`) and libpq keyword=value format are accepted.
 
+> **Security note:** Credentials in command-line arguments may appear in shell history and process listings (e.g., `ps aux`). For production or shared environments, prefer using a [PostgreSQL connection service file](https://www.postgresql.org/docs/current/libpq-pgservice.html) (`~/.pg_service.conf`) or the `PGPASSFILE` / `PGPASSWORD` environment variables so that the URL itself contains no secrets.
+
 ### Requirements
 
 - **CREATEDB privilege** — pGenie creates a temporary database on the server for each run and drops it afterwards. The connecting user must hold the `CREATEDB` privilege (or be a superuser).

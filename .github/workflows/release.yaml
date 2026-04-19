@@ -27,6 +27,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check changelog has upcoming section
+        shell: bash
+        run: |
+          if ! head -n 1 CHANGELOG.md | grep -qx '# Upcoming'; then
+            echo "::error::CHANGELOG.md must start with '# Upcoming' before releasing."
+            exit 1
+          fi
+
       - name: Check tag does not already exist
         run: |
           if git ls-remote --tags origin "refs/tags/v${{ inputs.version }}" | grep -q .; then
@@ -34,45 +42,83 @@ jobs:
             exit 1
           fi
 
+  prepare-release:
+    name: Prepare release commit
+    needs: validate
+    runs-on: ubuntu-latest
+    outputs:
+      commit-sha: ${{ steps.commit.outputs.commit-sha }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Update changelog for release
+        shell: bash
+        run: |
+          perl -0pi -e 's/^# Upcoming$/# v${{ inputs.version }}/m' CHANGELOG.md
+
+          if ! head -n 1 CHANGELOG.md | grep -qx '# v${{ inputs.version }}'; then
+            echo "::error::Failed to update CHANGELOG.md for v${{ inputs.version }}."
+            exit 1
+          fi
+
+      - name: Commit and push release changelog
+        id: commit
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          git commit -m "Prepare v${{ inputs.version }} release"
+          git push origin HEAD:"${{ github.ref }}"
+          echo "commit-sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
   build-linux:
     name: Build and test (Linux-x64)
-    needs: validate
+    needs: prepare-release
     uses: ./.github/workflows/build-linux.yaml
     secrets: inherit
     with:
       version: ${{ inputs.version }}
+      ref: ${{ needs.prepare-release.outputs.commit-sha }}
 
   build-macos-arm64:
     name: Build and test (macOS-arm64)
-    needs: validate
+    needs: prepare-release
     uses: ./.github/workflows/build-macos-arm64.yaml
     secrets: inherit
     with:
       version: ${{ inputs.version }}
+      ref: ${{ needs.prepare-release.outputs.commit-sha }}
 
   build-macos-x64:
     name: Build and test (macOS-x64)
-    needs: validate
+    needs: prepare-release
     uses: ./.github/workflows/build-macos-x64.yaml
     secrets: inherit
     with:
       version: ${{ inputs.version }}
+      ref: ${{ needs.prepare-release.outputs.commit-sha }}
 
   sdist:
     name: Build sdist
-    needs: validate
+    needs: prepare-release
     uses: ./.github/workflows/sdist.yaml
     secrets: inherit
     with:
       version: ${{ inputs.version }}
+      ref: ${{ needs.prepare-release.outputs.commit-sha }}
 
   # ── Publish ──────────────────────────────────────────────────────────────────
   release:
     name: Create GitHub release
-    needs: [build-linux, build-macos-arm64, build-macos-x64, sdist]
+    needs: [prepare-release, build-linux, build-macos-arm64, build-macos-x64, sdist]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare-release.outputs.commit-sha }}
 
       - name: Download all build artifacts
         uses: actions/download-artifact@v8
@@ -87,5 +133,5 @@ jobs:
         run: |
           gh release create "v${{ inputs.version }}" \
             --title "v${{ inputs.version }}" \
-            --target "${{ github.sha }}" \
+            --target "${{ needs.prepare-release.outputs.commit-sha }}" \
             artifacts/*

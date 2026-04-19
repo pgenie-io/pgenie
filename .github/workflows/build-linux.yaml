@@ -11,6 +11,11 @@ on:
         type: string
         required: false
         default: ""
+      ref:
+        description: Commit SHA or ref to checkout for the build.
+        type: string
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -24,6 +29,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref || github.sha }}
 
       - name: Install libpq
         run: sudo apt-get update && sudo apt-get install -y libpq-dev

@@ -31,6 +31,7 @@ instance IsStatement SelectAttributesParams where
       from pg_type
       join pg_attribute on pg_attribute.attrelid = pg_type.typrelid
       where pg_type.oid = $1 :: int4
+        and pg_attribute.attnum > 0
       order by attnum
     |]
       & lmap (.oid)

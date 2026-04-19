@@ -82,6 +82,19 @@ spec = describe "inferQueryTypes" do
       Right _ ->
         expectationFailure "Expected inference to fail because disc is NOT NULL and omitted from the INSERT, but it succeeded"
 
+  it "infers implicit composite type from table row cast" do
+    queryTypes <-
+      expectRight =<< runWithAnalyser do
+        executeMigration
+          "create table album (\
+          \  id int4 not null generated always as identity primary key,\
+          \  name text not null,\
+          \  released date null\
+          \);"
+        fst <$> inferQueryTypes "select (album.*)::album from album"
+    length queryTypes.resultColumns `shouldBe` 1
+    (head queryTypes.resultColumns).pgName `shouldBe` "album"
+
   it "infers ltree, citext, and hstore types from extension-enabled queries" do
     (ltreeQueryTypes, existingExtensionQueryTypes, ltreeTableQueryTypes) <-
       expectRight =<< runWithAnalyser do

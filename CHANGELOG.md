@@ -2,6 +2,7 @@
 
 ## Fixes
 
+- Fix implicit table composite type resolution error
 - Fix a bug in error path nesting that caused the paths to be reversed.
 
 # v0.4.0

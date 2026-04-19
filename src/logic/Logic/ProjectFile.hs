@@ -49,7 +49,7 @@ tryFromYaml text = do
           space <- U.atByKey "space" nameValue
           name <- U.atByKey "name" nameValue
           version <- U.atByKey "version" versionValue
-          artifacts <- U.atByKey "artifacts" artifactsValue
+          artifacts <- U.atByKey "artifacts" artifactsValue <|> pure []
           postgres <-
             optional
               ( U.atByKey

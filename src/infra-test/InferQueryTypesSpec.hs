@@ -93,7 +93,7 @@ spec = describe "inferQueryTypes" do
           \);"
         fst <$> inferQueryTypes "select (album.*)::album from album"
     length queryTypes.resultColumns `shouldBe` 1
-    (head queryTypes.resultColumns).pgName `shouldBe` "album"
+    fmap (.pgName) queryTypes.resultColumns `shouldBe` ["album"]
 
   it "infers ltree, citext, and hstore types from extension-enabled queries" do
     (ltreeQueryTypes, existingExtensionQueryTypes, ltreeTableQueryTypes) <-

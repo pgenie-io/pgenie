@@ -1,5 +1,9 @@
 # v0.4.1
 
+## Non-breaking changes
+
+- Make the `artifacts` field in the project file optional, defaulting to an empty list if not provided.
+
 ## Fixes
 
 - Fix implicit table composite type resolution error

@@ -34,28 +34,42 @@ spec = do
               ( Aeson.Object
                   (KeyMap.fromList [(Key.fromText "useOptional", Aeson.Bool True)])
               )
+
+    it "parses a missing artifacts section as an empty list" do
+      let yaml =
+            "space: my_space\n\
+            \name: music_catalogue\n\
+            \version: 1.0.0"
+          result = tryFromYaml yaml :: Either Error.Error ProjectFile
+      case result of
+        Left err -> expectationFailure ("Parse failed: " <> show err)
+        Right pf -> do
+          length pf.artifacts `shouldBe` 0
+          pf.postgres `shouldBe` Nothing
+
     it "leaves image unset when not specified" do
       let yaml =
             "space: my_space\n\
             \name: music_catalogue\n\
             \version: 1.0.0\n\
-            \artifacts:\n\
-            \  java:\n\
-            \    gen: https://raw.githubusercontent.com/pgenie-io/java.gen/v0.1.2/gen/Gen.dhall"
+            \"
           result = tryFromYaml yaml :: Either Error.Error ProjectFile
       case result of
         Left err -> expectationFailure ("Parse failed: " <> show err)
-        Right pf -> pf.postgres `shouldBe` Nothing
+        Right pf -> do
+          length pf.artifacts `shouldBe` 0
+          pf.postgres `shouldBe` Nothing
+
     it "parses an explicit image setting" do
       let yaml =
             "space: my_space\n\
             \name: music_catalogue\n\
             \version: 1.0.0\n\
             \postgres: 15\n\
-            \artifacts:\n\
-            \  java:\n\
-            \    gen: https://raw.githubusercontent.com/pgenie-io/java.gen/v0.1.2/gen/Gen.dhall"
+            \"
           result = tryFromYaml yaml :: Either Error.Error ProjectFile
       case result of
         Left err -> expectationFailure ("Parse failed: " <> show err)
-        Right pf -> pf.postgres `shouldBe` Just 15
+        Right pf -> do
+          length pf.artifacts `shouldBe` 0
+          pf.postgres `shouldBe` Just 15

@@ -31,13 +31,17 @@ jobs:
 
       - uses: actions/checkout@v6
         with:
+          ref: ${{ github.ref }}
           fetch-depth: 0
 
-      - name: Check changelog has upcoming section
+      - name: Check changelog release header
         shell: bash
         run: |
-          if ! head -n 1 CHANGELOG.md | grep -qx '# Upcoming'; then
-            echo "::error::CHANGELOG.md must start with '# Upcoming' before releasing."
+          expected_heading="# v${{ inputs.version }}"
+          top_heading="$(head -n 1 CHANGELOG.md)"
+
+          if [[ "$top_heading" != '# Upcoming' && "$top_heading" != "$expected_heading" ]]; then
+            echo "::error::CHANGELOG.md must start with either '# Upcoming' or '$expected_heading' before releasing."
             exit 1
           fi
 
@@ -57,27 +61,35 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          ref: ${{ github.ref }}
           fetch-depth: 0
 
-      - name: Update changelog for release
-        shell: bash
-        run: |
-          perl -0pi -e 's/^# Upcoming$/# v${{ inputs.version }}/m' CHANGELOG.md
-
-          if ! head -n 1 CHANGELOG.md | grep -qx '# v${{ inputs.version }}'; then
-            echo "::error::Failed to update CHANGELOG.md for v${{ inputs.version }}."
-            exit 1
-          fi
-
-      - name: Commit and push release changelog
+      - name: Prepare changelog for release
         id: commit
         shell: bash
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add CHANGELOG.md
-          git commit -m "Prepare v${{ inputs.version }} release"
-          git push origin HEAD:"${{ github.ref }}"
+          set -euo pipefail
+
+          expected_heading="# v${{ inputs.version }}"
+          top_heading="$(head -n 1 CHANGELOG.md)"
+          needs_commit=false
+
+          if [[ "$top_heading" == '# Upcoming' ]]; then
+            perl -0pi -e 's/^# Upcoming$/# v${{ inputs.version }}/m' CHANGELOG.md
+            needs_commit=true
+          elif [[ "$top_heading" != "$expected_heading" ]]; then
+            echo "::error::CHANGELOG.md must start with either '# Upcoming' or '$expected_heading' before releasing."
+            exit 1
+          fi
+
+          if [[ "$needs_commit" == true ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add CHANGELOG.md
+            git commit -m "Prepare v${{ inputs.version }} release"
+            git push origin HEAD:"${{ github.ref }}"
+          fi
+
           echo "commit-sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
   build-linux:

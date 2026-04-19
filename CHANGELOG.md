@@ -1,3 +1,9 @@
+# Upcoming
+
+## Fixes
+
+- Fix a bug in error path nesting that caused the paths to be reversed.
+
 # v0.4.0
 
 ## Non-breaking changes

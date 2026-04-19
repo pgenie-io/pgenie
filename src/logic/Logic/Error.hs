@@ -13,5 +13,5 @@ data Error = Error
 
 nest :: [Text] -> Error -> Error
 nest path err =
-  let newPath = path <> err.path
+  let newPath = err.path <> path
    in err {path = newPath}

@@ -135,3 +135,23 @@ jobs:
             --title "v${{ inputs.version }}" \
             --target "${{ needs.prepare-release.outputs.commit-sha }}" \
             artifacts/*
+
+  # ── Post-release ─────────────────────────────────────────────────────────────
+  update-homebrew-tap:
+    name: Update Homebrew tap formula
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger update-pgn-formula workflow on homebrew tap repo
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.LANDING_PAT }}
+        run: |
+          set -euo pipefail
+
+          if ! gh workflow run update-pgn-formula.yml \
+            --repo pgenie-io/homebrew-tap \
+            --ref main \
+            --field release_tag="v${{ inputs.version }}"; then
+            echo "::warning::Failed to trigger pgenie-io/homebrew-tap/update-pgn-formula.yml for v${{ inputs.version }}."
+          fi

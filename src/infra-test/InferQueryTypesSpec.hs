@@ -1,5 +1,8 @@
 module InferQueryTypesSpec (spec) where
 
+import Control.Monad.Trans.Resource qualified as ResourceT
+import Control.Monad.Trans.Resource.Internal qualified as ResourceT
+import Data.Acquire qualified as ResourceT
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as TextEncoding
 import Database.PostgreSQL.LibPQ qualified as Pq
@@ -8,6 +11,9 @@ import Infra.Adapters.Analyser qualified as Analyser
 import Logic.Algebra
 import PGenieGen.Model.Input qualified as Gen.Input
 import Test.Hspec
+import TestContainers qualified as Tc
+import TestContainers.Monad qualified as Tc
+import TestcontainersPostgresql qualified
 import Utils.Prelude
 
 spec :: Spec
@@ -197,62 +203,70 @@ spec = describe "inferQueryTypes" do
                  ]
     postgisTableQueryTypes.mentionedCustomTypes `shouldBe` []
 
-  describe "running-server mode (requires DATABASE_URL env var)" do
+  describe "running-server mode" do
     it "succeeds with a matching server version" do
-      mUrl <- lookupEnv "DATABASE_URL"
-      case mUrl of
-        Nothing -> pendingWith "DATABASE_URL not set"
-        Just urlStr -> do
-          let url = Text.pack urlStr
-          result <- runWithAnalyserViaUrl url 18 do
-            executeMigration "create table t (id int4 primary key);"
-            fst <$> inferQueryTypes "select id from t"
-          case result of
-            Left err -> expectationFailure ("Expected success but got error: " <> show err)
-            Right queryTypes -> length queryTypes.resultColumns `shouldBe` 1
+      withRunningServer "postgres:18" \(host, port) -> do
+        let url = serverConnSettings host port
+        result <- runWithAnalyserViaUrl url 18 do
+          executeMigration "create table t (id int4 primary key);"
+          fst <$> inferQueryTypes "select id from t"
+        case result of
+          Left err -> expectationFailure ("Expected success but got error: " <> show err)
+          Right queryTypes -> length queryTypes.resultColumns `shouldBe` 1
 
     it "fails with a clear error when the server version does not match the project target" do
-      mUrl <- lookupEnv "DATABASE_URL"
-      case mUrl of
-        Nothing -> pendingWith "DATABASE_URL not set"
-        Just urlStr -> do
-          let url = Text.pack urlStr
-          -- Use a target version of 1, which will never match any real server.
-          result <- runWithAnalyserViaUrl url 1 (pure ())
-          case result of
-            Right _ -> expectationFailure "Expected a version mismatch error"
-            Left err -> do
-              err.message `shouldSatisfy` Text.isInfixOf "does not match the project target version"
-              err.details `shouldSatisfy` any (\(k, _) -> k == "target")
+      withRunningServer "postgres:18" \(host, port) -> do
+        let url = serverConnSettings host port
+        -- Use a target version of 1, which will never match any real server.
+        result <- runWithAnalyserViaUrl url 1 (pure ())
+        case result of
+          Right _ -> expectationFailure "Expected a version mismatch error"
+          Left err -> do
+            err.message `shouldSatisfy` Text.isInfixOf "does not match the project target version"
+            err.details `shouldSatisfy` any (\(k, _) -> k == "target")
 
     it "leaves no temporary database behind after a successful run" do
-      mUrl <- lookupEnv "DATABASE_URL"
-      case mUrl of
-        Nothing -> pendingWith "DATABASE_URL not set"
-        Just urlStr -> do
-          let url = Text.pack urlStr
-          _ <- runWithAnalyserViaUrl url 18 do
-            executeMigration "create table cleanup_check (id int4);"
-          remaining <- listPgenieTempDbs urlStr
-          remaining `shouldBe` []
+      withRunningServer "postgres:18" \(host, port) -> do
+        let url = serverConnSettings host port
+        _ <- runWithAnalyserViaUrl url 18 do
+          executeMigration "create table cleanup_check (id int4);"
+        remaining <- listPgenieTempDbs url
+        remaining `shouldBe` []
 
     it "leaves no temporary database behind after a failed run" do
-      mUrl <- lookupEnv "DATABASE_URL"
-      case mUrl of
-        Nothing -> pendingWith "DATABASE_URL not set"
-        Just urlStr -> do
-          let url = Text.pack urlStr
-          _ <- runWithAnalyserViaUrl url 18 do
-            -- Deliberate failure after the temp DB has been created.
-            throwError
-              Error
-                { path = [],
-                  message = "deliberate test failure",
-                  suggestion = Nothing,
-                  details = []
-                }
-          remaining <- listPgenieTempDbs urlStr
-          remaining `shouldBe` []
+      withRunningServer "postgres:18" \(host, port) -> do
+        let url = serverConnSettings host port
+        _ <- runWithAnalyserViaUrl url 18 do
+          -- Deliberate failure after the temp DB has been created.
+          throwError
+            Error
+              { path = [],
+                message = "deliberate test failure",
+                suggestion = Nothing,
+                details = []
+              }
+        remaining <- listPgenieTempDbs url
+        remaining `shouldBe` []
+
+    it "handles multiple concurrent analyses without race conditions" do
+      withRunningServer "postgres:18" \(host, port) -> do
+        let url = serverConnSettings host port
+        -- Launch 5 independent analyses concurrently on the same server.
+        -- Each creates its own UUID-named temp DB, so there should be no conflicts.
+        vars <- replicateM 5 newEmptyMVar
+        for_ vars $ \var ->
+          forkIO do
+            result <- runWithAnalyserViaUrl url 18 do
+              executeMigration "create table t (id int4 primary key);"
+              fst <$> inferQueryTypes "select id from t"
+            putMVar var result
+        results <- mapM takeMVar vars
+        for_ results $ \case
+          Left err -> expectationFailure ("Concurrent run failed: " <> show err)
+          Right _ -> pure ()
+        -- All temp databases must have been cleaned up.
+        remaining <- listPgenieTempDbs url
+        remaining `shouldBe` []
 
 -- ---------------------------------------------------------------------------
 -- Helpers
@@ -291,11 +305,43 @@ runWithAnalyserViaUrl url targetMajorVersion action =
     & exposeErr
     & Fx.runFx
 
+-- | Spin up a temporary PostgreSQL container, pass @(host, port)@ to the
+-- callback, and stop the container when the callback finishes.
+withRunningServer :: Text -> ((Text, Word16) -> IO a) -> IO a
+withRunningServer tag callback =
+  bracket acquire cleanup (callback . fst)
+  where
+    config =
+      TestcontainersPostgresql.Config
+        { tagName = tag,
+          auth = TestcontainersPostgresql.TrustAuth,
+          forwardLogs = False
+        }
+
+    acquire :: IO ((Text, Word16), ResourceT.InternalState)
+    acquire = do
+      tcConfig <- Tc.determineConfig
+      Tc.runTestContainer tcConfig do
+        hostAndPort <- TestcontainersPostgresql.setup config
+        releaseMap <- ResourceT.liftResourceT ResourceT.getInternalState
+        liftIO (ResourceT.stateAlloc releaseMap)
+        pure (hostAndPort, releaseMap)
+
+    cleanup :: ((Text, Word16), ResourceT.InternalState) -> IO ()
+    cleanup (_, internalState) =
+      ResourceT.stateCleanup ResourceT.ReleaseNormal internalState
+
+-- | Build a libpq keyword=value connection string for the test container.
+-- Connects as the @postgres@ superuser with no password (trust auth).
+serverConnSettings :: Text -> Word16 -> Text
+serverConnSettings host port =
+  "host=" <> host <> " port=" <> Text.pack (show port) <> " user=postgres"
+
 -- | List the names of any leftover @pgenie_*@ databases on the server.
 -- Used to verify that temporary databases are cleaned up.
-listPgenieTempDbs :: String -> IO [String]
-listPgenieTempDbs urlStr = do
-  conn <- Pq.connectdb (TextEncoding.encodeUtf8 (Text.pack urlStr))
+listPgenieTempDbs :: Text -> IO [Text]
+listPgenieTempDbs connSettings = do
+  conn <- Pq.connectdb (TextEncoding.encodeUtf8 connSettings)
   st <- Pq.status conn
   names <-
     if st /= Pq.ConnectionOk
@@ -311,7 +357,7 @@ listPgenieTempDbs urlStr = do
               else do
                 n <- Pq.ntuples res
                 forM [0 .. n - 1] \i ->
-                  fmap (maybe "" (Text.unpack . TextEncoding.decodeUtf8Lenient)) (Pq.getvalue res i 0)
+                  fmap (foldMap TextEncoding.decodeUtf8Lenient) (Pq.getvalue res i 0)
   Pq.finish conn
   pure names
 

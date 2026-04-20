@@ -221,6 +221,9 @@ test-suite infra-test
     pgenie:utils,
     pgenie-gen,
     postgresql-libpq,
+    resourcet,
+    testcontainers,
+    testcontainers-postgresql,
     text,
 
 library infra

@@ -90,135 +90,136 @@ scopeViaDocker postgresTag emitEvent = do
 -- The temporary database is dropped when the scope exits (on success or error).
 scopeViaRunningServer :: Text -> Int -> (Logic.Event -> IO ()) -> Fx.Scope Logic.Error Device
 scopeViaRunningServer connectionUrl targetMajorVersion emitEvent = do
+  let serverSettings = Hasql.Connection.Settings.connectionString connectionUrl
+
   acquire $ runTotalIO \() -> emitEvent (Logic.StageEntered ["Connecting"])
-  device <- scopeTempDb (Hasql.Connection.Settings.connectionString connectionUrl) targetMajorVersion
-  acquire $ runTotalIO \() -> emitEvent (Logic.StageExited ["Connecting"] 0.1)
-  pure device
-  where
-    -- Isolated sub-scope for the temporary database lifecycle.
-    -- Cleanup order (LIFO): release analysis pool → drop temp DB → release admin pool.
-    scopeTempDb :: Hasql.Connection.Settings.Settings -> Int -> Fx.Scope Logic.Error Device
-    scopeTempDb serverSettings targetVersion = do
-      -- Admin pool (size 1) for version check and DB management.
-      -- Its release is registered first so it runs last in LIFO cleanup.
-      adminPool <-
-        scopePool
-          ( Hasql.Pool.Config.settings
-              [ Hasql.Pool.Config.size 1,
-                Hasql.Pool.Config.staticConnectionSettings serverSettings
-              ]
-          )
 
-      -- Validate the server major version by reusing the admin pool connection.
-      serverMajorVersion <- acquire $ runPartialIO \() -> do
-        res <- Hasql.Pool.use adminPool queryVersionSession
-        pure $ case res of
-          Left poolErr ->
-            Left
-              Logic.Error
-                { path = [],
-                  message = "Failed to query PostgreSQL server version: " <> Text.pack (show poolErr),
-                  suggestion = Nothing,
-                  details = []
-                }
-          Right (Left msg) ->
-            Left
-              Logic.Error
-                { path = [],
-                  message = "Failed to query server version: " <> msg,
-                  suggestion = Nothing,
-                  details = []
-                }
-          Right (Right n) -> Right n
+  -- Admin pool (size 1) for version check and DB management.
+  -- Its release is registered first so it runs last in LIFO cleanup.
+  adminPool <-
+    scopePool
+      ( Hasql.Pool.Config.settings
+          [ Hasql.Pool.Config.size 1,
+            Hasql.Pool.Config.staticConnectionSettings serverSettings
+          ]
+      )
 
-      when (serverMajorVersion /= targetVersion) do
-        throwError
+  -- Validate the server major version by reusing the admin pool connection.
+  serverMajorVersion <- acquire $ runPartialIO \() -> do
+    res <- Hasql.Pool.use adminPool queryVersionSession
+    pure $ case res of
+      Left poolErr ->
+        Left
           Logic.Error
             { path = [],
-              message =
-                "PostgreSQL server version "
-                  <> Text.pack (show serverMajorVersion)
-                  <> " does not match the project target version "
-                  <> Text.pack (show targetVersion),
-              suggestion =
-                Just
-                  ( "Set 'postgres: "
-                      <> Text.pack (show serverMajorVersion)
-                      <> "' in the project file to match the running server, "
-                      <> "or start a PostgreSQL "
-                      <> Text.pack (show targetVersion)
-                      <> " server"
-                  ),
+              message = "Failed to connect to PostgreSQL server",
+              suggestion = Nothing,
               details =
-                [ ("server", Text.pack (show serverMajorVersion)),
-                  ("target", Text.pack (show targetVersion))
+                [ ("reason", Text.pack (show poolErr))
                 ]
             }
+      Right (Left msg) ->
+        Left
+          Logic.Error
+            { path = [],
+              message = "Failed to query server version",
+              suggestion = Nothing,
+              details =
+                [ ("reason", msg)
+                ]
+            }
+      Right (Right n) -> Right n
 
-      -- Generate a UUID-based name for the temporary analysis database.
-      tempDbName <- acquire $ runTotalIO \() -> do
-        uuid <- UUID.V4.nextRandom
-        let uuidText = Text.pack (UUID.toString uuid)
-        pure ("pgenie_" <> Text.map (\c -> if c == '-' then '_' else c) uuidText)
+  when (serverMajorVersion /= targetMajorVersion) do
+    throwError
+      Logic.Error
+        { path = [],
+          message =
+            "PostgreSQL server version "
+              <> Text.pack (show serverMajorVersion)
+              <> " does not match the project target version "
+              <> Text.pack (show targetMajorVersion),
+          suggestion =
+            Just
+              ( "Set 'postgres: "
+                  <> Text.pack (show serverMajorVersion)
+                  <> "' in the project file to match the running server, "
+                  <> "or start a PostgreSQL "
+                  <> Text.pack (show targetMajorVersion)
+                  <> " server"
+              ),
+          details =
+            [ ("server", Text.pack (show serverMajorVersion)),
+              ("target", Text.pack (show targetMajorVersion))
+            ]
+        }
 
-      -- Create the temporary database via the admin pool.
-      acquire $ runPartialIO \() -> do
-        res <- Hasql.Pool.use adminPool (Hasql.Session.script ("CREATE DATABASE " <> quoteIdent tempDbName))
-        pure $ case res of
-          Left poolErr ->
-            Left
-              Logic.Error
-                { path = [],
-                  message = "Failed to create temporary analysis database",
-                  suggestion = Just "Ensure the database user has the CREATEDB privilege",
-                  details = [("reason", Text.pack (show poolErr))]
-                }
-          Right () -> Right ()
+  -- Generate a UUID-based name for the temporary analysis database.
+  tempDbName <- acquire $ runTotalIO \() -> do
+    uuid <- UUID.V4.nextRandom
+    let uuidText = Text.pack (UUID.toString uuid)
+    pure ("pgenie_" <> Text.map (\c -> if c == '-' then '_' else c) uuidText)
 
-      -- Register DROP DATABASE *before* creating the analysis pool so that in
-      -- LIFO cleanup order it runs after the analysis pool is released.
-      registerRelease $ runTotalIO \() -> do
-        _ <- Hasql.Pool.use adminPool (Hasql.Session.script ("DROP DATABASE " <> quoteIdent tempDbName))
-        pure ()
+  -- Create the temporary database via the admin pool.
+  acquire $ runPartialIO \() -> do
+    res <- Hasql.Pool.use adminPool (Hasql.Session.script ("CREATE DATABASE " <> quoteIdent tempDbName))
+    pure $ case res of
+      Left poolErr ->
+        Left
+          Logic.Error
+            { path = [],
+              message = "Failed to create temporary analysis database",
+              suggestion = Just "Ensure the database user has the CREATEDB privilege",
+              details = [("reason", Text.pack (show poolErr))]
+            }
+      Right () -> Right ()
 
-      -- Analysis pool on the temporary database.
-      -- Its release is registered last so it runs first in LIFO cleanup.
-      let analysisSettings = serverSettings <> Hasql.Connection.Settings.dbname tempDbName
-      analysisPool <-
-        scopePool
-          ( Hasql.Pool.Config.settings
-              [ Hasql.Pool.Config.size 100,
-                Hasql.Pool.Config.staticConnectionSettings analysisSettings
-              ]
-          )
+  -- Register DROP DATABASE *before* creating the analysis pool so that in
+  -- LIFO cleanup order it runs after the analysis pool is released.
+  registerRelease $ runTotalIO \() -> do
+    _ <- Hasql.Pool.use adminPool (Hasql.Session.script ("DROP DATABASE " <> quoteIdent tempDbName))
+    pure ()
 
-      pure (Device analysisPool)
+  -- Analysis pool on the temporary database.
+  -- Its release is registered last so it runs first in LIFO cleanup.
+  let analysisSettings = serverSettings <> Hasql.Connection.Settings.dbname tempDbName
+  analysisPool <-
+    scopePool
+      ( Hasql.Pool.Config.settings
+          [ Hasql.Pool.Config.size 100,
+            Hasql.Pool.Config.staticConnectionSettings analysisSettings
+          ]
+      )
+
+  acquire $ runTotalIO \() -> emitEvent (Logic.StageExited ["Connecting"] 1)
+
+  pure (Device analysisPool)
+  where
+    -- Session that reads the server major version via the existing connection,
+    -- avoiding the need to open a separate libpq connection.
+    queryVersionSession :: Hasql.Session.Session (Either Text Int)
+    queryVersionSession =
+      Hasql.Session.onLibpqConnection \conn -> do
+        mResult <- Pq.exec conn "SELECT current_setting('server_version_num')::int / 10000"
+        result <- case mResult of
+          Nothing -> fmap (Left . msgOf) (Pq.errorMessage conn)
+          Just res -> do
+            rst <- Pq.resultStatus res
+            if rst == Pq.TuplesOk
+              then do
+                mVal <- Pq.getvalue res (Pq.Row 0) (Pq.Col 0)
+                pure $ case mVal >>= readMaybe . Text.unpack . TextEncoding.decodeUtf8Lenient of
+                  Just n -> Right n
+                  Nothing -> Left "Could not parse server_version_num"
+              else fmap (Left . msgOf) (Pq.resultErrorMessage res)
+        pure (Right result, conn)
       where
-        -- Session that reads the server major version via the existing connection,
-        -- avoiding the need to open a separate libpq connection.
-        queryVersionSession :: Hasql.Session.Session (Either Text Int)
-        queryVersionSession =
-          Hasql.Session.onLibpqConnection \conn -> do
-            mResult <- Pq.exec conn "SELECT current_setting('server_version_num')::int / 10000"
-            result <- case mResult of
-              Nothing -> fmap (Left . msgOf) (Pq.errorMessage conn)
-              Just res -> do
-                rst <- Pq.resultStatus res
-                if rst == Pq.TuplesOk
-                  then do
-                    mVal <- Pq.getvalue res (Pq.Row 0) (Pq.Col 0)
-                    pure $ case mVal >>= readMaybe . Text.unpack . TextEncoding.decodeUtf8Lenient of
-                      Just n -> Right n
-                      Nothing -> Left "Could not parse server_version_num"
-                  else fmap (Left . msgOf) (Pq.resultErrorMessage res)
-            pure (Right result, conn)
-          where
-            msgOf :: Maybe ByteString -> Text
-            msgOf = maybe "Unknown error" TextEncoding.decodeUtf8Lenient
+        msgOf :: Maybe ByteString -> Text
+        msgOf = maybe "Unknown error" TextEncoding.decodeUtf8Lenient
 
-        -- Double-quote a PostgreSQL identifier for safe embedding in DDL.
-        quoteIdent :: Text -> Text
-        quoteIdent ident = "\"" <> Text.replace "\"" "\"\"" ident <> "\""
+    -- Double-quote a PostgreSQL identifier for safe embedding in DDL.
+    quoteIdent :: Text -> Text
+    quoteIdent ident = "\"" <> Text.replace "\"" "\"\"" ident <> "\""
 
 -- | Acquire a Hasql pool for the duration of the enclosing scope and register
 -- its release as a cleanup action.  Used by both Docker and running-server paths.

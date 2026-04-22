@@ -89,5 +89,5 @@ jobs:
     with:
       artifact-name: pgn-macos-x64
       runner: macos-15-intel
-      setup-docker: true
-      run-server-mode: false
+      run-docker-mode: true
+      run-server-mode: true

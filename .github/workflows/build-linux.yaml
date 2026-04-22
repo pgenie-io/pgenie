@@ -61,3 +61,5 @@ jobs:
     with:
       artifact-name: pgn-linux-x64
       runner: ubuntu-latest
+      run-docker-mode: true
+      run-server-mode: true

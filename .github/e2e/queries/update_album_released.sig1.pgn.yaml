@@ -1,0 +1,7 @@
+parameters:
+  released:
+    type: date
+    not_null: false
+  id:
+    type: int8
+    not_null: false

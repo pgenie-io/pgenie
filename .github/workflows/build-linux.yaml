@@ -55,14 +55,7 @@ jobs:
           name: ${{ env.artifact-name }}
           path: ${{ env.artifact-name }}.tar.gz
 
-  # Download the uploaded artifact on a fresh runner and run the full
-  # artifact-generation workflow against the demo project.  This simulates
-  # what a real user does after downloading the binary from a GitHub release:
-  # the runner starts in a clean state without any of the build dependencies
-  # cached, so this validates that the artifact is truly self-contained and
-  # does not rely on any undeclared dependencies that happened to be present
-  # in the build environment.
-  validate-artifact:
+  e2e-sanity-check:
     needs: build
     runs-on: ubuntu-latest
 
@@ -79,23 +72,114 @@ jobs:
       - name: Extract binary
         shell: bash
         run: |
-          cd artifact
-          tar -xzf "${{ env.artifact-name }}.tar.gz"
-          ls -la
+          tar -xzf "artifact/${{ env.artifact-name }}.tar.gz" -C artifact
+          chmod +x artifact/pgn
 
-      - name: Run basic check on the binary
-        run: |
-          "$GITHUB_WORKSPACE/artifact/pgn" --version
+      - name: Verify binary version
+        run: artifact/pgn --version
 
-      - name: Checkout demo project
-        uses: actions/checkout@v6
+  e2e-docker-mode:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install libpq
+        run: sudo apt-get update && sudo apt-get install -y libpq5
+
+      - name: Download artifact
+        uses: actions/download-artifact@v8
         with:
-          repository: pgenie-io/demo
-          ref: 3fd8694f8f77c46e99c5b2d16a88f63b0d6aa21b
-          path: demo
+          name: ${{ env.artifact-name }}
+          path: artifact
 
-      - name: Run end-to-end test
+      - name: Extract binary
         shell: bash
         run: |
-          cd "$GITHUB_WORKSPACE/demo"
-          "$GITHUB_WORKSPACE/artifact/pgn" generate
+          tar -xzf "artifact/${{ env.artifact-name }}.tar.gz" -C artifact
+          chmod +x artifact/pgn
+
+      - name: Set up test project
+        run: cp -r .github/e2e e2e-project
+
+      - name: analyse – docker mode
+        working-directory: e2e-project
+        run: $GITHUB_WORKSPACE/artifact/pgn analyse
+
+      - name: generate – docker mode
+        working-directory: e2e-project
+        run: $GITHUB_WORKSPACE/artifact/pgn generate
+
+      - name: manage-indexes – docker mode (output only)
+        working-directory: e2e-project
+        run: $GITHUB_WORKSPACE/artifact/pgn manage-indexes
+
+      - name: manage-indexes – docker mode (add migration)
+        working-directory: e2e-project
+        run: |
+          $GITHUB_WORKSPACE/artifact/pgn manage-indexes --add-migration
+          # Verify the migration file was created
+          ls migrations/ | grep -E '^[0-9]+\.sql$'
+
+  e2e-running-server-mode:
+    needs: build
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: "host=localhost port=5432 user=postgres password=postgres"
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install libpq
+        run: sudo apt-get update && sudo apt-get install -y libpq5
+
+      - name: Download artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.artifact-name }}
+          path: artifact
+
+      - name: Extract binary
+        shell: bash
+        run: |
+          tar -xzf "artifact/${{ env.artifact-name }}.tar.gz" -C artifact
+          chmod +x artifact/pgn
+
+      - name: Set up test project
+        run: cp -r .github/e2e e2e-project
+
+      - name: analyse – running-server mode
+        working-directory: e2e-project
+        run: $GITHUB_WORKSPACE/artifact/pgn --database-url "$DATABASE_URL" analyse
+
+      - name: generate – running-server mode
+        working-directory: e2e-project
+        run: $GITHUB_WORKSPACE/artifact/pgn --database-url "$DATABASE_URL" generate
+
+      - name: manage-indexes – running-server mode (output only)
+        working-directory: e2e-project
+        run: $GITHUB_WORKSPACE/artifact/pgn --database-url "$DATABASE_URL" manage-indexes
+
+      - name: manage-indexes – running-server mode (add migration)
+        working-directory: e2e-project
+        run: |
+          $GITHUB_WORKSPACE/artifact/pgn --database-url "$DATABASE_URL" manage-indexes --add-migration
+          # Verify the migration file was created
+          ls migrations/ | grep -E '^[0-9]+\.sql$'

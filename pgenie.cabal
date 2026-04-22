@@ -220,6 +220,10 @@ test-suite infra-test
     pgenie:logic,
     pgenie:utils,
     pgenie-gen,
+    postgresql-libpq,
+    resourcet,
+    testcontainers,
+    testcontainers-postgresql,
     text,
 
 library infra
@@ -278,6 +282,7 @@ library infra
     testcontainers-postgresql,
     text,
     text-builder,
+    uuid,
     vector,
 
 library ui

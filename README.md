@@ -20,7 +20,7 @@ Pre-built binaries are available for common platforms. See the **[Installation G
 
 #### Prerequisites
 
-- **Docker** — Must be installed and running. pGenie uses Docker to analyze SQL in a real PostgreSQL environment.
+- **Docker** *(optional)* — Required only when `--database-url` is **not** provided. pGenie can spin up a temporary PostgreSQL container automatically, but you can skip Docker entirely by pointing it at a running server with `--database-url`.
 - **libpq** — Required for building the Haskell bindings to PostgreSQL. On Debian/Ubuntu, install with `sudo apt-get install libpq-dev`, on macOS with `brew install libpq`.
 
 #### Using Stack
@@ -51,3 +51,28 @@ cd pgenie
 cabal update
 cabal install
 ```
+
+## Using a Running PostgreSQL Server
+
+By default, `pgn` launches a temporary Docker container for each run. You can skip Docker entirely by supplying a PostgreSQL connection string with `--database-url`:
+
+```bash
+pgn --database-url "postgresql://user:password@localhost:5432/mydb" analyse
+pgn --database-url "postgresql://user:password@localhost:5432/mydb" generate
+pgn --database-url "host=localhost port=5432 user=myuser password=mypass dbname=mydb" manage-indexes
+```
+
+Both URI format (`postgresql://...`) and libpq keyword=value format are accepted.
+
+> **Security note:** Credentials in command-line arguments may appear in shell history and process listings (e.g., `ps aux`). For production or shared environments, prefer using a [PostgreSQL connection service file](https://www.postgresql.org/docs/current/libpq-pgservice.html) (`~/.pg_service.conf`) or the `PGPASSFILE` / `PGPASSWORD` environment variables so that the URL itself contains no secrets.
+
+### Requirements
+
+- **CREATEDB privilege** — pGenie creates a temporary database on the server for each run and drops it afterwards. The connecting user must hold the `CREATEDB` privilege (or be a superuser).
+- **Version match** — The connected server's major version must match the `postgres` field in your project file (default: 18). If they differ, pGenie reports an error such as:
+
+  ```
+  PostgreSQL server version 16 does not match the project target version 18
+  ```
+
+  Fix this by either updating `postgres:` in `project1.pgn.yaml` to match your running server, or connecting to a server with the correct major version.

@@ -1,0 +1,4 @@
+space: e2e
+name: music_catalogue
+version: 1.0.0
+postgres: 18

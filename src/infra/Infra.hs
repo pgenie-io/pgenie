@@ -11,11 +11,11 @@ import Logic qualified
 import System.Exit qualified as Exit
 import Utils.Prelude
 
-run :: (Logic.Event -> IO ()) -> Fx MainAdapter.Device Logic.Error Text -> IO ()
-run emitEvent fx = do
+run :: (Logic.Event -> IO ()) -> Maybe Text -> Fx MainAdapter.Device Logic.Error Text -> IO ()
+run emitEvent maybeDatabaseUrl fx = do
   result <-
     fx
-      & scoping (MainAdapter.scope emitEvent)
+      & scoping (MainAdapter.scope emitEvent maybeDatabaseUrl)
       & exposeErr
       & Fx.runFx
   case result of

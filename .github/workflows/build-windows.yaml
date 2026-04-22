@@ -110,7 +110,7 @@ jobs:
         shell: pwsh
         run: |
           $pgBin = (Get-Item "C:\Program Files\PostgreSQL\*\bin" |
-                    Sort-Object { [version]($_.Parent.Name) } |
+                    Sort-Object { [int]($_.Parent.Name) } |
                     Select-Object -Last 1).FullName
           $pgData = "$env:USERPROFILE\pgdata"
           # Initialise with trust auth – no password required for testing

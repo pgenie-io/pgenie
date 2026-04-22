@@ -17,13 +17,13 @@ import Data.Text qualified as Text
 import Dhall.Core qualified as Dhall
 import Dhall.Marshal.Encode qualified as Dhall
 import Logic.Algebra
+import Logic.CustomTypeSignatureFile qualified as CustomTypeSignatureFile
 import Logic.Dsl
 import Logic.GeneratorHashes qualified as GeneratorHashes
 import Logic.IndexOptimizer qualified as IndexOptimizer
 import Logic.Name qualified as Name
 import Logic.ProjectFile qualified as ProjectFile
 import Logic.SeqScanDetector qualified as SeqScanDetector
-import Logic.CustomTypeSignatureFile qualified as CustomTypeSignatureFile
 import Logic.SignatureFile qualified as SignatureFile
 import Logic.SqlTemplate qualified as SqlTemplate
 import Logic.SyntaxAnalyser qualified as SyntaxAnalyser
@@ -442,36 +442,7 @@ analyseProject projectFile =
       stage "Custom types" (length customTypes) do
         for customTypes \ct ->
           stage (ct.pgSchema <> "." <> ct.pgName) 0 do
-            let sigPath =
-                  CustomTypeSignatureFile.customTypeSignatureFilePath
-                    ct.pgSchema
-                    ct.pgName
-            case CustomTypeSignatureFile.fromInferred ct of
-              Nothing ->
-                pure ct
-              Just inferredSig -> do
-                maybeSigContent <-
-                  catchError
-                    (Just <$> readFile sigPath)
-                    (\(_ :: Error) -> pure Nothing)
-                case maybeSigContent of
-                  Nothing -> do
-                    writeFile sigPath (CustomTypeSignatureFile.serialize inferredSig)
-                    pure ct
-                  Just sigContent -> do
-                    fileSig <- case CustomTypeSignatureFile.tryParse sigContent of
-                      Left err ->
-                        throwError
-                          ( Error
-                              []
-                              "Failed to parse custom-type signature file"
-                              (Just "Check the YAML syntax in the signature file")
-                              [("file", Path.toText sigPath), ("error", err)]
-                          )
-                      Right sig -> pure sig
-                    case CustomTypeSignatureFile.validateAndMerge ct fileSig of
-                      Left err -> throwError err
-                      Right refined -> pure refined
+            CustomTypeSignatureFile.refineFromSignatureFile ct
 
     pure
       ( Gen.Input.Project

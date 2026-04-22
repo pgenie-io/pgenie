@@ -3,6 +3,7 @@ module Logic.CustomTypeSignatureFile
     CompositeFieldSig (..),
     customTypeSignatureFilePath,
     fromInferred,
+    refineFromSignatureFile,
     serialize,
     tryParse,
     validateAndMerge,
@@ -14,6 +15,7 @@ import Control.Foldl qualified as Fold
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as Text
+import Logic.Algebra (FsOps (readFile, writeFile))
 import Logic.Error qualified as Error
 import PGenieGen.Model.Input qualified as Gen.Input
 import Utils.Prelude hiding (readFile, writeFile)
@@ -74,6 +76,37 @@ fromInferred ct =
     memberToFieldEntry :: Gen.Input.Member -> (Text, CompositeFieldSig)
     memberToFieldEntry m =
       (m.pgName, compositeFieldSigFromValue m.value (not m.isNullable))
+
+-- | Load, create, and validate the custom-type signature file for an inferred
+-- custom type.
+refineFromSignatureFile :: (FsOps m) => Gen.Input.CustomType -> m Gen.Input.CustomType
+refineFromSignatureFile ct =
+  case fromInferred ct of
+    Nothing -> pure ct
+    Just inferredSig -> do
+      let sigPath = customTypeSignatureFilePath ct.pgSchema ct.pgName
+      maybeSigContent <-
+        catchError
+          (Just <$> readFile sigPath)
+          (\(_ :: Error.Error) -> pure Nothing)
+      case maybeSigContent of
+        Nothing -> do
+          writeFile sigPath (serialize inferredSig)
+          pure ct
+        Just sigContent -> do
+          fileSig <- case tryParse sigContent of
+            Left err ->
+              throwError
+                ( Error.Error
+                    []
+                    "Failed to parse custom-type signature file"
+                    (Just "Check the YAML syntax in the signature file")
+                    [("file", Path.toText sigPath), ("error", err)]
+                )
+            Right sig -> pure sig
+          case validateAndMerge ct fileSig of
+            Left err -> throwError err
+            Right refined -> pure refined
 
 compositeFieldSigFromValue :: Gen.Input.Value -> Bool -> CompositeFieldSig
 compositeFieldSigFromValue value fieldNotNull =

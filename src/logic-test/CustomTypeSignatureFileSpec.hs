@@ -86,8 +86,7 @@ spec = do
     it "produces expected YAML for an enum" do
       let sig = EnumSig ["foo", "bar"]
           expected =
-            "kind: enum\n\
-            \variants:\n\
+            "enum:\n\
             \  - foo\n\
             \  - bar\n"
       serialize sig `shouldBe` expected
@@ -95,8 +94,7 @@ spec = do
     it "produces expected YAML for an empty enum" do
       let sig = EnumSig []
           expected =
-            "kind: enum\n\
-            \variants: []\n"
+            "enum: []\n"
       serialize sig `shouldBe` expected
 
     it "produces expected YAML for a composite" do
@@ -106,8 +104,7 @@ spec = do
                 ("notes", ScalarCompositeFieldSig {typeName = "text", notNull = False})
               ]
           expected =
-            "kind: composite\n\
-            \fields:\n\
+            "composite:\n\
             \  id:\n\
             \    type: uuid\n\
             \    not_null: true\n\
@@ -128,8 +125,7 @@ spec = do
                 )
               ]
           expected =
-            "kind: composite\n\
-            \fields:\n\
+            "composite:\n\
             \  items:\n\
             \    type: int4\n\
             \    not_null: false\n\

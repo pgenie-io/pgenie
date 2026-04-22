@@ -249,14 +249,12 @@ genNameToText name =
 serialize :: CustomTypeSig -> Text
 serialize = \case
   EnumSig variants ->
-    "kind: enum\n"
-      <> "variants:"
+    "enum:"
       <> if null variants
         then " []\n"
         else "\n" <> foldMap renderVariant variants
   CompositeSig fields ->
-    "kind: composite\n"
-      <> "fields:"
+    "composite:"
       <> if null fields
         then " {}\n"
         else "\n" <> foldMap renderField fields
@@ -312,8 +310,8 @@ tryParse text =
       U.mappingValue
         $ U.byKeyMapping (U.CaseSensitive True)
         $ asum
-          [ EnumSig <$> U.atByKey "variants" variantsValue,
-            CompositeSig <$> U.atByKey "fields" fieldsValue
+          [ EnumSig <$> U.atByKey "enum" variantsValue,
+            CompositeSig <$> U.atByKey "composite" fieldsValue
           ]
 
     variantsValue :: U.Value [Text]

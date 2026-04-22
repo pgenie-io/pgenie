@@ -83,43 +83,11 @@ jobs:
           name: ${{ env.artifact-name }}
           path: ${{ env.artifact-name }}.tar.gz
 
-  validate-artifact:
+  e2e:
     needs: build
-    runs-on: macos-15-intel
-
-    steps:
-      - name: Install libpq
-        run: brew install libpq
-
-      - name: Download artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: ${{ env.artifact-name }}
-          path: artifact
-
-      - name: Extract binary
-        shell: bash
-        run: |
-          cd artifact
-          tar -xzf "${{ env.artifact-name }}.tar.gz"
-          ls -la
-
-      - name: Run basic check on the binary
-        run: |
-          "$GITHUB_WORKSPACE/artifact/pgn" --version
-
-      - name: Checkout demo project
-        uses: actions/checkout@v6
-        with:
-          repository: pgenie-io/demo
-          ref: 3fd8694f8f77c46e99c5b2d16a88f63b0d6aa21b
-          path: demo
-
-      - name: Set up Docker
-        uses: docker/setup-docker-action@v5
-
-      - name: Run end-to-end test
-        shell: bash
-        run: |
-          cd "$GITHUB_WORKSPACE/demo"
-          "$GITHUB_WORKSPACE/artifact/pgn" generate
+    uses: ./.github/workflows/e2e-test.yaml
+    with:
+      artifact-name: pgn-macos-x64
+      runner: macos-15-intel
+      setup-docker: true
+      run-server-mode: false

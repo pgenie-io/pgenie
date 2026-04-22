@@ -78,27 +78,11 @@ jobs:
           name: ${{ env.artifact-name }}
           path: ${{ env.artifact-name }}.tar.gz
 
-  validate-artifact:
+  e2e:
     needs: build
-    runs-on: macos-14
-
-    steps:
-      - name: Install libpq
-        run: brew install libpq
-
-      - name: Download artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: ${{ env.artifact-name }}
-          path: artifact
-
-      - name: Extract binary
-        shell: bash
-        run: |
-          cd artifact
-          tar -xzf "${{ env.artifact-name }}.tar.gz"
-          ls -la
-
-      - name: Run basic check on the binary
-        run: |
-          "$GITHUB_WORKSPACE/artifact/pgn" --version
+    uses: ./.github/workflows/e2e-test.yaml
+    with:
+      artifact-name: pgn-macos-arm64
+      runner: macos-14
+      run-docker-mode: false
+      run-server-mode: false

@@ -37,11 +37,6 @@ jobs:
     uses: ./.github/workflows/sdist.yaml
     secrets: inherit
 
-  e2e:
-    name: End-to-end tests
-    uses: ./.github/workflows/e2e.yaml
-    secrets: inherit
-
   build-stack:
     name: Build and test via Stack
     runs-on: ubuntu-latest

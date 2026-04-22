@@ -55,47 +55,9 @@ jobs:
           name: ${{ env.artifact-name }}
           path: ${{ env.artifact-name }}.tar.gz
 
-  # Download the uploaded artifact on a fresh runner and run the full
-  # artifact-generation workflow against the demo project.  This simulates
-  # what a real user does after downloading the binary from a GitHub release:
-  # the runner starts in a clean state without any of the build dependencies
-  # cached, so this validates that the artifact is truly self-contained and
-  # does not rely on any undeclared dependencies that happened to be present
-  # in the build environment.
-  validate-artifact:
+  e2e:
     needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Install libpq
-        run: sudo apt-get update && sudo apt-get install -y libpq5
-
-      - name: Download artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: ${{ env.artifact-name }}
-          path: artifact
-
-      - name: Extract binary
-        shell: bash
-        run: |
-          cd artifact
-          tar -xzf "${{ env.artifact-name }}.tar.gz"
-          ls -la
-
-      - name: Run basic check on the binary
-        run: |
-          "$GITHUB_WORKSPACE/artifact/pgn" --version
-
-      - name: Checkout demo project
-        uses: actions/checkout@v6
-        with:
-          repository: pgenie-io/demo
-          ref: 3fd8694f8f77c46e99c5b2d16a88f63b0d6aa21b
-          path: demo
-
-      - name: Run end-to-end test
-        shell: bash
-        run: |
-          cd "$GITHUB_WORKSPACE/demo"
-          "$GITHUB_WORKSPACE/artifact/pgn" generate
+    uses: ./.github/workflows/e2e-test.yaml
+    with:
+      artifact-name: pgn-linux-x64
+      runner: ubuntu-latest

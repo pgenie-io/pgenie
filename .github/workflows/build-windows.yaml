@@ -106,37 +106,21 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Start PostgreSQL service
+      - name: Initialise and start PostgreSQL
         shell: pwsh
         run: |
-          $svc = Get-Service 'postgresql*' | Select-Object -First 1
-          if ($null -eq $svc) { throw "No PostgreSQL service found on this runner." }
-          Start-Service $svc.Name
-          Write-Host "Started service: $($svc.Name)"
-
-      - name: Add PostgreSQL bin to PATH and wait for readiness
-        shell: bash
-        run: |
-          PG_ROOT=$(ls -d "/c/Program Files/PostgreSQL/"* 2>/dev/null | sort -V | tail -1)
-          echo "$PG_ROOT/bin" >> "$GITHUB_PATH"
-          export PATH="$PG_ROOT/bin:$PATH"
-          attempts=0
-          until pg_isready -h localhost -U postgres || [ $attempts -ge 30 ]; do
-            sleep 1
-            attempts=$((attempts + 1))
-          done
-          if ! pg_isready -h localhost -U postgres; then
-            echo "::error::PostgreSQL did not become ready in time."
-            exit 1
-          fi
-
-      - name: Set postgres password
-        shell: bash
-        run: |
-          PG_ROOT=$(ls -d "/c/Program Files/PostgreSQL/"* 2>/dev/null | sort -V | tail -1)
-          # Set password; suppress error if trust auth is already in effect.
-          PGPASSWORD=postgres "$PG_ROOT/bin/psql.exe" -U postgres -h localhost \
-            -c "ALTER USER postgres WITH PASSWORD 'postgres';" 2>/dev/null || true
+          $pgBin = (Get-Item "C:\Program Files\PostgreSQL\*\bin" |
+                    Sort-Object { [version]($_.Parent.Name) } |
+                    Select-Object -Last 1).FullName
+          $pgData = "$env:USERPROFILE\pgdata"
+          # Initialise with trust auth – no password required for testing
+          & "$pgBin\initdb.exe" -D $pgData --auth=trust --username=postgres
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          # Start PostgreSQL and wait until the server is ready
+          & "$pgBin\pg_ctl.exe" start -D $pgData -l "$pgData\postgresql.log" -w
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          # Expose pg tools (pg_isready, libpq.dll, …) to subsequent steps
+          Add-Content $env:GITHUB_PATH $pgBin
 
       - name: Download artifact
         uses: actions/download-artifact@v8

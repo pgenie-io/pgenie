@@ -95,7 +95,7 @@ scopeViaRunningServer connectionUrl targetMajorVersion emitEvent = do
   acquire $ runTotalIO \() -> emitEvent (Logic.StageExited ["Connecting"] 0.1)
   pure device
   where
-    -- | Isolated sub-scope for the temporary database lifecycle.
+    -- Isolated sub-scope for the temporary database lifecycle.
     -- Cleanup order (LIFO): release analysis pool → drop temp DB → release admin pool.
     scopeTempDb :: Hasql.Connection.Settings.Settings -> Int -> Fx.Scope Logic.Error Device
     scopeTempDb serverSettings targetVersion = do
@@ -194,7 +194,7 @@ scopeViaRunningServer connectionUrl targetMajorVersion emitEvent = do
 
       pure (Device analysisPool)
       where
-        -- | Session that reads the server major version via the existing connection,
+        -- Session that reads the server major version via the existing connection,
         -- avoiding the need to open a separate libpq connection.
         queryVersionSession :: Hasql.Session.Session (Either Text Int)
         queryVersionSession =
@@ -216,7 +216,7 @@ scopeViaRunningServer connectionUrl targetMajorVersion emitEvent = do
             msgOf :: Maybe ByteString -> Text
             msgOf = maybe "Unknown error" TextEncoding.decodeUtf8Lenient
 
-        -- | Double-quote a PostgreSQL identifier for safe embedding in DDL.
+        -- Double-quote a PostgreSQL identifier for safe embedding in DDL.
         quoteIdent :: Text -> Text
         quoteIdent ident = "\"" <> Text.replace "\"" "\"\"" ident <> "\""
 

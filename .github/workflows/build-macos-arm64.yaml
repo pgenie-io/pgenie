@@ -78,11 +78,81 @@ jobs:
           name: ${{ env.artifact-name }}
           path: ${{ env.artifact-name }}.tar.gz
 
-  e2e:
+  e2e-sanity-check:
     needs: build
-    uses: ./.github/workflows/e2e-test.yaml
-    with:
-      artifact-name: pgn-macos-arm64
-      runner: macos-14
-      run-docker-mode: false
-      run-server-mode: false
+    runs-on: macos-14
+
+    steps:
+      - name: Install libpq
+        run: brew install libpq
+
+      - name: Download artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.artifact-name }}
+          path: artifact
+
+      - name: Extract binary
+        shell: bash
+        run: |
+          tar -xzf "artifact/${{ env.artifact-name }}.tar.gz" -C artifact
+          chmod +x artifact/pgn
+
+      - name: Verify binary version
+        run: artifact/pgn --version
+
+  e2e-running-server-mode:
+    needs: build
+    runs-on: macos-14
+
+    env:
+      DATABASE_URL: "host=localhost port=5432 user=postgres"
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install libpq
+        run: brew install libpq
+
+      - name: Install and start PostgreSQL
+        run: |
+          brew install postgresql@18
+          PG_BIN="/opt/homebrew/opt/postgresql@18/bin"
+          "$PG_BIN/initdb" -D ~/pgdata --auth=trust --username=postgres
+          "$PG_BIN/pg_ctl" start -D ~/pgdata -l ~/pgdata/postgresql.log
+          until "$PG_BIN/pg_isready" -h localhost -U postgres; do sleep 1; done
+          echo "$PG_BIN" >> $GITHUB_PATH
+
+      - name: Download artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.artifact-name }}
+          path: artifact
+
+      - name: Extract binary
+        shell: bash
+        run: |
+          tar -xzf "artifact/${{ env.artifact-name }}.tar.gz" -C artifact
+          chmod +x artifact/pgn
+
+      - name: Set up test project
+        run: cp -r .github/e2e e2e-project
+
+      - name: analyse – running-server mode
+        working-directory: e2e-project
+        run: $GITHUB_WORKSPACE/artifact/pgn --database-url "$DATABASE_URL" analyse
+
+      - name: generate – running-server mode
+        working-directory: e2e-project
+        run: $GITHUB_WORKSPACE/artifact/pgn --database-url "$DATABASE_URL" generate
+
+      - name: manage-indexes – running-server mode (output only)
+        working-directory: e2e-project
+        run: $GITHUB_WORKSPACE/artifact/pgn --database-url "$DATABASE_URL" manage-indexes
+
+      - name: manage-indexes – running-server mode (add migration)
+        working-directory: e2e-project
+        run: |
+          $GITHUB_WORKSPACE/artifact/pgn --database-url "$DATABASE_URL" manage-indexes --add-migration
+          # Verify the migration file was created
+          ls migrations/ | grep -E '^[0-9]+\.sql$'

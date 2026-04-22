@@ -55,11 +55,131 @@ jobs:
           name: ${{ env.artifact-name }}
           path: ${{ env.artifact-name }}.tar.gz
 
-  e2e:
+  e2e-sanity-check:
     needs: build
-    uses: ./.github/workflows/e2e-test.yaml
-    with:
-      artifact-name: pgn-linux-x64
-      runner: ubuntu-latest
-      run-docker-mode: true
-      run-server-mode: true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install libpq
+        run: sudo apt-get update && sudo apt-get install -y libpq5
+
+      - name: Download artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.artifact-name }}
+          path: artifact
+
+      - name: Extract binary
+        shell: bash
+        run: |
+          tar -xzf "artifact/${{ env.artifact-name }}.tar.gz" -C artifact
+          chmod +x artifact/pgn
+
+      - name: Verify binary version
+        run: artifact/pgn --version
+
+  e2e-docker-mode:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install libpq
+        run: sudo apt-get update && sudo apt-get install -y libpq5
+
+      - name: Download artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.artifact-name }}
+          path: artifact
+
+      - name: Extract binary
+        shell: bash
+        run: |
+          tar -xzf "artifact/${{ env.artifact-name }}.tar.gz" -C artifact
+          chmod +x artifact/pgn
+
+      - name: Set up test project
+        run: cp -r .github/e2e e2e-project
+
+      - name: analyse – docker mode
+        working-directory: e2e-project
+        run: $GITHUB_WORKSPACE/artifact/pgn analyse
+
+      - name: generate – docker mode
+        working-directory: e2e-project
+        run: $GITHUB_WORKSPACE/artifact/pgn generate
+
+      - name: manage-indexes – docker mode (output only)
+        working-directory: e2e-project
+        run: $GITHUB_WORKSPACE/artifact/pgn manage-indexes
+
+      - name: manage-indexes – docker mode (add migration)
+        working-directory: e2e-project
+        run: |
+          $GITHUB_WORKSPACE/artifact/pgn manage-indexes --add-migration
+          # Verify the migration file was created
+          ls migrations/ | grep -E '^[0-9]+\.sql$'
+
+  e2e-running-server-mode:
+    needs: build
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: "host=localhost port=5432 user=postgres password=postgres"
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install libpq
+        run: sudo apt-get update && sudo apt-get install -y libpq5
+
+      - name: Download artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.artifact-name }}
+          path: artifact
+
+      - name: Extract binary
+        shell: bash
+        run: |
+          tar -xzf "artifact/${{ env.artifact-name }}.tar.gz" -C artifact
+          chmod +x artifact/pgn
+
+      - name: Set up test project
+        run: cp -r .github/e2e e2e-project
+
+      - name: analyse – running-server mode
+        working-directory: e2e-project
+        run: $GITHUB_WORKSPACE/artifact/pgn --database-url "$DATABASE_URL" analyse
+
+      - name: generate – running-server mode
+        working-directory: e2e-project
+        run: $GITHUB_WORKSPACE/artifact/pgn --database-url "$DATABASE_URL" generate
+
+      - name: manage-indexes – running-server mode (output only)
+        working-directory: e2e-project
+        run: $GITHUB_WORKSPACE/artifact/pgn --database-url "$DATABASE_URL" manage-indexes
+
+      - name: manage-indexes – running-server mode (add migration)
+        working-directory: e2e-project
+        run: |
+          $GITHUB_WORKSPACE/artifact/pgn --database-url "$DATABASE_URL" manage-indexes --add-migration
+          # Verify the migration file was created
+          ls migrations/ | grep -E '^[0-9]+\.sql$'

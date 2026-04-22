@@ -17,6 +17,7 @@ import Data.Text qualified as Text
 import Dhall.Core qualified as Dhall
 import Dhall.Marshal.Encode qualified as Dhall
 import Logic.Algebra
+import Logic.CustomTypeSignatureFile qualified as CustomTypeSignatureFile
 import Logic.Dsl
 import Logic.GeneratorHashes qualified as GeneratorHashes
 import Logic.IndexOptimizer qualified as IndexOptimizer
@@ -437,12 +438,18 @@ analyseProject projectFile =
 
         pure (queries, customTypes, seqScanFindings)
 
+    refinedCustomTypes <-
+      stage "Custom types" (length customTypes) do
+        for customTypes \ct ->
+          stage (ct.pgSchema <> "." <> ct.pgName) 0 do
+            CustomTypeSignatureFile.refineFromSignatureFile ct
+
     pure
       ( Gen.Input.Project
           { space = Name.toGenName projectFile.space,
             name = Name.toGenName projectFile.name,
             version = projectFile.version,
-            customTypes = customTypes,
+            customTypes = refinedCustomTypes,
             queries = queries,
             migrations =
               migrationsLoaded

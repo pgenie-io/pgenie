@@ -141,6 +141,7 @@ library logic
   exposed-modules:
     Logic
     Logic.Algebra
+    Logic.CustomTypeSignatureFile
     Logic.Dsl
     Logic.Error
     Logic.IndexOptimizer
@@ -181,6 +182,7 @@ test-suite logic-test
   hs-source-dirs: src/logic-test
   main-is: Main.hs
   other-modules:
+    CustomTypeSignatureFileSpec
     IndexOptimizerSpec
     NameSpec
     ProjectFileSpec
@@ -195,6 +197,7 @@ test-suite logic-test
   build-depends:
     QuickCheck,
     aeson,
+    algebraic-path,
     hspec,
     megaparsec,
     pgenie:logic,

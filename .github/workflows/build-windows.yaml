@@ -1,0 +1,141 @@
+name: Build (Windows-x64)
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: >
+          Release version in SemVer (e.g. 1.2.3). When provided the version in
+          cabal-file is updated to 0.<version> before building to follow PVP
+          convention.
+        type: string
+        required: false
+        default: ""
+      ref:
+        description: Commit SHA or ref to checkout for the build.
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+env:
+  artifact-name: pgn-windows-x64
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      # The pre-installed PostgreSQL on the Windows runner supplies the libpq
+      # headers and import library needed to compile postgresql-libpq.
+      - name: Configure cabal for PostgreSQL (libpq)
+        shell: bash
+        run: |
+          PG_ROOT=$(ls -d "/c/Program Files/PostgreSQL/"* 2>/dev/null | sort -V | tail -1)
+          echo "$PG_ROOT/bin" >> "$GITHUB_PATH"
+          cat >> cabal.project.local << EOF
+          package postgresql-libpq
+            extra-include-dirs: ${PG_ROOT}/include
+            extra-lib-dirs: ${PG_ROOT}/lib
+          package pgenie
+            extra-lib-dirs: ${PG_ROOT}/lib
+          EOF
+
+      - name: Build
+        id: build
+        uses: ./.github/actions/build
+        with:
+          version: ${{ inputs.version }}
+          # Docker / testcontainers are not supported on Windows yet.
+          test-integration: false
+
+      - name: Package
+        shell: bash
+        run: |
+          dir="$(dirname "${{ steps.build.outputs.binary-path }}")"
+          file="$(basename "${{ steps.build.outputs.binary-path }}")"
+          tar -czf "${{ env.artifact-name }}.tar.gz" -C "$dir" "$file"
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.artifact-name }}
+          path: ${{ env.artifact-name }}.tar.gz
+
+  e2e-sanity-check:
+    needs: build
+    runs-on: windows-latest
+
+    steps:
+      - name: Add PostgreSQL bin to PATH
+        shell: bash
+        run: |
+          PG_ROOT=$(ls -d "/c/Program Files/PostgreSQL/"* 2>/dev/null | sort -V | tail -1)
+          echo "$PG_ROOT/bin" >> "$GITHUB_PATH"
+
+      - name: Download artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.artifact-name }}
+          path: artifact
+
+      - name: Extract binary
+        shell: bash
+        run: tar -xzf "artifact/${{ env.artifact-name }}.tar.gz" -C artifact
+
+      - name: Verify binary version
+        shell: bash
+        run: artifact/pgn.exe --version
+
+  e2e-running-server-mode:
+    needs: build
+    runs-on: windows-latest
+
+    env:
+      DATABASE_URL: "host=localhost port=5432 user=postgres password=postgres"
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Start PostgreSQL service
+        shell: pwsh
+        run: |
+          $svc = Get-Service 'postgresql*' | Select-Object -First 1
+          if ($null -eq $svc) { throw "No PostgreSQL service found on this runner." }
+          Start-Service $svc.Name
+          Write-Host "Started service: $($svc.Name)"
+
+      - name: Add PostgreSQL bin to PATH and wait for readiness
+        shell: bash
+        run: |
+          PG_ROOT=$(ls -d "/c/Program Files/PostgreSQL/"* 2>/dev/null | sort -V | tail -1)
+          echo "$PG_ROOT/bin" >> "$GITHUB_PATH"
+          export PATH="$PG_ROOT/bin:$PATH"
+          attempts=0
+          until pg_isready -h localhost -U postgres || [ $attempts -ge 30 ]; do
+            sleep 1
+            attempts=$((attempts + 1))
+          done
+          if ! pg_isready -h localhost -U postgres; then
+            echo "::error::PostgreSQL did not become ready in time."
+            exit 1
+          fi
+
+      - name: Set postgres password
+        shell: bash
+        run: |
+          PG_ROOT=$(ls -d "/c/Program Files/PostgreSQL/"* 2>/dev/null | sort -V | tail -1)
+          # Set password; suppress error if trust auth is already in effect.
+          PGPASSWORD=postgres "$PG_ROOT/bin/psql.exe" -U postgres -h localhost \
+            -c "ALTER USER postgres WITH PASSWORD 'postgres';" 2>/dev/null || true
+
+      - uses: ./.github/actions/e2e-live-postgres
+        with:
+          artifact-name: ${{ env.artifact-name }}
+          database-url: ${{ env.DATABASE_URL }}

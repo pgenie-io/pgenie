@@ -119,6 +119,15 @@ jobs:
       version: ${{ inputs.version }}
       ref: ${{ needs.prepare-release.outputs.commit-sha }}
 
+  build-windows:
+    name: Build and test (Windows-x64)
+    needs: prepare-release
+    uses: ./.github/workflows/build-windows.yaml
+    secrets: inherit
+    with:
+      version: ${{ inputs.version }}
+      ref: ${{ needs.prepare-release.outputs.commit-sha }}
+
   sdist:
     name: Build sdist
     needs: prepare-release
@@ -131,7 +140,7 @@ jobs:
   # ── Publish ──────────────────────────────────────────────────────────────────
   release:
     name: Create GitHub release
-    needs: [prepare-release, build-linux, build-macos-arm64, build-macos-x64, sdist]
+    needs: [prepare-release, build-linux, build-macos-arm64, build-macos-x64, build-windows, sdist]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

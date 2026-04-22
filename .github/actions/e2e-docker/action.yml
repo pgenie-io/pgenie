@@ -1,0 +1,52 @@
+name: E2E Docker Mode
+description: >
+  Run e2e scenarios against a Docker-managed PostgreSQL instance. The calling
+  job must have checked out the repository and have libpq and Docker available
+  before invoking this action.
+
+inputs:
+  artifact-name:
+    description: Name of the artifact containing the pgn binary tarball
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v8
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: artifact
+
+    - name: Extract binary
+      shell: bash
+      run: |
+        tar -xzf "artifact/${{ inputs.artifact-name }}.tar.gz" -C artifact
+        chmod +x artifact/pgn
+
+    - name: Set up test project
+      shell: bash
+      run: cp -r .github/e2e e2e-project
+
+    - name: analyse – docker mode
+      shell: bash
+      working-directory: e2e-project
+      run: $GITHUB_WORKSPACE/artifact/pgn analyse
+
+    - name: generate – docker mode
+      shell: bash
+      working-directory: e2e-project
+      run: $GITHUB_WORKSPACE/artifact/pgn generate
+
+    - name: manage-indexes – docker mode (output only)
+      shell: bash
+      working-directory: e2e-project
+      run: $GITHUB_WORKSPACE/artifact/pgn manage-indexes
+
+    - name: manage-indexes – docker mode (add migration)
+      shell: bash
+      working-directory: e2e-project
+      run: |
+        $GITHUB_WORKSPACE/artifact/pgn manage-indexes --add-migration
+        # Verify the migration file was created
+        ls migrations/ | grep -E '^[0-9]+\.sql$'

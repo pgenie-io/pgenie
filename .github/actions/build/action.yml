@@ -80,9 +80,5 @@ runs:
       shell: bash
       run: |
         cabal install pgenie:pgn --installdir=bin --install-method=copy
-        if [ "$RUNNER_OS" = "Windows" ]; then
-          path="$(pwd)/bin/pgn.exe"
-        else
-          path="$(pwd)/bin/pgn"
-        fi
-        echo "binary-path=$path" >> $GITHUB_OUTPUT
+        binary=$(ls "$(pwd)/bin/pgn" "$(pwd)/bin/pgn.exe" 2>/dev/null | head -1)
+        echo "binary-path=$binary" >> $GITHUB_OUTPUT

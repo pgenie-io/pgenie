@@ -5,8 +5,8 @@ description: >
   available before invoking this action.
 
 inputs:
-  artifact-name:
-    description: Name of the artifact containing the pgn binary tarball
+  exe:
+    description: Path to the pgn executable (e.g., "artifact/pgn")
     required: true
   database-url:
     description: PostgreSQL connection string passed to --database-url
@@ -15,47 +15,32 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Download artifact
-      uses: actions/download-artifact@v8
-      with:
-        name: ${{ inputs.artifact-name }}
-        path: artifact
-
-    - name: Extract binary
-      id: extract
-      shell: bash
-      run: |
-        tar -xzf "artifact/${{ inputs.artifact-name }}.tar.gz" -C artifact
-        if [ "$RUNNER_OS" = "Windows" ]; then
-          echo "bin=$GITHUB_WORKSPACE/artifact/pgn.exe" >> "$GITHUB_OUTPUT"
-        else
-          chmod +x artifact/pgn
-          echo "bin=$GITHUB_WORKSPACE/artifact/pgn" >> "$GITHUB_OUTPUT"
-        fi
-
-    - name: Set up test project
-      shell: bash
-      run: cp -r .github/e2e e2e-project
-
     - name: analyse – running-server mode
       shell: bash
       working-directory: e2e-project
-      run: '"${{ steps.extract.outputs.bin }}" --database-url "${{ inputs.database-url }}" analyse'
+      run: |
+        "${{ inputs.exe }}" --database-url "${{ inputs.database-url }}" analyse
 
     - name: generate – running-server mode
       shell: bash
       working-directory: e2e-project
-      run: '"${{ steps.extract.outputs.bin }}" --database-url "${{ inputs.database-url }}" generate'
+      run: |
+        "${{ inputs.exe }}" --database-url "${{ inputs.database-url }}" generate
 
     - name: manage-indexes – running-server mode (output only)
       shell: bash
       working-directory: e2e-project
-      run: '"${{ steps.extract.outputs.bin }}" --database-url "${{ inputs.database-url }}" manage-indexes'
+      run: |
+        "${{ inputs.exe }}" --database-url "${{ inputs.database-url }}" manage-indexes
 
     - name: manage-indexes – running-server mode (add migration)
       shell: bash
       working-directory: e2e-project
       run: |
-        "${{ steps.extract.outputs.bin }}" --database-url "${{ inputs.database-url }}" manage-indexes --add-migration
-        # Verify the migration file was created
-        ls migrations/ | grep -E '^[0-9]+\.sql$'
+        "${{ inputs.exe }}" --database-url "${{ inputs.database-url }}" manage-indexes --add-migration
+        # Fail if the specific migration file migrations/5.sql does not exist
+        if [ ! -f migrations/5.sql ]; then
+          echo "Expected migrations/5.sql not found"
+          ls migrations/ || true
+          exit 1
+        fi

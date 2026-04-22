@@ -39,6 +39,9 @@ jobs:
         run: |
           PG_ROOT=$(ls -d "/c/Program Files/PostgreSQL/"* 2>/dev/null | sort -V | tail -1)
           echo "$PG_ROOT/bin" >> "$GITHUB_PATH"
+          # Create a MinGW-compatible import library; GHC's bundled clang/lld
+          # (in MinGW mode) looks for libpq.dll.a, not the MSVC libpq.lib.
+          cp "${PG_ROOT}/lib/libpq.lib" "${PG_ROOT}/lib/libpq.dll.a"
           cat >> cabal.project.local << EOF
           package postgresql-libpq
             extra-include-dirs: ${PG_ROOT}/include
@@ -135,7 +138,24 @@ jobs:
           PGPASSWORD=postgres "$PG_ROOT/bin/psql.exe" -U postgres -h localhost \
             -c "ALTER USER postgres WITH PASSWORD 'postgres';" 2>/dev/null || true
 
+      - name: Download artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.artifact-name }}
+          path: artifact
+
+      - name: Extract binary
+        id: extract
+        shell: bash
+        run: |
+          tar -xzf "artifact/${{ env.artifact-name }}.tar.gz" -C artifact
+          echo "bin=$GITHUB_WORKSPACE/artifact/pgn.exe" >> "$GITHUB_OUTPUT"
+
+      - name: Set up test project
+        shell: bash
+        run: cp -r .github/e2e e2e-project
+
       - uses: ./.github/actions/e2e-live-postgres
         with:
-          artifact-name: ${{ env.artifact-name }}
+          exe: ${{ steps.extract.outputs.bin }}
           database-url: ${{ env.DATABASE_URL }}

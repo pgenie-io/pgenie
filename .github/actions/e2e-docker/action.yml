@@ -5,48 +5,36 @@ description: >
   before invoking this action.
 
 inputs:
-  artifact-name:
-    description: Name of the artifact containing the pgn binary tarball
+  exe:
+    description: Path to the pgn executable (e.g., "artifact/pgn")
     required: true
 
 runs:
   using: composite
   steps:
-    - name: Download artifact
-      uses: actions/download-artifact@v8
-      with:
-        name: ${{ inputs.artifact-name }}
-        path: artifact
-
-    - name: Extract binary
-      shell: bash
-      run: |
-        tar -xzf "artifact/${{ inputs.artifact-name }}.tar.gz" -C artifact
-        chmod +x artifact/pgn
-
-    - name: Set up test project
-      shell: bash
-      run: cp -r .github/e2e e2e-project
-
     - name: analyse – docker mode
       shell: bash
       working-directory: e2e-project
-      run: $GITHUB_WORKSPACE/artifact/pgn analyse
+      run: ${{ inputs.exe }} analyse
 
     - name: generate – docker mode
       shell: bash
       working-directory: e2e-project
-      run: $GITHUB_WORKSPACE/artifact/pgn generate
+      run: ${{ inputs.exe }} generate
 
     - name: manage-indexes – docker mode (output only)
       shell: bash
       working-directory: e2e-project
-      run: $GITHUB_WORKSPACE/artifact/pgn manage-indexes
+      run: ${{ inputs.exe }} manage-indexes
 
     - name: manage-indexes – docker mode (add migration)
       shell: bash
       working-directory: e2e-project
       run: |
-        $GITHUB_WORKSPACE/artifact/pgn manage-indexes --add-migration
-        # Verify the migration file was created
-        ls migrations/ | grep -E '^[0-9]+\.sql$'
+        ${{ inputs.exe }} manage-indexes --add-migration
+        # Fail if the specific migration file migrations/5.sql does not exist
+        if [ ! -f migrations/5.sql ]; then
+          echo "Expected migrations/5.sql not found"
+          ls migrations/ || true
+          exit 1
+        fi

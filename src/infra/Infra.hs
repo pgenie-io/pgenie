@@ -11,7 +11,7 @@ import Logic qualified
 import System.Exit qualified as Exit
 import Utils.Prelude
 
-run :: (Logic.Event -> IO ()) -> Maybe Text -> Fx MainAdapter.Device Logic.Error Text -> IO ()
+run :: (Logic.Event -> IO ()) -> Maybe Text -> Fx MainAdapter.Device Logic.Report Text -> IO ()
 run emitEvent maybeDatabaseUrl fx = do
   result <-
     fx

@@ -41,7 +41,7 @@ instance MonadParallel.MonadParallel Script where
       (ma progress path)
       (mb progress path)
 
-instance MonadError Error Script where
+instance MonadError Report Script where
   throwError e = Script \_ path ->
     throwError (Error.nest path e)
 

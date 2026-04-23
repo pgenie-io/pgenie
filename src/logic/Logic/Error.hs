@@ -3,7 +3,7 @@ module Logic.Error where
 import Utils.Prelude
 
 -- | Error report.
-data Error = Error
+data Report = Report
   { path :: [Text],
     message :: Text,
     suggestion :: Maybe Text,
@@ -11,12 +11,12 @@ data Error = Error
   }
   deriving stock (Eq, Show)
 
-nest :: [Text] -> Error -> Error
+nest :: [Text] -> Report -> Report
 nest path err =
   let newPath = err.path <> path
    in err {path = newPath}
 
-nesting :: (MonadError Error m) => [Text] -> m a -> m a
+nesting :: (MonadError Report m) => [Text] -> m a -> m a
 nesting path action =
   catchError action \err ->
     throwError (nest path err)

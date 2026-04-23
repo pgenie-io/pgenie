@@ -8,7 +8,7 @@ import Logic.Name qualified as Name
 import PGenieGen.Model.Input qualified as Gen.Input
 import Utils.Prelude
 
-type Embed = Either Logic.Error
+type Embed = Either Logic.Report
 
 adaptQuery :: Sessions.Query -> Embed Logic.InferredQueryTypes
 adaptQuery query = do
@@ -47,7 +47,7 @@ textToName text =
     Right name -> pure (Name.toGenName name)
     Left err ->
       Left
-        Logic.Error
+        Logic.Report
           { path = [],
             message = err,
             suggestion = Nothing,

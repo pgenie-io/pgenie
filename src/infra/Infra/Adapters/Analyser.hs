@@ -36,13 +36,13 @@ data Source
     -- A temporary database is created for analysis and dropped on cleanup.
     RunningServerSource {connectionUrl :: Text, targetMajorVersion :: Int}
 
-scope :: Source -> (Logic.Event -> IO ()) -> Fx.Scope Logic.Error Device
+scope :: Source -> (Logic.Event -> IO ()) -> Fx.Scope Logic.Report Device
 scope source emitEvent = case source of
   DockerSource {postgresTag} -> scopeViaDocker postgresTag emitEvent
   RunningServerSource {connectionUrl, targetMajorVersion} ->
     scopeViaRunningServer connectionUrl targetMajorVersion emitEvent
 
-scopeViaDocker :: Text -> (Logic.Event -> IO ()) -> Fx.Scope Logic.Error Device
+scopeViaDocker :: Text -> (Logic.Event -> IO ()) -> Fx.Scope Logic.Report Device
 scopeViaDocker postgresTag emitEvent = do
   acquire $ runTotalIO \() -> emitEvent (Logic.StageEntered ["Starting Container"])
   (host, port) <-
@@ -76,9 +76,9 @@ scopeViaDocker postgresTag emitEvent = do
   acquire $ runTotalIO \() -> emitEvent (Logic.StageExited ["Connecting"] 0.1)
   pure (Device pool)
   where
-    adaptTestcontainersError :: SomeException -> Logic.Error
+    adaptTestcontainersError :: SomeException -> Logic.Report
     adaptTestcontainersError err =
-      Logic.Error
+      Logic.Report
         { path = ["testcontainers"],
           message = Text.pack (displayException err),
           suggestion = Nothing,
@@ -88,7 +88,7 @@ scopeViaDocker postgresTag emitEvent = do
 -- | Connect to a running server, verify its major version, create a temporary
 -- analysis database, and return a device backed by a pool on that database.
 -- The temporary database is dropped when the scope exits (on success or error).
-scopeViaRunningServer :: Text -> Int -> (Logic.Event -> IO ()) -> Fx.Scope Logic.Error Device
+scopeViaRunningServer :: Text -> Int -> (Logic.Event -> IO ()) -> Fx.Scope Logic.Report Device
 scopeViaRunningServer connectionUrl targetMajorVersion emitEvent = do
   let serverSettings = Hasql.Connection.Settings.connectionString connectionUrl
 
@@ -110,7 +110,7 @@ scopeViaRunningServer connectionUrl targetMajorVersion emitEvent = do
     pure $ case res of
       Left poolErr ->
         Left
-          Logic.Error
+          Logic.Report
             { path = [],
               message = "Failed to connect to PostgreSQL server",
               suggestion = Nothing,
@@ -120,7 +120,7 @@ scopeViaRunningServer connectionUrl targetMajorVersion emitEvent = do
             }
       Right (Left msg) ->
         Left
-          Logic.Error
+          Logic.Report
             { path = [],
               message = "Failed to query server version",
               suggestion = Nothing,
@@ -132,7 +132,7 @@ scopeViaRunningServer connectionUrl targetMajorVersion emitEvent = do
 
   when (serverMajorVersion /= targetMajorVersion) do
     throwError
-      Logic.Error
+      Logic.Report
         { path = [],
           message =
             "PostgreSQL server version "
@@ -166,7 +166,7 @@ scopeViaRunningServer connectionUrl targetMajorVersion emitEvent = do
     pure $ case res of
       Left poolErr ->
         Left
-          Logic.Error
+          Logic.Report
             { path = [],
               message = "Failed to create temporary analysis database",
               suggestion = Just "Ensure the database user has the CREATEDB privilege",
@@ -223,30 +223,30 @@ scopeViaRunningServer connectionUrl targetMajorVersion emitEvent = do
 
 -- | Acquire a Hasql pool for the duration of the enclosing scope and register
 -- its release as a cleanup action.  Used by both Docker and running-server paths.
-scopePool :: Hasql.Pool.Config.Config -> Fx.Scope Logic.Error Hasql.Pool.Pool
+scopePool :: Hasql.Pool.Config.Config -> Fx.Scope Logic.Report Hasql.Pool.Pool
 scopePool config = do
   pool <- acquire $ runTotalIO \() -> Hasql.Pool.acquire config
   registerRelease $ runTotalIO \() -> Hasql.Pool.release pool
   pure pool
 
-instance HasqlDev.RunsSession (Fx Device Logic.Error) where
+instance HasqlDev.RunsSession (Fx Device Logic.Report) where
   runSession session =
     runPartialIO \(Device pool) ->
       first adaptPoolUsageError <$> Hasql.Pool.use pool session
     where
-      adaptPoolUsageError :: Hasql.Pool.UsageError -> Logic.Error
+      adaptPoolUsageError :: Hasql.Pool.UsageError -> Logic.Report
       adaptPoolUsageError err = case err of
         Hasql.Pool.SessionUsageError sessionErr ->
           adaptSessionError sessionErr
         otherErr ->
-          Logic.Error
+          Logic.Report
             { path = [],
               message = Text.pack (show otherErr),
               suggestion = Nothing,
               details = []
             }
 
-      adaptSessionError :: Hasql.SessionError -> Logic.Error
+      adaptSessionError :: Hasql.SessionError -> Logic.Report
       adaptSessionError sessionErr = case sessionErr of
         Hasql.ScriptSessionError sql serverErr ->
           adaptServerError sql serverErr
@@ -255,37 +255,37 @@ instance HasqlDev.RunsSession (Fx Device Logic.Error) where
             Hasql.ServerStatementError serverErr ->
               adaptServerError sql serverErr
             otherErr ->
-              Logic.Error
+              Logic.Report
                 { path = [],
                   message = Text.pack (show otherErr),
                   suggestion = Nothing,
                   details = [("sql", sql)]
                 }
         Hasql.ConnectionSessionError msg ->
-          Logic.Error
+          Logic.Report
             { path = [],
               message = msg,
               suggestion = Nothing,
               details = []
             }
         Hasql.MissingTypesSessionError types ->
-          Logic.Error
+          Logic.Report
             { path = [],
               message = "Missing database types",
               suggestion = Just "Ensure all referenced types exist in the database",
               details = [("types", Text.pack (show types))]
             }
         Hasql.DriverSessionError msg ->
-          Logic.Error
+          Logic.Report
             { path = [],
               message = msg,
               suggestion = Nothing,
               details = []
             }
 
-      adaptServerError :: Text -> Hasql.ServerError -> Logic.Error
+      adaptServerError :: Text -> Hasql.ServerError -> Logic.Report
       adaptServerError sql (Hasql.ServerError errorCode message details hint position) =
-        Logic.Error
+        Logic.Report
           { path = [],
             message = message,
             suggestion = derivedSuggestion,
@@ -315,7 +315,7 @@ instance HasqlDev.RunsSession (Fx Device Logic.Error) where
           Nothing ->
             "Add all NOT NULL columns to the INSERT statement, or define DEFAULT values for them in the schema"
 
-instance Logic.DbOps (Fx Device Logic.Error) where
+instance Logic.DbOps (Fx Device Logic.Report) where
   executeMigration migrationText =
     HasqlDev.runSession (Hasql.Session.script migrationText)
 
@@ -333,9 +333,9 @@ instance Logic.DbOps (Fx Device Logic.Error) where
                 map adaptAnalysisError warnings
               )
     where
-      adaptAnalysisError :: Sessions.Error -> Logic.Error
+      adaptAnalysisError :: Sessions.Error -> Logic.Report
       adaptAnalysisError err =
-        Logic.Error
+        Logic.Report
           { path = err.location,
             message = err.reason,
             suggestion = Nothing,

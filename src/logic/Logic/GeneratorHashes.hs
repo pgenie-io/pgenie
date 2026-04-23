@@ -30,7 +30,7 @@ tryLoadHashesFile :: (Algebra.FsOps m) => m HashesMap
 tryLoadHashesFile =
   catchError
     (parseHashesFile <$> Algebra.readFile hashesFilePath)
-    (\(_ :: Error.Error) -> pure Map.empty)
+    (\(_ :: Error.Report) -> pure Map.empty)
 
 -- | Serialize the hashes map to YAML format.
 serializeHashesMap :: HashesMap -> Text

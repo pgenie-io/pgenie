@@ -28,12 +28,12 @@ data Artifact = Artifact
     config :: Maybe Aeson.Value
   }
 
-tryFromYaml :: (MonadError Error.Error m) => Text -> m ProjectFile
+tryFromYaml :: (MonadError Error.Report m) => Text -> m ProjectFile
 tryFromYaml text = do
   case U.parseText projectFileValue text of
     Left errMsg ->
       throwError
-        Error.Error
+        Error.Report
           { path = ["project1.pgn.yaml"],
             message = errMsg,
             suggestion = Just "Check YAML syntax and required fields",

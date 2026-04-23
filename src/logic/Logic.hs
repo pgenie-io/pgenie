@@ -65,7 +65,7 @@ analyse options maybeFormat =
       unless (null seqScanFindings) do
         for_ seqScanFindings \(queryName, finding) ->
           warn
-            ( Error
+            ( Report
                 []
                 ( "Sequential scan detected in query '"
                     <> queryName
@@ -80,7 +80,7 @@ analyse options maybeFormat =
             )
         when options.failOnSeqScans do
           throwError
-            ( Error
+            ( Report
                 []
                 "Sequential scans detected"
                 (Just "Run 'manage-indexes' to generate index migration, or remove --fail-on-seq-scans to allow warnings")
@@ -100,7 +100,7 @@ generate options =
       unless (null seqScanFindings) do
         for_ seqScanFindings \(queryName, finding) ->
           warn
-            ( Error
+            ( Report
                 []
                 ( "Sequential scan detected in query '"
                     <> queryName
@@ -115,7 +115,7 @@ generate options =
             )
         when options.failOnSeqScans do
           throwError
-            ( Error
+            ( Report
                 []
                 "Sequential scans detected"
                 (Just "Run 'manage-indexes' to generate index migration, or remove --fail-on-seq-scans to allow warnings")
@@ -148,7 +148,7 @@ loadQuerySql queryListed = do
   case SqlTemplate.tryFromText sql of
     Left err ->
       throwError
-        ( Error
+        ( Report
             []
             "Failed to parse SQL template"
             (Just "Check the SQL syntax in the query file")
@@ -175,7 +175,7 @@ generateCode projectFile project =
               case gen artifact.config of
                 Left errMsg ->
                   throwError
-                    ( Error
+                    ( Report
                         []
                         errMsg
                         (Just "Ensure the artifact configuration conforms to the format expected by the generator")
@@ -191,7 +191,7 @@ generateCode projectFile project =
             case output.result of
               Gen.Output.ResultErr report ->
                 throwError
-                  ( Error
+                  ( Report
                       report.path
                       report.message
                       Nothing
@@ -206,7 +206,7 @@ generateCode projectFile project =
                 artifactPath <- case Path.maybeFromText name of
                   Nothing ->
                     throwError
-                      ( Error
+                      ( Report
                           []
                           "Invalid artifact name"
                           (Just "Must be in snake_case and must not start with a number")
@@ -278,7 +278,7 @@ analyseProject projectFile =
         name <- case Name.tryFromText (Path.toBasename queryPath) of
           Left err ->
             throwError
-              ( Error
+              ( Report
                   []
                   "Failed to extract query name from path"
                   (Just "Ensure the query file name is a valid identifier")
@@ -346,7 +346,7 @@ analyseProject projectFile =
                  in case SyntaxAnalyser.resolveText nativeTemplate of
                       Left err -> do
                         warn
-                          ( Error
+                          ( Report
                               []
                               "Failed to detect result cardinality by AST. Defaulting to multi-row"
                               Nothing
@@ -391,7 +391,7 @@ analyseProject projectFile =
                 maybeSigContent <-
                   catchError
                     (Just <$> readFile sigPath)
-                    (\(_ :: Error) -> pure Nothing)
+                    (\(_ :: Report) -> pure Nothing)
                 case maybeSigContent of
                   Nothing -> do
                     writeFile sigPath (SignatureFile.serialize inferredSig)
@@ -400,7 +400,7 @@ analyseProject projectFile =
                     fileSig <- case SignatureFile.tryParse sigContent of
                       Left err ->
                         throwError
-                          ( Error
+                          ( Report
                               []
                               "Failed to parse signature file"
                               (Just "Check the YAML syntax in the signature file")
@@ -537,7 +537,7 @@ normalizeTableToken token =
         x : _ -> x
 
 -- | Depending on the warning handling strategy this can either log the warning and continue or throw an error to stop the execution.
-warn :: Error -> Script ()
+warn :: Report -> Script ()
 warn =
   -- TODO: Implement conditional throwing or emission.
   emit . WarningEmitted
@@ -562,7 +562,7 @@ handleIndexOptimization options indexes seqScanFindings = do
           else allActions
   when options.allowRedundantIndexes do
     for_ dropActions \action ->
-      warn (Error [] (indexActionMessage action) (Just "Suppressed by --allow-redundant-indexes") (indexActionDetails action))
+      warn (Report [] (indexActionMessage action) (Just "Suppressed by --allow-redundant-indexes") (indexActionDetails action))
   if null migrationActions
     then pure ""
     else do
@@ -584,7 +584,7 @@ writeMigrationFile content = do
     let baseName = Path.toBasename p
     unless (not (Text.null baseName) && Text.all isDigit baseName) do
       throwError
-        ( Error
+        ( Report
             []
             ("Migration naming convention is not clear: " <> Path.toText p)
             (Just "All migration files must follow the N.sql naming convention (e.g., 1.sql, 2.sql)")
@@ -595,7 +595,7 @@ writeMigrationFile content = do
   case Path.maybeFromText ("migrations/" <> migrationFileName) of
     Nothing ->
       throwError
-        ( Error
+        ( Report
             []
             "Failed to construct migration file path"
             Nothing
@@ -605,7 +605,7 @@ writeMigrationFile content = do
       writeFile migrationPath content
       emit
         ( WarningEmitted
-            ( Error
+            ( Report
                 []
                 ("Written migration to migrations/" <> migrationFileName)
                 (Just "Review the migration and commit it")

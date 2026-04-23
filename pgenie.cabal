@@ -14,8 +14,8 @@ copyright: (c) 2025, Nikita Volkov
 license: GPL-3.0-or-later
 license-file: LICENSE
 extra-source-files:
-  README.md
   cabal.project
+  README.md
 
 source-repository head
   type: git
@@ -110,7 +110,6 @@ library utils
     Utils.Text
 
   build-depends:
-    QuickCheck,
     algebraic-path,
     base,
     bytestring,
@@ -121,6 +120,7 @@ library utils
     monad-parallel,
     mtl,
     profunctors,
+    QuickCheck,
     quickcheck-instances,
     relations,
     syntactic-class,
@@ -143,10 +143,10 @@ library logic
     Logic.Algebra
     Logic.CustomTypeSignatureFile
     Logic.Dsl
-    Logic.Error
     Logic.IndexOptimizer
     Logic.Name
     Logic.ProjectFile
+    Logic.Report
     Logic.SeqScanDetector
     Logic.SignatureFile
     Logic.SqlTemplate
@@ -159,7 +159,6 @@ library logic
     Logic.SyntaxAnalyser.Data
 
   build-depends:
-    QuickCheck,
     aeson,
     algebraic-path,
     containers,
@@ -167,9 +166,10 @@ library logic
     foldl,
     megaparsec,
     monad-parallel,
-    pgenie:utils,
     pgenie-gen,
+    pgenie:utils,
     postgresql-syntax,
+    QuickCheck,
     syntactic-class,
     text,
     text-builder,
@@ -195,14 +195,14 @@ test-suite logic-test
     hspec-discover:hspec-discover
 
   build-depends:
-    QuickCheck,
     aeson,
     algebraic-path,
     hspec,
     megaparsec,
+    pgenie-gen,
     pgenie:logic,
     pgenie:utils,
-    pgenie-gen,
+    QuickCheck,
     text,
 
 test-suite infra-test
@@ -219,10 +219,10 @@ test-suite infra-test
   build-depends:
     fx,
     hspec,
+    pgenie-gen,
     pgenie:infra,
     pgenie:logic,
     pgenie:utils,
-    pgenie-gen,
     postgresql-libpq,
     resourcet,
     testcontainers,
@@ -275,9 +275,9 @@ library infra
     hasql-mapping,
     hasql-pool,
     hasql-th,
+    pgenie-gen,
     pgenie:logic,
     pgenie:utils,
-    pgenie-gen,
     postgresql-libpq,
     resourcet,
     syntactic-class,

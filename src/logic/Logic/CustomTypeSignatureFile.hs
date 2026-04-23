@@ -16,7 +16,7 @@ import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Logic.Algebra (FsOps (readFile, writeFile))
-import Logic.Error qualified as Error
+import Logic.Report qualified as Error
 import PGenieGen.Model.Input qualified as Gen.Input
 import Utils.Prelude hiding (readFile, writeFile)
 import YamlUnscrambler qualified as U
@@ -88,7 +88,7 @@ refineFromSignatureFile ct =
       maybeSigContent <-
         catchError
           (Just <$> readFile sigPath)
-          (\(_ :: Error.Error) -> pure Nothing)
+          (\(_ :: Error.Report) -> pure Nothing)
       case maybeSigContent of
         Nothing -> do
           writeFile sigPath (serialize inferredSig)
@@ -97,7 +97,7 @@ refineFromSignatureFile ct =
           fileSig <- case tryParse sigContent of
             Left err ->
               throwError
-                ( Error.Error
+                ( Error.Report
                     []
                     "Failed to parse custom-type signature file"
                     (Just "Check the YAML syntax in the signature file")
@@ -402,7 +402,7 @@ validateAndMerge ::
   Gen.Input.CustomType ->
   -- | Signature from file.
   CustomTypeSig ->
-  Either Error.Error Gen.Input.CustomType
+  Either Error.Report Gen.Input.CustomType
 validateAndMerge inferred fileSig =
   case (inferred.definition, fileSig) of
     (Gen.Input.CustomTypeDefinitionEnum variants, EnumSig fileVariants) ->
@@ -420,7 +420,7 @@ validateEnum ::
   Gen.Input.CustomType ->
   [Gen.Input.EnumVariant] ->
   [Text] ->
-  Either Error.Error Gen.Input.CustomType
+  Either Error.Report Gen.Input.CustomType
 validateEnum inferred variants fileVariants = do
   let inferredNames = map (.pgName) variants
   unless (inferredNames == fileVariants) do
@@ -437,7 +437,7 @@ validateComposite ::
   Gen.Input.CustomType ->
   [Gen.Input.Member] ->
   [(Text, CompositeFieldSig)] ->
-  Either Error.Error Gen.Input.CustomType
+  Either Error.Report Gen.Input.CustomType
 validateComposite inferred inferredFields fileFields = do
   let inferredNames = Set.fromList (map (.pgName) inferredFields)
       fileNames = Set.fromList (map fst fileFields)
@@ -468,7 +468,7 @@ validateCompositeField ::
   CompositeFieldSig ->
   -- | From file.
   CompositeFieldSig ->
-  Either Error.Error CompositeFieldSig
+  Either Error.Report CompositeFieldSig
 validateCompositeField fieldPath inferred file = do
   unless (inferred.typeName == file.typeName) do
     Left
@@ -552,9 +552,9 @@ splitArrayTypeName typeName =
         then go (Text.dropEnd 2 text) (dims + 1)
         else (text, dims)
 
-mismatchError :: Text -> Text -> Error.Error
+mismatchError :: Text -> Text -> Error.Report
 mismatchError fieldPath message =
-  Error.Error
+  Error.Report
     { path = [],
       message = "Custom-type signature mismatch at " <> fieldPath <> ": " <> message,
       suggestion = Just "Update the signature file or fix the custom type",

@@ -1,11 +1,11 @@
 module Logic.Algebra
   ( module Logic.Algebra,
-    Error (..),
+    Report (..),
   )
 where
 
-import Logic.Error (Error (..))
 import Logic.ProjectFile (ProjectFile)
+import Logic.Report (Report (..))
 import PGenieGen qualified as Gen
 import PGenieGen.Model.Input qualified as Gen.Input
 import Utils.Prelude hiding (readFile, writeFile)
@@ -15,8 +15,8 @@ import Utils.Prelude hiding (readFile, writeFile)
 data Event
   = StageEntered [Text]
   | StageExited [Text] Double
-  | WarningEmitted Error
-  | Failed Error
+  | WarningEmitted Report
+  | Failed Report
   deriving stock (Eq, Show)
 
 -- * States
@@ -127,19 +127,19 @@ data ModelFormat = ModelFormatJson | ModelFormatDhall
 class (Monad m) => Emits m where
   emit :: Event -> m ()
 
-class (MonadError Error m) => DbOps m where
+class (MonadError Report m) => DbOps m where
   executeMigration :: Text -> m ()
-  inferQueryTypes :: Text -> m (InferredQueryTypes, [Error])
+  inferQueryTypes :: Text -> m (InferredQueryTypes, [Report])
   explainQuery :: Text -> m [Text]
   getIndexes :: m [IndexInfo]
 
-class (MonadError Error m) => FsOps m where
+class (MonadError Report m) => FsOps m where
   readFile :: Path -> m Text
   writeFile :: Path -> Text -> m ()
   listDir :: Path -> m [Path]
 
 -- | Domain operations.
-class (MonadError Error m) => LoadsGen m where
+class (MonadError Report m) => LoadsGen m where
   loadGen ::
     Gen.Location ->
     -- | Possible integrity hash for caching.

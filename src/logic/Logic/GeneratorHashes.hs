@@ -9,7 +9,7 @@ import Control.Foldl qualified as Fold
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
 import Logic.Algebra qualified as Algebra
-import Logic.Error qualified as Error
+import Logic.Report qualified as Error
 import Utils.Prelude hiding (readFile, writeFile)
 import YamlUnscrambler qualified as U
 
@@ -30,7 +30,7 @@ tryLoadHashesFile :: (Algebra.FsOps m) => m HashesMap
 tryLoadHashesFile =
   catchError
     (parseHashesFile <$> Algebra.readFile hashesFilePath)
-    (\(_ :: Error.Error) -> pure Map.empty)
+    (\(_ :: Error.Report) -> pure Map.empty)
 
 -- | Serialize the hashes map to YAML format.
 serializeHashesMap :: HashesMap -> Text

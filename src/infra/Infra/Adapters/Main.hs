@@ -22,12 +22,12 @@ data Device = Device
     projectFile :: ProjectFile.ProjectFile
   }
 
-scope :: (Logic.Event -> IO ()) -> Maybe Text -> Fx.Scope Logic.Error Device
+scope :: (Logic.Event -> IO ()) -> Maybe Text -> Fx.Scope Logic.Report Device
 scope emitEvent maybeDatabaseUrl = do
   -- Terminate early on Windows in Docker mode since it's not supported yet.
   when (isNothing maybeDatabaseUrl && Info.os == "mingw32") do
     throwError
-      Logic.Error
+      Logic.Report
         { path = [],
           message = "Docker execution mode on Windows is under development. Windows users can only use the live Postgres mode for now.",
           suggestion = Just "Run pgn with --database-url to connect to a running PostgreSQL server. See https://pgenie.io/docs/guides/live-instance-mode for more details.",
@@ -66,11 +66,11 @@ scope emitEvent maybeDatabaseUrl = do
         projectFile
       }
 
-instance Logic.Emits (Fx Device Logic.Error) where
+instance Logic.Emits (Fx Device Logic.Report) where
   emit event =
     runTotalIO \dev -> dev.emitEvent event
 
-instance Logic.DbOps (Fx Device Logic.Error) where
+instance Logic.DbOps (Fx Device Logic.Report) where
   executeMigration migrationText =
     Logic.executeMigration migrationText
       & mapEnv (.analyser)
@@ -87,7 +87,7 @@ instance Logic.DbOps (Fx Device Logic.Error) where
     Logic.getIndexes
       & mapEnv (.analyser)
 
-instance Logic.FsOps (Fx Device Logic.Error) where
+instance Logic.FsOps (Fx Device Logic.Report) where
   readFile path =
     liftFileOp "Failed to read file" path do
       Text.readFile (Path.toFilePath path)
@@ -106,7 +106,7 @@ instance Logic.FsOps (Fx Device Logic.Error) where
           pure path'
         Nothing ->
           throwError
-            Logic.Error
+            Logic.Report
               { path = [],
                 message = "Invalid file path",
                 suggestion = Nothing,
@@ -115,12 +115,12 @@ instance Logic.FsOps (Fx Device Logic.Error) where
                   ]
               }
 
-instance Logic.LoadsGen (Fx Device Logic.Error) where
+instance Logic.LoadsGen (Fx Device Logic.Report) where
   loadGen location maybeHash =
     runExceptionalIO (const (Gen.load location maybeHash (const (pure ()))))
       & first
         ( \err ->
-            Logic.Error
+            Logic.Report
               { path = [],
                 message = "Failed to load gen",
                 suggestion = Nothing,
@@ -130,16 +130,16 @@ instance Logic.LoadsGen (Fx Device Logic.Error) where
               }
         )
 
-instance Logic.LoadsProjectFile (Fx Device Logic.Error) where
+instance Logic.LoadsProjectFile (Fx Device Logic.Report) where
   loadProjectFile =
     runTotalIO \dev -> pure dev.projectFile
 
-liftFileOp :: Text -> Path -> IO a -> Fx env Logic.Error a
+liftFileOp :: Text -> Path -> IO a -> Fx env Logic.Report a
 liftFileOp errMessage path action =
   runExceptionalIO (const action)
     & first
       ( \err ->
-          Logic.Error
+          Logic.Report
             { path = [],
               message = errMessage,
               suggestion = Nothing,

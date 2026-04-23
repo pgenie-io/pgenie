@@ -8,7 +8,7 @@ where
 import Control.Monad.Parallel qualified as MonadParallel
 import Data.Text qualified as Text
 import Logic.Algebra
-import Logic.Error qualified as Error
+import Logic.Report qualified as Error
 import Utils.Prelude hiding (readFile, writeFile)
 
 run :: (Caps m) => Script a -> m a
@@ -41,7 +41,7 @@ instance MonadParallel.MonadParallel Script where
       (ma progress path)
       (mb progress path)
 
-instance MonadError Error Script where
+instance MonadError Report Script where
   throwError e = Script \_ path ->
     throwError (Error.nest path e)
 

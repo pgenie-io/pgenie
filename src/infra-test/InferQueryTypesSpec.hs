@@ -239,7 +239,7 @@ spec = describe "inferQueryTypes" do
         _ <- runWithAnalyserViaUrl url 18 do
           -- Deliberate failure after the temp DB has been created.
           throwError
-            Error
+            Report
               { path = [],
                 message = "deliberate test failure",
                 suggestion = Nothing,
@@ -274,15 +274,15 @@ spec = describe "inferQueryTypes" do
 
 -- | Run an action against a fresh throwaway PostgreSQL container.
 runWithAnalyser ::
-  Fx Analyser.Device Error a ->
-  IO (Either Error a)
+  Fx Analyser.Device Report a ->
+  IO (Either Report a)
 runWithAnalyser =
   runWithAnalyserOn "postgres:18"
 
 runWithAnalyserOn ::
   Text ->
-  Fx Analyser.Device Error a ->
-  IO (Either Error a)
+  Fx Analyser.Device Report a ->
+  IO (Either Report a)
 runWithAnalyserOn postgresImage action =
   action
     & scoping (Analyser.scope (Analyser.DockerSource {postgresTag = postgresImage}) (const (pure ())))
@@ -293,8 +293,8 @@ runWithAnalyserOn postgresImage action =
 runWithAnalyserViaUrl ::
   Text ->
   Int ->
-  Fx Analyser.Device Error a ->
-  IO (Either Error a)
+  Fx Analyser.Device Report a ->
+  IO (Either Report a)
 runWithAnalyserViaUrl url targetMajorVersion action =
   action
     & scoping

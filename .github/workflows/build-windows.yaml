@@ -1,0 +1,145 @@
+name: Build (Windows-x64)
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: >
+          Release version in SemVer (e.g. 1.2.3). When provided the version in
+          cabal-file is updated to 0.<version> before building to follow PVP
+          convention.
+        type: string
+        required: false
+        default: ""
+      ref:
+        description: Commit SHA or ref to checkout for the build.
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+env:
+  artifact-name: pgn-windows-x64
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      # The pre-installed PostgreSQL on the Windows runner supplies the libpq
+      # headers and import library needed to compile postgresql-libpq.
+      - name: Configure cabal for PostgreSQL (libpq)
+        shell: bash
+        run: |
+          PG_ROOT=$(ls -d "/c/Program Files/PostgreSQL/"* 2>/dev/null | sort -V | tail -1)
+          echo "$PG_ROOT/bin" >> "$GITHUB_PATH"
+          # Create a MinGW-compatible import library; GHC's bundled clang/lld
+          # (in MinGW mode) looks for libpq.dll.a, not the MSVC libpq.lib.
+          cp "${PG_ROOT}/lib/libpq.lib" "${PG_ROOT}/lib/libpq.dll.a"
+          cat >> cabal.project.local << EOF
+          package postgresql-libpq
+            extra-include-dirs: ${PG_ROOT}/include
+            extra-lib-dirs: ${PG_ROOT}/lib
+          package pgenie
+            extra-lib-dirs: ${PG_ROOT}/lib
+          EOF
+
+      - name: Build
+        id: build
+        uses: ./.github/actions/build
+        with:
+          version: ${{ inputs.version }}
+          # Docker / testcontainers are not supported on Windows yet.
+          test-integration: false
+
+      - name: Package
+        shell: bash
+        run: |
+          dir="$(dirname "${{ steps.build.outputs.binary-path }}")"
+          file="$(basename "${{ steps.build.outputs.binary-path }}")"
+          tar -czf "${{ env.artifact-name }}.tar.gz" -C "$dir" "$file"
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.artifact-name }}
+          path: ${{ env.artifact-name }}.tar.gz
+
+  e2e-sanity-check:
+    needs: build
+    runs-on: windows-latest
+
+    steps:
+      - name: Add PostgreSQL bin to PATH
+        shell: bash
+        run: |
+          PG_ROOT=$(ls -d "/c/Program Files/PostgreSQL/"* 2>/dev/null | sort -V | tail -1)
+          echo "$PG_ROOT/bin" >> "$GITHUB_PATH"
+
+      - name: Download artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.artifact-name }}
+          path: artifact
+
+      - name: Extract binary
+        shell: bash
+        run: tar -xzf "artifact/${{ env.artifact-name }}.tar.gz" -C artifact
+
+      - name: Verify binary version
+        shell: bash
+        run: artifact/pgn.exe --version
+
+  e2e-running-server-mode:
+    needs: build
+    runs-on: windows-latest
+
+    env:
+      DATABASE_URL: "host=localhost port=5432 user=postgres password=postgres"
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Initialise and start PostgreSQL
+        shell: pwsh
+        run: |
+          $pgBin = (Get-Item "C:\Program Files\PostgreSQL\*\bin" |
+                    Sort-Object { [int]($_.Parent.Name) } |
+                    Select-Object -Last 1).FullName
+          $pgData = "$env:USERPROFILE\pgdata"
+          # Initialise with trust auth – no password required for testing
+          & "$pgBin\initdb.exe" -D $pgData --auth=trust --username=postgres
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          # Start PostgreSQL and wait until the server is ready
+          & "$pgBin\pg_ctl.exe" start -D $pgData -l "$pgData\postgresql.log" -w
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          # Expose pg tools (pg_isready, libpq.dll, …) to subsequent steps
+          Add-Content $env:GITHUB_PATH $pgBin
+
+      - name: Download artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.artifact-name }}
+          path: artifact
+
+      - name: Extract binary
+        id: extract
+        shell: bash
+        run: |
+          tar -xzf "artifact/${{ env.artifact-name }}.tar.gz" -C artifact
+          echo "bin=$GITHUB_WORKSPACE/artifact/pgn.exe" >> "$GITHUB_OUTPUT"
+
+      - name: Set up test project
+        shell: bash
+        run: cp -r .github/e2e e2e-project
+
+      - uses: ./.github/actions/e2e-live-postgres
+        with:
+          exe: ${{ steps.extract.outputs.bin }}
+          database-url: ${{ env.DATABASE_URL }}

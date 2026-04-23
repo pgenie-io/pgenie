@@ -95,32 +95,20 @@ jobs:
           path: artifact
 
       - name: Extract binary
+        id: extract
         shell: bash
         run: |
           tar -xzf "artifact/${{ env.artifact-name }}.tar.gz" -C artifact
           chmod +x artifact/pgn
+          echo "bin=$GITHUB_WORKSPACE/artifact/pgn" >> "$GITHUB_OUTPUT"
 
       - name: Set up test project
+        shell: bash
         run: cp -r .github/e2e e2e-project
 
-      - name: analyse – docker mode
-        working-directory: e2e-project
-        run: $GITHUB_WORKSPACE/artifact/pgn analyse
-
-      - name: generate – docker mode
-        working-directory: e2e-project
-        run: $GITHUB_WORKSPACE/artifact/pgn generate
-
-      - name: manage-indexes – docker mode (output only)
-        working-directory: e2e-project
-        run: $GITHUB_WORKSPACE/artifact/pgn manage-indexes
-
-      - name: manage-indexes – docker mode (add migration)
-        working-directory: e2e-project
-        run: |
-          $GITHUB_WORKSPACE/artifact/pgn manage-indexes --add-migration
-          # Verify the migration file was created
-          ls migrations/ | grep -E '^[0-9]+\.sql$'
+      - uses: ./.github/actions/e2e-docker
+        with:
+          exe: ${{ steps.extract.outputs.bin }}
 
   e2e-running-server-mode:
     needs: build
@@ -128,7 +116,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:18
+        image: postgres:17
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -157,29 +145,18 @@ jobs:
           path: artifact
 
       - name: Extract binary
+        id: extract
         shell: bash
         run: |
           tar -xzf "artifact/${{ env.artifact-name }}.tar.gz" -C artifact
           chmod +x artifact/pgn
+          echo "bin=$GITHUB_WORKSPACE/artifact/pgn" >> "$GITHUB_OUTPUT"
 
       - name: Set up test project
+        shell: bash
         run: cp -r .github/e2e e2e-project
 
-      - name: analyse – running-server mode
-        working-directory: e2e-project
-        run: $GITHUB_WORKSPACE/artifact/pgn --database-url "$DATABASE_URL" analyse
-
-      - name: generate – running-server mode
-        working-directory: e2e-project
-        run: $GITHUB_WORKSPACE/artifact/pgn --database-url "$DATABASE_URL" generate
-
-      - name: manage-indexes – running-server mode (output only)
-        working-directory: e2e-project
-        run: $GITHUB_WORKSPACE/artifact/pgn --database-url "$DATABASE_URL" manage-indexes
-
-      - name: manage-indexes – running-server mode (add migration)
-        working-directory: e2e-project
-        run: |
-          $GITHUB_WORKSPACE/artifact/pgn --database-url "$DATABASE_URL" manage-indexes --add-migration
-          # Verify the migration file was created
-          ls migrations/ | grep -E '^[0-9]+\.sql$'
+      - uses: ./.github/actions/e2e-live-postgres
+        with:
+          exe: ${{ steps.extract.outputs.bin }}
+          database-url: ${{ env.DATABASE_URL }}

@@ -1,0 +1,40 @@
+name: E2E Docker Mode
+description: >
+  Run e2e scenarios against a Docker-managed PostgreSQL instance. The calling
+  job must have checked out the repository and have libpq and Docker available
+  before invoking this action.
+
+inputs:
+  exe:
+    description: Path to the pgn executable (e.g., "artifact/pgn")
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: analyse – docker mode
+      shell: bash
+      working-directory: e2e-project
+      run: ${{ inputs.exe }} analyse
+
+    - name: generate – docker mode
+      shell: bash
+      working-directory: e2e-project
+      run: ${{ inputs.exe }} generate
+
+    - name: manage-indexes – docker mode (output only)
+      shell: bash
+      working-directory: e2e-project
+      run: ${{ inputs.exe }} manage-indexes
+
+    - name: manage-indexes – docker mode (add migration)
+      shell: bash
+      working-directory: e2e-project
+      run: |
+        ${{ inputs.exe }} manage-indexes --add-migration
+        # Fail if the specific migration file migrations/5.sql does not exist
+        if [ ! -f migrations/5.sql ]; then
+          echo "Expected migrations/5.sql not found"
+          ls migrations/ || true
+          exit 1
+        fi

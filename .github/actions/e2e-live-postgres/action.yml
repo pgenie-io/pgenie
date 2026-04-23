@@ -1,0 +1,46 @@
+name: E2E Live PostgreSQL Mode
+description: >
+  Run e2e scenarios against a live running PostgreSQL instance. The calling job
+  must have checked out the repository and have PostgreSQL running and libpq
+  available before invoking this action.
+
+inputs:
+  exe:
+    description: Path to the pgn executable (e.g., "artifact/pgn")
+    required: true
+  database-url:
+    description: PostgreSQL connection string passed to --database-url
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: analyse – running-server mode
+      shell: bash
+      working-directory: e2e-project
+      run: |
+        "${{ inputs.exe }}" --database-url "${{ inputs.database-url }}" analyse
+
+    - name: generate – running-server mode
+      shell: bash
+      working-directory: e2e-project
+      run: |
+        "${{ inputs.exe }}" --database-url "${{ inputs.database-url }}" generate
+
+    - name: manage-indexes – running-server mode (output only)
+      shell: bash
+      working-directory: e2e-project
+      run: |
+        "${{ inputs.exe }}" --database-url "${{ inputs.database-url }}" manage-indexes
+
+    - name: manage-indexes – running-server mode (add migration)
+      shell: bash
+      working-directory: e2e-project
+      run: |
+        "${{ inputs.exe }}" --database-url "${{ inputs.database-url }}" manage-indexes --add-migration
+        # Fail if the specific migration file migrations/5.sql does not exist
+        if [ ! -f migrations/5.sql ]; then
+          echo "Expected migrations/5.sql not found"
+          ls migrations/ || true
+          exit 1
+        fi

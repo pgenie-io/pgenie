@@ -32,6 +32,11 @@ jobs:
     uses: ./.github/workflows/build-macos-x64.yaml
     secrets: inherit
 
+  build-windows:
+    name: Build and test on Windows-x64
+    uses: ./.github/workflows/build-windows.yaml
+    secrets: inherit
+
   sdist:
     name: Build sdist
     uses: ./.github/workflows/sdist.yaml

@@ -1,6 +1,10 @@
 # pGenie
 
-Type-safe PostgreSQL client code generator. This repository contains the source code for the `pgn` CLI tool.
+pGenie turns PostgreSQL migrations and parameterized queries into fully typed client code.
+
+You write plain SQL. pGenie validates it against a real PostgreSQL instance and generates idiomatic, type-safe client libraries for your application.
+
+This repository contains the source code for the `pgn` CLI tool.
 
 📚 **Full documentation:** [pgenie.io/docs](https://pgenie.io/docs/)
 

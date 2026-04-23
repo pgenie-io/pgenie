@@ -5,3 +5,13 @@ Study the contents of the `cabal.project` file. In the `source-repository-packag
 # Instructions
 
 - Avoid polluting the top namespace with definitions that could be placed in `where` blocks. Alternatively introduce helper modules if the definitions are more general. Place the helper modules in a deeper namespace of the current module, e.g. `A.B.Helper` for `A.B`.
+
+# Changelog management
+
+Accumulate the unreleased changes in the `Upcoming` section at the top of the `CHANGELOG.md` file. The release workflow automatically relabels the `Upcoming` section to the new version.
+
+When implementing changes, describe every user-facing change in the changelog. Avoid describing the minorities and chores like refactorings, tests and CI. Focus on the following categories:
+
+- Non-breaking changes: New features, improvements and optimizations that do not break existing functionality.
+- Fixes: Bug fixes and error handling improvements that do not break existing functionality.
+- Breaking changes: Changes that break existing functionality, such as API changes, removed features, or changes in behavior. These should be clearly marked and described in detail to help users understand the impact of the change and how to adapt their code if necessary.

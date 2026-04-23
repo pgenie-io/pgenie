@@ -1,3 +1,10 @@
+# Upcoming
+
+## Non-breaking changes
+
+- Add `--database-url` support so `pgn` can target an existing PostgreSQL server instead of spawning Docker, including temporary database provisioning and cleanup for running-server mode.
+- Add custom type signature files and the flow to generate and consume them.
+
 # v0.4.1
 
 ## Non-breaking changes

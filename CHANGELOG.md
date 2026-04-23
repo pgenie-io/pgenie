@@ -1,3 +1,9 @@
+# Upcoming
+
+## Non-breaking changes
+
+- Add early termination with a clear error message for Windows users who try to use Docker mode, which is not supported yet. Windows users can still use the live Postgres mode by providing `--database-url` pointing to a running PostgreSQL server.
+
 # v0.5.0
 
 ## Non-breaking changes

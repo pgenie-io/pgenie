@@ -13,6 +13,7 @@ import Logic qualified
 import Logic.ProjectFile qualified as ProjectFile
 import PGenieGen qualified as Gen
 import System.Directory qualified as Directory
+import System.Info qualified as Info
 import Utils.Prelude
 
 data Device = Device
@@ -23,6 +24,16 @@ data Device = Device
 
 scope :: (Logic.Event -> IO ()) -> Maybe Text -> Fx.Scope Logic.Error Device
 scope emitEvent maybeDatabaseUrl = do
+  -- Terminate early on Windows in Docker mode since it's not supported yet.
+  when (isNothing maybeDatabaseUrl && Info.os == "mingw32") do
+    throwError
+      Logic.Error
+        { path = [],
+          message = "Docker execution mode on Windows is under development. Windows users can only use the live Postgres mode for now.",
+          suggestion = Just "Run pgn with --database-url to connect to a running PostgreSQL server. See https://pgenie.io/docs/guides/live-instance-mode for more details.",
+          details = []
+        }
+
   projectFile <-
     let path = "project1.pgn.yaml"
      in acquire do

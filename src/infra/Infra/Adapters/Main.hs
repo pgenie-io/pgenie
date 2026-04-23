@@ -23,21 +23,11 @@ data Device = Device
 
 scope :: (Logic.Event -> IO ()) -> Maybe Text -> Fx.Scope Logic.Error Device
 scope emitEvent maybeDatabaseUrl = do
-  let halveEvent = \case
-        Logic.StageExited path progress ->
-          Logic.StageExited path (progress / 2)
-        otherEvent ->
-          otherEvent
-      halvedEmitEvent =
-        emitEvent . halveEvent
-
   projectFile <-
     let path = "project1.pgn.yaml"
      in acquire do
-          liftFileOp
-            "Failed to load project file"
-            path
-            (Text.readFile (Path.toFilePath path))
+          liftFileOp "Failed to load project file" path do
+            Text.readFile (Path.toFilePath path)
 
   projectFile <- ProjectFile.tryFromYaml projectFile
 
@@ -48,6 +38,14 @@ scope emitEvent maybeDatabaseUrl = do
            in Analyser.DockerSource {postgresTag}
         Just url ->
           Analyser.RunningServerSource {connectionUrl = url, targetMajorVersion}
+
+  let halveEvent = \case
+        Logic.StageExited path progress ->
+          Logic.StageExited path (progress / 2)
+        otherEvent ->
+          otherEvent
+      halvedEmitEvent =
+        emitEvent . halveEvent
 
   analyser <- Analyser.scope source halvedEmitEvent
   pure

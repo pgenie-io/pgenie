@@ -116,8 +116,8 @@ jobs:
 
       - name: Install and start PostgreSQL
         run: |
-          brew install postgresql@18
-          PG_BIN="/opt/homebrew/opt/postgresql@18/bin"
+          brew install postgresql@17
+          PG_BIN="/opt/homebrew/opt/postgresql@17/bin"
           "$PG_BIN/initdb" -D ~/pgdata --auth=trust --username=postgres
           "$PG_BIN/pg_ctl" start -D ~/pgdata -l ~/pgdata/postgresql.log
           until "$PG_BIN/pg_isready" -h localhost -U postgres; do sleep 1; done

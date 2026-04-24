@@ -3,6 +3,7 @@ module Ui
   )
 where
 
+import Infra.Adapters.Script qualified as Script
 import Logic qualified
 import Ui.Commands qualified as Commands
 import Ui.Display qualified as Display
@@ -16,7 +17,7 @@ main ::
   -- | Version string for @--version@ (SemVer, without the PVP @0.@ prefix).
   Text ->
   -- | Execute an effect with an event sink and an optional database URL.
-  ((Logic.Event -> IO ()) -> Maybe Text -> m Text -> IO ()) ->
+  ((Script.Event -> IO ()) -> Maybe Text -> m Text -> IO ()) ->
   -- | Application.
   IO ()
 main version runEffect = do

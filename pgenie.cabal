@@ -142,7 +142,6 @@ library logic
     Logic
     Logic.Algebra
     Logic.CustomTypeSignatureFile
-    Logic.Dsl
     Logic.IndexOptimizer
     Logic.Name
     Logic.ProjectFile
@@ -235,6 +234,7 @@ library infra
   exposed-modules:
     Infra
     Infra.Adapters.Analyser
+    Infra.Adapters.Script
 
   other-modules:
     Infra.Adapters.Analyser.Embeddings.Sessions
@@ -275,6 +275,8 @@ library infra
     hasql-mapping,
     hasql-pool,
     hasql-th,
+    monad-parallel,
+    mtl,
     pgenie-gen,
     pgenie:logic,
     pgenie:utils,
@@ -308,6 +310,7 @@ library ui
 
   build-depends:
     optparse-applicative,
+    pgenie:infra,
     pgenie:logic,
     pgenie:utils,
     text,
@@ -326,6 +329,7 @@ test-suite ui-test
 
   build-depends:
     hspec,
+    pgenie:infra,
     pgenie:logic,
     pgenie:ui,
     pgenie:utils,

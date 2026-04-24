@@ -21,6 +21,7 @@ import Infra.Adapters.Analyser.Embeddings.Sessions qualified as Embeddings.Sessi
 import Infra.Adapters.Analyser.Scopes.Testcontainers qualified
 import Infra.Adapters.Analyser.Sessions qualified as Sessions
 import Infra.Adapters.Analyser.Sessions.Procedures.GetIndexes qualified as GetIndexes
+import Infra.Adapters.Script qualified as Script
 import Logic qualified
 import TestcontainersPostgresql qualified
 import Utils.Prelude
@@ -36,15 +37,15 @@ data Source
     -- A temporary database is created for analysis and dropped on cleanup.
     RunningServerSource {connectionUrl :: Text, targetMajorVersion :: Int}
 
-scope :: Source -> (Logic.Event -> IO ()) -> Fx.Scope Logic.Report Device
+scope :: Source -> (Script.Event -> IO ()) -> Fx.Scope Logic.Report Device
 scope source emitEvent = case source of
   DockerSource {postgresTag} -> scopeViaDocker postgresTag emitEvent
   RunningServerSource {connectionUrl, targetMajorVersion} ->
     scopeViaRunningServer connectionUrl targetMajorVersion emitEvent
 
-scopeViaDocker :: Text -> (Logic.Event -> IO ()) -> Fx.Scope Logic.Report Device
+scopeViaDocker :: Text -> (Script.Event -> IO ()) -> Fx.Scope Logic.Report Device
 scopeViaDocker postgresTag emitEvent = do
-  acquire $ runTotalIO \() -> emitEvent (Logic.StageEntered ["Starting Container"])
+  acquire $ runTotalIO \() -> emitEvent (Script.StageEntered ["Starting Container"])
   (host, port) <-
     first
       adaptTestcontainersError
@@ -57,8 +58,8 @@ scopeViaDocker postgresTag emitEvent = do
                 }
           )
       )
-  acquire $ runTotalIO \() -> emitEvent (Logic.StageExited ["Starting Container"] 0.9)
-  acquire $ runTotalIO \() -> emitEvent (Logic.StageEntered ["Connecting"])
+  acquire $ runTotalIO \() -> emitEvent (Script.StageExited ["Starting Container"] 0.9)
+  acquire $ runTotalIO \() -> emitEvent (Script.StageEntered ["Connecting"])
   pool <-
     scopePool
       ( Hasql.Pool.Config.settings
@@ -73,7 +74,7 @@ scopeViaDocker postgresTag emitEvent = do
               )
           ]
       )
-  acquire $ runTotalIO \() -> emitEvent (Logic.StageExited ["Connecting"] 0.1)
+  acquire $ runTotalIO \() -> emitEvent (Script.StageExited ["Connecting"] 0.1)
   pure (Device pool)
   where
     adaptTestcontainersError :: SomeException -> Logic.Report
@@ -88,11 +89,11 @@ scopeViaDocker postgresTag emitEvent = do
 -- | Connect to a running server, verify its major version, create a temporary
 -- analysis database, and return a device backed by a pool on that database.
 -- The temporary database is dropped when the scope exits (on success or error).
-scopeViaRunningServer :: Text -> Int -> (Logic.Event -> IO ()) -> Fx.Scope Logic.Report Device
+scopeViaRunningServer :: Text -> Int -> (Script.Event -> IO ()) -> Fx.Scope Logic.Report Device
 scopeViaRunningServer connectionUrl targetMajorVersion emitEvent = do
   let serverSettings = Hasql.Connection.Settings.connectionString connectionUrl
 
-  acquire $ runTotalIO \() -> emitEvent (Logic.StageEntered ["Connecting"])
+  acquire $ runTotalIO \() -> emitEvent (Script.StageEntered ["Connecting"])
 
   -- Admin pool (size 1) for version check and DB management.
   -- Its release is registered first so it runs last in LIFO cleanup.
@@ -191,7 +192,7 @@ scopeViaRunningServer connectionUrl targetMajorVersion emitEvent = do
           ]
       )
 
-  acquire $ runTotalIO \() -> emitEvent (Logic.StageExited ["Connecting"] 1)
+  acquire $ runTotalIO \() -> emitEvent (Script.StageExited ["Connecting"] 1)
 
   pure (Device analysisPool)
   where

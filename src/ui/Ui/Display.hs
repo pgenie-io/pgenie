@@ -6,7 +6,7 @@ module Ui.Display
 where
 
 import Data.Text.IO qualified as TextIO
-import Logic.Algebra qualified as Logic
+import Infra.Adapters.Script qualified as Script
 import Ui.Display.Components.Main qualified as Main
 import Utils.Prelude
 
@@ -23,7 +23,7 @@ new = do
   pure Display {memoryVar}
 
 -- | Handle a Logic event and update the display
-handleEvent :: Display -> Logic.Event -> IO ()
+handleEvent :: Display -> Script.Event -> IO ()
 handleEvent display event = do
   oldMemory <- takeMVar display.memoryVar
   currentTime <- getCurrentTime

@@ -1,7 +1,7 @@
 module Ui.Display.Components.MainSpec (spec) where
 
 import Data.Text qualified as Text
-import Logic.Algebra qualified as Logic
+import Infra.Adapters.Script qualified as Script
 import Test.Hspec
 import TextBuilder qualified
 import Ui.Display.Components.Main qualified as Main
@@ -13,7 +13,7 @@ t :: UTCTime
 t = UTCTime (fromGregorian 2024 1 1) 0
 
 -- | Fold a list of events through update, collecting all outputs.
-runEvents :: [Logic.Event] -> [TextBuilder]
+runEvents :: [Script.Event] -> [TextBuilder]
 runEvents = go (Main.init t)
   where
     go _ [] = []
@@ -31,45 +31,45 @@ spec = do
     it "does not show Done while generators are still in progress" do
       let -- Scope infrastructure events (already halved, as received by Main.update)
           scopeEvents =
-            [ Logic.StageExited ["Starting Container"] 0.45,
-              Logic.StageExited ["Connecting"] 0.05
+            [ Script.StageExited ["Starting Container"] 0.45,
+              Script.StageExited ["Connecting"] 0.05
             ]
 
           -- Analysis stage events (leaf contributions, already halved)
           analysisEvents =
-            [ Logic.StageEntered ["Analysing"],
+            [ Script.StageEntered ["Analysing"],
               -- Migrations (Loading + Executing, 1 migration each)
-              Logic.StageExited ["migrations/001.sql", "Loading", "Migrations", "Analysing"] 0.0625,
-              Logic.StageExited ["migrations/001.sql", "Executing", "Migrations", "Analysing"] 0.0625,
-              Logic.StageExited ["Migrations", "Analysing"] 0,
+              Script.StageExited ["migrations/001.sql", "Loading", "Migrations", "Analysing"] 0.0625,
+              Script.StageExited ["migrations/001.sql", "Executing", "Migrations", "Analysing"] 0.0625,
+              Script.StageExited ["Migrations", "Analysing"] 0,
               -- Checking indexes
-              Logic.StageExited ["Checking indexes", "Analysing"] 0.125,
+              Script.StageExited ["Checking indexes", "Analysing"] 0.125,
               -- Queries (1 query)
-              Logic.StageExited ["Loading", "query1", "Queries", "Analysing"] 0.0625,
-              Logic.StageExited ["Inferring", "query1", "Queries", "Analysing"] 0.0625,
-              Logic.StageExited ["Analysing"] 0
+              Script.StageExited ["Loading", "query1", "Queries", "Analysing"] 0.0625,
+              Script.StageExited ["Inferring", "query1", "Queries", "Analysing"] 0.0625,
+              Script.StageExited ["Analysing"] 0
             ]
 
           -- 3 generators (each Loading + Compiling, already halved)
           gen1Events =
-            [ Logic.StageEntered ["gen1", "Generating"],
-              Logic.StageExited ["Loading", "gen1", "Generating"] 0.0417,
-              Logic.StageExited ["Compiling", "gen1", "Generating"] 0.0417,
-              Logic.StageExited ["gen1", "Generating"] 0
+            [ Script.StageEntered ["gen1", "Generating"],
+              Script.StageExited ["Loading", "gen1", "Generating"] 0.0417,
+              Script.StageExited ["Compiling", "gen1", "Generating"] 0.0417,
+              Script.StageExited ["gen1", "Generating"] 0
             ]
 
           gen2PartialEvents =
-            [ Logic.StageEntered ["gen2", "Generating"],
+            [ Script.StageEntered ["gen2", "Generating"],
               -- gen2 Loading completes while later generators are still compiling.
-              Logic.StageExited ["Loading", "gen2", "Generating"] 0.0417
+              Script.StageExited ["Loading", "gen2", "Generating"] 0.0417
             ]
 
           -- All events up to (and including) the moment gen3 is still running
           eventsBeforeAllDone =
-            [Logic.StageEntered []]
+            [Script.StageEntered []]
               <> scopeEvents
               <> analysisEvents
-              <> [Logic.StageEntered ["Generating"]]
+              <> [Script.StageEntered ["Generating"]]
               <> gen1Events
               <> gen2PartialEvents
           -- gen2 is still compiling; gen3 hasn't started yet
@@ -88,16 +88,16 @@ spec = do
 
     it "shows Done exactly once, after the root stage exits" do
       let events =
-            [ Logic.StageEntered [],
-              Logic.StageExited ["Starting Container"] 0.45,
-              Logic.StageExited ["Connecting"] 0.05,
-              Logic.StageExited ["Analysing"] 0.375,
-              Logic.StageEntered ["Generating"],
-              Logic.StageExited ["gen1", "Generating"] 0.0833,
-              Logic.StageExited ["gen2", "Generating"] 0.0833,
-              Logic.StageExited ["gen3", "Generating"] 0.0833,
-              Logic.StageExited ["Generating"] 0,
-              Logic.StageExited [] 0
+            [ Script.StageEntered [],
+              Script.StageExited ["Starting Container"] 0.45,
+              Script.StageExited ["Connecting"] 0.05,
+              Script.StageExited ["Analysing"] 0.375,
+              Script.StageEntered ["Generating"],
+              Script.StageExited ["gen1", "Generating"] 0.0833,
+              Script.StageExited ["gen2", "Generating"] 0.0833,
+              Script.StageExited ["gen3", "Generating"] 0.0833,
+              Script.StageExited ["Generating"] 0,
+              Script.StageExited [] 0
             ]
           outputs = runEvents events
           doneOutputs = filter containsDone outputs

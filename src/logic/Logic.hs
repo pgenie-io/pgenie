@@ -18,11 +18,11 @@ import Dhall.Core qualified as Dhall
 import Dhall.Marshal.Encode qualified as Dhall
 import Logic.Algebra
 import Logic.CustomTypeSignatureFile qualified as CustomTypeSignatureFile
-import Logic.Dsl
 import Logic.GeneratorHashes qualified as GeneratorHashes
 import Logic.IndexOptimizer qualified as IndexOptimizer
 import Logic.Name qualified as Name
 import Logic.ProjectFile qualified as ProjectFile
+import Logic.Report (Report (..))
 import Logic.SeqScanDetector qualified as SeqScanDetector
 import Logic.SignatureFile qualified as SignatureFile
 import Logic.SqlTemplate qualified as SqlTemplate
@@ -58,82 +58,79 @@ data GeneratedArtifact = GeneratedArtifact
 -- can write it to stdout.
 analyse :: (Caps m) => AnalyseOptions -> Maybe ModelFormat -> m Text
 analyse options maybeFormat =
-  run do
-    stage "" 2 do
-      projectFile <- loadProjectFile
-      (genProject, seqScanFindings, _indexes) <- analyseProject projectFile
-      unless (null seqScanFindings) do
-        for_ seqScanFindings \(queryName, finding) ->
-          warn
-            ( Report
-                []
-                ( "Sequential scan detected in query '"
-                    <> queryName
-                    <> "': table '"
-                    <> finding.tableName
-                    <> "' scanned without index on ("
-                    <> Text.intercalate ", " finding.suggestedIndexColumns
-                    <> ")"
-                )
-                (Just "Run 'manage-indexes' to generate index migration")
-                [("query", queryName), ("table", finding.tableName)]
-            )
-        when options.failOnSeqScans do
-          throwError
-            ( Report
-                []
-                "Sequential scans detected"
-                (Just "Run 'manage-indexes' to generate index migration, or remove --fail-on-seq-scans to allow warnings")
-                []
-            )
-      case maybeFormat of
-        Nothing -> pure ""
-        Just ModelFormatDhall -> pure (Dhall.pretty (Dhall.cse (Dhall.denote (Dhall.inject.embed genProject))))
-        Just ModelFormatJson -> pure (to (Aeson.Text.encodeToTextBuilder genProject))
+  stage "" 2 do
+    projectFile <- loadProjectFile
+    (genProject, seqScanFindings, _indexes) <- analyseProject projectFile
+    unless (null seqScanFindings) do
+      for_ seqScanFindings \(queryName, finding) ->
+        warn
+          ( Report
+              []
+              ( "Sequential scan detected in query '"
+                  <> queryName
+                  <> "': table '"
+                  <> finding.tableName
+                  <> "' scanned without index on ("
+                  <> Text.intercalate ", " finding.suggestedIndexColumns
+                  <> ")"
+              )
+              (Just "Run 'manage-indexes' to generate index migration")
+              [("query", queryName), ("table", finding.tableName)]
+          )
+      when options.failOnSeqScans do
+        throwError
+          ( Report
+              []
+              "Sequential scans detected"
+              (Just "Run 'manage-indexes' to generate index migration, or remove --fail-on-seq-scans to allow warnings")
+              []
+          )
+    case maybeFormat of
+      Nothing -> pure ""
+      Just ModelFormatDhall -> pure (Dhall.pretty (Dhall.cse (Dhall.denote (Dhall.inject.embed genProject))))
+      Just ModelFormatJson -> pure (to (Aeson.Text.encodeToTextBuilder genProject))
 
 generate :: (Caps m) => GenerateOptions -> m ()
 generate options =
-  run do
-    stage "" 2 do
-      projectFile <- loadProjectFile
-      (genProject, seqScanFindings, _indexes) <- analyseProject projectFile
-      unless (null seqScanFindings) do
-        for_ seqScanFindings \(queryName, finding) ->
-          warn
-            ( Report
-                []
-                ( "Sequential scan detected in query '"
-                    <> queryName
-                    <> "': table '"
-                    <> finding.tableName
-                    <> "' scanned without index on ("
-                    <> Text.intercalate ", " finding.suggestedIndexColumns
-                    <> ")"
-                )
-                (Just "Run 'manage-indexes' to generate index migration")
-                [("query", queryName), ("table", finding.tableName)]
-            )
-        when options.failOnSeqScans do
-          throwError
-            ( Report
-                []
-                "Sequential scans detected"
-                (Just "Run 'manage-indexes' to generate index migration, or remove --fail-on-seq-scans to allow warnings")
-                []
-            )
-      generateCode projectFile genProject
-      pure ()
+  stage "" 2 do
+    projectFile <- loadProjectFile
+    (genProject, seqScanFindings, _indexes) <- analyseProject projectFile
+    unless (null seqScanFindings) do
+      for_ seqScanFindings \(queryName, finding) ->
+        warn
+          ( Report
+              []
+              ( "Sequential scan detected in query '"
+                  <> queryName
+                  <> "': table '"
+                  <> finding.tableName
+                  <> "' scanned without index on ("
+                  <> Text.intercalate ", " finding.suggestedIndexColumns
+                  <> ")"
+              )
+              (Just "Run 'manage-indexes' to generate index migration")
+              [("query", queryName), ("table", finding.tableName)]
+          )
+      when options.failOnSeqScans do
+        throwError
+          ( Report
+              []
+              "Sequential scans detected"
+              (Just "Run 'manage-indexes' to generate index migration, or remove --fail-on-seq-scans to allow warnings")
+              []
+          )
+    generateCode projectFile genProject
+    pure ()
 
 -- | Analyse the project's index usage and output the recommended migration SQL
 -- to stdout. When @--add-migration@ is set, also writes the migration to a
 -- numbered file in the @migrations/@ directory.
 manageIndexes :: (Caps m) => ManageIndexesOptions -> m Text
 manageIndexes options =
-  run do
-    stage "" 2 do
-      projectFile <- loadProjectFile
-      (_genProject, seqScanFindings, indexes) <- analyseProject projectFile
-      handleIndexOptimization options indexes seqScanFindings
+  stage "" 2 do
+    projectFile <- loadProjectFile
+    (_genProject, seqScanFindings, indexes) <- analyseProject projectFile
+    handleIndexOptimization options indexes seqScanFindings
 
 -- * Helpers
 
@@ -142,7 +139,7 @@ locationToUrl = \case
   Gen.LocationUrl url -> url
   Gen.LocationPath path -> Path.toText path
 
-loadQuerySql :: QueryListed -> Script SqlTemplate.SqlTemplate
+loadQuerySql :: (Caps m) => QueryListed -> m SqlTemplate.SqlTemplate
 loadQuerySql queryListed = do
   sql <- readFile queryListed.filePath
   case SqlTemplate.tryFromText sql of
@@ -156,7 +153,7 @@ loadQuerySql queryListed = do
         )
     Right res -> pure res
 
-generateCode :: ProjectFile.ProjectFile -> Gen.Input.Project -> Script [GeneratedArtifact]
+generateCode :: (Caps m) => ProjectFile.ProjectFile -> Gen.Input.Project -> m [GeneratedArtifact]
 generateCode projectFile project =
   stage "Generating" (length projectFile.artifacts) do
     -- Load existing hashes file
@@ -231,7 +228,7 @@ generateCode projectFile project =
 
     pure artifacts
 
-analyseProject :: ProjectFile.ProjectFile -> Script (Gen.Input.Project, [(Text, SeqScanFinding)], [IndexInfo])
+analyseProject :: (Caps m) => ProjectFile.ProjectFile -> m (Gen.Input.Project, [(Text, SeqScanFinding)], [IndexInfo])
 analyseProject projectFile =
   stage "Analysing" 3 do
     migrationsLoaded <-
@@ -465,7 +462,7 @@ analyseProject projectFile =
         indexes
       )
 
-stagedParFor :: Text -> (a -> Text) -> [a] -> (a -> Script b) -> Script [b]
+stagedParFor :: (Caps m) => Text -> (a -> Text) -> [a] -> (a -> m b) -> m [b]
 stagedParFor stageName nameFn items action =
   stage stageName (length items) do
     MonadParallel.forM items \item ->
@@ -536,21 +533,7 @@ normalizeTableToken token =
         [] -> ""
         x : _ -> x
 
--- | Depending on the warning handling strategy this can either log the warning and continue or throw an error to stop the execution.
-warn :: Report -> Script ()
-warn =
-  -- TODO: Implement conditional throwing or emission.
-  emit . WarningEmitted
-
--- | Run the unified index optimizer, combining redundant-index detection,
--- excessive-composite narrowing, and missing-index creation into one step.
--- Returns the migration SQL, printing it to stdout via the caller.
--- When @--allow-redundant-indexes@ is set, DropIndex actions are emitted as
--- warnings instead of being included in the generated migration.
--- When @--add-migration@ is set, also writes the migration to a numbered file in
--- @migrations/@, failing if the existing files do not follow the @N.sql@
--- naming convention.
-handleIndexOptimization :: ManageIndexesOptions -> [IndexInfo] -> [(Text, SeqScanFinding)] -> Script Text
+handleIndexOptimization :: (Caps m) => ManageIndexesOptions -> [IndexInfo] -> [(Text, SeqScanFinding)] -> m Text
 handleIndexOptimization options indexes seqScanFindings = do
   let queryNeeds =
         map (\(_, finding) -> (finding.tableName, finding.suggestedIndexColumns)) seqScanFindings
@@ -574,7 +557,7 @@ handleIndexOptimization options indexes seqScanFindings = do
 -- | Write the migration SQL to a numbered file in @migrations/@.
 -- Fails explicitly if any existing file does not follow the @N.sql@ naming
 -- convention (i.e. the base name is not a sequence of digits).
-writeMigrationFile :: Text -> Script ()
+writeMigrationFile :: (Caps m) => Text -> m ()
 writeMigrationFile content = do
   migrationsListed <-
     listDir "migrations"
@@ -603,14 +586,12 @@ writeMigrationFile content = do
         )
     Just migrationPath -> do
       writeFile migrationPath content
-      emit
-        ( WarningEmitted
-            ( Report
-                []
-                ("Written migration to migrations/" <> migrationFileName)
-                (Just "Review the migration and commit it")
-                []
-            )
+      warn
+        ( Report
+            []
+            ("Written migration to migrations/" <> migrationFileName)
+            (Just "Review the migration and commit it")
+            []
         )
 
 isDropAction :: IndexAction -> Bool

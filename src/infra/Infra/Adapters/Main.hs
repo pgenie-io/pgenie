@@ -9,6 +9,7 @@ import Data.Text qualified as Text
 import Data.Text.IO qualified as Text
 import Fx
 import Infra.Adapters.Analyser qualified as Analyser
+import Infra.Adapters.Script qualified as Script
 import Logic qualified
 import Logic.ProjectFile qualified as ProjectFile
 import PGenieGen qualified as Gen
@@ -17,12 +18,12 @@ import System.Info qualified as Info
 import Utils.Prelude
 
 data Device = Device
-  { emitEvent :: Logic.Event -> IO (),
+  { emitEvent :: Script.Event -> IO (),
     analyser :: Analyser.Device,
     projectFile :: ProjectFile.ProjectFile
   }
 
-scope :: (Logic.Event -> IO ()) -> Maybe Text -> Fx.Scope Logic.Report Device
+scope :: (Script.Event -> IO ()) -> Maybe Text -> Fx.Scope Logic.Report Device
 scope emitEvent maybeDatabaseUrl = do
   -- Terminate early on Windows in Docker mode since it's not supported yet.
   when (isNothing maybeDatabaseUrl && Info.os == "mingw32") do
@@ -51,8 +52,8 @@ scope emitEvent maybeDatabaseUrl = do
           Analyser.RunningServerSource {connectionUrl = url, targetMajorVersion}
 
   let halveEvent = \case
-        Logic.StageExited path progress ->
-          Logic.StageExited path (progress / 2)
+        Script.StageExited path progress ->
+          Script.StageExited path (progress / 2)
         otherEvent ->
           otherEvent
       halvedEmitEvent =
@@ -66,8 +67,8 @@ scope emitEvent maybeDatabaseUrl = do
         projectFile
       }
 
-instance Logic.Emits (Fx Device Logic.Report) where
-  emit event =
+instance Script.EmitsEvent (Fx Device Logic.Report) where
+  emitEvent event =
     runTotalIO \dev -> dev.emitEvent event
 
 instance Logic.DbOps (Fx Device Logic.Report) where

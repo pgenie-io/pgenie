@@ -204,6 +204,19 @@ test-suite logic-test
     QuickCheck,
     text,
 
+library runtime
+  import: base
+  hs-source-dirs: src/runtime/
+  exposed-modules:
+    Runtime.Emitting
+    Runtime.Observation
+
+  build-depends:
+    monad-parallel,
+    pgenie:logic,
+    pgenie:utils,
+    text,
+
 test-suite infra-test
   import: test
   type: exitcode-stdio-1.0
@@ -234,7 +247,6 @@ library infra
   exposed-modules:
     Infra
     Infra.Adapters.Analyser
-    Infra.Adapters.Script
 
   other-modules:
     Infra.Adapters.Analyser.Embeddings.Sessions
@@ -279,6 +291,7 @@ library infra
     mtl,
     pgenie-gen,
     pgenie:logic,
+    pgenie:runtime,
     pgenie:utils,
     postgresql-libpq,
     resourcet,
@@ -310,8 +323,8 @@ library ui
 
   build-depends:
     optparse-applicative,
-    pgenie:infra,
     pgenie:logic,
+    pgenie:runtime,
     pgenie:utils,
     text,
     text-builder,
@@ -329,8 +342,8 @@ test-suite ui-test
 
   build-depends:
     hspec,
-    pgenie:infra,
     pgenie:logic,
+    pgenie:runtime,
     pgenie:ui,
     pgenie:utils,
     text,

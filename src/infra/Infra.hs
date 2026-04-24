@@ -7,20 +7,21 @@ import Data.Text qualified as Text
 import Data.Text.IO qualified as TextIO
 import Fx
 import Infra.Adapters.Main qualified as MainAdapter
-import Infra.Adapters.Script qualified as Script
 import Logic qualified
+import Runtime.Emitting qualified as Emitting
+import Runtime.Observation qualified as Observation
 import System.Exit qualified as Exit
 import Utils.Prelude
 
-run :: (Script.Event -> IO ()) -> Maybe Text -> Script.ScriptT (Fx MainAdapter.Device Logic.Report) Text -> IO ()
-run emitEvent maybeDatabaseUrl fx = do
+run :: (Observation.Observation -> IO ()) -> Maybe Text -> Emitting.Emitting (Fx MainAdapter.Device Logic.Report) Text -> IO ()
+run emitObservation maybeDatabaseUrl fx = do
   result <-
-    Script.runScript fx
-      & scoping (MainAdapter.scope emitEvent maybeDatabaseUrl)
+    Emitting.interpretEmitting fx
+      & scoping (MainAdapter.scope emitObservation maybeDatabaseUrl)
       & exposeErr
       & Fx.runFx
   case result of
     Left err -> do
-      emitEvent (Script.Failed err)
+      emitObservation (Observation.ExecutionFailed err)
       Exit.exitFailure
     Right text -> unless (Text.null text) (TextIO.putStrLn text)

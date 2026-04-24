@@ -5,8 +5,8 @@ module Ui.Display.Components.Main
   )
 where
 
-import Infra.Adapters.Script qualified as Script
 import Logic.Report (Report (..))
+import Runtime.Observation qualified as Observation
 import Ui.Display.Components.Main.View qualified as View
 import Ui.Display.Components.ProgressBar qualified as ProgressBar
 import Utils.Prelude hiding (init)
@@ -28,12 +28,12 @@ init startTime =
     }
 
 -- | Combined update: transitions state and produces terminal output
-update :: Script.Event -> UTCTime -> Memory -> (Memory, TextBuilder)
-update event currentTime mem =
+update :: Observation.Observation -> UTCTime -> Memory -> (Memory, TextBuilder)
+update observation currentTime mem =
   if mem.isCompleted
     then (mem, mempty)
-    else case event of
-      Script.StageEntered path ->
+    else case observation of
+      Observation.StageEntered path ->
         let (pb', pbOutput) =
               ProgressBar.update
                 0
@@ -47,7 +47,7 @@ update event currentTime mem =
                   pbOutput
                 ]
             )
-      Script.StageExited path progressDelta ->
+      Observation.StageExited path progressDelta ->
         case mem.progressBar of
           Nothing -> (mem, mempty)
           Just pb ->
@@ -56,7 +56,7 @@ update event currentTime mem =
              in if null path
                   then (mem' {isCompleted = True}, View.printDone)
                   else (mem', View.eraseLine <> pbOutput)
-      Script.WarningEmitted err ->
+      Observation.WarningEmitted err ->
         let (pb', pbOutput) =
               ProgressBar.update
                 0
@@ -70,7 +70,7 @@ update event currentTime mem =
                   pbOutput
                 ]
             )
-      Script.Failed err ->
+      Observation.ExecutionFailed err ->
         ( mem {progressBar = Nothing},
           mconcat
             [ if isJust mem.progressBar then View.eraseLine else mempty,

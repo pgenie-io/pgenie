@@ -1,12 +1,12 @@
 module Ui.Display
   ( Display,
     new,
-    handleEvent,
+    handleObservation,
   )
 where
 
 import Data.Text.IO qualified as TextIO
-import Infra.Adapters.Script qualified as Script
+import Runtime.Observation qualified as Observation
 import Ui.Display.Components.Main qualified as Main
 import Utils.Prelude
 
@@ -22,12 +22,12 @@ new = do
   memoryVar <- newMVar (Main.init currentTime)
   pure Display {memoryVar}
 
--- | Handle a Logic event and update the display
-handleEvent :: Display -> Script.Event -> IO ()
-handleEvent display event = do
+-- | Handle a runtime observation and update the display.
+handleObservation :: Display -> Observation.Observation -> IO ()
+handleObservation display observation = do
   oldMemory <- takeMVar display.memoryVar
   currentTime <- getCurrentTime
-  let (newMemory, output) = Main.update event currentTime oldMemory
+  let (newMemory, output) = Main.update observation currentTime oldMemory
   TextIO.hPutStr stderr (to output)
   hFlush stderr
   putMVar display.memoryVar newMemory

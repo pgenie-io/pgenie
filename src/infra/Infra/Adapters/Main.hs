@@ -9,22 +9,23 @@ import Data.Text qualified as Text
 import Data.Text.IO qualified as Text
 import Fx
 import Infra.Adapters.Analyser qualified as Analyser
-import Infra.Adapters.Script qualified as Script
 import Logic qualified
 import Logic.ProjectFile qualified as ProjectFile
 import PGenieGen qualified as Gen
+import Runtime.Emitting qualified as Emitting
+import Runtime.Observation qualified as Observation
 import System.Directory qualified as Directory
 import System.Info qualified as Info
 import Utils.Prelude
 
 data Device = Device
-  { emitEvent :: Script.Event -> IO (),
+  { emitObservation :: Observation.Observation -> IO (),
     analyser :: Analyser.Device,
     projectFile :: ProjectFile.ProjectFile
   }
 
-scope :: (Script.Event -> IO ()) -> Maybe Text -> Fx.Scope Logic.Report Device
-scope emitEvent maybeDatabaseUrl = do
+scope :: (Observation.Observation -> IO ()) -> Maybe Text -> Fx.Scope Logic.Report Device
+scope emitObservation maybeDatabaseUrl = do
   -- Terminate early on Windows in Docker mode since it's not supported yet.
   when (isNothing maybeDatabaseUrl && Info.os == "mingw32") do
     throwError
@@ -51,25 +52,25 @@ scope emitEvent maybeDatabaseUrl = do
         Just url ->
           Analyser.RunningServerSource {connectionUrl = url, targetMajorVersion}
 
-  let halveEvent = \case
-        Script.StageExited path progress ->
-          Script.StageExited path (progress / 2)
-        otherEvent ->
-          otherEvent
-      halvedEmitEvent =
-        emitEvent . halveEvent
+  let halveObservation = \case
+        Observation.StageExited path progress ->
+          Observation.StageExited path (progress / 2)
+        otherObservation ->
+          otherObservation
+      halvedEmitObservation =
+        emitObservation . halveObservation
 
-  analyser <- Analyser.scope source halvedEmitEvent
+  analyser <- Analyser.scope source halvedEmitObservation
   pure
     Device
-      { emitEvent = halvedEmitEvent,
+      { emitObservation = halvedEmitObservation,
         analyser,
         projectFile
       }
 
-instance Script.EmitsEvent (Fx Device Logic.Report) where
-  emitEvent event =
-    runTotalIO \dev -> dev.emitEvent event
+instance Emitting.EmitsObservation (Fx Device Logic.Report) where
+  emitObservation observation =
+    runTotalIO \dev -> dev.emitObservation observation
 
 instance Logic.DbOps (Fx Device Logic.Report) where
   executeMigration migrationText =

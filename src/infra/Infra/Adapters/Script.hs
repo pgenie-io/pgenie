@@ -117,6 +117,4 @@ instance (EmitsEvent m) => EmitsEvent (ScriptT m) where
 -- | Lift an action from @m@ into 'ScriptT m', nesting the current path into
 -- any error it throws.
 liftScript :: (MonadError Logic.Report m) => m a -> ScriptT m a
-liftScript ma = ScriptT \_ path ->
-  catchError ma \e ->
-    throwError (Report.nest path e)
+liftScript ma = ScriptT \_ path -> Report.nesting path ma

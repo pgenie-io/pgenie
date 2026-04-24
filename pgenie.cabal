@@ -204,12 +204,11 @@ test-suite logic-test
     QuickCheck,
     text,
 
-library runtime
+library interpreters
   import: base
-  hs-source-dirs: src/runtime/
+  hs-source-dirs: src/interpreters/
   exposed-modules:
-    Runtime.Emitting
-    Runtime.Observation
+    Interpreters.Emitting
 
   build-depends:
     monad-parallel,
@@ -290,8 +289,8 @@ library infra
     monad-parallel,
     mtl,
     pgenie-gen,
+    pgenie:interpreters,
     pgenie:logic,
-    pgenie:runtime,
     pgenie:utils,
     postgresql-libpq,
     resourcet,
@@ -323,8 +322,8 @@ library ui
 
   build-depends:
     optparse-applicative,
+    pgenie:interpreters,
     pgenie:logic,
-    pgenie:runtime,
     pgenie:utils,
     text,
     text-builder,
@@ -342,8 +341,8 @@ test-suite ui-test
 
   build-depends:
     hspec,
+    pgenie:interpreters,
     pgenie:logic,
-    pgenie:runtime,
     pgenie:ui,
     pgenie:utils,
     text,

@@ -1,7 +1,8 @@
--- | Pure runtime interpreter for staged logic that emits structured
--- observations for a host environment to render or record.
-module Runtime.Emitting
-  ( EmitsObservation (..),
+-- | Pure interpreter for staged logic that emits structured observations
+-- for a host environment to render or record.
+module Interpreters.Emitting
+  ( Observation (..),
+    EmitsObservation (..),
     Emitting (..),
     interpretEmitting,
   )
@@ -11,12 +12,19 @@ import Control.Monad.Parallel qualified as MonadParallel
 import Data.Text qualified as Text
 import Logic qualified
 import Logic.Report qualified as Report
-import Runtime.Observation qualified as Observation
 import Utils.Prelude hiding (readFile, writeFile)
+
+-- | Observations produced while executing capability-based logic.
+data Observation
+  = StageEntered [Text]
+  | StageExited [Text] Double
+  | WarningEmitted Logic.Report
+  | ExecutionFailed Logic.Report
+  deriving stock (Eq, Show)
 
 -- | Capability to publish runtime observations.
 class (Monad m) => EmitsObservation m where
-  emitObservation :: Observation.Observation -> m ()
+  emitObservation :: Observation -> m ()
 
 -- | Transformer that tracks the current stage path and per-stage progress
 -- budget, implementing the 'Logic.Stages' and 'Logic.Warns' capabilities.
@@ -62,16 +70,16 @@ instance (EmitsObservation m, Monad m) => Logic.Stages (Emitting m) where
             if Text.null name
               then path
               else name : path
-      emitObservation (Observation.StageEntered newPath)
+      emitObservation (StageEntered newPath)
       (remainingProgress, result) <-
         if substagesCount > 0
           then (0,) <$> runInner (progressPerStage / fromIntegral substagesCount) newPath
           else (progressPerStage,) <$> runInner 0 newPath
-      emitObservation (Observation.StageExited newPath remainingProgress)
+      emitObservation (StageExited newPath remainingProgress)
       pure result
 
 instance (EmitsObservation m, Monad m) => Logic.Warns (Emitting m) where
-  warn report = Emitting \_ path -> emitObservation (Observation.WarningEmitted (Report.nest path report))
+  warn report = Emitting \_ path -> emitObservation (WarningEmitted (Report.nest path report))
 
 instance (Logic.DbOps m) => Logic.DbOps (Emitting m) where
   executeMigration sql = hoist (Logic.executeMigration sql)

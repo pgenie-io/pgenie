@@ -9,22 +9,21 @@ import Data.Text qualified as Text
 import Data.Text.IO qualified as Text
 import Fx
 import Infra.Adapters.Analyser qualified as Analyser
+import Interpreters.Emitting qualified as Emitting
 import Logic qualified
 import Logic.ProjectFile qualified as ProjectFile
 import PGenieGen qualified as Gen
-import Runtime.Emitting qualified as Emitting
-import Runtime.Observation qualified as Observation
 import System.Directory qualified as Directory
 import System.Info qualified as Info
 import Utils.Prelude
 
 data Device = Device
-  { emitObservation :: Observation.Observation -> IO (),
+  { emitObservation :: Emitting.Observation -> IO (),
     analyser :: Analyser.Device,
     projectFile :: ProjectFile.ProjectFile
   }
 
-scope :: (Observation.Observation -> IO ()) -> Maybe Text -> Fx.Scope Logic.Report Device
+scope :: (Emitting.Observation -> IO ()) -> Maybe Text -> Fx.Scope Logic.Report Device
 scope emitObservation maybeDatabaseUrl = do
   -- Terminate early on Windows in Docker mode since it's not supported yet.
   when (isNothing maybeDatabaseUrl && Info.os == "mingw32") do
@@ -52,9 +51,9 @@ scope emitObservation maybeDatabaseUrl = do
         Just url ->
           Analyser.RunningServerSource {connectionUrl = url, targetMajorVersion}
 
-  let halveObservation = \case
-        Observation.StageExited path progress ->
-          Observation.StageExited path (progress / 2)
+      halveObservation = \case
+        Emitting.StageExited path progress ->
+          Emitting.StageExited path (progress / 2)
         otherObservation ->
           otherObservation
       halvedEmitObservation =

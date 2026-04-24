@@ -5,8 +5,8 @@ module Ui.Display.Components.Main
   )
 where
 
+import Interpreters.Emitting qualified as Emitting
 import Logic.Report (Report (..))
-import Runtime.Observation qualified as Observation
 import Ui.Display.Components.Main.View qualified as View
 import Ui.Display.Components.ProgressBar qualified as ProgressBar
 import Utils.Prelude hiding (init)
@@ -28,12 +28,12 @@ init startTime =
     }
 
 -- | Combined update: transitions state and produces terminal output
-update :: Observation.Observation -> UTCTime -> Memory -> (Memory, TextBuilder)
+update :: Emitting.Observation -> UTCTime -> Memory -> (Memory, TextBuilder)
 update observation currentTime mem =
   if mem.isCompleted
     then (mem, mempty)
     else case observation of
-      Observation.StageEntered path ->
+      Emitting.StageEntered path ->
         let (pb', pbOutput) =
               ProgressBar.update
                 0
@@ -47,7 +47,7 @@ update observation currentTime mem =
                   pbOutput
                 ]
             )
-      Observation.StageExited path progressDelta ->
+      Emitting.StageExited path progressDelta ->
         case mem.progressBar of
           Nothing -> (mem, mempty)
           Just pb ->
@@ -56,7 +56,7 @@ update observation currentTime mem =
              in if null path
                   then (mem' {isCompleted = True}, View.printDone)
                   else (mem', View.eraseLine <> pbOutput)
-      Observation.WarningEmitted err ->
+      Emitting.WarningEmitted err ->
         let (pb', pbOutput) =
               ProgressBar.update
                 0
@@ -70,7 +70,7 @@ update observation currentTime mem =
                   pbOutput
                 ]
             )
-      Observation.ExecutionFailed err ->
+      Emitting.ExecutionFailed err ->
         ( mem {progressBar = Nothing},
           mconcat
             [ if isJust mem.progressBar then View.eraseLine else mempty,

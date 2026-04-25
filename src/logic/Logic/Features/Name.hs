@@ -1,4 +1,4 @@
-module Logic.Name
+module Logic.Features.Name
   ( Name,
     toGenName,
     toPartsVector,
@@ -16,7 +16,7 @@ where
 
 import Data.Text qualified as Text
 import Data.Vector qualified as Vector
-import Logic.Name.Megaparsec qualified as Megaparsec
+import Logic.Features.Name.Megaparsec qualified as Megaparsec
 import PGenieGen.Model.Input qualified as Gen
 import Test.QuickCheck qualified as Qc
 import TextBuilder qualified

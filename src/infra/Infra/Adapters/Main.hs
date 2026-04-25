@@ -12,9 +12,9 @@ import Fx
 import Infra.Adapters.Analyser qualified as Analyser
 import Interpreters.Observing qualified as Observing
 import Logic qualified
-import Logic.CustomTypeSignatureFile qualified as CustomTypeSignatureFile
-import Logic.GeneratorHashes qualified as GeneratorHashes
-import Logic.ProjectFile qualified as ProjectFile
+import Logic.Features.CustomTypeSignatureFile qualified as CustomTypeSignatureFile
+import Logic.Features.GeneratorHashes qualified as GeneratorHashes
+import Logic.Features.ProjectFile qualified as ProjectFile
 import PGenieGen qualified as Gen
 import System.Directory qualified as Directory
 import System.Info qualified as Info

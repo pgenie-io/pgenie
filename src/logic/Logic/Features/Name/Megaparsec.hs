@@ -1,4 +1,4 @@
-module Logic.Name.Megaparsec where
+module Logic.Features.Name.Megaparsec where
 
 import Data.Text qualified as Text
 import Text.Megaparsec

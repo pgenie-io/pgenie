@@ -1,8 +1,8 @@
 module SignatureFileSpec (spec) where
 
 import Data.Text qualified as Text
-import Logic.Name qualified as Name
-import Logic.SignatureFile
+import Logic.Features.Name qualified as Name
+import Logic.Features.SignatureFile
 import PGenieGen.Model.Input qualified as Gen.Input
 import Test.Hspec
 import Utils.Prelude

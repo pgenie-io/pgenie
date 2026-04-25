@@ -1,4 +1,4 @@
-module Logic.SeqScanDetector
+module Logic.Features.SeqScanDetector
   ( SeqScanFinding (..),
     ExplainsQuery (..),
     detectSeqScans,
@@ -7,7 +7,7 @@ module Logic.SeqScanDetector
 where
 
 import Data.Text qualified as Text
-import Logic.Report (Report (..))
+import Logic.Features.Report (Report (..))
 import Utils.Prelude
 
 -- | A finding of sequential scan in a query execution plan.

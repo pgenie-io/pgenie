@@ -1,4 +1,4 @@
-module Logic.ProjectFile where
+module Logic.Features.ProjectFile where
 
 import AlgebraicPath qualified as Path
 import Control.Foldl qualified as Fold
@@ -7,8 +7,8 @@ import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Text qualified as Text
 import Data.Vector qualified as Vector
-import Logic.Name qualified as Name
-import Logic.Report qualified as Report
+import Logic.Features.Name qualified as Name
+import Logic.Features.Report qualified as Report
 import PGenieGen qualified as Gen
 import PGenieGen.Model.Input qualified as Gen
 import Utils.Prelude hiding (Version)

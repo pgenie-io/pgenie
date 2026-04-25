@@ -1,4 +1,4 @@
-module Logic.GeneratorHashes
+module Logic.Features.GeneratorHashes
   ( HashesMap,
     Port (..),
     tryLoadHashesFile,
@@ -10,7 +10,7 @@ where
 import Control.Foldl qualified as Fold
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
-import Logic.Report qualified as Report
+import Logic.Features.Report qualified as Report
 import Utils.Prelude hiding (readFile, writeFile)
 import YamlUnscrambler qualified as U
 

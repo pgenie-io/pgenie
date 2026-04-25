@@ -3,7 +3,7 @@
 module Ui.Commands.ManageIndexes (manageIndexes) where
 
 import Logic qualified
-import Logic.ProjectFile qualified as ProjectFile
+import Logic.Features.ProjectFile qualified as ProjectFile
 import Options.Applicative qualified as Opt
 import Ui.Framework
 import Utils.Prelude

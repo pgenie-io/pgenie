@@ -4,7 +4,7 @@
 module Ui.Commands.Generate (generate) where
 
 import Logic qualified
-import Logic.ProjectFile qualified as ProjectFile
+import Logic.Features.ProjectFile qualified as ProjectFile
 import Options.Applicative qualified as Opt
 import Ui.Framework
 import Utils.Prelude

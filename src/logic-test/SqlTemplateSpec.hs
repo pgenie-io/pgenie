@@ -1,7 +1,7 @@
 module SqlTemplateSpec (spec) where
 
 import Data.Text qualified as Text
-import Logic.SqlTemplate
+import Logic.Features.SqlTemplate
 import Test.Hspec
 import Test.Hspec.QuickCheck
 import Test.QuickCheck

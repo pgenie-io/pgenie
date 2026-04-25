@@ -1,4 +1,4 @@
-module Logic.Report where
+module Logic.Features.Report where
 
 import Utils.Prelude
 

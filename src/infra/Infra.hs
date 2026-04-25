@@ -9,7 +9,7 @@ import Fx
 import Infra.Adapters.Main qualified as MainAdapter
 import Interpreters.Observing qualified as Observing
 import Logic qualified
-import Logic.ProjectFile qualified as ProjectFile
+import Logic.Features.ProjectFile qualified as ProjectFile
 import System.Exit qualified as Exit
 import Utils.Prelude
 

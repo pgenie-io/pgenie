@@ -11,9 +11,9 @@ where
 import Control.Monad.Parallel qualified as MonadParallel
 import Data.Text qualified as Text
 import Logic qualified
-import Logic.CustomTypeSignatureFile qualified as CustomTypeSignatureFile
-import Logic.GeneratorHashes qualified as GeneratorHashes
-import Logic.Report qualified as Report
+import Logic.Features.CustomTypeSignatureFile qualified as CustomTypeSignatureFile
+import Logic.Features.GeneratorHashes qualified as GeneratorHashes
+import Logic.Features.Report qualified as Report
 import Utils.Prelude hiding (readFile, writeFile)
 
 -- | Observations produced while executing capability-based logic.

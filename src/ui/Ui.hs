@@ -5,7 +5,7 @@ where
 
 import Interpreters.Observing qualified as Observing
 import Logic qualified
-import Logic.ProjectFile qualified as ProjectFile
+import Logic.Features.ProjectFile qualified as ProjectFile
 import Ui.Commands qualified as Commands
 import Ui.Display qualified as Display
 import Ui.Framework qualified as Framework

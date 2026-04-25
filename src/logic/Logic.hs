@@ -47,20 +47,20 @@ import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Dhall.Core qualified as Dhall
 import Dhall.Marshal.Encode qualified as Dhall
-import Logic.CustomTypeSignatureFile qualified as CustomTypeSignatureFile
-import Logic.GeneratorHashes qualified as GeneratorHashes
-import Logic.IndexOptimizer (DropReason (..), IndexAction (..), IndexInfo (..), LoadsIndexes (..))
-import Logic.IndexOptimizer qualified as IndexOptimizer
-import Logic.Migrations (ExecutesMigrations (..))
-import Logic.Name qualified as Name
-import Logic.ProjectFile qualified as ProjectFile
-import Logic.QueryAnalysis (InferredParam (..), InferredQueryTypes (..), InfersQueryTypes (..))
-import Logic.Report (Report (..))
-import Logic.SeqScanDetector (ExplainsQuery (..), SeqScanFinding (..))
-import Logic.SeqScanDetector qualified as SeqScanDetector
-import Logic.SignatureFile qualified as SignatureFile
-import Logic.SqlTemplate qualified as SqlTemplate
-import Logic.SyntaxAnalyser qualified as SyntaxAnalyser
+import Logic.Features.CustomTypeSignatureFile qualified as CustomTypeSignatureFile
+import Logic.Features.GeneratorHashes qualified as GeneratorHashes
+import Logic.Features.IndexOptimizer (DropReason (..), IndexAction (..), IndexInfo (..), LoadsIndexes (..))
+import Logic.Features.IndexOptimizer qualified as IndexOptimizer
+import Logic.Features.Migrations (ExecutesMigrations (..))
+import Logic.Features.Name qualified as Name
+import Logic.Features.ProjectFile qualified as ProjectFile
+import Logic.Features.QueryAnalysis (InferredParam (..), InferredQueryTypes (..), InfersQueryTypes (..))
+import Logic.Features.Report (Report (..))
+import Logic.Features.SeqScanDetector (ExplainsQuery (..), SeqScanFinding (..))
+import Logic.Features.SeqScanDetector qualified as SeqScanDetector
+import Logic.Features.SignatureFile qualified as SignatureFile
+import Logic.Features.SqlTemplate qualified as SqlTemplate
+import Logic.Features.SyntaxAnalyser qualified as SyntaxAnalyser
 import PGenieGen qualified as Gen
 import PGenieGen.Model.Input qualified as Gen.Input
 import PGenieGen.Model.Output qualified as Gen.Output

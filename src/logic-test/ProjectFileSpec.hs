@@ -3,8 +3,8 @@ module ProjectFileSpec (spec) where
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
-import Logic.ProjectFile
-import Logic.Report qualified as Report
+import Logic.Features.ProjectFile
+import Logic.Features.Report qualified as Report
 import Test.Hspec
 import Utils.Prelude
 

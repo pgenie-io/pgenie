@@ -148,6 +148,8 @@ library logic
     Logic.Features.ProjectFile
     Logic.Features.QueryAnalysis
     Logic.Features.Report
+    Logic.Features.Fs
+    Logic.Features.Staging
     Logic.Features.SeqScanDetector
     Logic.Features.SignatureFile
     Logic.Features.SqlTemplate

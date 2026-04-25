@@ -55,7 +55,9 @@ import Logic.Features.Migrations (ExecutesMigrations (..))
 import Logic.Features.Name qualified as Name
 import Logic.Features.ProjectFile qualified as ProjectFile
 import Logic.Features.QueryAnalysis (InferredParam (..), InferredQueryTypes (..), InfersQueryTypes (..))
-import Logic.Features.Report (Report (..))
+import Logic.Features.Fs (FsOps (..))
+import Logic.Features.Report (Report (..), Warns (..))
+import Logic.Features.Staging (Stages (..))
 import Logic.Features.SeqScanDetector (ExplainsQuery (..), SeqScanFinding (..))
 import Logic.Features.SeqScanDetector qualified as SeqScanDetector
 import Logic.Features.SignatureFile qualified as SignatureFile
@@ -106,33 +108,6 @@ data ManageIndexesOptions = ManageIndexesOptions
 
 data ModelFormat = ModelFormatJson | ModelFormatDhall
   deriving stock (Eq, Show)
-
--- |
--- - Reports progress.
--- - Reports stage enter and exit for logging.
--- - Reports parallelism as @enters - exits@. Amount of actively running stages.
-class (Monad m) => Stages m where
-  -- | Wrap an action as a stage in progress.
-  stage ::
-    -- | Name of the stage. May be empty.
-    Text ->
-    -- | Amount of substages.
-    --
-    -- Each nested stage exit will increase the progress within this stage by @1 / amountOfSubstages@.
-    --
-    -- If there's no substages, pass @0@. Then only the exit of the whole stage will increase the progress.
-    Int ->
-    m a ->
-    m a
-
--- | Emission of non-fatal problem reports.
-class (Monad m) => Warns m where
-  warn :: Report -> m ()
-
-class (Monad m) => FsOps m where
-  readFile :: Path -> m Text
-  writeFile :: Path -> Text -> m ()
-  listDir :: Path -> m [Path]
 
 -- | Domain operations.
 class (Monad m) => LoadsGen m where

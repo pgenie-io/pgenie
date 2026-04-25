@@ -155,6 +155,7 @@ library logic
     Logic.Features.SqlTemplate
     Logic.Features.SyntaxAnalyser
     Logic.Workflows.AnalyseProject
+    Logic.Workflows.GenerateCode
     Logic.Workflows.GenerateQuerySigs
     Logic.Workflows.GenerateTypeSigs
 

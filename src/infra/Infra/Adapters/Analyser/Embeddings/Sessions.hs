@@ -3,14 +3,15 @@ module Infra.Adapters.Analyser.Embeddings.Sessions where
 
 import Data.Vector qualified as Vector
 import Infra.Adapters.Analyser.Sessions qualified as Sessions
-import Logic qualified
+import Logic.Features.QueryAnalysis (InferredParam (..), InferredQueryTypes (..))
+import Logic.Features.Report qualified as Report
 import Logic.Features.Name qualified as Name
 import PGenieGen.Model.Input qualified as Gen.Input
 import Utils.Prelude
 
-type Embed = Either Logic.Report
+type Embed = Either Report.Report
 
-adaptQuery :: Sessions.Query -> Embed Logic.InferredQueryTypes
+adaptQuery :: Sessions.Query -> Embed InferredQueryTypes
 adaptQuery query = do
   params <-
     traverse adaptParam (Vector.toList query.params)
@@ -18,13 +19,13 @@ adaptQuery query = do
     traverse adaptResultColumn (Vector.toList query.resultColumns)
   mentionedCustomTypes <-
     collectCustomTypes query
-  pure Logic.InferredQueryTypes {params, resultColumns, mentionedCustomTypes}
+  pure InferredQueryTypes {params, resultColumns, mentionedCustomTypes}
 
-adaptParam :: Sessions.Param -> Embed Logic.InferredParam
+adaptParam :: Sessions.Param -> Embed InferredParam
 adaptParam param = do
   type_ <- adaptType param.type_
   pure
-    Logic.InferredParam
+    InferredParam
       { isNullable = param.nullable,
         type_
       }
@@ -47,7 +48,7 @@ textToName text =
     Right name -> pure (Name.toGenName name)
     Left err ->
       Left
-        Logic.Report
+        Report.Report
           { path = [],
             message = err,
             suggestion = Nothing,

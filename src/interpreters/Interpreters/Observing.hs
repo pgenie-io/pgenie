@@ -10,18 +10,25 @@ where
 
 import Control.Monad.Parallel qualified as MonadParallel
 import Data.Text qualified as Text
-import Logic qualified
 import Logic.Features.CustomTypeSignatureFile qualified as CustomTypeSignatureFile
+import Logic.Features.Fs (FsOps (..))
 import Logic.Features.GeneratorHashes qualified as GeneratorHashes
+import Logic.Features.IndexOptimizer (LoadsIndexes (..))
+import Logic.Features.Migrations (ExecutesMigrations (..))
+import Logic.Features.QueryAnalysis (InfersQueryTypes (..))
+import Logic.Features.Report (Report (..), Warns (..))
 import Logic.Features.Report qualified as Report
+import Logic.Features.SeqScanDetector (ExplainsQuery (..))
+import Logic.Features.Staging (Stages (..))
+import Logic.Workflows.GenerateCode qualified as GenerateCode
 import Utils.Prelude hiding (readFile, writeFile)
 
 -- | Observations produced while executing capability-based logic.
 data Observation
   = StageEntered [Text]
   | StageExited [Text] Double
-  | WarningEmitted Logic.Report
-  | ExecutionFailed Logic.Report
+  | WarningEmitted Report.Report
+  | ExecutionFailed Report.Report
   deriving stock (Eq, Show)
 
 -- | Capability to publish runtime observations.
@@ -29,7 +36,7 @@ class (Monad m) => Observes m where
   observe :: Observation -> m ()
 
 -- | Transformer that tracks the current stage path and per-stage progress
--- budget, implementing the 'Logic.Stages' and 'Logic.Warns' capabilities.
+-- budget, implementing the 'Stages' and 'Warns' capabilities.
 newtype Observing m a = Observing (Double -> [Text] -> m a)
 
 -- | Interpret an 'Observing' action at the top level with full progress budget.
@@ -58,14 +65,14 @@ instance (MonadParallel.MonadParallel m) => MonadParallel.MonadParallel (Observi
       (ma progress path)
       (mb progress path)
 
-instance (MonadError Logic.Report m) => MonadError Logic.Report (Observing m) where
+instance (MonadError Report.Report m) => MonadError Report.Report (Observing m) where
   throwError e = Observing \_ path ->
     throwError (Report.nest path e)
 
   catchError (Observing f) handler =
     Observing \progress path -> catchError (f progress path) (\e -> let Observing h = handler e in h progress path)
 
-instance (Observes m, Monad m) => Logic.Stages (Observing m) where
+instance (Observes m, Monad m) => Stages (Observing m) where
   stage name substagesCount (Observing runInner) =
     Observing \progressPerStage path -> do
       let newPath =
@@ -80,28 +87,28 @@ instance (Observes m, Monad m) => Logic.Stages (Observing m) where
       observe (StageExited newPath remainingProgress)
       pure result
 
-instance (Observes m, Monad m) => Logic.Warns (Observing m) where
+instance (Observes m, Monad m) => Warns (Observing m) where
   warn report = Observing \_ path -> observe (WarningEmitted (Report.nest path report))
 
-instance (Logic.ExecutesMigrations m) => Logic.ExecutesMigrations (Observing m) where
-  executeMigration sql = lift (Logic.executeMigration sql)
+instance (ExecutesMigrations m) => ExecutesMigrations (Observing m) where
+  executeMigration sql = lift (executeMigration sql)
 
-instance (Logic.InfersQueryTypes m) => Logic.InfersQueryTypes (Observing m) where
-  inferQueryTypes sql = lift (Logic.inferQueryTypes sql)
+instance (InfersQueryTypes m) => InfersQueryTypes (Observing m) where
+  inferQueryTypes sql = lift (inferQueryTypes sql)
 
-instance (Logic.ExplainsQuery m) => Logic.ExplainsQuery (Observing m) where
-  explainQuery sql = lift (Logic.explainQuery sql)
+instance (ExplainsQuery m) => ExplainsQuery (Observing m) where
+  explainQuery sql = lift (explainQuery sql)
 
-instance (Logic.LoadsIndexes m) => Logic.LoadsIndexes (Observing m) where
-  getIndexes = lift Logic.getIndexes
+instance (LoadsIndexes m) => LoadsIndexes (Observing m) where
+  getIndexes = lift getIndexes
 
-instance (Logic.FsOps m) => Logic.FsOps (Observing m) where
-  readFile path = lift (Logic.readFile path)
-  writeFile path content = lift (Logic.writeFile path content)
-  listDir path = lift (Logic.listDir path)
+instance (FsOps m) => FsOps (Observing m) where
+  readFile path = lift (readFile path)
+  writeFile path content = lift (writeFile path content)
+  listDir path = lift (listDir path)
 
-instance (Logic.LoadsGen m) => Logic.LoadsGen (Observing m) where
-  loadGen loc hash = lift (Logic.loadGen loc hash)
+instance (GenerateCode.LoadsGen m) => GenerateCode.LoadsGen (Observing m) where
+  loadGen loc hash = lift (GenerateCode.loadGen loc hash)
 
 instance (CustomTypeSignatureFile.Port m) => CustomTypeSignatureFile.Port (Observing m) where
   readFile path =

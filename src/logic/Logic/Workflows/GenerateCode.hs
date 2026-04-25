@@ -17,13 +17,15 @@ import PGenieGen.Model.Output qualified as Gen.Output
 import PGenieGen.Model.Output.Report qualified as Gen.Output.Report
 import Utils.Prelude hiding (readFile, writeFile)
 
-class (MonadParallel m, Stages m, Warns m, FsOps m, GeneratorHashes.Port m) => Port m where
+class (Monad m) => LoadsGen m where
   loadGen ::
     Gen.Location ->
     -- | Possible integrity hash for caching.
     Maybe Text ->
     -- | Action producing the gen along with its integrity hash.
     m (Gen.Gen, Text)
+
+type Port m = (MonadParallel m, Stages m, Warns m, FsOps m, GeneratorHashes.Port m, LoadsGen m)
 
 data Artifact = Artifact
   { name :: Text,

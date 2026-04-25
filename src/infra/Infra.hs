@@ -8,12 +8,12 @@ import Data.Text.IO qualified as TextIO
 import Fx
 import Infra.Adapters.Main qualified as MainAdapter
 import Interpreters.Observing qualified as Observing
-import Logic qualified
 import Logic.Features.ProjectFile qualified as ProjectFile
+import Logic.Features.Report qualified as Report
 import System.Exit qualified as Exit
 import Utils.Prelude
 
-run :: (Observing.Observation -> IO ()) -> Maybe Text -> (ProjectFile.ProjectFile -> Observing.Observing (Fx MainAdapter.Device Logic.Report) Text) -> IO ()
+run :: (Observing.Observation -> IO ()) -> Maybe Text -> (ProjectFile.ProjectFile -> Observing.Observing (Fx MainAdapter.Device Report.Report) Text) -> IO ()
 run observe maybeDatabaseUrl makeFx = do
   result <-
     ( do

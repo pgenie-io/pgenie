@@ -6,25 +6,26 @@
 -- for using the application as a source of analysis data.
 module Ui.Commands.Analyse (analyse) where
 
-import Logic qualified
+import Logic.Features.ProjectFile qualified as ProjectFile
+import Logic.Workflows.Analyse qualified as Analyse
 import Options.Applicative qualified as Opt
 import Ui.Framework
 import Utils.Prelude
 
-analyse :: (Logic.Caps m) => Command m
+analyse :: (Analyse.Port m) => Command m
 analyse =
   Command
     { name = "analyse",
       description = "Validate the project without generating code; optionally output the project model",
       parser,
-      execute = Logic.analyse
+      execute = Analyse.run
     }
 
-type Params = Logic.AnalyseOptions
+type Params = Analyse.Params
 
 parser :: Opt.Parser Params
 parser =
-  Logic.AnalyseOptions
+  Analyse.Params
     <$> Opt.switch
       ( Opt.long "fail-on-seq-scans"
           <> Opt.help "Fail the procedure if sequential scans are detected (instead of emitting warnings)"
@@ -40,6 +41,6 @@ parser =
   where
     readFormat =
       Opt.eitherReader \s -> case s of
-        "json" -> Right Logic.ModelFormatJson
-        "dhall" -> Right Logic.ModelFormatDhall
+        "json" -> Right Analyse.ModelFormatJson
+        "dhall" -> Right Analyse.ModelFormatDhall
         _ -> Left ("Unknown format: " <> s <> ". Expected 'json' or 'dhall'.")

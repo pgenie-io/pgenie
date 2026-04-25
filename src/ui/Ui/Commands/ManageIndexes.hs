@@ -2,13 +2,13 @@
 -- indexes and remove redundant or excessive ones.
 module Ui.Commands.ManageIndexes (manageIndexes) where
 
-import Logic qualified
 import Logic.Features.ProjectFile qualified as ProjectFile
+import Logic.Workflows.ManageIndexes qualified as ManageIndexes
 import Options.Applicative qualified as Opt
 import Ui.Framework
 import Utils.Prelude
 
-manageIndexes :: (Logic.Caps m) => Command m
+manageIndexes :: (ManageIndexes.Port m) => Command m
 manageIndexes =
   Command
     { name = "manage-indexes",
@@ -34,11 +34,11 @@ parser =
           <> Opt.help "Also write the migration to a numbered file in migrations/ (fails if existing files do not follow the N.sql naming convention)"
       )
 
-execute :: (Logic.Caps m) => ProjectFile.ProjectFile -> Params -> m Text
+execute :: (ManageIndexes.Port m) => ProjectFile.ProjectFile -> Params -> m Text
 execute projectFile params =
-  Logic.manageIndexes
+  ManageIndexes.run
     projectFile
-    Logic.ManageIndexesOptions
+    ManageIndexes.Params
       { allowRedundantIndexes = params.allowRedundantIndexes,
         addMigration = params.addMigration
       }

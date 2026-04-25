@@ -139,7 +139,6 @@ library logic
   import: base
   hs-source-dirs: src/logic/
   exposed-modules:
-    Logic
     Logic.Features.CustomTypeSignatureFile
     Logic.Features.GeneratorHashes
     Logic.Features.IndexOptimizer

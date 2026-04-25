@@ -3,13 +3,13 @@
 -- Forces the intended use of the application. The user has no option not to generate the signature files.
 module Ui.Commands.Generate (generate) where
 
-import Logic qualified
 import Logic.Features.ProjectFile qualified as ProjectFile
+import Logic.Workflows.Generate qualified as Generate
 import Options.Applicative qualified as Opt
 import Ui.Framework
 import Utils.Prelude
 
-generate :: (Logic.Caps m) => Command m
+generate :: (Generate.Port m) => Command m
 generate =
   Command
     { name = "generate",
@@ -30,11 +30,11 @@ parser =
           <> Opt.help "Fail the procedure if sequential scans are detected (instead of emitting warnings)"
       )
 
-execute :: (Logic.Caps m) => ProjectFile.ProjectFile -> Params -> m Text
+execute :: (Generate.Port m) => ProjectFile.ProjectFile -> Params -> m Text
 execute projectFile params =
-  Logic.generate
+  Generate.run
     projectFile
-    Logic.GenerateOptions
+    Generate.Params
       { failOnSeqScans = params.failOnSeqScans
       }
     $> ""

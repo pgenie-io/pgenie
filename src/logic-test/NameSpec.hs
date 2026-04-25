@@ -1,6 +1,6 @@
 module NameSpec (spec) where
 
-import Logic.Name
+import Logic.Features.Name
 import Test.Hspec
 import Utils.Prelude
 

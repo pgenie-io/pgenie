@@ -11,10 +11,16 @@ import Data.Text.IO qualified as Text
 import Fx
 import Infra.Adapters.Analyser qualified as Analyser
 import Interpreters.Observing qualified as Observing
-import Logic qualified
 import Logic.Features.CustomTypeSignatureFile qualified as CustomTypeSignatureFile
+import Logic.Features.Fs (FsOps (..))
 import Logic.Features.GeneratorHashes qualified as GeneratorHashes
+import Logic.Features.IndexOptimizer (LoadsIndexes (..))
+import Logic.Features.Migrations (ExecutesMigrations (..))
 import Logic.Features.ProjectFile qualified as ProjectFile
+import Logic.Features.QueryAnalysis (InfersQueryTypes (..))
+import Logic.Features.Report qualified as Report
+import Logic.Features.SeqScanDetector (ExplainsQuery (..))
+import Logic.Workflows.GenerateCode qualified as GenerateCode
 import PGenieGen qualified as Gen
 import System.Directory qualified as Directory
 import System.Info qualified as Info
@@ -26,16 +32,16 @@ data Device = Device
     projectFile :: ProjectFile.ProjectFile
   }
 
-getProjectFile :: Fx Device Logic.Report ProjectFile.ProjectFile
+getProjectFile :: Fx Device Report.Report ProjectFile.ProjectFile
 getProjectFile =
   runTotalIO \dev -> pure dev.projectFile
 
-scope :: (Observing.Observation -> IO ()) -> Maybe Text -> Fx.Scope Logic.Report Device
+scope :: (Observing.Observation -> IO ()) -> Maybe Text -> Fx.Scope Report.Report Device
 scope observe maybeDatabaseUrl = do
   -- Terminate early on Windows in Docker mode since it's not supported yet.
   when (isNothing maybeDatabaseUrl && Info.os == "mingw32") do
     throwError
-      Logic.Report
+      Report.Report
         { path = [],
           message = "Docker execution mode on Windows is under development. Windows users can only use the live Postgres mode for now.",
           suggestion = Just "Run pgn with --database-url to connect to a running PostgreSQL server. See https://pgenie.io/docs/guides/live-instance-mode for more details.",
@@ -74,31 +80,31 @@ scope observe maybeDatabaseUrl = do
         projectFile
       }
 
-instance Observing.Observes (Fx Device Logic.Report) where
+instance Observing.Observes (Fx Device Report.Report) where
   observe observation =
     runTotalIO \dev -> dev.observe observation
 
-instance Logic.ExecutesMigrations (Fx Device Logic.Report) where
+instance ExecutesMigrations (Fx Device Report.Report) where
   executeMigration migrationText =
-    Logic.executeMigration migrationText
+    executeMigration migrationText
       & mapEnv (.analyser)
 
-instance Logic.InfersQueryTypes (Fx Device Logic.Report) where
+instance InfersQueryTypes (Fx Device Report.Report) where
   inferQueryTypes queryText =
-    Logic.inferQueryTypes queryText
+    inferQueryTypes queryText
       & mapEnv (.analyser)
 
-instance Logic.ExplainsQuery (Fx Device Logic.Report) where
+instance ExplainsQuery (Fx Device Report.Report) where
   explainQuery sql =
-    Logic.explainQuery sql
+    explainQuery sql
       & mapEnv (.analyser)
 
-instance Logic.LoadsIndexes (Fx Device Logic.Report) where
+instance LoadsIndexes (Fx Device Report.Report) where
   getIndexes =
-    Logic.getIndexes
+    getIndexes
       & mapEnv (.analyser)
 
-instance Logic.FsOps (Fx Device Logic.Report) where
+instance FsOps (Fx Device Report.Report) where
   readFile path =
     liftFileOp "Failed to read file" path do
       Text.readFile (Path.toFilePath path)
@@ -117,7 +123,7 @@ instance Logic.FsOps (Fx Device Logic.Report) where
           pure path'
         Nothing ->
           throwError
-            Logic.Report
+            Report.Report
               { path = [],
                 message = "Invalid file path",
                 suggestion = Nothing,
@@ -126,12 +132,12 @@ instance Logic.FsOps (Fx Device Logic.Report) where
                   ]
               }
 
-instance Logic.LoadsGen (Fx Device Logic.Report) where
+instance GenerateCode.LoadsGen (Fx Device Report.Report) where
   loadGen location maybeHash =
     runExceptionalIO (const (Gen.load location maybeHash (const (pure ()))))
       & first
         ( \err ->
-            Logic.Report
+            Report.Report
               { path = [],
                 message = "Failed to load gen",
                 suggestion = Nothing,
@@ -141,7 +147,7 @@ instance Logic.LoadsGen (Fx Device Logic.Report) where
               }
         )
 
-instance CustomTypeSignatureFile.Port (Fx Device Logic.Report) where
+instance CustomTypeSignatureFile.Port (Fx Device Report.Report) where
   readFile path =
     liftFileOp "Failed to read custom-type signature file" path do
       Text.readFile (Path.toFilePath path)
@@ -151,7 +157,7 @@ instance CustomTypeSignatureFile.Port (Fx Device Logic.Report) where
       Directory.createDirectoryIfMissing True (Path.toFilePath (path <> ".."))
       Text.writeFile (Path.toFilePath path) content
 
-instance GeneratorHashes.Port (Fx Device Logic.Report) where
+instance GeneratorHashes.Port (Fx Device Report.Report) where
   readFile path =
     liftFileOp "Failed to read generator hashes file" path do
       Text.readFile (Path.toFilePath path)
@@ -161,12 +167,12 @@ instance GeneratorHashes.Port (Fx Device Logic.Report) where
       Directory.createDirectoryIfMissing True (Path.toFilePath (path <> ".."))
       Text.writeFile (Path.toFilePath path) content
 
-liftFileOp :: Text -> Path -> IO a -> Fx env Logic.Report a
+liftFileOp :: Text -> Path -> IO a -> Fx env Report.Report a
 liftFileOp errMessage path action =
   runExceptionalIO (const action)
     & first
       ( \err ->
-          Logic.Report
+          Report.Report
             { path = [],
               message = errMessage,
               suggestion = Nothing,

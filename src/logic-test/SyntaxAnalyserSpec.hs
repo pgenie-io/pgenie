@@ -1,6 +1,6 @@
 module SyntaxAnalyserSpec (spec) where
 
-import Logic.SyntaxAnalyser
+import Logic.Features.SyntaxAnalyser
 import Test.Hspec
 import Utils.Prelude
 

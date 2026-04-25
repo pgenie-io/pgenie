@@ -61,13 +61,13 @@ class (Monad m) => Stages m where
 class (Monad m) => Warns m where
   warn :: Report -> m ()
 
-class (MonadError Report m) => FsOps m where
+class (Monad m) => FsOps m where
   readFile :: Path -> m Text
   writeFile :: Path -> Text -> m ()
   listDir :: Path -> m [Path]
 
 -- | Domain operations.
-class (MonadError Report m) => LoadsGen m where
+class (Monad m) => LoadsGen m where
   loadGen ::
     Gen.Location ->
     -- | Possible integrity hash for caching.

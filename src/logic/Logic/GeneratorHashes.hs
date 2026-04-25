@@ -9,7 +9,7 @@ import Control.Foldl qualified as Fold
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
 import Logic.Algebra qualified as Algebra
-import Logic.Report qualified as Error
+import Logic.Report qualified as Report
 import Utils.Prelude hiding (readFile, writeFile)
 import YamlUnscrambler qualified as U
 
@@ -26,11 +26,11 @@ hashesFilePath = "freeze1.pgn.yaml"
 -- * Operations
 
 -- | Try to load the hashes file. Returns an empty map if the file doesn't exist or can't be parsed.
-tryLoadHashesFile :: (Algebra.FsOps m) => m HashesMap
+tryLoadHashesFile :: (Algebra.FsOps m, MonadError Report.Report m) => m HashesMap
 tryLoadHashesFile =
   catchError
     (parseHashesFile <$> Algebra.readFile hashesFilePath)
-    (\(_ :: Error.Report) -> pure Map.empty)
+    (\(_ :: Report.Report) -> pure Map.empty)
 
 -- | Serialize the hashes map to YAML format.
 serializeHashesMap :: HashesMap -> Text

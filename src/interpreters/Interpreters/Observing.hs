@@ -82,30 +82,30 @@ instance (Observes m, Monad m) => Logic.Warns (Observing m) where
   warn report = Observing \_ path -> observe (WarningEmitted (Report.nest path report))
 
 instance (Logic.ExecutesMigrations m) => Logic.ExecutesMigrations (Observing m) where
-  executeMigration sql = hoist (Logic.executeMigration sql)
+  executeMigration sql = lift (Logic.executeMigration sql)
 
 instance (Logic.InfersQueryTypes m) => Logic.InfersQueryTypes (Observing m) where
-  inferQueryTypes sql = hoist (Logic.inferQueryTypes sql)
+  inferQueryTypes sql = lift (Logic.inferQueryTypes sql)
 
 instance (Logic.ExplainsQuery m) => Logic.ExplainsQuery (Observing m) where
-  explainQuery sql = hoist (Logic.explainQuery sql)
+  explainQuery sql = lift (Logic.explainQuery sql)
 
 instance (Logic.LoadsIndexes m) => Logic.LoadsIndexes (Observing m) where
-  getIndexes = hoist Logic.getIndexes
+  getIndexes = lift Logic.getIndexes
 
 instance (Logic.FsOps m) => Logic.FsOps (Observing m) where
-  readFile path = hoist (Logic.readFile path)
-  writeFile path content = hoist (Logic.writeFile path content)
-  listDir path = hoist (Logic.listDir path)
+  readFile path = lift (Logic.readFile path)
+  writeFile path content = lift (Logic.writeFile path content)
+  listDir path = lift (Logic.listDir path)
 
 instance (Logic.LoadsGen m) => Logic.LoadsGen (Observing m) where
-  loadGen loc hash = hoist (Logic.loadGen loc hash)
+  loadGen loc hash = lift (Logic.loadGen loc hash)
 
 instance (Logic.LoadsProjectFile m) => Logic.LoadsProjectFile (Observing m) where
-  loadProjectFile = Observing \_ _ -> Logic.loadProjectFile
+  loadProjectFile = lift Logic.loadProjectFile
 
 instance (Observes m) => Observes (Observing m) where
-  observe observation = Observing \_ _ -> observe observation
+  observe observation = lift (observe observation)
 
-hoist :: (MonadError Logic.Report m) => m a -> Observing m a
-hoist ma = Observing \_ path -> Report.nesting path ma
+instance MonadTrans Observing where
+  lift ma = Observing \_ _ -> ma

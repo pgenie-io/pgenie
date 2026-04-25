@@ -8,7 +8,7 @@ import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Text qualified as Text
 import Data.Vector qualified as Vector
 import Logic.Name qualified as Name
-import Logic.Report qualified as Error
+import Logic.Report qualified as Report
 import PGenieGen qualified as Gen
 import PGenieGen.Model.Input qualified as Gen
 import Utils.Prelude hiding (Version)
@@ -28,12 +28,12 @@ data Artifact = Artifact
     config :: Maybe Aeson.Value
   }
 
-tryFromYaml :: (MonadError Error.Report m) => Text -> m ProjectFile
+tryFromYaml :: (MonadError Report.Report m) => Text -> m ProjectFile
 tryFromYaml text = do
   case U.parseText projectFileValue text of
     Left errMsg ->
       throwError
-        Error.Report
+        Report.Report
           { path = ["project1.pgn.yaml"],
             message = errMsg,
             suggestion = Just "Check YAML syntax and required fields",
@@ -183,7 +183,6 @@ tryFromYaml text = do
             ]
             (Just configMapping)
             (Just configSequence)
-
 
 -- | Port for loading the project configuration file.
 class (Monad m) => LoadsProjectFile m where

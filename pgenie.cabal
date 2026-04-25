@@ -286,8 +286,6 @@ library infra
     hasql-mapping,
     hasql-pool,
     hasql-th,
-    monad-parallel,
-    mtl,
     pgenie-gen,
     pgenie:interpreters,
     pgenie:logic,
@@ -342,7 +340,6 @@ test-suite ui-test
   build-depends:
     hspec,
     pgenie:interpreters,
-    pgenie:logic,
     pgenie:ui,
     pgenie:utils,
     text,

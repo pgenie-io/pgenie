@@ -25,9 +25,9 @@ new = do
 -- | Handle a runtime observation and update the display.
 handleObservation :: Display -> Observing.Observation -> IO ()
 handleObservation display observation = do
-  oldMemory <- takeMVar display.memoryVar
-  currentTime <- getCurrentTime
-  let (newMemory, output) = Main.update observation currentTime oldMemory
-  TextIO.hPutStr stderr (to output)
-  hFlush stderr
-  putMVar display.memoryVar newMemory
+  modifyMVar_ display.memoryVar \oldMemory -> do
+    currentTime <- getCurrentTime
+    let (newMemory, output) = Main.update observation currentTime oldMemory
+    TextIO.hPutStr stderr (to output)
+    hFlush stderr
+    pure newMemory

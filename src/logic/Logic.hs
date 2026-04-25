@@ -22,7 +22,6 @@ import Logic.GeneratorHashes qualified as GeneratorHashes
 import Logic.IndexOptimizer qualified as IndexOptimizer
 import Logic.Name qualified as Name
 import Logic.ProjectFile qualified as ProjectFile
-import Logic.Report (Report (..))
 import Logic.SeqScanDetector qualified as SeqScanDetector
 import Logic.SignatureFile qualified as SignatureFile
 import Logic.SqlTemplate qualified as SqlTemplate

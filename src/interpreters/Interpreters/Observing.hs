@@ -3,7 +3,7 @@
 module Interpreters.Observing
   ( Observation (..),
     Observes (..),
-    Observing (..),
+    Observing,
     interpretObserving,
   )
 where
@@ -28,7 +28,7 @@ class (Monad m) => Observes m where
 
 -- | Transformer that tracks the current stage path and per-stage progress
 -- budget, implementing the 'Logic.Stages' and 'Logic.Warns' capabilities.
-newtype Observing m a = Observing {unObserving :: Double -> [Text] -> m a}
+newtype Observing m a = Observing (Double -> [Text] -> m a)
 
 -- | Interpret an 'Observing' action at the top level with full progress budget.
 interpretObserving :: Observing m a -> m a

@@ -316,10 +316,11 @@ instance HasqlDev.RunsSession (Fx Device Logic.Report) where
           Nothing ->
             "Add all NOT NULL columns to the INSERT statement, or define DEFAULT values for them in the schema"
 
-instance Logic.DbOps (Fx Device Logic.Report) where
+instance Logic.ExecutesMigrations (Fx Device Logic.Report) where
   executeMigration migrationText =
     HasqlDev.runSession (Hasql.Session.script migrationText)
 
+instance Logic.InfersQueryTypes (Fx Device Logic.Report) where
   inferQueryTypes sql =
     HasqlDev.runSession (Sessions.inferTypes sql) >>= \case
       Left err ->
@@ -343,6 +344,7 @@ instance Logic.DbOps (Fx Device Logic.Report) where
             details = err.details
           }
 
+instance Logic.ExplainsQuery (Fx Device Logic.Report) where
   explainQuery sql =
     HasqlDev.runSession do
       Hasql.Session.onLibpqConnection \conn -> do
@@ -360,5 +362,6 @@ instance Logic.DbOps (Fx Device Logic.Report) where
               _ -> pure []
         pure (Right rows, conn)
 
+instance Logic.LoadsIndexes (Fx Device Logic.Report) where
   getIndexes =
     HasqlDev.runSession GetIndexes.getIndexes

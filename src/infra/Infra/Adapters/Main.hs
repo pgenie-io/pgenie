@@ -71,19 +71,22 @@ instance Observing.Observes (Fx Device Logic.Report) where
   observe observation =
     runTotalIO \dev -> dev.observe observation
 
-instance Logic.DbOps (Fx Device Logic.Report) where
+instance Logic.ExecutesMigrations (Fx Device Logic.Report) where
   executeMigration migrationText =
     Logic.executeMigration migrationText
       & mapEnv (.analyser)
 
+instance Logic.InfersQueryTypes (Fx Device Logic.Report) where
   inferQueryTypes queryText =
     Logic.inferQueryTypes queryText
       & mapEnv (.analyser)
 
+instance Logic.ExplainsQuery (Fx Device Logic.Report) where
   explainQuery sql =
     Logic.explainQuery sql
       & mapEnv (.analyser)
 
+instance Logic.LoadsIndexes (Fx Device Logic.Report) where
   getIndexes =
     Logic.getIndexes
       & mapEnv (.analyser)

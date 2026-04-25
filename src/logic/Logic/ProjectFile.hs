@@ -183,3 +183,8 @@ tryFromYaml text = do
             ]
             (Just configMapping)
             (Just configSequence)
+
+
+-- | Port for loading the project configuration file.
+class (Monad m) => LoadsProjectFile m where
+  loadProjectFile :: m ProjectFile

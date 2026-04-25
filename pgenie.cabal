@@ -143,8 +143,10 @@ library logic
     Logic.Algebra
     Logic.CustomTypeSignatureFile
     Logic.IndexOptimizer
+    Logic.Migrations
     Logic.Name
     Logic.ProjectFile
+    Logic.QueryAnalysis
     Logic.Report
     Logic.SeqScanDetector
     Logic.SignatureFile

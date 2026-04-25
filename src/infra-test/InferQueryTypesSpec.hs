@@ -8,7 +8,9 @@ import Data.Text.Encoding qualified as TextEncoding
 import Database.PostgreSQL.LibPQ qualified as Pq
 import Fx
 import Infra.Adapters.Analyser qualified as Analyser
-import Logic.Algebra
+import Logic.Migrations
+import Logic.QueryAnalysis
+import Logic.Report (Report (..))
 import PGenieGen.Model.Input qualified as Gen.Input
 import Test.Hspec
 import TestContainers qualified as Tc

@@ -1,12 +1,29 @@
 module Logic.SeqScanDetector
-  ( detectSeqScans,
+  ( SeqScanFinding (..),
+    ExplainsQuery (..),
+    detectSeqScans,
     extractFilterColumns,
   )
 where
 
 import Data.Text qualified as Text
-import Logic.Algebra (SeqScanFinding (..))
+import Logic.Report (Report (..))
 import Utils.Prelude
+
+-- | A finding of sequential scan in a query execution plan.
+data SeqScanFinding = SeqScanFinding
+  { -- | Name of the table being sequentially scanned.
+    tableName :: Text,
+    -- | The filter condition from the EXPLAIN output.
+    filterCondition :: Text,
+    -- | Suggested columns to create an index on.
+    suggestedIndexColumns :: [Text]
+  }
+  deriving stock (Eq, Show)
+
+-- | Port for explaining a query's execution plan.
+class (MonadError Report m) => ExplainsQuery m where
+  explainQuery :: Text -> m [Text]
 
 -- | Detect sequential scans with filters from EXPLAIN text output lines.
 -- Only seq scans that have a filter condition are flagged,

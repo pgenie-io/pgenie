@@ -81,10 +81,16 @@ instance (Observes m, Monad m) => Logic.Stages (Observing m) where
 instance (Observes m, Monad m) => Logic.Warns (Observing m) where
   warn report = Observing \_ path -> observe (WarningEmitted (Report.nest path report))
 
-instance (Logic.DbOps m) => Logic.DbOps (Observing m) where
+instance (Logic.ExecutesMigrations m) => Logic.ExecutesMigrations (Observing m) where
   executeMigration sql = hoist (Logic.executeMigration sql)
+
+instance (Logic.InfersQueryTypes m) => Logic.InfersQueryTypes (Observing m) where
   inferQueryTypes sql = hoist (Logic.inferQueryTypes sql)
+
+instance (Logic.ExplainsQuery m) => Logic.ExplainsQuery (Observing m) where
   explainQuery sql = hoist (Logic.explainQuery sql)
+
+instance (Logic.LoadsIndexes m) => Logic.LoadsIndexes (Observing m) where
   getIndexes = hoist Logic.getIndexes
 
 instance (Logic.FsOps m) => Logic.FsOps (Observing m) where

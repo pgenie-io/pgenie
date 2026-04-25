@@ -5,6 +5,25 @@ module Logic
     generate,
     manageIndexes,
     module Logic.Algebra,
+    -- * Re-exports from feature modules
+    -- ** ProjectFile
+    LoadsProjectFile (..),
+    -- ** Migrations
+    ExecutesMigrations (..),
+    -- ** QueryAnalysis
+    InfersQueryTypes (..),
+    InferredQueryTypes (..),
+    InferredParam (..),
+    -- ** SeqScanDetector
+    ExplainsQuery (..),
+    SeqScanFinding (..),
+    -- ** IndexOptimizer
+    LoadsIndexes (..),
+    IndexInfo (..),
+    IndexAction (..),
+    DropReason (..),
+    -- * Combined capabilities
+    Caps,
   )
 where
 
@@ -19,9 +38,14 @@ import Dhall.Marshal.Encode qualified as Dhall
 import Logic.Algebra
 import Logic.CustomTypeSignatureFile qualified as CustomTypeSignatureFile
 import Logic.GeneratorHashes qualified as GeneratorHashes
+import Logic.IndexOptimizer (DropReason (..), IndexAction (..), IndexInfo (..), LoadsIndexes (..))
 import Logic.IndexOptimizer qualified as IndexOptimizer
+import Logic.Migrations (ExecutesMigrations (..))
 import Logic.Name qualified as Name
+import Logic.ProjectFile (LoadsProjectFile (..))
 import Logic.ProjectFile qualified as ProjectFile
+import Logic.QueryAnalysis (InferredParam (..), InferredQueryTypes (..), InfersQueryTypes (..))
+import Logic.SeqScanDetector (ExplainsQuery (..), SeqScanFinding (..))
 import Logic.SeqScanDetector qualified as SeqScanDetector
 import Logic.SignatureFile qualified as SignatureFile
 import Logic.SqlTemplate qualified as SqlTemplate
@@ -32,6 +56,20 @@ import PGenieGen.Model.Output qualified as Gen.Output
 import PGenieGen.Model.Output.Report qualified as Gen.Output.Report
 import SyntacticClass qualified as Syntactic
 import Utils.Prelude hiding (readFile, writeFile)
+
+-- | Combined capabilities required by the logic.
+type Caps m =
+  ( MonadParallel m,
+    LoadsProjectFile m,
+    LoadsGen m,
+    ExecutesMigrations m,
+    InfersQueryTypes m,
+    ExplainsQuery m,
+    LoadsIndexes m,
+    FsOps m,
+    Stages m,
+    Warns m
+  )
 
 -- * Intermediate (non-interface) Types
 

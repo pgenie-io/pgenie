@@ -17,17 +17,14 @@ analyse =
     { name = "analyse",
       description = "Validate the project without generating code; optionally output the project model",
       parser,
-      execute
+      execute = Logic.analyse
     }
 
-data Params = Params
-  { failOnSeqScans :: Bool,
-    output :: Maybe Logic.ModelFormat
-  }
+type Params = Logic.AnalyseOptions
 
 parser :: Opt.Parser Params
 parser =
-  Params
+  Logic.AnalyseOptions
     <$> Opt.switch
       ( Opt.long "fail-on-seq-scans"
           <> Opt.help "Fail the procedure if sequential scans are detected (instead of emitting warnings)"
@@ -46,9 +43,3 @@ parser =
         "json" -> Right Logic.ModelFormatJson
         "dhall" -> Right Logic.ModelFormatDhall
         _ -> Left ("Unknown format: " <> s <> ". Expected 'json' or 'dhall'.")
-
-execute :: (Logic.Caps m) => Params -> m Text
-execute params =
-  Logic.analyse
-    Logic.AnalyseOptions {failOnSeqScans = params.failOnSeqScans}
-    params.output

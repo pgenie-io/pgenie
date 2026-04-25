@@ -1,5 +1,6 @@
 module Infra.Adapters.Main
   ( Device,
+    getProjectFile,
     scope,
   )
 where
@@ -22,6 +23,10 @@ data Device = Device
     analyser :: Analyser.Device,
     projectFile :: ProjectFile.ProjectFile
   }
+
+getProjectFile :: Fx Device Logic.Report ProjectFile.ProjectFile
+getProjectFile =
+  runTotalIO \dev -> pure dev.projectFile
 
 scope :: (Observing.Observation -> IO ()) -> Maybe Text -> Fx.Scope Logic.Report Device
 scope observe maybeDatabaseUrl = do
@@ -133,10 +138,6 @@ instance Logic.LoadsGen (Fx Device Logic.Report) where
                   ]
               }
         )
-
-instance Logic.LoadsProjectFile (Fx Device Logic.Report) where
-  loadProjectFile =
-    runTotalIO \dev -> pure dev.projectFile
 
 liftFileOp :: Text -> Path -> IO a -> Fx env Logic.Report a
 liftFileOp errMessage path action =

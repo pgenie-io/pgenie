@@ -11,7 +11,8 @@ import Utils.Prelude hiding (readFile, writeFile)
 -- * Analyse options
 
 data AnalyseOptions = AnalyseOptions
-  { failOnSeqScans :: Bool
+  { failOnSeqScans :: Bool,
+    output :: Maybe ModelFormat
   }
   deriving stock (Eq, Show)
 

@@ -8,9 +8,6 @@ module Logic
 
     -- * Re-exports from feature modules
 
-    -- ** ProjectFile
-    LoadsProjectFile (..),
-
     -- ** Migrations
     ExecutesMigrations (..),
 
@@ -49,7 +46,6 @@ import Logic.IndexOptimizer (DropReason (..), IndexAction (..), IndexInfo (..), 
 import Logic.IndexOptimizer qualified as IndexOptimizer
 import Logic.Migrations (ExecutesMigrations (..))
 import Logic.Name qualified as Name
-import Logic.ProjectFile (LoadsProjectFile (..))
 import Logic.ProjectFile qualified as ProjectFile
 import Logic.QueryAnalysis (InferredParam (..), InferredQueryTypes (..), InfersQueryTypes (..))
 import Logic.SeqScanDetector (ExplainsQuery (..), SeqScanFinding (..))
@@ -67,7 +63,6 @@ import Utils.Prelude hiding (readFile, writeFile)
 -- | Combined capabilities required by the logic.
 type Caps m =
   ( MonadParallel m,
-    LoadsProjectFile m,
     LoadsGen m,
     ExecutesMigrations m,
     InfersQueryTypes m,
@@ -100,10 +95,9 @@ data GeneratedArtifact = GeneratedArtifact
 -- 'generate', but does not write any artifact files.  When a format is
 -- provided the project model is also serialised and returned so the caller
 -- can write it to stdout.
-analyse :: (Caps m) => AnalyseOptions -> Maybe ModelFormat -> m Text
-analyse options maybeFormat =
+analyse :: (Caps m) => ProjectFile.ProjectFile -> AnalyseOptions -> m Text
+analyse projectFile options =
   stage "" 2 do
-    projectFile <- loadProjectFile
     (genProject, seqScanFindings, _indexes) <- analyseProject projectFile
     unless (null seqScanFindings) do
       for_ seqScanFindings \(queryName, finding) ->
@@ -129,15 +123,14 @@ analyse options maybeFormat =
               (Just "Run 'manage-indexes' to generate index migration, or remove --fail-on-seq-scans to allow warnings")
               []
           )
-    case maybeFormat of
+    case options.output of
       Nothing -> pure ""
       Just ModelFormatDhall -> pure (Dhall.pretty (Dhall.cse (Dhall.denote (Dhall.inject.embed genProject))))
       Just ModelFormatJson -> pure (to (Aeson.Text.encodeToTextBuilder genProject))
 
-generate :: (Caps m) => GenerateOptions -> m ()
-generate options =
+generate :: (Caps m) => ProjectFile.ProjectFile -> GenerateOptions -> m ()
+generate projectFile options =
   stage "" 2 do
-    projectFile <- loadProjectFile
     (genProject, seqScanFindings, _indexes) <- analyseProject projectFile
     unless (null seqScanFindings) do
       for_ seqScanFindings \(queryName, finding) ->
@@ -169,10 +162,9 @@ generate options =
 -- | Analyse the project's index usage and output the recommended migration SQL
 -- to stdout. When @--add-migration@ is set, also writes the migration to a
 -- numbered file in the @migrations/@ directory.
-manageIndexes :: (Caps m) => ManageIndexesOptions -> m Text
-manageIndexes options =
+manageIndexes :: (Caps m) => ProjectFile.ProjectFile -> ManageIndexesOptions -> m Text
+manageIndexes projectFile options =
   stage "" 2 do
-    projectFile <- loadProjectFile
     (_genProject, seqScanFindings, indexes) <- analyseProject projectFile
     handleIndexOptimization options indexes seqScanFindings
   where

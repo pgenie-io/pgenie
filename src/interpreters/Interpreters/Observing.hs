@@ -101,9 +101,6 @@ instance (Logic.FsOps m) => Logic.FsOps (Observing m) where
 instance (Logic.LoadsGen m) => Logic.LoadsGen (Observing m) where
   loadGen loc hash = lift (Logic.loadGen loc hash)
 
-instance (Logic.LoadsProjectFile m) => Logic.LoadsProjectFile (Observing m) where
-  loadProjectFile = lift Logic.loadProjectFile
-
 instance (Observes m) => Observes (Observing m) where
   observe observation = lift (observe observation)
 

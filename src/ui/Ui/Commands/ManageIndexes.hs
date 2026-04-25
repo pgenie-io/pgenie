@@ -3,6 +3,7 @@
 module Ui.Commands.ManageIndexes (manageIndexes) where
 
 import Logic qualified
+import Logic.ProjectFile qualified as ProjectFile
 import Options.Applicative qualified as Opt
 import Ui.Framework
 import Utils.Prelude
@@ -33,9 +34,10 @@ parser =
           <> Opt.help "Also write the migration to a numbered file in migrations/ (fails if existing files do not follow the N.sql naming convention)"
       )
 
-execute :: (Logic.Caps m) => Params -> m Text
-execute params =
+execute :: (Logic.Caps m) => ProjectFile.ProjectFile -> Params -> m Text
+execute projectFile params =
   Logic.manageIndexes
+    projectFile
     Logic.ManageIndexesOptions
       { allowRedundantIndexes = params.allowRedundantIndexes,
         addMigration = params.addMigration

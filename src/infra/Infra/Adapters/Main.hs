@@ -1,5 +1,6 @@
 module Infra.Adapters.Main
   ( Device,
+    getProjectFile,
     scope,
   )
 where
@@ -11,6 +12,8 @@ import Fx
 import Infra.Adapters.Analyser qualified as Analyser
 import Interpreters.Observing qualified as Observing
 import Logic qualified
+import Logic.CustomTypeSignatureFile qualified as CustomTypeSignatureFile
+import Logic.GeneratorHashes qualified as GeneratorHashes
 import Logic.ProjectFile qualified as ProjectFile
 import PGenieGen qualified as Gen
 import System.Directory qualified as Directory
@@ -22,6 +25,10 @@ data Device = Device
     analyser :: Analyser.Device,
     projectFile :: ProjectFile.ProjectFile
   }
+
+getProjectFile :: Fx Device Logic.Report ProjectFile.ProjectFile
+getProjectFile =
+  runTotalIO \dev -> pure dev.projectFile
 
 scope :: (Observing.Observation -> IO ()) -> Maybe Text -> Fx.Scope Logic.Report Device
 scope observe maybeDatabaseUrl = do
@@ -71,19 +78,22 @@ instance Observing.Observes (Fx Device Logic.Report) where
   observe observation =
     runTotalIO \dev -> dev.observe observation
 
-instance Logic.DbOps (Fx Device Logic.Report) where
+instance Logic.ExecutesMigrations (Fx Device Logic.Report) where
   executeMigration migrationText =
     Logic.executeMigration migrationText
       & mapEnv (.analyser)
 
+instance Logic.InfersQueryTypes (Fx Device Logic.Report) where
   inferQueryTypes queryText =
     Logic.inferQueryTypes queryText
       & mapEnv (.analyser)
 
+instance Logic.ExplainsQuery (Fx Device Logic.Report) where
   explainQuery sql =
     Logic.explainQuery sql
       & mapEnv (.analyser)
 
+instance Logic.LoadsIndexes (Fx Device Logic.Report) where
   getIndexes =
     Logic.getIndexes
       & mapEnv (.analyser)
@@ -131,9 +141,25 @@ instance Logic.LoadsGen (Fx Device Logic.Report) where
               }
         )
 
-instance Logic.LoadsProjectFile (Fx Device Logic.Report) where
-  loadProjectFile =
-    runTotalIO \dev -> pure dev.projectFile
+instance CustomTypeSignatureFile.Port (Fx Device Logic.Report) where
+  readFile path =
+    liftFileOp "Failed to read custom-type signature file" path do
+      Text.readFile (Path.toFilePath path)
+
+  writeFile path content =
+    liftFileOp "Failed to write custom-type signature file" path do
+      Directory.createDirectoryIfMissing True (Path.toFilePath (path <> ".."))
+      Text.writeFile (Path.toFilePath path) content
+
+instance GeneratorHashes.Port (Fx Device Logic.Report) where
+  readFile path =
+    liftFileOp "Failed to read generator hashes file" path do
+      Text.readFile (Path.toFilePath path)
+
+  writeFile path content =
+    liftFileOp "Failed to write generator hashes file" path do
+      Directory.createDirectoryIfMissing True (Path.toFilePath (path <> ".."))
+      Text.writeFile (Path.toFilePath path) content
 
 liftFileOp :: Text -> Path -> IO a -> Fx env Logic.Report a
 liftFileOp errMessage path action =

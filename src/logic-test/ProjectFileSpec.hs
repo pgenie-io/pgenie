@@ -4,7 +4,7 @@ import Data.Aeson qualified as Aeson
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
 import Logic.ProjectFile
-import Logic.Report qualified as Error
+import Logic.Report qualified as Report
 import Test.Hspec
 import Utils.Prelude
 
@@ -21,7 +21,7 @@ spec = do
             \    gen: https://raw.githubusercontent.com/pgenie-io/java.gen/v0.1.2/gen/Gen.dhall\n\
             \    config:\n\
             \      useOptional: true"
-          result = tryFromYaml yaml :: Either Error.Report ProjectFile
+          result = tryFromYaml yaml :: Either Report.Report ProjectFile
       case result of
         Left err ->
           expectationFailure ("Parse failed: " <> show err)
@@ -40,7 +40,7 @@ spec = do
             "space: my_space\n\
             \name: music_catalogue\n\
             \version: 1.0.0"
-          result = tryFromYaml yaml :: Either Error.Report ProjectFile
+          result = tryFromYaml yaml :: Either Report.Report ProjectFile
       case result of
         Left err -> expectationFailure ("Parse failed: " <> show err)
         Right pf -> do
@@ -53,7 +53,7 @@ spec = do
             \name: music_catalogue\n\
             \version: 1.0.0\n\
             \"
-          result = tryFromYaml yaml :: Either Error.Report ProjectFile
+          result = tryFromYaml yaml :: Either Report.Report ProjectFile
       case result of
         Left err -> expectationFailure ("Parse failed: " <> show err)
         Right pf -> do
@@ -67,7 +67,7 @@ spec = do
             \version: 1.0.0\n\
             \postgres: 15\n\
             \"
-          result = tryFromYaml yaml :: Either Error.Report ProjectFile
+          result = tryFromYaml yaml :: Either Report.Report ProjectFile
       case result of
         Left err -> expectationFailure ("Parse failed: " <> show err)
         Right pf -> do

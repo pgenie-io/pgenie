@@ -11,6 +11,8 @@ where
 import Control.Monad.Parallel qualified as MonadParallel
 import Data.Text qualified as Text
 import Logic qualified
+import Logic.CustomTypeSignatureFile qualified as CustomTypeSignatureFile
+import Logic.GeneratorHashes qualified as GeneratorHashes
 import Logic.Report qualified as Report
 import Utils.Prelude hiding (readFile, writeFile)
 
@@ -81,25 +83,42 @@ instance (Observes m, Monad m) => Logic.Stages (Observing m) where
 instance (Observes m, Monad m) => Logic.Warns (Observing m) where
   warn report = Observing \_ path -> observe (WarningEmitted (Report.nest path report))
 
-instance (Logic.DbOps m) => Logic.DbOps (Observing m) where
-  executeMigration sql = hoist (Logic.executeMigration sql)
-  inferQueryTypes sql = hoist (Logic.inferQueryTypes sql)
-  explainQuery sql = hoist (Logic.explainQuery sql)
-  getIndexes = hoist Logic.getIndexes
+instance (Logic.ExecutesMigrations m) => Logic.ExecutesMigrations (Observing m) where
+  executeMigration sql = lift (Logic.executeMigration sql)
+
+instance (Logic.InfersQueryTypes m) => Logic.InfersQueryTypes (Observing m) where
+  inferQueryTypes sql = lift (Logic.inferQueryTypes sql)
+
+instance (Logic.ExplainsQuery m) => Logic.ExplainsQuery (Observing m) where
+  explainQuery sql = lift (Logic.explainQuery sql)
+
+instance (Logic.LoadsIndexes m) => Logic.LoadsIndexes (Observing m) where
+  getIndexes = lift Logic.getIndexes
 
 instance (Logic.FsOps m) => Logic.FsOps (Observing m) where
-  readFile path = hoist (Logic.readFile path)
-  writeFile path content = hoist (Logic.writeFile path content)
-  listDir path = hoist (Logic.listDir path)
+  readFile path = lift (Logic.readFile path)
+  writeFile path content = lift (Logic.writeFile path content)
+  listDir path = lift (Logic.listDir path)
 
 instance (Logic.LoadsGen m) => Logic.LoadsGen (Observing m) where
-  loadGen loc hash = hoist (Logic.loadGen loc hash)
+  loadGen loc hash = lift (Logic.loadGen loc hash)
 
-instance (Logic.LoadsProjectFile m) => Logic.LoadsProjectFile (Observing m) where
-  loadProjectFile = Observing \_ _ -> Logic.loadProjectFile
+instance (CustomTypeSignatureFile.Port m) => CustomTypeSignatureFile.Port (Observing m) where
+  readFile path =
+    lift (CustomTypeSignatureFile.readFile path)
+
+  writeFile path content =
+    lift (CustomTypeSignatureFile.writeFile path content)
+
+instance (GeneratorHashes.Port m) => GeneratorHashes.Port (Observing m) where
+  readFile path =
+    lift (GeneratorHashes.readFile path)
+
+  writeFile path content =
+    lift (GeneratorHashes.writeFile path content)
 
 instance (Observes m) => Observes (Observing m) where
-  observe observation = Observing \_ _ -> observe observation
+  observe observation = lift (observe observation)
 
-hoist :: (MonadError Logic.Report m) => m a -> Observing m a
-hoist ma = Observing \_ path -> Report.nesting path ma
+instance MonadTrans Observing where
+  lift ma = Observing \_ _ -> ma

@@ -4,6 +4,7 @@
 module Ui.Commands.Generate (generate) where
 
 import Logic qualified
+import Logic.ProjectFile qualified as ProjectFile
 import Options.Applicative qualified as Opt
 import Ui.Framework
 import Utils.Prelude
@@ -29,9 +30,10 @@ parser =
           <> Opt.help "Fail the procedure if sequential scans are detected (instead of emitting warnings)"
       )
 
-execute :: (Logic.Caps m) => Params -> m Text
-execute params =
+execute :: (Logic.Caps m) => ProjectFile.ProjectFile -> Params -> m Text
+execute projectFile params =
   Logic.generate
+    projectFile
     Logic.GenerateOptions
       { failOnSeqScans = params.failOnSeqScans
       }

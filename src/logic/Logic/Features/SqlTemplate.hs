@@ -1,4 +1,4 @@
-module Logic.SqlTemplate
+module Logic.Features.SqlTemplate
   ( SqlTemplate,
     toGenQueryFragments,
     toGenParamNames,
@@ -10,7 +10,7 @@ where
 
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
-import Logic.Name qualified as Name
+import Logic.Features.Name qualified as Name
 import PGenieGen.Model.Input qualified as Gen
 import Test.QuickCheck qualified as Qc
 import Text.Megaparsec qualified as Megaparsec

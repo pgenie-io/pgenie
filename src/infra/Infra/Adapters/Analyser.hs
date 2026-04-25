@@ -22,7 +22,11 @@ import Infra.Adapters.Analyser.Scopes.Testcontainers qualified
 import Infra.Adapters.Analyser.Sessions qualified as Sessions
 import Infra.Adapters.Analyser.Sessions.Procedures.GetIndexes qualified as GetIndexes
 import Interpreters.Observing qualified as Observing
-import Logic qualified
+import Logic.Features.IndexOptimizer (LoadsIndexes (..))
+import Logic.Features.Migrations (ExecutesMigrations (..))
+import Logic.Features.QueryAnalysis (InfersQueryTypes (..))
+import Logic.Features.Report qualified as Report
+import Logic.Features.SeqScanDetector (ExplainsQuery (..))
 import TestcontainersPostgresql qualified
 import Utils.Prelude
 import Utils.Text qualified
@@ -37,13 +41,13 @@ data Source
     -- A temporary database is created for analysis and dropped on cleanup.
     RunningServerSource {connectionUrl :: Text, targetMajorVersion :: Int}
 
-scope :: Source -> (Observing.Observation -> IO ()) -> Fx.Scope Logic.Report Device
+scope :: Source -> (Observing.Observation -> IO ()) -> Fx.Scope Report.Report Device
 scope source observe = case source of
   DockerSource {postgresTag} -> scopeViaDocker postgresTag observe
   RunningServerSource {connectionUrl, targetMajorVersion} ->
     scopeViaRunningServer connectionUrl targetMajorVersion observe
 
-scopeViaDocker :: Text -> (Observing.Observation -> IO ()) -> Fx.Scope Logic.Report Device
+scopeViaDocker :: Text -> (Observing.Observation -> IO ()) -> Fx.Scope Report.Report Device
 scopeViaDocker postgresTag observe = do
   acquire $ runTotalIO \() -> observe (Observing.StageEntered ["Starting Container"])
   (host, port) <-
@@ -77,9 +81,9 @@ scopeViaDocker postgresTag observe = do
   acquire $ runTotalIO \() -> observe (Observing.StageExited ["Connecting"] 0.1)
   pure (Device pool)
   where
-    adaptTestcontainersError :: SomeException -> Logic.Report
+    adaptTestcontainersError :: SomeException -> Report.Report
     adaptTestcontainersError err =
-      Logic.Report
+      Report.Report
         { path = ["testcontainers"],
           message = Text.pack (displayException err),
           suggestion = Nothing,
@@ -89,7 +93,7 @@ scopeViaDocker postgresTag observe = do
 -- | Connect to a running server, verify its major version, create a temporary
 -- analysis database, and return a device backed by a pool on that database.
 -- The temporary database is dropped when the scope exits (on success or error).
-scopeViaRunningServer :: Text -> Int -> (Observing.Observation -> IO ()) -> Fx.Scope Logic.Report Device
+scopeViaRunningServer :: Text -> Int -> (Observing.Observation -> IO ()) -> Fx.Scope Report.Report Device
 scopeViaRunningServer connectionUrl targetMajorVersion observe = do
   let serverSettings = Hasql.Connection.Settings.connectionString connectionUrl
 
@@ -111,7 +115,7 @@ scopeViaRunningServer connectionUrl targetMajorVersion observe = do
     pure $ case res of
       Left poolErr ->
         Left
-          Logic.Report
+          Report.Report
             { path = [],
               message = "Failed to connect to PostgreSQL server",
               suggestion = Nothing,
@@ -121,7 +125,7 @@ scopeViaRunningServer connectionUrl targetMajorVersion observe = do
             }
       Right (Left msg) ->
         Left
-          Logic.Report
+          Report.Report
             { path = [],
               message = "Failed to query server version",
               suggestion = Nothing,
@@ -133,7 +137,7 @@ scopeViaRunningServer connectionUrl targetMajorVersion observe = do
 
   when (serverMajorVersion /= targetMajorVersion) do
     throwError
-      Logic.Report
+      Report.Report
         { path = [],
           message =
             "PostgreSQL server version "
@@ -167,7 +171,7 @@ scopeViaRunningServer connectionUrl targetMajorVersion observe = do
     pure $ case res of
       Left poolErr ->
         Left
-          Logic.Report
+          Report.Report
             { path = [],
               message = "Failed to create temporary analysis database",
               suggestion = Just "Ensure the database user has the CREATEDB privilege",
@@ -224,30 +228,30 @@ scopeViaRunningServer connectionUrl targetMajorVersion observe = do
 
 -- | Acquire a Hasql pool for the duration of the enclosing scope and register
 -- its release as a cleanup action.  Used by both Docker and running-server paths.
-scopePool :: Hasql.Pool.Config.Config -> Fx.Scope Logic.Report Hasql.Pool.Pool
+scopePool :: Hasql.Pool.Config.Config -> Fx.Scope Report.Report Hasql.Pool.Pool
 scopePool config = do
   pool <- acquire $ runTotalIO \() -> Hasql.Pool.acquire config
   registerRelease $ runTotalIO \() -> Hasql.Pool.release pool
   pure pool
 
-instance HasqlDev.RunsSession (Fx Device Logic.Report) where
+instance HasqlDev.RunsSession (Fx Device Report.Report) where
   runSession session =
     runPartialIO \(Device pool) ->
       first adaptPoolUsageError <$> Hasql.Pool.use pool session
     where
-      adaptPoolUsageError :: Hasql.Pool.UsageError -> Logic.Report
+      adaptPoolUsageError :: Hasql.Pool.UsageError -> Report.Report
       adaptPoolUsageError err = case err of
         Hasql.Pool.SessionUsageError sessionErr ->
           adaptSessionError sessionErr
         otherErr ->
-          Logic.Report
+          Report.Report
             { path = [],
               message = Text.pack (show otherErr),
               suggestion = Nothing,
               details = []
             }
 
-      adaptSessionError :: Hasql.SessionError -> Logic.Report
+      adaptSessionError :: Hasql.SessionError -> Report.Report
       adaptSessionError sessionErr = case sessionErr of
         Hasql.ScriptSessionError sql serverErr ->
           adaptServerError sql serverErr
@@ -256,37 +260,37 @@ instance HasqlDev.RunsSession (Fx Device Logic.Report) where
             Hasql.ServerStatementError serverErr ->
               adaptServerError sql serverErr
             otherErr ->
-              Logic.Report
+              Report.Report
                 { path = [],
                   message = Text.pack (show otherErr),
                   suggestion = Nothing,
                   details = [("sql", sql)]
                 }
         Hasql.ConnectionSessionError msg ->
-          Logic.Report
+          Report.Report
             { path = [],
               message = msg,
               suggestion = Nothing,
               details = []
             }
         Hasql.MissingTypesSessionError types ->
-          Logic.Report
+          Report.Report
             { path = [],
               message = "Missing database types",
               suggestion = Just "Ensure all referenced types exist in the database",
               details = [("types", Text.pack (show types))]
             }
         Hasql.DriverSessionError msg ->
-          Logic.Report
+          Report.Report
             { path = [],
               message = msg,
               suggestion = Nothing,
               details = []
             }
 
-      adaptServerError :: Text -> Hasql.ServerError -> Logic.Report
+      adaptServerError :: Text -> Hasql.ServerError -> Report.Report
       adaptServerError sql (Hasql.ServerError errorCode message details hint position) =
-        Logic.Report
+        Report.Report
           { path = [],
             message = message,
             suggestion = derivedSuggestion,
@@ -316,11 +320,11 @@ instance HasqlDev.RunsSession (Fx Device Logic.Report) where
           Nothing ->
             "Add all NOT NULL columns to the INSERT statement, or define DEFAULT values for them in the schema"
 
-instance Logic.ExecutesMigrations (Fx Device Logic.Report) where
+instance ExecutesMigrations (Fx Device Report.Report) where
   executeMigration migrationText =
     HasqlDev.runSession (Hasql.Session.script migrationText)
 
-instance Logic.InfersQueryTypes (Fx Device Logic.Report) where
+instance InfersQueryTypes (Fx Device Report.Report) where
   inferQueryTypes sql =
     HasqlDev.runSession (Sessions.inferTypes sql) >>= \case
       Left err ->
@@ -335,16 +339,16 @@ instance Logic.InfersQueryTypes (Fx Device Logic.Report) where
                 map adaptAnalysisError warnings
               )
     where
-      adaptAnalysisError :: Sessions.Error -> Logic.Report
+      adaptAnalysisError :: Sessions.Error -> Report.Report
       adaptAnalysisError err =
-        Logic.Report
+        Report.Report
           { path = err.location,
             message = err.reason,
             suggestion = Nothing,
             details = err.details
           }
 
-instance Logic.ExplainsQuery (Fx Device Logic.Report) where
+instance ExplainsQuery (Fx Device Report.Report) where
   explainQuery sql =
     HasqlDev.runSession do
       Hasql.Session.onLibpqConnection \conn -> do
@@ -362,6 +366,6 @@ instance Logic.ExplainsQuery (Fx Device Logic.Report) where
               _ -> pure []
         pure (Right rows, conn)
 
-instance Logic.LoadsIndexes (Fx Device Logic.Report) where
+instance LoadsIndexes (Fx Device Report.Report) where
   getIndexes =
     HasqlDev.runSession GetIndexes.getIndexes

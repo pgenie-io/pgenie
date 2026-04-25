@@ -1,4 +1,4 @@
-module Logic.IndexOptimizer
+module Logic.Features.IndexOptimizer
   ( IndexInfo (..),
     IndexAction (..),
     DropReason (..),
@@ -11,7 +11,7 @@ where
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as Text
-import Logic.Report (Report (..))
+import Logic.Features.Report (Report (..))
 import Utils.Prelude
 
 -- * Index domain types

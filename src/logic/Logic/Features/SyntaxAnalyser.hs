@@ -1,12 +1,12 @@
-module Logic.SyntaxAnalyser
+module Logic.Features.SyntaxAnalyser
   ( resolveText,
     module Data,
   )
 where
 
 import Data.Text qualified as Text
-import Logic.SyntaxAnalyser.AstInterpreter qualified as AstInterpreter
-import Logic.SyntaxAnalyser.Data as Data
+import Logic.Features.SyntaxAnalyser.AstInterpreter qualified as AstInterpreter
+import Logic.Features.SyntaxAnalyser.Data as Data
 import PostgresqlSyntax.Parsing qualified as Parsing
 import Utils.Prelude
 

@@ -1,4 +1,4 @@
-module Logic.SignatureFile
+module Logic.Features.SignatureFile
   ( Signature (..),
     FieldSig (..),
     ResultSig (..),
@@ -17,7 +17,7 @@ import Control.Foldl qualified as Fold
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as Text
-import Logic.Report qualified as Report
+import Logic.Features.Report qualified as Report
 import PGenieGen.Model.Input qualified as Gen.Input
 import Utils.Prelude hiding (readFile, writeFile)
 import YamlUnscrambler qualified as U

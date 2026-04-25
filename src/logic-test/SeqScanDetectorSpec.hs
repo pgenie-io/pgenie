@@ -1,6 +1,6 @@
 module SeqScanDetectorSpec (spec) where
 
-import Logic.SeqScanDetector
+import Logic.Features.SeqScanDetector
 import Test.Hspec
 import Utils.Prelude
 

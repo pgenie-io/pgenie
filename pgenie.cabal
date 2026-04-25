@@ -139,24 +139,32 @@ library logic
   import: base
   hs-source-dirs: src/logic/
   exposed-modules:
-    Logic
-    Logic.CustomTypeSignatureFile
-    Logic.GeneratorHashes
-    Logic.IndexOptimizer
-    Logic.Migrations
-    Logic.Name
-    Logic.ProjectFile
-    Logic.QueryAnalysis
-    Logic.Report
-    Logic.SeqScanDetector
-    Logic.SignatureFile
-    Logic.SqlTemplate
-    Logic.SyntaxAnalyser
+    Logic.Features.CustomTypeSignatureFile
+    Logic.Features.Fs
+    Logic.Features.GeneratorHashes
+    Logic.Features.IndexOptimizer
+    Logic.Features.Migrations
+    Logic.Features.Name
+    Logic.Features.ProjectFile
+    Logic.Features.QueryAnalysis
+    Logic.Features.Report
+    Logic.Features.SeqScanDetector
+    Logic.Features.SignatureFile
+    Logic.Features.SqlTemplate
+    Logic.Features.Staging
+    Logic.Features.SyntaxAnalyser
+    Logic.Workflows.Analyse
+    Logic.Workflows.AnalyseProject
+    Logic.Workflows.Generate
+    Logic.Workflows.GenerateCode
+    Logic.Workflows.GenerateQuerySigs
+    Logic.Workflows.GenerateTypeSigs
+    Logic.Workflows.ManageIndexes
 
   other-modules:
-    Logic.Name.Megaparsec
-    Logic.SyntaxAnalyser.AstInterpreter
-    Logic.SyntaxAnalyser.Data
+    Logic.Features.Name.Megaparsec
+    Logic.Features.SyntaxAnalyser.AstInterpreter
+    Logic.Features.SyntaxAnalyser.Data
 
   build-depends:
     aeson,

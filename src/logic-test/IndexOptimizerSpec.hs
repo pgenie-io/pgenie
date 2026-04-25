@@ -1,7 +1,7 @@
 module IndexOptimizerSpec (spec) where
 
 import Data.Text qualified as Text
-import Logic.IndexOptimizer
+import Logic.Features.IndexOptimizer
 import Test.Hspec
 import Utils.Prelude
 

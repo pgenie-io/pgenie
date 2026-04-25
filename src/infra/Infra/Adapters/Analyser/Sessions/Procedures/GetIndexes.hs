@@ -3,15 +3,15 @@ module Infra.Adapters.Analyser.Sessions.Procedures.GetIndexes where
 import Hasql.Decoders qualified as Decoders
 import Hasql.Session qualified as Session
 import Hasql.Statement qualified as Statement
-import Logic qualified
+import Logic.Features.IndexOptimizer (IndexInfo (..))
 import Utils.Prelude
 
 -- | Fetch all user-defined indexes from the database.
-getIndexes :: Session.Session [Logic.IndexInfo]
+getIndexes :: Session.Session [IndexInfo]
 getIndexes =
   Session.statement () indexesStatement
   where
-    indexesStatement :: Statement.Statement () [Logic.IndexInfo]
+    indexesStatement :: Statement.Statement () [IndexInfo]
     indexesStatement =
       Statement.unpreparable sql mempty decoder
       where
@@ -40,11 +40,11 @@ getIndexes =
               "ORDER BY ct.relname, ci.relname"
             ]
 
-        decoder :: Decoders.Result [Logic.IndexInfo]
+        decoder :: Decoders.Result [IndexInfo]
         decoder =
           Decoders.rowList rowDecoder
 
-        rowDecoder :: Decoders.Row Logic.IndexInfo
+        rowDecoder :: Decoders.Row IndexInfo
         rowDecoder = do
           indexName <- Decoders.column (Decoders.nonNullable Decoders.text)
           tableName <- Decoders.column (Decoders.nonNullable Decoders.text)
@@ -55,7 +55,7 @@ getIndexes =
           indexMethod <- Decoders.column (Decoders.nonNullable Decoders.text)
           predicate <- Decoders.column (Decoders.nullable Decoders.text)
           pure
-            Logic.IndexInfo
+            IndexInfo
               { indexName,
                 tableName,
                 schemaName,

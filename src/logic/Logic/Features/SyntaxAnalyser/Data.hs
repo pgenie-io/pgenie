@@ -1,4 +1,4 @@
-module Logic.SyntaxAnalyser.Data where
+module Logic.Features.SyntaxAnalyser.Data where
 
 import Utils.Prelude
 

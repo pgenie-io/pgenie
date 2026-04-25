@@ -1,8 +1,8 @@
 module CustomTypeSignatureFileSpec (spec) where
 
 import AlgebraicPath qualified as Path
-import Logic.CustomTypeSignatureFile
-import Logic.Name qualified as Name
+import Logic.Features.CustomTypeSignatureFile
+import Logic.Features.Name qualified as Name
 import PGenieGen.Model.Input qualified as Gen.Input
 import Test.Hspec
 import Utils.Prelude

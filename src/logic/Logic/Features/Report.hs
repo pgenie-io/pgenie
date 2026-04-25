@@ -1,4 +1,4 @@
-module Logic.Report where
+module Logic.Features.Report where
 
 import Utils.Prelude
 
@@ -20,3 +20,7 @@ nesting :: (MonadError Report m) => [Text] -> m a -> m a
 nesting path action =
   catchError action \err ->
     throwError (nest path err)
+
+-- | Emission of non-fatal problem reports.
+class (Monad m) => Warns m where
+  warn :: Report -> m ()

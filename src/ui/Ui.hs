@@ -4,8 +4,9 @@ module Ui
 where
 
 import Interpreters.Observing qualified as Observing
-import Logic qualified
-import Logic.ProjectFile qualified as ProjectFile
+import Logic.Features.ProjectFile qualified as ProjectFile
+import Logic.Workflows.AnalyseProject qualified as AnalyseProject
+import Logic.Workflows.GenerateCode qualified as GenerateCode
 import Ui.Commands qualified as Commands
 import Ui.Display qualified as Display
 import Ui.Framework qualified as Framework
@@ -14,7 +15,7 @@ import Utils.Prelude
 -- |
 -- Construct an application by specifying the runtime.
 main ::
-  (Logic.Caps m) =>
+  (AnalyseProject.Port m, GenerateCode.Port m) =>
   -- | Version string for @--version@ (SemVer, without the PVP @0.@ prefix).
   Text ->
   -- | Execute an effect with an observation sink and an optional database URL.

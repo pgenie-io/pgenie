@@ -1,13 +1,13 @@
 -- | Domain types and port for inferring the types of a SQL query's parameters
 -- and result columns.
-module Logic.QueryAnalysis
+module Logic.Features.QueryAnalysis
   ( InferredQueryTypes (..),
     InferredParam (..),
     InfersQueryTypes (..),
   )
 where
 
-import Logic.Report (Report (..))
+import Logic.Features.Report (Report (..))
 import PGenieGen.Model.Input qualified as Gen.Input
 import Utils.Prelude
 

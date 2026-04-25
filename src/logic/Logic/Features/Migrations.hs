@@ -1,10 +1,10 @@
 -- | Port for executing migration SQL against the target database.
-module Logic.Migrations
+module Logic.Features.Migrations
   ( ExecutesMigrations (..),
   )
 where
 
-import Logic.Report (Report (..))
+import Logic.Features.Report (Report (..))
 import Utils.Prelude
 
 -- | Port for executing a migration SQL script against the database.

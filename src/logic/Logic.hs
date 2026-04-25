@@ -5,23 +5,30 @@ module Logic
     generate,
     manageIndexes,
     module Logic.Algebra,
+
     -- * Re-exports from feature modules
+
     -- ** ProjectFile
     LoadsProjectFile (..),
+
     -- ** Migrations
     ExecutesMigrations (..),
+
     -- ** QueryAnalysis
     InfersQueryTypes (..),
     InferredQueryTypes (..),
     InferredParam (..),
+
     -- ** SeqScanDetector
     ExplainsQuery (..),
     SeqScanFinding (..),
+
     -- ** IndexOptimizer
     LoadsIndexes (..),
     IndexInfo (..),
     IndexAction (..),
     DropReason (..),
+
     -- * Combined capabilities
     Caps,
   )
@@ -168,27 +175,116 @@ manageIndexes options =
     projectFile <- loadProjectFile
     (_genProject, seqScanFindings, indexes) <- analyseProject projectFile
     handleIndexOptimization options indexes seqScanFindings
+  where
+    handleIndexOptimization :: (Caps m) => ManageIndexesOptions -> [IndexInfo] -> [(Text, SeqScanFinding)] -> m Text
+    handleIndexOptimization options indexes seqScanFindings = do
+      let queryNeeds =
+            map (\(_, finding) -> (finding.tableName, finding.suggestedIndexColumns)) seqScanFindings
+          allActions = IndexOptimizer.optimizeIndexes indexes queryNeeds
+          (dropActions, createActions) =
+            partition
+              ( \case
+                  DropIndex {} -> True
+                  CreateIndex {} -> False
+              )
+              allActions
+          migrationActions =
+            if options.allowRedundantIndexes
+              then createActions
+              else allActions
+      when options.allowRedundantIndexes do
+        for_ dropActions \action ->
+          warn (Report [] (indexActionMessage action) (Just "Suppressed by --allow-redundant-indexes") (indexActionDetails action))
+      if null migrationActions
+        then pure ""
+        else do
+          let migrationContent = IndexOptimizer.generateMigration migrationActions
+          when options.addMigration do
+            writeMigrationFile migrationContent
+          pure migrationContent
+      where
+        indexActionMessage :: IndexAction -> Text
+        indexActionMessage (DropIndex idx reason) = case reason of
+          ExactDuplicate other ->
+            "Redundant index: "
+              <> idx.indexName
+              <> " on "
+              <> idx.tableName
+              <> " is an exact duplicate of "
+              <> other.indexName
+          PrefixRedundancy other ->
+            "Redundant index: "
+              <> idx.indexName
+              <> " on "
+              <> idx.tableName
+              <> " is a prefix of "
+              <> other.indexName
+          ExcessiveComposite replacement ->
+            "Excessive composite index: "
+              <> idx.indexName
+              <> " on "
+              <> idx.tableName
+              <> " can be narrowed to ("
+              <> Text.intercalate ", " replacement
+              <> ")"
+          UnusedByQueries ->
+            "Redundant index: "
+              <> idx.indexName
+              <> " on "
+              <> idx.tableName
+              <> " is not used by observed query needs"
+        indexActionMessage (CreateIndex tbl cols) =
+          "Missing index: "
+            <> tbl
+            <> " needs an index on ("
+            <> Text.intercalate ", " cols
+            <> ")"
+
+        indexActionDetails :: IndexAction -> [(Text, Text)]
+        indexActionDetails (DropIndex idx _) = [("index", idx.indexName), ("table", idx.tableName)]
+        indexActionDetails (CreateIndex tbl cols) = [("table", tbl), ("columns", Text.intercalate ", " cols)]
+
+        -- Write the migration SQL to a numbered file in @migrations/@.
+        -- Fails explicitly if any existing file does not follow the @N.sql@ naming
+        -- convention (i.e. the base name is not a sequence of digits).
+        writeMigrationFile :: (Caps m) => Text -> m ()
+        writeMigrationFile content = do
+          migrationsListed <-
+            listDir "migrations"
+              & fmap (filter (\p -> Path.toExtensions p == ["sql"]))
+              & fmap sort
+          for_ migrationsListed \p -> do
+            let baseName = Path.toBasename p
+            unless (not (Text.null baseName) && Text.all isDigit baseName) do
+              throwError
+                ( Report
+                    []
+                    ("Migration naming convention is not clear: " <> Path.toText p)
+                    (Just "All migration files must follow the N.sql naming convention (e.g., 1.sql, 2.sql)")
+                    [("file", Path.toText p)]
+                )
+          let nextMigrationNum = length migrationsListed + 1
+              migrationFileName = Text.pack (show nextMigrationNum) <> ".sql"
+          case Path.maybeFromText ("migrations/" <> migrationFileName) of
+            Nothing ->
+              throwError
+                ( Report
+                    []
+                    "Failed to construct migration file path"
+                    Nothing
+                    [("filename", migrationFileName)]
+                )
+            Just migrationPath -> do
+              writeFile migrationPath content
+              warn
+                ( Report
+                    []
+                    ("Written migration to migrations/" <> migrationFileName)
+                    (Just "Review the migration and commit it")
+                    []
+                )
 
 -- * Helpers
-
-locationToUrl :: Gen.Location -> Text
-locationToUrl = \case
-  Gen.LocationUrl url -> url
-  Gen.LocationPath path -> Path.toText path
-
-loadQuerySql :: (Caps m) => QueryListed -> m SqlTemplate.SqlTemplate
-loadQuerySql queryListed = do
-  sql <- readFile queryListed.filePath
-  case SqlTemplate.tryFromText sql of
-    Left err ->
-      throwError
-        ( Report
-            []
-            "Failed to parse SQL template"
-            (Just "Check the SQL syntax in the query file")
-            [("file", Path.toText queryListed.filePath), ("error", to err)]
-        )
-    Right res -> pure res
 
 generateCode :: (Caps m) => ProjectFile.ProjectFile -> Gen.Input.Project -> m [GeneratedArtifact]
 generateCode projectFile project =
@@ -200,7 +296,9 @@ generateCode projectFile project =
     artifactsWithHashes <-
       MonadParallel.forM projectFile.artifacts \artifact -> do
         let name = Name.inSnakeCase artifact.name
-            genUrl = locationToUrl artifact.gen
+            genUrl = case artifact.gen of
+              Gen.LocationUrl url -> url
+              Gen.LocationPath path -> Path.toText path
             maybeHash = Map.lookup genUrl existingHashes
         stage name 2 do
           compileFnWithHash <-
@@ -498,6 +596,85 @@ analyseProject projectFile =
         seqScanFindings,
         indexes
       )
+  where
+    loadQuerySql :: (Caps m) => QueryListed -> m SqlTemplate.SqlTemplate
+    loadQuerySql queryListed = do
+      sql <- readFile queryListed.filePath
+      case SqlTemplate.tryFromText sql of
+        Left err ->
+          throwError
+            ( Report
+                []
+                "Failed to parse SQL template"
+                (Just "Check the SQL syntax in the query file")
+                [("file", Path.toText queryListed.filePath), ("error", to err)]
+            )
+        Right res -> pure res
+
+    inferSeqScanFindingsFromSql :: Text -> [SeqScanFinding]
+    inferSeqScanFindingsFromSql sql =
+      case inferTableAndWhere sql of
+        Nothing -> []
+        Just (tbl, whereClause) ->
+          let cols = SeqScanDetector.extractFilterColumns whereClause
+           in if null cols
+                then []
+                else [SeqScanFinding tbl whereClause cols]
+      where
+        inferTableAndWhere :: Text -> Maybe (Text, Text)
+        inferTableAndWhere sql = do
+          let normalized =
+                sql
+                  & Text.lines
+                  & filter (not . ("--" `Text.isPrefixOf`) . Text.stripStart)
+                  & Text.unwords
+              normalizedLower = Text.toLower normalized
+              tokens = Text.words normalized
+          guard (not (" join " `Text.isInfixOf` normalizedLower))
+          table <- inferTableName tokens
+          whereClause <- inferWhereClause tokens
+          pure (table, whereClause)
+          where
+            inferTableName :: [Text] -> Maybe Text
+            inferTableName tokens =
+              findAfterKeyword "from"
+                <|> findAfterKeyword "update"
+                <|> ( do
+                        i <- elemIndex "into" lowerTokens
+                        prev <- lowerTokens !? (i - 1)
+                        guard (prev == "insert")
+                        token <- tokens !? (i + 1)
+                        pure (normalizeTableToken token)
+                    )
+              where
+                findAfterKeyword kw = do
+                  i <- elemIndex kw lowerTokens
+                  token <- tokens !? (i + 1)
+                  pure (normalizeTableToken token)
+                lowerTokens = map Text.toLower tokens
+
+                normalizeTableToken :: Text -> Text
+                normalizeTableToken token =
+                  let cleaned =
+                        token
+                          & Text.dropWhile (\c -> c == '"' || c == '(')
+                          & Text.takeWhile (\c -> c /= '"' && c /= ')' && c /= ';' && c /= ',')
+                          & Text.splitOn "."
+                   in case reverse cleaned of
+                        [] -> ""
+                        x : _ -> x
+
+            inferWhereClause :: [Text] -> Maybe Text
+            inferWhereClause tokens =
+              let lowerTokens = map Text.toLower tokens
+                  stopKeywords = Set.fromList ["group", "order", "limit", "returning", "union"]
+               in do
+                    i <- elemIndex "where" lowerTokens
+                    let rest = drop (i + 1) tokens
+                        restLower = drop (i + 1) lowerTokens
+                        clauseTokens = map fst (takeWhile (\(_, lowerTok) -> lowerTok `Set.notMember` stopKeywords) (zip rest restLower))
+                    guard (not (null clauseTokens))
+                    pure (Text.unwords clauseTokens)
 
 stagedParFor :: (Caps m) => Text -> (a -> Text) -> [a] -> (a -> m b) -> m [b]
 stagedParFor stageName nameFn items action =
@@ -505,173 +682,3 @@ stagedParFor stageName nameFn items action =
     MonadParallel.forM items \item ->
       stage (nameFn item) 0 do
         action item
-
-inferSeqScanFindingsFromSql :: Text -> [SeqScanFinding]
-inferSeqScanFindingsFromSql sql =
-  case inferTableAndWhere sql of
-    Nothing -> []
-    Just (tbl, whereClause) ->
-      let cols = SeqScanDetector.extractFilterColumns whereClause
-       in if null cols
-            then []
-            else [SeqScanFinding tbl whereClause cols]
-
-inferTableAndWhere :: Text -> Maybe (Text, Text)
-inferTableAndWhere sql = do
-  let normalized =
-        sql
-          & Text.lines
-          & filter (not . ("--" `Text.isPrefixOf`) . Text.stripStart)
-          & Text.unwords
-      normalizedLower = Text.toLower normalized
-      tokens = Text.words normalized
-  guard (not (" join " `Text.isInfixOf` normalizedLower))
-  table <- inferTableName tokens
-  whereClause <- inferWhereClause tokens
-  pure (table, whereClause)
-
-inferTableName :: [Text] -> Maybe Text
-inferTableName tokens =
-  let lowerTokens = map Text.toLower tokens
-      findAfterKeyword kw = do
-        i <- elemIndex kw lowerTokens
-        token <- tokens !? (i + 1)
-        pure (normalizeTableToken token)
-   in findAfterKeyword "from"
-        <|> findAfterKeyword "update"
-        <|> ( do
-                i <- elemIndex "into" lowerTokens
-                prev <- lowerTokens !? (i - 1)
-                guard (prev == "insert")
-                token <- tokens !? (i + 1)
-                pure (normalizeTableToken token)
-            )
-
-inferWhereClause :: [Text] -> Maybe Text
-inferWhereClause tokens =
-  let lowerTokens = map Text.toLower tokens
-      stopKeywords = Set.fromList ["group", "order", "limit", "returning", "union"]
-   in do
-        i <- elemIndex "where" lowerTokens
-        let rest = drop (i + 1) tokens
-            restLower = drop (i + 1) lowerTokens
-            clauseTokens = map fst (takeWhile (\(_, lowerTok) -> lowerTok `Set.notMember` stopKeywords) (zip rest restLower))
-        guard (not (null clauseTokens))
-        pure (Text.unwords clauseTokens)
-
-normalizeTableToken :: Text -> Text
-normalizeTableToken token =
-  let cleaned =
-        token
-          & Text.dropWhile (\c -> c == '"' || c == '(')
-          & Text.takeWhile (\c -> c /= '"' && c /= ')' && c /= ';' && c /= ',')
-          & Text.splitOn "."
-   in case reverse cleaned of
-        [] -> ""
-        x : _ -> x
-
-handleIndexOptimization :: (Caps m) => ManageIndexesOptions -> [IndexInfo] -> [(Text, SeqScanFinding)] -> m Text
-handleIndexOptimization options indexes seqScanFindings = do
-  let queryNeeds =
-        map (\(_, finding) -> (finding.tableName, finding.suggestedIndexColumns)) seqScanFindings
-      allActions = IndexOptimizer.optimizeIndexes indexes queryNeeds
-      (dropActions, createActions) = partition isDropAction allActions
-      migrationActions =
-        if options.allowRedundantIndexes
-          then createActions
-          else allActions
-  when options.allowRedundantIndexes do
-    for_ dropActions \action ->
-      warn (Report [] (indexActionMessage action) (Just "Suppressed by --allow-redundant-indexes") (indexActionDetails action))
-  if null migrationActions
-    then pure ""
-    else do
-      let migrationContent = IndexOptimizer.generateMigration migrationActions
-      when options.addMigration do
-        writeMigrationFile migrationContent
-      pure migrationContent
-
--- | Write the migration SQL to a numbered file in @migrations/@.
--- Fails explicitly if any existing file does not follow the @N.sql@ naming
--- convention (i.e. the base name is not a sequence of digits).
-writeMigrationFile :: (Caps m) => Text -> m ()
-writeMigrationFile content = do
-  migrationsListed <-
-    listDir "migrations"
-      & fmap (filter (\p -> Path.toExtensions p == ["sql"]))
-      & fmap sort
-  for_ migrationsListed \p -> do
-    let baseName = Path.toBasename p
-    unless (not (Text.null baseName) && Text.all isDigit baseName) do
-      throwError
-        ( Report
-            []
-            ("Migration naming convention is not clear: " <> Path.toText p)
-            (Just "All migration files must follow the N.sql naming convention (e.g., 1.sql, 2.sql)")
-            [("file", Path.toText p)]
-        )
-  let nextMigrationNum = length migrationsListed + 1
-      migrationFileName = Text.pack (show nextMigrationNum) <> ".sql"
-  case Path.maybeFromText ("migrations/" <> migrationFileName) of
-    Nothing ->
-      throwError
-        ( Report
-            []
-            "Failed to construct migration file path"
-            Nothing
-            [("filename", migrationFileName)]
-        )
-    Just migrationPath -> do
-      writeFile migrationPath content
-      warn
-        ( Report
-            []
-            ("Written migration to migrations/" <> migrationFileName)
-            (Just "Review the migration and commit it")
-            []
-        )
-
-isDropAction :: IndexAction -> Bool
-isDropAction (DropIndex {}) = True
-isDropAction (CreateIndex {}) = False
-
-indexActionMessage :: IndexAction -> Text
-indexActionMessage (DropIndex idx reason) = case reason of
-  ExactDuplicate other ->
-    "Redundant index: "
-      <> idx.indexName
-      <> " on "
-      <> idx.tableName
-      <> " is an exact duplicate of "
-      <> other.indexName
-  PrefixRedundancy other ->
-    "Redundant index: "
-      <> idx.indexName
-      <> " on "
-      <> idx.tableName
-      <> " is a prefix of "
-      <> other.indexName
-  ExcessiveComposite replacement ->
-    "Excessive composite index: "
-      <> idx.indexName
-      <> " on "
-      <> idx.tableName
-      <> " can be narrowed to ("
-      <> Text.intercalate ", " replacement
-      <> ")"
-  UnusedByQueries ->
-    "Redundant index: "
-      <> idx.indexName
-      <> " on "
-      <> idx.tableName
-      <> " is not used by observed query needs"
-indexActionMessage (CreateIndex tbl cols) =
-  "Missing index: "
-    <> tbl
-    <> " needs an index on ("
-    <> Text.intercalate ", " cols
-    <> ")"
-
-indexActionDetails :: IndexAction -> [(Text, Text)]
-indexActionDetails (DropIndex idx _) = [("index", idx.indexName), ("table", idx.tableName)]
-indexActionDetails (CreateIndex tbl cols) = [("table", tbl), ("columns", Text.intercalate ", " cols)]

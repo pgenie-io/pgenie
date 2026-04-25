@@ -155,6 +155,7 @@ library logic
     Logic.Features.SqlTemplate
     Logic.Features.SyntaxAnalyser
     Logic.Workflows.GenerateQuerySigs
+    Logic.Workflows.GenerateTypeSigs
 
   other-modules:
     Logic.Features.Name.Megaparsec

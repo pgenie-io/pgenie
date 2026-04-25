@@ -110,7 +110,10 @@ run projectFile params =
                 (Just "All migration files must follow the N.sql naming convention (e.g., 1.sql, 2.sql)")
                 [("file", Path.toText p)]
             )
-      let nextMigrationNum = length migrationsListed + 1
+      let existingNumbers = map (read . Text.unpack . Path.toBasename) migrationsListed :: [Int]
+          nextMigrationNum = case existingNumbers of
+            [] -> 1
+            nums -> maximum nums + 1
           migrationFileName = Text.pack (show nextMigrationNum) <> ".sql"
       case Path.maybeFromText ("migrations/" <> migrationFileName) of
         Nothing ->
@@ -122,6 +125,14 @@ run projectFile params =
                 [("filename", migrationFileName)]
             )
         Just migrationPath -> do
+          when (migrationPath `elem` migrationsListed) do
+            throwError
+              ( Report
+                  []
+                  ("Migration file already exists: migrations/" <> migrationFileName)
+                  (Just "This is likely a bug; please report it")
+                  [("file", migrationFileName)]
+              )
           writeFile migrationPath content
           warn
             ( Report

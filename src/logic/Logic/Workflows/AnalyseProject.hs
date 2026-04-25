@@ -5,7 +5,6 @@ import Control.Monad.Parallel qualified as MonadParallel
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as Text
-import Logic.Features.CustomTypeSignatureFile qualified as CustomTypeSignatureFile
 import Logic.Features.Fs (FsOps (..))
 import Logic.Features.IndexOptimizer (IndexInfo (..), LoadsIndexes (..))
 import Logic.Features.Migrations (ExecutesMigrations (..))
@@ -33,8 +32,7 @@ type Port m =
     ExecutesMigrations m,
     InfersQueryTypes m,
     ExplainsQuery m,
-    LoadsIndexes m,
-    CustomTypeSignatureFile.Port m
+    LoadsIndexes m
   )
 
 data Result = Result

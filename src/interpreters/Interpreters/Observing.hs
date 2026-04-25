@@ -10,9 +10,7 @@ where
 
 import Control.Monad.Parallel qualified as MonadParallel
 import Data.Text qualified as Text
-import Logic.Features.CustomTypeSignatureFile qualified as CustomTypeSignatureFile
 import Logic.Features.Fs (FsOps (..))
-import Logic.Features.GeneratorHashes qualified as GeneratorHashes
 import Logic.Features.IndexOptimizer (LoadsIndexes (..))
 import Logic.Features.Migrations (ExecutesMigrations (..))
 import Logic.Features.QueryAnalysis (InfersQueryTypes (..))
@@ -109,20 +107,6 @@ instance (FsOps m) => FsOps (Observing m) where
 
 instance (GenerateCode.LoadsGen m) => GenerateCode.LoadsGen (Observing m) where
   loadGen loc hash = lift (GenerateCode.loadGen loc hash)
-
-instance (CustomTypeSignatureFile.Port m) => CustomTypeSignatureFile.Port (Observing m) where
-  readFile path =
-    lift (CustomTypeSignatureFile.readFile path)
-
-  writeFile path content =
-    lift (CustomTypeSignatureFile.writeFile path content)
-
-instance (GeneratorHashes.Port m) => GeneratorHashes.Port (Observing m) where
-  readFile path =
-    lift (GeneratorHashes.readFile path)
-
-  writeFile path content =
-    lift (GeneratorHashes.writeFile path content)
 
 instance (Observes m) => Observes (Observing m) where
   observe observation = lift (observe observation)

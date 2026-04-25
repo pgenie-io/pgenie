@@ -25,7 +25,7 @@ class (Monad m) => LoadsGen m where
     -- | Action producing the gen along with its integrity hash.
     m (Gen.Gen, Text)
 
-type Port m = (MonadParallel m, Stages m, Warns m, FsOps m, GeneratorHashes.Port m, LoadsGen m)
+type Port m = (MonadParallel m, Stages m, Warns m, FsOps m, MonadError Report m, LoadsGen m)
 
 data Artifact = Artifact
   { name :: Text,

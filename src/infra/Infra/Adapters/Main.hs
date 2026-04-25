@@ -9,6 +9,7 @@ import Data.Text qualified as Text
 import Data.Text.IO qualified as Text
 import Fx
 import Infra.Adapters.Analyser qualified as Analyser
+import Interpreters.Observing qualified as Observing
 import Logic qualified
 import Logic.ProjectFile qualified as ProjectFile
 import PGenieGen qualified as Gen
@@ -17,13 +18,13 @@ import System.Info qualified as Info
 import Utils.Prelude
 
 data Device = Device
-  { emitEvent :: Logic.Event -> IO (),
+  { observe :: Observing.Observation -> IO (),
     analyser :: Analyser.Device,
     projectFile :: ProjectFile.ProjectFile
   }
 
-scope :: (Logic.Event -> IO ()) -> Maybe Text -> Fx.Scope Logic.Report Device
-scope emitEvent maybeDatabaseUrl = do
+scope :: (Observing.Observation -> IO ()) -> Maybe Text -> Fx.Scope Logic.Report Device
+scope observe maybeDatabaseUrl = do
   -- Terminate early on Windows in Docker mode since it's not supported yet.
   when (isNothing maybeDatabaseUrl && Info.os == "mingw32") do
     throwError
@@ -50,25 +51,25 @@ scope emitEvent maybeDatabaseUrl = do
         Just url ->
           Analyser.RunningServerSource {connectionUrl = url, targetMajorVersion}
 
-  let halveEvent = \case
-        Logic.StageExited path progress ->
-          Logic.StageExited path (progress / 2)
-        otherEvent ->
-          otherEvent
-      halvedEmitEvent =
-        emitEvent . halveEvent
+      halveObservation = \case
+        Observing.StageExited path progress ->
+          Observing.StageExited path (progress / 2)
+        otherObservation ->
+          otherObservation
+      halvedObserve =
+        observe . halveObservation
 
-  analyser <- Analyser.scope source halvedEmitEvent
+  analyser <- Analyser.scope source halvedObserve
   pure
     Device
-      { emitEvent = halvedEmitEvent,
+      { observe = halvedObserve,
         analyser,
         projectFile
       }
 
-instance Logic.Emits (Fx Device Logic.Report) where
-  emit event =
-    runTotalIO \dev -> dev.emitEvent event
+instance Observing.Observes (Fx Device Logic.Report) where
+  observe observation =
+    runTotalIO \dev -> dev.observe observation
 
 instance Logic.DbOps (Fx Device Logic.Report) where
   executeMigration migrationText =

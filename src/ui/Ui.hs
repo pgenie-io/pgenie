@@ -3,6 +3,7 @@ module Ui
   )
 where
 
+import Interpreters.Observing qualified as Observing
 import Logic qualified
 import Ui.Commands qualified as Commands
 import Ui.Display qualified as Display
@@ -15,8 +16,8 @@ main ::
   (Logic.Caps m) =>
   -- | Version string for @--version@ (SemVer, without the PVP @0.@ prefix).
   Text ->
-  -- | Execute an effect with an event sink and an optional database URL.
-  ((Logic.Event -> IO ()) -> Maybe Text -> m Text -> IO ()) ->
+  -- | Execute an effect with an observation sink and an optional database URL.
+  ((Observing.Observation -> IO ()) -> Maybe Text -> m Text -> IO ()) ->
   -- | Application.
   IO ()
 main version runEffect = do
@@ -30,4 +31,4 @@ main version runEffect = do
       Commands.generate,
       Commands.manageIndexes
     ]
-    (\dbUrl -> runEffect (Display.handleEvent display) dbUrl)
+    (\dbUrl -> runEffect (Display.handleObservation display) dbUrl)

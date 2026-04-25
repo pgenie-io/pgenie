@@ -10,15 +10,6 @@ import PGenieGen qualified as Gen
 import PGenieGen.Model.Input qualified as Gen.Input
 import Utils.Prelude hiding (readFile, writeFile)
 
--- * Event
-
-data Event
-  = StageEntered [Text]
-  | StageExited [Text] Double
-  | WarningEmitted Report
-  | Failed Report
-  deriving stock (Eq, Show)
-
 -- * States
 
 data InferredQueryTypes = InferredQueryTypes
@@ -123,9 +114,27 @@ data ModelFormat = ModelFormatJson | ModelFormatDhall
 -- They allow to implement the overall orchestration logic in a way that is decoupled from specific implementations of these capabilities, making it easier to test and maintain.
 -- We simply state what we need for the logic to work and provide an interface for the implementations to conform to.
 
--- | Emission of events for observability.
-class (Monad m) => Emits m where
-  emit :: Event -> m ()
+-- |
+-- - Reports progress.
+-- - Reports stage enter and exit for logging.
+-- - Reports parallelism as @enters - exits@. Amount of actively running stages.
+class (Monad m) => Stages m where
+  -- | Wrap an action as a stage in progress.
+  stage ::
+    -- | Name of the stage. May be empty.
+    Text ->
+    -- | Amount of substages.
+    --
+    -- Each nested stage exit will increase the progress within this stage by @1 / amountOfSubstages@.
+    --
+    -- If there's no substages, pass @0@. Then only the exit of the whole stage will increase the progress.
+    Int ->
+    m a ->
+    m a
+
+-- | Emission of non-fatal problem reports.
+class (Monad m) => Warns m where
+  warn :: Report -> m ()
 
 class (MonadError Report m) => DbOps m where
   executeMigration :: Text -> m ()
@@ -157,5 +166,6 @@ type Caps m =
     LoadsGen m,
     DbOps m,
     FsOps m,
-    Emits m
+    Stages m,
+    Warns m
   )

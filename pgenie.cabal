@@ -142,7 +142,6 @@ library logic
     Logic
     Logic.Algebra
     Logic.CustomTypeSignatureFile
-    Logic.Dsl
     Logic.IndexOptimizer
     Logic.Name
     Logic.ProjectFile
@@ -203,6 +202,18 @@ test-suite logic-test
     pgenie:logic,
     pgenie:utils,
     QuickCheck,
+    text,
+
+library interpreters
+  import: base
+  hs-source-dirs: src/interpreters/
+  exposed-modules:
+    Interpreters.Observing
+
+  build-depends:
+    monad-parallel,
+    pgenie:logic,
+    pgenie:utils,
     text,
 
 test-suite infra-test
@@ -276,6 +287,7 @@ library infra
     hasql-pool,
     hasql-th,
     pgenie-gen,
+    pgenie:interpreters,
     pgenie:logic,
     pgenie:utils,
     postgresql-libpq,
@@ -308,6 +320,7 @@ library ui
 
   build-depends:
     optparse-applicative,
+    pgenie:interpreters,
     pgenie:logic,
     pgenie:utils,
     text,
@@ -326,7 +339,7 @@ test-suite ui-test
 
   build-depends:
     hspec,
-    pgenie:logic,
+    pgenie:interpreters,
     pgenie:ui,
     pgenie:utils,
     text,

@@ -11,6 +11,8 @@ where
 import Control.Monad.Parallel qualified as MonadParallel
 import Data.Text qualified as Text
 import Logic qualified
+import Logic.CustomTypeSignatureFile qualified as CustomTypeSignatureFile
+import Logic.GeneratorHashes qualified as GeneratorHashes
 import Logic.Report qualified as Report
 import Utils.Prelude hiding (readFile, writeFile)
 
@@ -100,6 +102,20 @@ instance (Logic.FsOps m) => Logic.FsOps (Observing m) where
 
 instance (Logic.LoadsGen m) => Logic.LoadsGen (Observing m) where
   loadGen loc hash = lift (Logic.loadGen loc hash)
+
+instance (CustomTypeSignatureFile.Port m) => CustomTypeSignatureFile.Port (Observing m) where
+  readFile path =
+    lift (CustomTypeSignatureFile.readFile path)
+
+  writeFile path content =
+    lift (CustomTypeSignatureFile.writeFile path content)
+
+instance (GeneratorHashes.Port m) => GeneratorHashes.Port (Observing m) where
+  readFile path =
+    lift (GeneratorHashes.readFile path)
+
+  writeFile path content =
+    lift (GeneratorHashes.writeFile path content)
 
 instance (Observes m) => Observes (Observing m) where
   observe observation = lift (observe observation)

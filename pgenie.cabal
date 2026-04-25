@@ -140,8 +140,8 @@ library logic
   hs-source-dirs: src/logic/
   exposed-modules:
     Logic
-    Logic.Algebra
     Logic.CustomTypeSignatureFile
+    Logic.GeneratorHashes
     Logic.IndexOptimizer
     Logic.Migrations
     Logic.Name
@@ -154,7 +154,6 @@ library logic
     Logic.SyntaxAnalyser
 
   other-modules:
-    Logic.GeneratorHashes
     Logic.Name.Megaparsec
     Logic.SyntaxAnalyser.AstInterpreter
     Logic.SyntaxAnalyser.Data

@@ -4,7 +4,15 @@ module Logic
   ( analyse,
     generate,
     manageIndexes,
-    module Logic.Algebra,
+    AnalyseOptions (..),
+    GenerateOptions (..),
+    ManageIndexesOptions (..),
+    ModelFormat (..),
+    Stages (..),
+    Warns (..),
+    FsOps (..),
+    LoadsGen (..),
+    Report (..),
 
     -- * Re-exports from feature modules
 
@@ -39,7 +47,6 @@ import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Dhall.Core qualified as Dhall
 import Dhall.Marshal.Encode qualified as Dhall
-import Logic.Algebra
 import Logic.CustomTypeSignatureFile qualified as CustomTypeSignatureFile
 import Logic.GeneratorHashes qualified as GeneratorHashes
 import Logic.IndexOptimizer (DropReason (..), IndexAction (..), IndexInfo (..), LoadsIndexes (..))
@@ -48,6 +55,7 @@ import Logic.Migrations (ExecutesMigrations (..))
 import Logic.Name qualified as Name
 import Logic.ProjectFile qualified as ProjectFile
 import Logic.QueryAnalysis (InferredParam (..), InferredQueryTypes (..), InfersQueryTypes (..))
+import Logic.Report (Report (..))
 import Logic.SeqScanDetector (ExplainsQuery (..), SeqScanFinding (..))
 import Logic.SeqScanDetector qualified as SeqScanDetector
 import Logic.SignatureFile qualified as SignatureFile
@@ -63,6 +71,8 @@ import Utils.Prelude hiding (readFile, writeFile)
 -- | Combined capabilities required by the logic.
 type Caps m =
   ( MonadParallel m,
+    CustomTypeSignatureFile.Port m,
+    GeneratorHashes.Port m,
     LoadsGen m,
     ExecutesMigrations m,
     InfersQueryTypes m,
@@ -72,6 +82,66 @@ type Caps m =
     Stages m,
     Warns m
   )
+
+-- * Interface types
+
+data AnalyseOptions = AnalyseOptions
+  { failOnSeqScans :: Bool,
+    output :: Maybe ModelFormat
+  }
+  deriving stock (Eq, Show)
+
+data GenerateOptions = GenerateOptions
+  { failOnSeqScans :: Bool
+  }
+  deriving stock (Eq, Show)
+
+data ManageIndexesOptions = ManageIndexesOptions
+  { allowRedundantIndexes :: Bool,
+    -- | When set, write the generated migration to a numbered file in the
+    -- @migrations/@ directory in addition to printing it to stdout.
+    addMigration :: Bool
+  }
+  deriving stock (Eq, Show)
+
+data ModelFormat = ModelFormatJson | ModelFormatDhall
+  deriving stock (Eq, Show)
+
+-- |
+-- - Reports progress.
+-- - Reports stage enter and exit for logging.
+-- - Reports parallelism as @enters - exits@. Amount of actively running stages.
+class (Monad m) => Stages m where
+  -- | Wrap an action as a stage in progress.
+  stage ::
+    -- | Name of the stage. May be empty.
+    Text ->
+    -- | Amount of substages.
+    --
+    -- Each nested stage exit will increase the progress within this stage by @1 / amountOfSubstages@.
+    --
+    -- If there's no substages, pass @0@. Then only the exit of the whole stage will increase the progress.
+    Int ->
+    m a ->
+    m a
+
+-- | Emission of non-fatal problem reports.
+class (Monad m) => Warns m where
+  warn :: Report -> m ()
+
+class (Monad m) => FsOps m where
+  readFile :: Path -> m Text
+  writeFile :: Path -> Text -> m ()
+  listDir :: Path -> m [Path]
+
+-- | Domain operations.
+class (Monad m) => LoadsGen m where
+  loadGen ::
+    Gen.Location ->
+    -- | Possible integrity hash for caching.
+    Maybe Text ->
+    -- | Action producing the gen along with its integrity hash.
+    m (Gen.Gen, Text)
 
 -- * Intermediate (non-interface) Types
 
@@ -351,7 +421,7 @@ generateCode projectFile project =
 
     -- Write updated hashes file
     unless noNewHashes do
-      writeFile "freeze1.pgn.yaml" (GeneratorHashes.serializeHashesMap updatedHashes)
+      GeneratorHashes.writeHashesFile updatedHashes
 
     pure artifacts
 

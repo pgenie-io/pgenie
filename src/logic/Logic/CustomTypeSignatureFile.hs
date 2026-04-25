@@ -1,6 +1,7 @@
 module Logic.CustomTypeSignatureFile
   ( CustomTypeSig (..),
     CompositeFieldSig (..),
+    Port (..),
     customTypeSignatureFilePath,
     fromInferred,
     refineFromSignatureFile,
@@ -15,11 +16,15 @@ import Control.Foldl qualified as Fold
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as Text
-import Logic.Algebra (FsOps (readFile, writeFile))
 import Logic.Report qualified as Report
 import PGenieGen.Model.Input qualified as Gen.Input
 import Utils.Prelude hiding (readFile, writeFile)
 import YamlUnscrambler qualified as U
+
+-- | Port for accessing custom-type signature files.
+class (MonadError Report.Report m) => Port m where
+  readFile :: Path -> m Text
+  writeFile :: Path -> Text -> m ()
 
 -- * Types
 
@@ -79,7 +84,7 @@ fromInferred ct =
 
 -- | Load, create, and validate the custom-type signature file for an inferred
 -- custom type.
-refineFromSignatureFile :: (FsOps m, MonadError Report.Report m) => Gen.Input.CustomType -> m Gen.Input.CustomType
+refineFromSignatureFile :: (Port m) => Gen.Input.CustomType -> m Gen.Input.CustomType
 refineFromSignatureFile ct =
   case fromInferred ct of
     Nothing -> pure ct

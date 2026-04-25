@@ -12,6 +12,8 @@ import Fx
 import Infra.Adapters.Analyser qualified as Analyser
 import Interpreters.Observing qualified as Observing
 import Logic qualified
+import Logic.CustomTypeSignatureFile qualified as CustomTypeSignatureFile
+import Logic.GeneratorHashes qualified as GeneratorHashes
 import Logic.ProjectFile qualified as ProjectFile
 import PGenieGen qualified as Gen
 import System.Directory qualified as Directory
@@ -138,6 +140,26 @@ instance Logic.LoadsGen (Fx Device Logic.Report) where
                   ]
               }
         )
+
+instance CustomTypeSignatureFile.Port (Fx Device Logic.Report) where
+  readFile path =
+    liftFileOp "Failed to read custom-type signature file" path do
+      Text.readFile (Path.toFilePath path)
+
+  writeFile path content =
+    liftFileOp "Failed to write custom-type signature file" path do
+      Directory.createDirectoryIfMissing True (Path.toFilePath (path <> ".."))
+      Text.writeFile (Path.toFilePath path) content
+
+instance GeneratorHashes.Port (Fx Device Logic.Report) where
+  readFile path =
+    liftFileOp "Failed to read generator hashes file" path do
+      Text.readFile (Path.toFilePath path)
+
+  writeFile path content =
+    liftFileOp "Failed to write generator hashes file" path do
+      Directory.createDirectoryIfMissing True (Path.toFilePath (path <> ".."))
+      Text.writeFile (Path.toFilePath path) content
 
 liftFileOp :: Text -> Path -> IO a -> Fx env Logic.Report a
 liftFileOp errMessage path action =

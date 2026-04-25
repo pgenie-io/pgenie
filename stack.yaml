@@ -4,7 +4,7 @@ allow-newer-deps:
   - aeson-optics
   - dhall-json
 extra-deps:
-  - {github: nikita-volkov/dhall-haskell, commit: c3264e5ed34566b66badb301211847ac4f78e697, subdirs: [dhall]}
+  - {github: nikita-volkov/dhall-haskell, commit: bdd6b4f3d7feba136febe5c4442a683f07e4c270, subdirs: [dhall]}
   - {github: nikita-volkov/hasql-dev, commit: 76d8faaa706872e0fe9b1036aa011edd2eb9d0ed}
   - {github: nikita-volkov/relations, commit: fac9e0445677a6493f1954f491921c5a7442cd58}
   - {github: nikita-volkov/syntactic-class, commit: b74373863e8bb0ef9877e0cd8dad5a3128d31818}

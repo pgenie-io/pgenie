@@ -3,7 +3,7 @@ module Ui
   )
 where
 
-import Interpreters.Emitting qualified as Emitting
+import Interpreters.Observing qualified as Observing
 import Logic qualified
 import Ui.Commands qualified as Commands
 import Ui.Display qualified as Display
@@ -17,7 +17,7 @@ main ::
   -- | Version string for @--version@ (SemVer, without the PVP @0.@ prefix).
   Text ->
   -- | Execute an effect with an observation sink and an optional database URL.
-  ((Emitting.Observation -> IO ()) -> Maybe Text -> m Text -> IO ()) ->
+  ((Observing.Observation -> IO ()) -> Maybe Text -> m Text -> IO ()) ->
   -- | Application.
   IO ()
 main version runEffect = do

@@ -208,7 +208,7 @@ library interpreters
   import: base
   hs-source-dirs: src/interpreters/
   exposed-modules:
-    Interpreters.Emitting
+    Interpreters.Observing
 
   build-depends:
     monad-parallel,

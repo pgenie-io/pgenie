@@ -9,7 +9,7 @@ import Data.Text qualified as Text
 import Data.Text.IO qualified as Text
 import Fx
 import Infra.Adapters.Analyser qualified as Analyser
-import Interpreters.Emitting qualified as Emitting
+import Interpreters.Observing qualified as Observing
 import Logic qualified
 import Logic.ProjectFile qualified as ProjectFile
 import PGenieGen qualified as Gen
@@ -18,13 +18,13 @@ import System.Info qualified as Info
 import Utils.Prelude
 
 data Device = Device
-  { emitObservation :: Emitting.Observation -> IO (),
+  { observe :: Observing.Observation -> IO (),
     analyser :: Analyser.Device,
     projectFile :: ProjectFile.ProjectFile
   }
 
-scope :: (Emitting.Observation -> IO ()) -> Maybe Text -> Fx.Scope Logic.Report Device
-scope emitObservation maybeDatabaseUrl = do
+scope :: (Observing.Observation -> IO ()) -> Maybe Text -> Fx.Scope Logic.Report Device
+scope observe maybeDatabaseUrl = do
   -- Terminate early on Windows in Docker mode since it's not supported yet.
   when (isNothing maybeDatabaseUrl && Info.os == "mingw32") do
     throwError
@@ -52,24 +52,24 @@ scope emitObservation maybeDatabaseUrl = do
           Analyser.RunningServerSource {connectionUrl = url, targetMajorVersion}
 
       halveObservation = \case
-        Emitting.StageExited path progress ->
-          Emitting.StageExited path (progress / 2)
+        Observing.StageExited path progress ->
+          Observing.StageExited path (progress / 2)
         otherObservation ->
           otherObservation
-      halvedEmitObservation =
-        emitObservation . halveObservation
+      halvedObserve =
+        observe . halveObservation
 
-  analyser <- Analyser.scope source halvedEmitObservation
+  analyser <- Analyser.scope source halvedObserve
   pure
     Device
-      { emitObservation = halvedEmitObservation,
+      { observe = halvedObserve,
         analyser,
         projectFile
       }
 
-instance Emitting.EmitsObservation (Fx Device Logic.Report) where
-  emitObservation observation =
-    runTotalIO \dev -> dev.emitObservation observation
+instance Observing.Observes (Fx Device Logic.Report) where
+  observe observation =
+    runTotalIO \dev -> dev.observe observation
 
 instance Logic.DbOps (Fx Device Logic.Report) where
   executeMigration migrationText =

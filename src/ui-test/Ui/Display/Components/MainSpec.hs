@@ -1,7 +1,7 @@
 module Ui.Display.Components.MainSpec (spec) where
 
 import Data.Text qualified as Text
-import Interpreters.Emitting qualified as Emitting
+import Interpreters.Observing qualified as Emitting
 import Test.Hspec
 import TextBuilder qualified
 import Ui.Display.Components.Main qualified as Main

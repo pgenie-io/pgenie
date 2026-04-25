@@ -6,7 +6,7 @@ module Ui.Display
 where
 
 import Data.Text.IO qualified as TextIO
-import Interpreters.Emitting qualified as Emitting
+import Interpreters.Observing qualified as Observing
 import Ui.Display.Components.Main qualified as Main
 import Utils.Prelude
 
@@ -23,7 +23,7 @@ new = do
   pure Display {memoryVar}
 
 -- | Handle a runtime observation and update the display.
-handleObservation :: Display -> Emitting.Observation -> IO ()
+handleObservation :: Display -> Observing.Observation -> IO ()
 handleObservation display observation = do
   oldMemory <- takeMVar display.memoryVar
   currentTime <- getCurrentTime

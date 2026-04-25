@@ -154,10 +154,13 @@ library logic
     Logic.Features.SignatureFile
     Logic.Features.SqlTemplate
     Logic.Features.SyntaxAnalyser
+    Logic.Workflows.Analyse
     Logic.Workflows.AnalyseProject
     Logic.Workflows.GenerateCode
     Logic.Workflows.GenerateQuerySigs
     Logic.Workflows.GenerateTypeSigs
+    Logic.Workflows.Generate
+    Logic.Workflows.ManageIndexes
 
   other-modules:
     Logic.Features.Name.Megaparsec

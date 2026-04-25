@@ -16,7 +16,7 @@ import Logic.Features.GeneratorHashes qualified as GeneratorHashes
 import Logic.Features.IndexOptimizer (LoadsIndexes (..))
 import Logic.Features.Migrations (ExecutesMigrations (..))
 import Logic.Features.QueryAnalysis (InfersQueryTypes (..))
-import Logic.Features.Report (Report (..), Warns (..))
+import Logic.Features.Report (Warns (..))
 import Logic.Features.Report qualified as Report
 import Logic.Features.SeqScanDetector (ExplainsQuery (..))
 import Logic.Features.Staging (Stages (..))

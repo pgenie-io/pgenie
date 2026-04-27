@@ -28,6 +28,17 @@ containsDone tb = View.printDone == tb || Text.isInfixOf (TextBuilder.toText Vie
 spec :: Spec
 spec = do
   describe "progress handling" do
+    it "shows stage completion with green Done when a non-root stage exits" do
+      let outputs =
+            runEvents
+              [ Emitting.StageEntered ["Loading", "haskell", "Generating"],
+                Emitting.StageExited ["Loading", "haskell", "Generating"] 0.0417
+              ]
+
+          containsStageDone tb = Text.isInfixOf " > \ESC[32mDone\ESC[0m\n" (TextBuilder.toText tb)
+
+      any containsStageDone outputs `shouldBe` True
+
     it "does not show Done while generators are still in progress" do
       let -- Scope infrastructure events (already halved, as received by Main.update)
           scopeEvents =

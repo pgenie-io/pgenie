@@ -1,6 +1,7 @@
 module Ui.Display.Components.Main.View
   ( eraseLine,
     printStagePath,
+    printStageDone,
     printDone,
     printWarning,
     printError,
@@ -21,6 +22,17 @@ printStagePath path =
   if null path
     then mempty
     else TextBuilder.intercalateMap " > " to (reverse path) <> "\n"
+
+-- | Print the stage path breadcrumb with a trailing green "Done" status.
+printStageDone :: [Text] -> TextBuilder
+printStageDone path =
+  case path of
+    [] -> printDone
+    (_ : parents) ->
+      let doneLabel = "\ESC[32mDone\ESC[0m"
+       in if null parents
+            then doneLabel <> "\n"
+            else TextBuilder.intercalateMap " > " to (reverse parents) <> " > " <> doneLabel <> "\n"
 
 -- | Print the "Done!" completion message, replacing the current line.
 printDone :: TextBuilder

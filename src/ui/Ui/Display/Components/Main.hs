@@ -55,7 +55,7 @@ update observation currentTime mem =
                 mem' = mem {progressBar = Just pb'}
              in if null path
                   then (mem' {isCompleted = True}, View.printDone)
-                  else (mem', View.eraseLine <> pbOutput)
+                  else (mem', View.eraseLine <> View.printStageDone path <> pbOutput)
       Observing.WarningEmitted err ->
         let (pb', pbOutput) =
               ProgressBar.update

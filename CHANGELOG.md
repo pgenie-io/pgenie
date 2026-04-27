@@ -1,3 +1,9 @@
+# Upcoming
+
+## Non-breaking changes
+
+- Update progress output so each completed stage prints a breadcrumb ending with a green `Done`, for example `Generating > haskell > Done`.
+
 # v0.5.1
 
 ## Non-breaking changes

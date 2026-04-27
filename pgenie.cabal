@@ -140,34 +140,38 @@ library logic
   hs-source-dirs: src/logic/
   exposed-modules:
     Logic
-    Logic.Features.Fs
-    Logic.Features.IndexOptimizer
-    Logic.Features.Migrations
-    Logic.Features.Name
-    Logic.Features.ProjectFile
-    Logic.Features.QueryAnalysis
-    Logic.Features.Report
-    Logic.Features.SeqScanDetector
-    Logic.Features.Staging
-    Logic.Workflows.Analyse
-    Logic.Workflows.AnalyseProject
-    Logic.Workflows.Generate
-    Logic.Workflows.GenerateCode
-    Logic.Workflows.ManageIndexes
+    Logic.Features.Analyse.Workflows.Analyse
+    Logic.Features.AnalyseProject.Workflows.AnalyseProject
+    Logic.Features.CustomTypeSignatures.Types.CustomTypeSignatures
+    Logic.Features.CustomTypeSignatures.Workflows.GenerateTypeSignatures
+    Logic.Features.Fs.Port
+    Logic.Features.Generate.Workflows.Generate
+    Logic.Features.GeneratorRuntime.Port
+    Logic.Features.GeneratorRuntime.Types.GeneratorHashes
+    Logic.Features.GeneratorRuntime.Workflows.GenerateCode
+    Logic.Features.IndexCatalog.Port
+    Logic.Features.IndexOptimization.Types.IndexOptimization
+    Logic.Features.IndexOptimization.Types.SeqScanFinding
+    Logic.Features.ManageIndexes.Workflows.ManageIndexes
+    Logic.Features.Migrations.Port
+    Logic.Features.Naming.Types.Name
+    Logic.Features.ProjectModel.Types.ProjectModel
+    Logic.Features.QueryAnalysis.Port
+    Logic.Features.QueryAnalysis.Types.QueryAnalysis
+    Logic.Features.QuerySignatures.Types.QuerySignatures
+    Logic.Features.QuerySignatures.Workflows.GenerateQuerySignatures
+    Logic.Features.Reporting.Port
+    Logic.Features.Reporting.Types.Report
+    Logic.Features.SeqScanExplain.Port
+    Logic.Features.SqlTemplates.Types.SqlTemplates
+    Logic.Features.Staging.Port
+    Logic.Features.SyntaxAnalyser
 
   other-modules:
     Logic.Features
-    Logic.Features.CustomTypeSignatureFile
-    Logic.Features.GeneratorHashes
-    Logic.Features.Name.Megaparsec
-    Logic.Features.SignatureFile
-    Logic.Features.SqlTemplate
-    Logic.Features.SyntaxAnalyser
+    Logic.Features.Naming.Types.Name.Megaparsec
     Logic.Features.SyntaxAnalyser.AstInterpreter
     Logic.Features.SyntaxAnalyser.Data
-    Logic.Workflows
-    Logic.Workflows.GenerateQuerySigs
-    Logic.Workflows.GenerateTypeSigs
 
   build-depends:
     aeson,

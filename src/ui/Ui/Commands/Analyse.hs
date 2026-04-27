@@ -6,7 +6,8 @@
 -- for using the application as a source of analysis data.
 module Ui.Commands.Analyse (analyse) where
 
-import Logic.Workflows.Analyse qualified as Analyse
+import Logic.Features.Analyse.Workflows.Analyse qualified as Analyse
+import Logic.Features.ProjectModel.Types.ProjectModel qualified as ProjectFile
 import Options.Applicative qualified as Opt
 import Ui.Framework
 import Utils.Prelude
@@ -17,14 +18,17 @@ analyse =
     { name = "analyse",
       description = "Validate the project without generating code; optionally output the project model",
       parser,
-      execute = Analyse.run
+      execute
     }
 
-type Params = Analyse.Params
+data Params = Params
+  { failOnSeqScans :: Bool,
+    output :: Maybe Analyse.ModelFormat
+  }
 
 parser :: Opt.Parser Params
 parser =
-  Analyse.Params
+  Params
     <$> Opt.switch
       ( Opt.long "fail-on-seq-scans"
           <> Opt.help "Fail the procedure if sequential scans are detected (instead of emitting warnings)"
@@ -43,3 +47,13 @@ parser =
         "json" -> Right Analyse.ModelFormatJson
         "dhall" -> Right Analyse.ModelFormatDhall
         _ -> Left ("Unknown format: " <> s <> ". Expected 'json' or 'dhall'.")
+
+execute :: (Analyse.Port m) => ProjectFile.ProjectFile -> Params -> m Text
+execute projectFile params = do
+  Analyse.run
+    Analyse.Params
+      { projectFile,
+        failOnSeqScans = params.failOnSeqScans,
+        output = params.output
+      }
+    <&> (.outputText)

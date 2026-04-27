@@ -3,7 +3,7 @@ module Infra.Adapters.Analyser.Sessions.Procedures.GetIndexes where
 import Hasql.Decoders qualified as Decoders
 import Hasql.Session qualified as Session
 import Hasql.Statement qualified as Statement
-import Logic.Features.IndexOptimizer (IndexInfo (..))
+import Logic.Features.IndexOptimization.Types.IndexOptimization (IndexInfo (..))
 import Utils.Prelude
 
 -- | Fetch all user-defined indexes from the database.

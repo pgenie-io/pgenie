@@ -1,13 +1,13 @@
 module Logic.Features (spec) where
 
-import qualified Logic.Features.CustomTypeSignatureFile as CustomTypeSignatureFile
-import qualified Logic.Features.IndexOptimizer as IndexOptimizer
-import qualified Logic.Features.Name as Name
-import qualified Logic.Features.ProjectFile as ProjectFile
-import qualified Logic.Features.SeqScanDetector as SeqScanDetector
-import qualified Logic.Features.SignatureFile as SignatureFile
-import qualified Logic.Features.SqlTemplate as SqlTemplate
-import qualified Logic.Features.SyntaxAnalyser as SyntaxAnalyser
+import Logic.Features.CustomTypeSignatures.Types.CustomTypeSignatures qualified as CustomTypeSignatureFile
+import Logic.Features.IndexOptimization.Types.IndexOptimization qualified as IndexOptimizer
+import Logic.Features.IndexOptimization.Types.SeqScanFinding qualified as SeqScanDetector
+import Logic.Features.Naming.Types.Name qualified as Name
+import Logic.Features.ProjectModel.Types.ProjectModel qualified as ProjectFile
+import Logic.Features.QuerySignatures.Types.QuerySignatures qualified as SignatureFile
+import Logic.Features.SqlTemplates.Types.SqlTemplates qualified as SqlTemplate
+import Logic.Features.SyntaxAnalyser qualified as SyntaxAnalyser
 import Test.Hspec
 
 spec :: Spec

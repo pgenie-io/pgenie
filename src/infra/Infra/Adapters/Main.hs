@@ -11,14 +11,14 @@ import Data.Text.IO qualified as Text
 import Fx
 import Infra.Adapters.Analyser qualified as Analyser
 import Interpreters.Observing qualified as Observing
-import Logic.Features.Fs (FsOps (..))
-import Logic.Features.IndexOptimizer (LoadsIndexes (..))
-import Logic.Features.Migrations (ExecutesMigrations (..))
-import Logic.Features.ProjectFile qualified as ProjectFile
-import Logic.Features.QueryAnalysis (InfersQueryTypes (..))
-import Logic.Features.Report qualified as Report
-import Logic.Features.SeqScanDetector (ExplainsQuery (..))
-import Logic.Workflows.GenerateCode qualified as GenerateCode
+import Logic.Features.Fs.Port (FsOps (..))
+import Logic.Features.GeneratorRuntime.Port (LoadsGen (..))
+import Logic.Features.IndexCatalog.Port (LoadsIndexes (..))
+import Logic.Features.Migrations.Port (ExecutesMigrations (..))
+import Logic.Features.ProjectModel.Types.ProjectModel qualified as ProjectFile
+import Logic.Features.QueryAnalysis.Port (InfersQueryTypes (..))
+import Logic.Features.Reporting.Types.Report qualified as Report
+import Logic.Features.SeqScanExplain.Port (ExplainsQuery (..))
 import PGenieGen qualified as Gen
 import System.Directory qualified as Directory
 import System.Info qualified as Info
@@ -130,7 +130,7 @@ instance FsOps (Fx Device Report.Report) where
                   ]
               }
 
-instance GenerateCode.LoadsGen (Fx Device Report.Report) where
+instance LoadsGen (Fx Device Report.Report) where
   loadGen location maybeHash =
     runExceptionalIO (const (Gen.load location maybeHash (const (pure ()))))
       & first

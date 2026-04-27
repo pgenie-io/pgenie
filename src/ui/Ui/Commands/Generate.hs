@@ -3,8 +3,8 @@
 -- Forces the intended use of the application. The user has no option not to generate the signature files.
 module Ui.Commands.Generate (generate) where
 
-import Logic.Features.ProjectFile qualified as ProjectFile
-import Logic.Workflows.Generate qualified as Generate
+import Logic.Features.Generate.Workflows.Generate qualified as Generate
+import Logic.Features.ProjectModel.Types.ProjectModel qualified as ProjectFile
 import Options.Applicative qualified as Opt
 import Ui.Framework
 import Utils.Prelude
@@ -33,8 +33,8 @@ parser =
 execute :: (Generate.Port m) => ProjectFile.ProjectFile -> Params -> m Text
 execute projectFile params =
   Generate.run
-    projectFile
     Generate.Params
-      { failOnSeqScans = params.failOnSeqScans
+      { projectFile,
+        failOnSeqScans = params.failOnSeqScans
       }
     $> ""

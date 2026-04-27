@@ -2,8 +2,8 @@
 -- indexes and remove redundant or excessive ones.
 module Ui.Commands.ManageIndexes (manageIndexes) where
 
-import Logic.Features.ProjectFile qualified as ProjectFile
-import Logic.Workflows.ManageIndexes qualified as ManageIndexes
+import Logic.Features.ManageIndexes.Workflows.ManageIndexes qualified as ManageIndexes
+import Logic.Features.ProjectModel.Types.ProjectModel qualified as ProjectFile
 import Options.Applicative qualified as Opt
 import Ui.Framework
 import Utils.Prelude
@@ -37,8 +37,9 @@ parser =
 execute :: (ManageIndexes.Port m) => ProjectFile.ProjectFile -> Params -> m Text
 execute projectFile params =
   ManageIndexes.run
-    projectFile
     ManageIndexes.Params
-      { allowRedundantIndexes = params.allowRedundantIndexes,
+      { projectFile,
+        allowRedundantIndexes = params.allowRedundantIndexes,
         addMigration = params.addMigration
       }
+    <&> (.migrationText)

@@ -1,7 +1,7 @@
 module Ui.Framework where
 
 import Data.Text qualified as Text
-import Logic.Features.ProjectFile qualified as ProjectFile
+import Logic.Features.ProjectModel.Types.ProjectModel qualified as ProjectFile
 import Options.Applicative qualified as Opt
 import Utils.Prelude
 

@@ -6,7 +6,7 @@ module Ui.Display.Components.Main
 where
 
 import Interpreters.Observing qualified as Observing
-import Logic.Features.Report (Report (..))
+import Logic.Features.Reporting.Types.Report (Report (..))
 import Ui.Display.Components.Main.View qualified as View
 import Ui.Display.Components.ProgressBar qualified as ProgressBar
 import Utils.Prelude hiding (init)

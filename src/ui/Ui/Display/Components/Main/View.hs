@@ -28,11 +28,8 @@ printStageDone :: [Text] -> TextBuilder
 printStageDone path =
   case path of
     [] -> printDone
-    (_ : parents) ->
-      let doneLabel = "\ESC[32mDone\ESC[0m"
-       in if null parents
-            then doneLabel <> "\n"
-            else TextBuilder.intercalateMap " > " to (reverse parents) <> " > " <> doneLabel <> "\n"
+    _ ->
+      TextBuilder.intercalateMap " > " to (reverse path) <> " > \ESC[32mDone\ESC[0m\n"
 
 -- | Print the "Done!" completion message, replacing the current line.
 printDone :: TextBuilder

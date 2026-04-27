@@ -1,4 +1,7 @@
-module Logic.Features.Fs where
+module Logic.Features.Fs
+  ( FsOps (..),
+  )
+where
 
 import Utils.Prelude hiding (readFile, writeFile)
 

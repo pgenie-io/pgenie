@@ -1,14 +1,12 @@
 module Logic.Features.SignatureFile
   ( Signature (..),
-    FieldSig (..),
-    ResultSig (..),
-    Cardinality (..),
     signatureFilePath,
     fromInferred,
     serialize,
     tryParse,
     validateAndMerge,
     applyToQuery,
+    spec,
   )
 where
 
@@ -17,8 +15,10 @@ import Control.Foldl qualified as Fold
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as Text
+import Logic.Features.Name qualified as Name
 import Logic.Features.Report qualified as Report
 import PGenieGen.Model.Input qualified as Gen.Input
+import Test.Hspec
 import Utils.Prelude hiding (readFile, writeFile)
 import YamlUnscrambler qualified as U
 
@@ -606,20 +606,21 @@ applyToQuery ::
   Maybe Gen.Input.ResultRows ->
   ([Gen.Input.Member], Maybe Gen.Input.ResultRows)
 applyToQuery sig params result =
-  ( zipWith applyFieldToMember (map snd sig.parameters) params,
-    case (sig.result, result) of
-      (Just sigResult, Just genResult) ->
-        let updatedColumns =
-              case nonEmpty (zipWith applyFieldToMember (map snd sigResult.columns) (toList genResult.columns)) of
-                Nothing -> genResult.columns
-                Just cols -> cols
-         in Just
-              Gen.Input.ResultRows
-                { cardinality = cardinalityToGenInput sigResult.cardinality,
-                  columns = updatedColumns
-                }
-      _ -> result
-  )
+  let refinedParams = zipWith applyFieldToMember (map snd sig.parameters) params
+      refinedResult =
+        case (sig.result, result) of
+          (Just sigResult, Just genResult) ->
+            let updatedColumns =
+                  case nonEmpty (zipWith applyFieldToMember (map snd sigResult.columns) (toList genResult.columns)) of
+                    Nothing -> genResult.columns
+                    Just cols -> cols
+             in Just
+                  Gen.Input.ResultRows
+                    { cardinality = cardinalityToGenInput sigResult.cardinality,
+                      columns = updatedColumns
+                    }
+          _ -> result
+   in (refinedParams, refinedResult)
   where
     applyFieldToMember :: FieldSig -> Gen.Input.Member -> Gen.Input.Member
     applyFieldToMember field member =
@@ -642,3 +643,669 @@ applyToQuery sig params result =
                     }
             }
         _ -> value
+
+spec :: Spec
+spec = do
+  describe "serialize and tryParse roundtrip" do
+    it "roundtrips a signature with parameters and result" do
+      let sig =
+            Signature
+              { idempotent = False,
+                parameters =
+                  [ ("format", FieldSig {typeName = "uuid", notNull = False}),
+                    ("name", FieldSig {typeName = "text", notNull = True})
+                  ],
+                result =
+                  Just
+                    ResultSig
+                      { cardinality = CardinalityZeroOrOne,
+                        columns =
+                          [ ("id", FieldSig {typeName = "uuid", notNull = True}),
+                            ("name", FieldSig {typeName = "text", notNull = True}),
+                            ("released", FieldSig {typeName = "date", notNull = False})
+                          ]
+                      }
+              }
+      tryParse (serialize sig) `shouldBe` Right sig
+
+    it "roundtrips a signature with empty parameters" do
+      let sig =
+            Signature
+              { idempotent = False,
+                parameters = [],
+                result =
+                  Just
+                    ResultSig
+                      { cardinality = CardinalityMany,
+                        columns =
+                          [ ("id", FieldSig {typeName = "int4", notNull = True})
+                          ]
+                      }
+              }
+      tryParse (serialize sig) `shouldBe` Right sig
+
+    it "roundtrips a signature with no result" do
+      let sig =
+            Signature
+              { idempotent = False,
+                parameters =
+                  [ ("id", FieldSig {typeName = "int8", notNull = True})
+                  ],
+                result = Nothing
+              }
+      tryParse (serialize sig) `shouldBe` Right sig
+
+    it "roundtrips a signature with idempotent true" do
+      let sig =
+            Signature
+              { idempotent = True,
+                parameters = [],
+                result = Nothing
+              }
+      tryParse (serialize sig) `shouldBe` Right sig
+
+  describe "serialize" do
+    it "produces expected YAML format" do
+      let sig =
+            Signature
+              { idempotent = False,
+                parameters =
+                  [ ("format", FieldSig {typeName = "uuid", notNull = False})
+                  ],
+                result =
+                  Just
+                    ResultSig
+                      { cardinality = CardinalityZeroOrOne,
+                        columns =
+                          [ ("id", FieldSig {typeName = "uuid", notNull = True})
+                          ]
+                      }
+              }
+          expected =
+            "idempotent: false\n\
+            \parameters:\n\
+            \  format:\n\
+            \    type: uuid\n\
+            \    not_null: false\n\
+            \result:\n\
+            \  cardinality: zero_or_one\n\
+            \  columns:\n\
+            \    id:\n\
+            \      type: uuid\n\
+            \      not_null: true\n"
+      serialize sig `shouldBe` expected
+
+    it "serializes one-dimensional array types using dims syntax" do
+      let sig =
+            Signature
+              { idempotent = False,
+                parameters = [],
+                result =
+                  Just
+                    ResultSig
+                      { cardinality = CardinalityMany,
+                        columns =
+                          [ ( "tracks",
+                              ArrayFieldSig
+                                { typeName = "track_info[]",
+                                  notNull = False,
+                                  elementNotNull = False
+                                }
+                            )
+                          ]
+                      }
+              }
+          expected =
+            "idempotent: false\n\
+            \parameters: {}\n\
+            \result:\n\
+            \  cardinality: many\n\
+            \  columns:\n\
+            \    tracks:\n\
+            \      type: track_info\n\
+            \      not_null: false\n\
+            \      dims: 1\n\
+            \      element_not_null: false\n"
+      serialize sig `shouldBe` expected
+
+  describe "fromInferred" do
+    it "maps extension primitives to signature type names" do
+      let member :: Text -> Bool -> Gen.Input.Value -> Gen.Input.Member
+          member pgName isNullable value =
+            Gen.Input.Member
+              { name = case Name.tryFromText pgName of
+                  Right name -> Name.toGenName name
+                  Left err -> error ("genName: " <> show err),
+                pgName,
+                isNullable,
+                value
+              }
+
+          primitiveValue :: Gen.Input.Primitive -> Gen.Input.Value
+          primitiveValue primitive =
+            Gen.Input.Value
+              { arraySettings = Nothing,
+                scalar = Gen.Input.ScalarPrimitive primitive
+              }
+
+          arrayValue :: Natural -> Gen.Input.Primitive -> Gen.Input.Value
+          arrayValue dimensionality primitive =
+            Gen.Input.Value
+              { arraySettings =
+                  Just
+                    Gen.Input.ArraySettings
+                      { dimensionality,
+                        elementIsNullable = True
+                      },
+                scalar = Gen.Input.ScalarPrimitive primitive
+              }
+
+          sig =
+            fromInferred
+              [ member "ltree_path" False (primitiveValue Gen.Input.PrimitiveLtree),
+                member "citext_name" True (primitiveValue Gen.Input.PrimitiveCitext),
+                member "tags" True (primitiveValue Gen.Input.PrimitiveHstore),
+                member "box2d" True (primitiveValue Gen.Input.PrimitiveBox2D),
+                member "box3d" True (primitiveValue Gen.Input.PrimitiveBox3D),
+                member "geom" False (primitiveValue Gen.Input.PrimitiveGeometry),
+                member "geog_array" True (arrayValue 1 Gen.Input.PrimitiveGeography)
+              ]
+              Nothing
+      sig
+        `shouldBe` Signature
+          { idempotent = False,
+            parameters =
+              [ ("ltree_path", FieldSig {typeName = "ltree", notNull = True}),
+                ("citext_name", FieldSig {typeName = "citext", notNull = False}),
+                ("tags", FieldSig {typeName = "hstore", notNull = False}),
+                ("box2d", FieldSig {typeName = "box2d", notNull = False}),
+                ("box3d", FieldSig {typeName = "box3d", notNull = False}),
+                ("geom", FieldSig {typeName = "geometry", notNull = True}),
+                ( "geog_array",
+                  ArrayFieldSig
+                    { typeName = "geography[]",
+                      notNull = False,
+                      elementNotNull = False
+                    }
+                )
+              ],
+            result = Nothing
+          }
+
+  describe "tryParse" do
+    it "parses all cardinality values" do
+      let mkSig card =
+            "parameters: {}\nresult:\n  cardinality: "
+              <> card
+              <> "\n  columns:\n    id:\n      type: int4\n      not_null: true\n"
+      fmap (.result) (tryParse (mkSig "zero_or_one"))
+        `shouldBe` Right
+          ( Just
+              ResultSig
+                { cardinality = CardinalityZeroOrOne,
+                  columns = [("id", FieldSig {typeName = "int4", notNull = True})]
+                }
+          )
+      fmap (.result) (tryParse (mkSig "one"))
+        `shouldBe` Right
+          ( Just
+              ResultSig
+                { cardinality = CardinalityOne,
+                  columns = [("id", FieldSig {typeName = "int4", notNull = True})]
+                }
+          )
+      fmap (.result) (tryParse (mkSig "many"))
+        `shouldBe` Right
+          ( Just
+              ResultSig
+                { cardinality = CardinalityMany,
+                  columns = [("id", FieldSig {typeName = "int4", notNull = True})]
+                }
+          )
+
+    it "rejects invalid cardinality" do
+      let yaml =
+            "parameters: {}\nresult:\n  cardinality: invalid\n  columns:\n    id:\n      type: int4\n      not_null: true\n"
+      tryParse yaml `shouldSatisfy` isLeft
+
+    it "parses explicit idempotent values" do
+      fmap (.idempotent) (tryParse "idempotent: true\nparameters: {}\n")
+        `shouldBe` Right True
+      fmap (.idempotent) (tryParse "idempotent: false\nparameters: {}\n")
+        `shouldBe` Right False
+
+    it "defaults idempotent to false when omitted" do
+      tryParse "parameters: {}\n"
+        `shouldBe` Right
+          Signature
+            { idempotent = False,
+              parameters = [],
+              result = Nothing
+            }
+
+    it "parses array types with dims and element_not_null" do
+      let yaml =
+            "parameters: {}\n\
+            \result:\n\
+            \  cardinality: many\n\
+            \  columns:\n\
+            \    tracks:\n\
+            \      type: track_info\n\
+            \      not_null: false\n\
+            \      dims: 1\n\
+            \      element_not_null: false\n"
+      fmap (.result) (tryParse yaml)
+        `shouldBe` Right
+          ( Just
+              ResultSig
+                { cardinality = CardinalityMany,
+                  columns =
+                    [ ( "tracks",
+                        ArrayFieldSig
+                          { typeName = "track_info[]",
+                            notNull = False,
+                            elementNotNull = False
+                          }
+                      )
+                    ]
+                }
+          )
+
+    it "parses legacy array syntax" do
+      let yaml =
+            "parameters: {}\n\
+            \result:\n\
+            \  cardinality: many\n\
+            \  columns:\n\
+            \    tracks:\n\
+            \      type: track_info[]\n\
+            \      not_null: false\n"
+      fmap (.result) (tryParse yaml)
+        `shouldBe` Right
+          ( Just
+              ResultSig
+                { cardinality = CardinalityMany,
+                  columns =
+                    [ ( "tracks",
+                        ArrayFieldSig
+                          { typeName = "track_info[]",
+                            notNull = False,
+                            elementNotNull = False
+                          }
+                      )
+                    ]
+                }
+          )
+
+    it "defaults dims to 0 and ignores element_not_null" do
+      let yaml =
+            "parameters: {}\n\
+            \result:\n\
+            \  cardinality: many\n\
+            \  columns:\n\
+            \    tracks:\n\
+            \      type: track_info\n\
+            \      not_null: false\n\
+            \      element_not_null: true\n"
+      fmap (.result) (tryParse yaml)
+        `shouldBe` Right
+          ( Just
+              ResultSig
+                { cardinality = CardinalityMany,
+                  columns =
+                    [ ( "tracks",
+                        FieldSig
+                          { typeName = "track_info",
+                            notNull = False
+                          }
+                      )
+                    ]
+                }
+          )
+
+    it "defaults element_not_null to false when dims is present" do
+      let yaml =
+            "parameters: {}\n\
+            \result:\n\
+            \  cardinality: many\n\
+            \  columns:\n\
+            \    tracks:\n\
+            \      type: track_info\n\
+            \      not_null: false\n\
+            \      dims: 2\n"
+      fmap (.result) (tryParse yaml)
+        `shouldBe` Right
+          ( Just
+              ResultSig
+                { cardinality = CardinalityMany,
+                  columns =
+                    [ ( "tracks",
+                        ArrayFieldSig
+                          { typeName = "track_info[][]",
+                            notNull = False,
+                            elementNotNull = False
+                          }
+                      )
+                    ]
+                }
+          )
+
+  describe "validateAndMerge" do
+    it "accepts matching signatures" do
+      let sig =
+            Signature
+              { idempotent = False,
+                parameters =
+                  [ ("x", FieldSig {typeName = "int4", notNull = False})
+                  ],
+                result =
+                  Just
+                    ResultSig
+                      { cardinality = CardinalityMany,
+                        columns =
+                          [ ("id", FieldSig {typeName = "int4", notNull = True})
+                          ]
+                      }
+              }
+      validateAndMerge sig sig `shouldBe` Right sig
+
+    it "allows parameter not_null to be made stricter (false -> true)" do
+      let inferred =
+            Signature
+              { idempotent = False,
+                parameters =
+                  [ ("x", FieldSig {typeName = "int4", notNull = False})
+                  ],
+                result = Nothing
+              }
+          file =
+            Signature
+              { idempotent = False,
+                parameters =
+                  [ ("x", FieldSig {typeName = "int4", notNull = True})
+                  ],
+                result = Nothing
+              }
+      validateAndMerge inferred file `shouldBe` Right file
+
+    it "rejects parameter not_null relaxation (true -> false)" do
+      let inferred =
+            Signature
+              { idempotent = False,
+                parameters =
+                  [ ("x", FieldSig {typeName = "int4", notNull = True})
+                  ],
+                result = Nothing
+              }
+          file =
+            Signature
+              { idempotent = False,
+                parameters =
+                  [ ("x", FieldSig {typeName = "int4", notNull = False})
+                  ],
+                result = Nothing
+              }
+      validateAndMerge inferred file `shouldSatisfy` isLeft
+
+    it "rejects result column not_null relaxation (true -> false)" do
+      let inferred =
+            Signature
+              { idempotent = False,
+                parameters = [],
+                result =
+                  Just
+                    ResultSig
+                      { cardinality = CardinalityMany,
+                        columns =
+                          [ ("id", FieldSig {typeName = "int4", notNull = True})
+                          ]
+                      }
+              }
+          file =
+            Signature
+              { idempotent = False,
+                parameters = [],
+                result =
+                  Just
+                    ResultSig
+                      { cardinality = CardinalityMany,
+                        columns =
+                          [ ("id", FieldSig {typeName = "int4", notNull = False})
+                          ]
+                      }
+              }
+      validateAndMerge inferred file `shouldSatisfy` isLeft
+
+    it "allows result column not_null to be made stricter (false -> true)" do
+      let inferred =
+            Signature
+              { idempotent = False,
+                parameters = [],
+                result =
+                  Just
+                    ResultSig
+                      { cardinality = CardinalityMany,
+                        columns =
+                          [ ("id", FieldSig {typeName = "int4", notNull = False})
+                          ]
+                      }
+              }
+          file =
+            Signature
+              { idempotent = False,
+                parameters = [],
+                result =
+                  Just
+                    ResultSig
+                      { cardinality = CardinalityMany,
+                        columns =
+                          [ ("id", FieldSig {typeName = "int4", notNull = True})
+                          ]
+                      }
+              }
+      validateAndMerge inferred file `shouldBe` Right file
+
+    it "allows cardinality to be changed freely" do
+      let inferred =
+            Signature
+              { idempotent = False,
+                parameters = [],
+                result =
+                  Just
+                    ResultSig
+                      { cardinality = CardinalityMany,
+                        columns =
+                          [ ("id", FieldSig {typeName = "int4", notNull = True})
+                          ]
+                      }
+              }
+          file =
+            Signature
+              { idempotent = False,
+                parameters = [],
+                result =
+                  Just
+                    ResultSig
+                      { cardinality = CardinalityOne,
+                        columns =
+                          [ ("id", FieldSig {typeName = "int4", notNull = True})
+                          ]
+                      }
+              }
+          expected =
+            Signature
+              { idempotent = False,
+                parameters = [],
+                result =
+                  Just
+                    ResultSig
+                      { cardinality = CardinalityOne,
+                        columns =
+                          [ ("id", FieldSig {typeName = "int4", notNull = True})
+                          ]
+                      }
+              }
+      validateAndMerge inferred file `shouldBe` Right expected
+
+    it "preserves idempotence from the file signature" do
+      let inferred =
+            Signature
+              { idempotent = False,
+                parameters = [],
+                result = Nothing
+              }
+          file =
+            Signature
+              { idempotent = True,
+                parameters = [],
+                result = Nothing
+              }
+      validateAndMerge inferred file `shouldBe` Right file
+
+    it "keeps inferred array element nullability when file uses legacy array syntax" do
+      let inferred =
+            Signature
+              { idempotent = False,
+                parameters = [],
+                result =
+                  Just
+                    ResultSig
+                      { cardinality = CardinalityMany,
+                        columns =
+                          [ ( "tracks",
+                              ArrayFieldSig
+                                { typeName = "track_info[]",
+                                  notNull = False,
+                                  elementNotNull = True
+                                }
+                            )
+                          ]
+                      }
+              }
+          file =
+            Signature
+              { idempotent = False,
+                parameters = [],
+                result =
+                  Just
+                    ResultSig
+                      { cardinality = CardinalityMany,
+                        columns =
+                          [ ( "tracks",
+                              FieldSig
+                                { typeName = "track_info[]",
+                                  notNull = False
+                                }
+                            )
+                          ]
+                      }
+              }
+          expected =
+            Signature
+              { idempotent = False,
+                parameters = [],
+                result =
+                  Just
+                    ResultSig
+                      { cardinality = CardinalityMany,
+                        columns =
+                          [ ( "tracks",
+                              ArrayFieldSig
+                                { typeName = "track_info[]",
+                                  notNull = False,
+                                  elementNotNull = True
+                                }
+                            )
+                          ]
+                      }
+              }
+      validateAndMerge inferred file `shouldBe` Right expected
+
+    it "rejects type mismatch in parameters" do
+      let inferred =
+            Signature
+              { idempotent = False,
+                parameters =
+                  [ ("x", FieldSig {typeName = "int4", notNull = False})
+                  ],
+                result = Nothing
+              }
+          file =
+            Signature
+              { idempotent = False,
+                parameters =
+                  [ ("x", FieldSig {typeName = "int8", notNull = False})
+                  ],
+                result = Nothing
+              }
+      validateAndMerge inferred file `shouldSatisfy` isLeft
+
+    it "rejects type mismatch in result columns" do
+      let inferred =
+            Signature
+              { idempotent = False,
+                parameters = [],
+                result =
+                  Just
+                    ResultSig
+                      { cardinality = CardinalityMany,
+                        columns =
+                          [ ("id", FieldSig {typeName = "int4", notNull = True})
+                          ]
+                      }
+              }
+          file =
+            Signature
+              { idempotent = False,
+                parameters = [],
+                result =
+                  Just
+                    ResultSig
+                      { cardinality = CardinalityMany,
+                        columns =
+                          [ ("id", FieldSig {typeName = "uuid", notNull = True})
+                          ]
+                      }
+              }
+      validateAndMerge inferred file `shouldSatisfy` isLeft
+
+    it "rejects parameter name mismatch" do
+      let inferred =
+            Signature
+              { idempotent = False,
+                parameters =
+                  [ ("x", FieldSig {typeName = "int4", notNull = False})
+                  ],
+                result = Nothing
+              }
+          file =
+            Signature
+              { idempotent = False,
+                parameters =
+                  [ ("y", FieldSig {typeName = "int4", notNull = False})
+                  ],
+                result = Nothing
+              }
+      validateAndMerge inferred file `shouldSatisfy` isLeft
+
+    it "rejects result section mismatch (present vs absent)" do
+      let inferred =
+            Signature
+              { idempotent = False,
+                parameters = [],
+                result =
+                  Just
+                    ResultSig
+                      { cardinality = CardinalityMany,
+                        columns =
+                          [ ("id", FieldSig {typeName = "int4", notNull = True})
+                          ]
+                      }
+              }
+          file =
+            Signature
+              { idempotent = False,
+                parameters = [],
+                result = Nothing
+              }
+      validateAndMerge inferred file `shouldSatisfy` isLeft

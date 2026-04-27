@@ -1,6 +1,9 @@
 {-# OPTIONS_GHC -Wno-unused-binds -Wno-unused-imports -Wno-name-shadowing -Wno-incomplete-patterns -Wno-unused-matches -Wno-missing-methods -Wno-unused-record-wildcards -Wno-redundant-constraints -Wno-deprecations -Wno-missing-signatures #-}
 
-module Logic.Features.SyntaxAnalyser.AstInterpreter where
+module Logic.Features.SyntaxAnalyser.AstInterpreter
+  ( preparableStmtQuerySyntaxAnalysis,
+  )
+where
 
 import Logic.Features.SyntaxAnalyser.Data
 import PostgresqlSyntax.Ast qualified as Ast

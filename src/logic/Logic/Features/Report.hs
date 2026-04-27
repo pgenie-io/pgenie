@@ -1,4 +1,10 @@
-module Logic.Features.Report where
+module Logic.Features.Report
+  ( Report (..),
+    nest,
+    nestingAsError,
+    Warns (..),
+  )
+where
 
 import Utils.Prelude
 
@@ -16,8 +22,8 @@ nest path err =
   let newPath = err.path <> path
    in err {path = newPath}
 
-nesting :: (MonadError Report m) => [Text] -> m a -> m a
-nesting path action =
+nestingAsError :: (MonadError Report m) => [Text] -> m a -> m a
+nestingAsError path action =
   catchError action \err ->
     throwError (nest path err)
 

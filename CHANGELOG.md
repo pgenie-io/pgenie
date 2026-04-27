@@ -3,6 +3,7 @@
 ## Non-breaking changes
 
 - Update progress output so each completed stage prints a breadcrumb ending with a green `Done`, for example `Generating > haskell > Done`.
+- Move the logic test specs into the production `Logic.*` modules, add a root `Logic.spec` entry point, and trim test-only exports from the logic library.
 
 # v0.5.1
 

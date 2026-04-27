@@ -1,4 +1,8 @@
-module Logic.Features.SyntaxAnalyser.Data where
+module Logic.Features.SyntaxAnalyser.Data
+  ( RowAmount (..),
+    QuerySyntaxAnalysis (..),
+  )
+where
 
 import Utils.Prelude
 

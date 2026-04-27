@@ -7,16 +7,16 @@ packages:
 - completed:
     name: dhall
     pantry-tree:
-      sha256: 5b158b148d0baa56a8b1ab502a6ed12b1a002f3bee8bd7a04e1769c4e39607ec
+      sha256: c1ff1f598b64d38716e44317814f540998d36642dc486bdb2ba625d6211aa408
       size: 28671
-    sha256: b1436f2d5d8609fc79bfd53e7138a980ec09c08f8fe38e5c65f2c87a676499e9
-    size: 933235
+    sha256: c55feb5ea9ee26faf6e3e454c83b5c75205338f6442bb78500c712986456debd
+    size: 934165
     subdir: dhall
-    url: https://github.com/nikita-volkov/dhall-haskell/archive/c3264e5ed34566b66badb301211847ac4f78e697.tar.gz
+    url: https://github.com/nikita-volkov/dhall-haskell/archive/116c10d3e3201e97211047b49b7e2418ced7d066.tar.gz
     version: 1.42.3
   original:
     subdir: dhall
-    url: https://github.com/nikita-volkov/dhall-haskell/archive/c3264e5ed34566b66badb301211847ac4f78e697.tar.gz
+    url: https://github.com/nikita-volkov/dhall-haskell/archive/116c10d3e3201e97211047b49b7e2418ced7d066.tar.gz
 - completed:
     name: hasql-dev
     pantry-tree:

@@ -1,4 +1,7 @@
-module Logic.Features.Staging where
+module Logic.Features.Staging
+  ( Stages (..),
+  )
+where
 
 import Utils.Prelude
 

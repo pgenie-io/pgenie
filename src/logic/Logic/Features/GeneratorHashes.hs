@@ -1,7 +1,5 @@
 module Logic.Features.GeneratorHashes
-  ( HashesMap,
-    tryLoadHashesFile,
-    serializeHashesMap,
+  ( tryLoadHashesFile,
     writeHashesFile,
   )
 where

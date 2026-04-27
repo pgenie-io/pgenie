@@ -139,9 +139,8 @@ library logic
   import: base
   hs-source-dirs: src/logic/
   exposed-modules:
-    Logic.Features.CustomTypeSignatureFile
+    Logic
     Logic.Features.Fs
-    Logic.Features.GeneratorHashes
     Logic.Features.IndexOptimizer
     Logic.Features.Migrations
     Logic.Features.Name
@@ -149,22 +148,26 @@ library logic
     Logic.Features.QueryAnalysis
     Logic.Features.Report
     Logic.Features.SeqScanDetector
-    Logic.Features.SignatureFile
-    Logic.Features.SqlTemplate
     Logic.Features.Staging
-    Logic.Features.SyntaxAnalyser
     Logic.Workflows.Analyse
     Logic.Workflows.AnalyseProject
     Logic.Workflows.Generate
     Logic.Workflows.GenerateCode
-    Logic.Workflows.GenerateQuerySigs
-    Logic.Workflows.GenerateTypeSigs
     Logic.Workflows.ManageIndexes
 
   other-modules:
+    Logic.Features
+    Logic.Features.CustomTypeSignatureFile
+    Logic.Features.GeneratorHashes
     Logic.Features.Name.Megaparsec
+    Logic.Features.SignatureFile
+    Logic.Features.SqlTemplate
+    Logic.Features.SyntaxAnalyser
     Logic.Features.SyntaxAnalyser.AstInterpreter
     Logic.Features.SyntaxAnalyser.Data
+    Logic.Workflows
+    Logic.Workflows.GenerateQuerySigs
+    Logic.Workflows.GenerateTypeSigs
 
   build-depends:
     aeson,
@@ -172,6 +175,7 @@ library logic
     containers,
     dhall,
     foldl,
+    hspec,
     megaparsec,
     monad-parallel,
     pgenie-gen,
@@ -189,29 +193,10 @@ test-suite logic-test
   type: exitcode-stdio-1.0
   hs-source-dirs: src/logic-test
   main-is: Main.hs
-  other-modules:
-    CustomTypeSignatureFileSpec
-    IndexOptimizerSpec
-    NameSpec
-    ProjectFileSpec
-    SeqScanDetectorSpec
-    SignatureFileSpec
-    SqlTemplateSpec
-    SyntaxAnalyserSpec
-
-  build-tool-depends:
-    hspec-discover:hspec-discover
-
   build-depends:
-    aeson,
-    algebraic-path,
     hspec,
-    megaparsec,
-    pgenie-gen,
     pgenie:logic,
     pgenie:utils,
-    QuickCheck,
-    text,
 
 library interpreters
   import: base

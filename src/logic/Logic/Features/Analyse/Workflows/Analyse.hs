@@ -33,29 +33,28 @@ run params =
     analyseResult <-
       AnalyseProject.run AnalyseProject.Params {projectFile = params.projectFile}
     unless (null analyseResult.seqScanFindings) do
-      for_ analyseResult.seqScanFindings \(queryName, finding) ->
-        warn
-          ( Report
-              []
-              ( "Sequential scan detected in query '"
-                  <> queryName
-                  <> "': table '"
-                  <> finding.tableName
-                  <> "' scanned without index on ("
-                  <> Text.intercalate ", " finding.suggestedIndexColumns
-                  <> ")"
+      if params.failOnSeqScans
+        then
+          throwError
+            ( Report
+                []
+                "Sequential scans detected"
+                (Just "Run 'manage-indexes' to generate index migration, or remove --fail-on-seq-scans to allow warnings")
+                [ ("queries", Text.intercalate ", " (map fst analyseResult.seqScanFindings))
+                ]
+            )
+        else do
+          for_ analyseResult.seqScanFindings \(queryName, finding) ->
+            warn
+              ( Report
+                  []
+                  "Sequential scan detected"
+                  (Just "Run 'manage-indexes' to generate index migration")
+                  [ ("query", queryName),
+                    ("table", finding.tableName),
+                    ("columns", Text.intercalate ", " finding.suggestedIndexColumns)
+                  ]
               )
-              (Just "Run 'manage-indexes' to generate index migration")
-              [("query", queryName), ("table", finding.tableName)]
-          )
-      when params.failOnSeqScans do
-        throwError
-          ( Report
-              []
-              "Sequential scans detected"
-              (Just "Run 'manage-indexes' to generate index migration, or remove --fail-on-seq-scans to allow warnings")
-              []
-          )
     case params.output of
       Nothing -> pure Result {outputText = ""}
       Just ModelFormatDhall ->

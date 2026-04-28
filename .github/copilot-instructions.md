@@ -11,7 +11,13 @@ Study the contents of the `cabal.project` file. In the `source-repository-packag
 
 Accumulate the unreleased changes in the `Upcoming` section at the top of the `CHANGELOG.md` file. The release workflow automatically relabels the `Upcoming` section to the new version.
 
-When implementing changes, describe every user-facing change in the changelog. Avoid describing the minorities and chores like refactorings, tests and CI. Avoid describing changes to the libraries, only focus on the executable's behaviour! Focus on the following categories:
+When implementing changes, describe every user-facing change in the changelog. 
+
+**DO NOT** describe the minorities and chores like refactorings, tests and CI.
+
+**DO NOT** describe changes to the sublibraries, instead focus on the executable's behaviour! 
+
+Focus on the following categories:
 
 - Non-breaking changes: New features, improvements and optimizations that do not break existing functionality.
 - Fixes: Bug fixes and error handling improvements that do not break existing functionality.

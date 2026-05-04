@@ -29,34 +29,39 @@ printStageDone path =
   case path of
     [] -> printDone
     _ ->
-      TextBuilder.intercalateMap " > " to (reverse path) <> " > \ESC[32mDone\ESC[0m\n"
+      TextBuilder.intercalateMap " > " to (reverse path) <> " > \ESC[1;32mDone\ESC[0m\n"
 
 -- | Print the "Done!" completion message, replacing the current line.
 printDone :: TextBuilder
-printDone = "\r\ESC[2K" <> "\ESC[32mDone!\ESC[0m" <> "\n"
+printDone = "\r\ESC[2K" <> "\ESC[1;32mDone!\ESC[0m" <> "\n"
 
 -- | Print a warning report.
 printWarning :: [Text] -> Text -> Maybe Text -> [(Text, Text)] -> TextBuilder
 printWarning path message suggestion details =
-  report ("\ESC[33mWarning\ESC[0m") path message suggestion details
+  report "1;33" "Warning" path message suggestion details
 
 -- | Print an error report.
 printError :: [Text] -> Text -> Maybe Text -> [(Text, Text)] -> TextBuilder
 printError path message suggestion details =
-  report ("\ESC[1;31mError\ESC[0m") path message suggestion details
+  report "1;31" "Error" path message suggestion details
 
 report ::
+  TextBuilder ->
   TextBuilder ->
   [Text] ->
   Text ->
   Maybe Text ->
   [(Text, Text)] ->
   TextBuilder
-report label path message suggestion details =
+report modifiers label path message suggestion details =
   mconcat
-    [ label,
+    [ "\ESC[",
+      modifiers,
+      "m",
+      label,
       ": ",
       to message,
+      "\ESC[0m",
       "\n",
       if null path
         then ""

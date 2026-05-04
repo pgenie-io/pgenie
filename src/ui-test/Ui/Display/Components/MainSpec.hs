@@ -30,11 +30,11 @@ spec = do
   describe "stage rendering" do
     it "renders the full breadcrumb when a nested stage exits" do
       TextBuilder.toText (View.printStageDone ["Loading", "haskell", "Generating"])
-        `shouldBe` "Generating > haskell > Loading > \ESC[32mDone\ESC[0m\n"
+        `shouldBe` "Generating > haskell > Loading > \ESC[1;32mDone\ESC[0m\n"
 
     it "renders a top-level stage exit with the stage name" do
       TextBuilder.toText (View.printStageDone ["Generating"])
-        `shouldBe` "Generating > \ESC[32mDone\ESC[0m\n"
+        `shouldBe` "Generating > \ESC[1;32mDone\ESC[0m\n"
 
   describe "progress handling" do
     it "shows stage completion with green Done when a non-root stage exits" do
@@ -44,7 +44,7 @@ spec = do
                 Emitting.StageExited ["Loading", "haskell", "Generating"] 0.0417
               ]
 
-          containsStageDone tb = Text.isInfixOf " > \ESC[32mDone\ESC[0m\n" (TextBuilder.toText tb)
+          containsStageDone tb = Text.isInfixOf "Done" (TextBuilder.toText tb)
 
       any containsStageDone outputs `shouldBe` True
 

@@ -138,7 +138,7 @@ instance LoadsGen (Fx Device Report.Report) where
             Report.Report
               { path = [],
                 message = "Failed to load gen",
-                suggestion = Nothing,
+                suggestion = Just "Update to the latest releases of pgn and codegen",
                 details =
                   [ ("reason", onto (displayException @SomeException err)),
                     ( "location",

@@ -16,7 +16,6 @@
 !/cabal.project.freeze
 !/.ormolu
 !/stack.yaml
-!/stack.yaml.lock
 
 # Unignore subtrees:
 !/.github/

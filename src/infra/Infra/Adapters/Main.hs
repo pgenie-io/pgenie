@@ -140,7 +140,9 @@ instance LoadsGen (Fx Device Report.Report) where
                 message = "Failed to load gen",
                 suggestion = Just "Update to the latest releases of pgn and codegen",
                 details =
-                  [ ("reason", onto (displayException @SomeException err)),
+                  [ ( "reason",
+                      onto (displayException @SomeException err)
+                    ),
                     ( "location",
                       case location of
                         Gen.LocationUrl url -> onto url

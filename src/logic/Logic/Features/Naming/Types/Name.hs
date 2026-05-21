@@ -22,7 +22,7 @@ import TextBuilder qualified
 import Utils.Prelude
 
 -- |
--- Normalized name backed by the gen-sdk model.
+-- Normalized name consisting of lowercase word parts separated by underscores.
 --
 -- A name consists of a lowercase head word followed by lowercase words or
 -- natural numbers, separated by underscores. Parsing normalizes letter case,
@@ -30,7 +30,7 @@ import Utils.Prelude
 -- separate parts.
 --
 -- It can be converted to various casing formats, such as camelCase, PascalCase, snake_case, etc.
-newtype Name = Name Gen.Name
+newtype Name = Name (NonEmpty Text)
   deriving newtype (Eq)
 
 instance Ord Name where
@@ -102,45 +102,7 @@ instance IsSome TextBuilder Name where
   maybeFrom = either (const Nothing) Just . tryFromText . to
 
 toPartsNonEmpty :: Name -> NonEmpty Text
-toPartsNonEmpty (Name name) =
-  wordToText name.head :| map tailPartToText name.tail
-  where
-    tailPartToText = \case
-      Gen.WordOrNumberWord word -> wordToText word
-      Gen.WordOrNumberNumber number -> Text.pack (show number)
-
-    wordToText :: Gen.Word -> Text
-    wordToText (Gen.Word chars) =
-      Text.pack (map wordCharToChar (toList chars))
-      where
-        wordCharToChar :: Gen.WordChar -> Char
-        wordCharToChar = \case
-          Gen.WordCharA -> 'a'
-          Gen.WordCharB -> 'b'
-          Gen.WordCharC -> 'c'
-          Gen.WordCharD -> 'd'
-          Gen.WordCharE -> 'e'
-          Gen.WordCharF -> 'f'
-          Gen.WordCharG -> 'g'
-          Gen.WordCharH -> 'h'
-          Gen.WordCharI -> 'i'
-          Gen.WordCharJ -> 'j'
-          Gen.WordCharK -> 'k'
-          Gen.WordCharL -> 'l'
-          Gen.WordCharM -> 'm'
-          Gen.WordCharN -> 'n'
-          Gen.WordCharO -> 'o'
-          Gen.WordCharP -> 'p'
-          Gen.WordCharQ -> 'q'
-          Gen.WordCharR -> 'r'
-          Gen.WordCharS -> 's'
-          Gen.WordCharT -> 't'
-          Gen.WordCharU -> 'u'
-          Gen.WordCharV -> 'v'
-          Gen.WordCharW -> 'w'
-          Gen.WordCharX -> 'x'
-          Gen.WordCharY -> 'y'
-          Gen.WordCharZ -> 'z'
+toPartsNonEmpty (Name parts) = parts
 
 toText :: Name -> Text
 toText = to @Text . toTextBuilder
@@ -165,8 +127,27 @@ toTextBuilderInSnakeCase = TextBuilder.intercalateMap "_" to . toPartsNonEmpty
 toTextBuilderInScreamCase :: Name -> TextBuilder
 toTextBuilderInScreamCase = TextBuilder.intercalateMap "_" (to . Text.toUpper) . toPartsNonEmpty
 
+toTextBuilderInTrainCase :: Name -> TextBuilder
+toTextBuilderInTrainCase = TextBuilder.intercalateMap "-" (to . Text.toTitle) . toPartsNonEmpty
+
+toTextBuilderInScreamingKebabCase :: Name -> TextBuilder
+toTextBuilderInScreamingKebabCase = TextBuilder.intercalateMap "-" (to . Text.toUpper) . toPartsNonEmpty
+
+toTextBuilderInCamelSnakeCase :: Name -> TextBuilder
+toTextBuilderInCamelSnakeCase = TextBuilder.intercalateMap "_" (to . Text.toTitle) . toPartsNonEmpty
+
 toGenName :: Name -> Gen.Name
-toGenName (Name name) = name
+toGenName name =
+  Gen.Name
+    { inCamelCase = to @Text (toTextBuilderInCamelCase name),
+      inPascalCase = to @Text (toTextBuilderInPascalCase name),
+      inKebabCase = to @Text (toTextBuilderInKebabCase name),
+      inTrainCase = to @Text (toTextBuilderInTrainCase name),
+      inScreamingKebabCase = to @Text (toTextBuilderInScreamingKebabCase name),
+      inSnakeCase = to @Text (toTextBuilderInSnakeCase name),
+      inCamelSnakeCase = to @Text (toTextBuilderInCamelSnakeCase name),
+      inScreamingSnakeCase = to @Text (toTextBuilderInScreamCase name)
+    }
 
 tryFromText :: Text -> Either Text Name
 tryFromText text =
@@ -198,56 +179,14 @@ inScreamCase = to . toTextBuilderInScreamCase
 
 partsToNameMaybe :: NonEmpty Text -> Maybe Name
 partsToNameMaybe (firstPart :| tailParts) = do
-  headWord <- wordTextToGenWordMaybe firstPart
-  tailWords <- traverse tailPartToGenWordOrNumberMaybe tailParts
-  pure
-    ( Name
-        Gen.Name
-          { head = headWord,
-            tail = tailWords
-          }
-    )
+  guard (isWordPart firstPart)
+  traverse_ (\p -> guard (isWordPart p || isNumberPart p)) tailParts
+  pure (Name (firstPart :| tailParts))
   where
-    tailPartToGenWordOrNumberMaybe :: Text -> Maybe Gen.WordOrNumber
-    tailPartToGenWordOrNumberMaybe text =
-      case readMaybe (Text.unpack text) of
-        Just number -> Just (Gen.WordOrNumberNumber number)
-        Nothing -> Gen.WordOrNumberWord <$> wordTextToGenWordMaybe text
-
-wordTextToGenWordMaybe :: Text -> Maybe Gen.Word
-wordTextToGenWordMaybe text = do
-  chars <- traverse wordCharFromCharMaybe (Text.unpack text)
-  Gen.Word <$> nonEmpty chars
-  where
-    wordCharFromCharMaybe :: Char -> Maybe Gen.WordChar
-    wordCharFromCharMaybe = \case
-      'a' -> Just Gen.WordCharA
-      'b' -> Just Gen.WordCharB
-      'c' -> Just Gen.WordCharC
-      'd' -> Just Gen.WordCharD
-      'e' -> Just Gen.WordCharE
-      'f' -> Just Gen.WordCharF
-      'g' -> Just Gen.WordCharG
-      'h' -> Just Gen.WordCharH
-      'i' -> Just Gen.WordCharI
-      'j' -> Just Gen.WordCharJ
-      'k' -> Just Gen.WordCharK
-      'l' -> Just Gen.WordCharL
-      'm' -> Just Gen.WordCharM
-      'n' -> Just Gen.WordCharN
-      'o' -> Just Gen.WordCharO
-      'p' -> Just Gen.WordCharP
-      'q' -> Just Gen.WordCharQ
-      'r' -> Just Gen.WordCharR
-      's' -> Just Gen.WordCharS
-      't' -> Just Gen.WordCharT
-      'u' -> Just Gen.WordCharU
-      'v' -> Just Gen.WordCharV
-      'w' -> Just Gen.WordCharW
-      'x' -> Just Gen.WordCharX
-      'y' -> Just Gen.WordCharY
-      'z' -> Just Gen.WordCharZ
-      _ -> Nothing
+    isWordPart part =
+      not (Text.null part) && Text.all isAsciiLower part
+    isNumberPart part =
+      not (Text.null part) && Text.all isDigit part
 
 spec :: Spec
 spec = do

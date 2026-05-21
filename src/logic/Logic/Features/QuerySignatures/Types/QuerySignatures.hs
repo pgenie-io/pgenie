@@ -198,47 +198,7 @@ primitiveToTypeName = \case
   Gen.Input.PrimitiveOid -> "oid"
 
 genNameToText :: Gen.Input.Name -> Text
-genNameToText name =
-  let headText = wordToText (toList (coerce @_ @(NonEmpty _) name.head))
-      tailTexts = map wordOrNumberToText name.tail
-   in Text.intercalate "_" (headText : tailTexts)
-  where
-    wordToText :: [Gen.Input.WordChar] -> Text
-    wordToText = Text.pack . map wordCharToChar
-
-    wordCharToChar :: Gen.Input.WordChar -> Char
-    wordCharToChar = \case
-      Gen.Input.WordCharA -> 'a'
-      Gen.Input.WordCharB -> 'b'
-      Gen.Input.WordCharC -> 'c'
-      Gen.Input.WordCharD -> 'd'
-      Gen.Input.WordCharE -> 'e'
-      Gen.Input.WordCharF -> 'f'
-      Gen.Input.WordCharG -> 'g'
-      Gen.Input.WordCharH -> 'h'
-      Gen.Input.WordCharI -> 'i'
-      Gen.Input.WordCharJ -> 'j'
-      Gen.Input.WordCharK -> 'k'
-      Gen.Input.WordCharL -> 'l'
-      Gen.Input.WordCharM -> 'm'
-      Gen.Input.WordCharN -> 'n'
-      Gen.Input.WordCharO -> 'o'
-      Gen.Input.WordCharP -> 'p'
-      Gen.Input.WordCharQ -> 'q'
-      Gen.Input.WordCharR -> 'r'
-      Gen.Input.WordCharS -> 's'
-      Gen.Input.WordCharT -> 't'
-      Gen.Input.WordCharU -> 'u'
-      Gen.Input.WordCharV -> 'v'
-      Gen.Input.WordCharW -> 'w'
-      Gen.Input.WordCharX -> 'x'
-      Gen.Input.WordCharY -> 'y'
-      Gen.Input.WordCharZ -> 'z'
-
-    wordOrNumberToText :: Gen.Input.WordOrNumber -> Text
-    wordOrNumberToText = \case
-      Gen.Input.WordOrNumberWord (Gen.Input.Word w) -> wordToText (toList w)
-      Gen.Input.WordOrNumberNumber n -> Text.pack (show n)
+genNameToText name = name.inSnakeCase
 
 -- * Serialization
 

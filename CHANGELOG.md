@@ -1,4 +1,4 @@
-# Upcoming
+# v0.6.1
 
 ## Non-breaking changes
 

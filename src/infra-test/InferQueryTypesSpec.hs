@@ -124,27 +124,27 @@ spec = describe "inferQueryTypes" do
         pure (ltreeQueryTypes, existingExtensionQueryTypes, ltreeTableQueryTypes)
 
     map (\param -> (param.isNullable, param.type_)) ltreeQueryTypes.params
-      `shouldBe` [ (True, primitiveValue Gen.Input.PrimitiveLtree),
-                   (True, arrayValue 1 Gen.Input.PrimitiveLtree)
+      `shouldBe` [ (True, primitiveValue Gen.Input.LtreePrimitive),
+                   (True, arrayValue 1 Gen.Input.LtreePrimitive)
                  ]
     map (\column -> (column.pgName, column.isNullable, column.value)) ltreeQueryTypes.resultColumns
-      `shouldBe` [ ("path", True, primitiveValue Gen.Input.PrimitiveLtree),
-                   ("path_array", True, arrayValue 1 Gen.Input.PrimitiveLtree)
+      `shouldBe` [ ("path", True, primitiveValue Gen.Input.LtreePrimitive),
+                   ("path_array", True, arrayValue 1 Gen.Input.LtreePrimitive)
                  ]
     ltreeQueryTypes.mentionedCustomTypes `shouldBe` []
 
     map (\param -> (param.isNullable, param.type_)) existingExtensionQueryTypes.params
-      `shouldBe` [(True, primitiveValue Gen.Input.PrimitiveCitext)]
+      `shouldBe` [(True, primitiveValue Gen.Input.CitextPrimitive)]
     map (\column -> (column.pgName, column.isNullable, column.value)) existingExtensionQueryTypes.resultColumns
-      `shouldBe` [ ("ci", True, primitiveValue Gen.Input.PrimitiveCitext),
-                   ("attrs", True, primitiveValue Gen.Input.PrimitiveHstore)
+      `shouldBe` [ ("ci", True, primitiveValue Gen.Input.CitextPrimitive),
+                   ("attrs", True, primitiveValue Gen.Input.HstorePrimitive)
                  ]
     existingExtensionQueryTypes.mentionedCustomTypes `shouldBe` []
 
     ltreeTableQueryTypes.params `shouldBe` []
     map (\column -> (column.pgName, column.isNullable, column.value)) ltreeTableQueryTypes.resultColumns
-      `shouldBe` [ ("path", False, primitiveValue Gen.Input.PrimitiveLtree),
-                   ("ancestors", True, arrayValue 1 Gen.Input.PrimitiveLtree)
+      `shouldBe` [ ("path", False, primitiveValue Gen.Input.LtreePrimitive),
+                   ("ancestors", True, arrayValue 1 Gen.Input.LtreePrimitive)
                  ]
     ltreeTableQueryTypes.mentionedCustomTypes `shouldBe` []
 
@@ -182,27 +182,27 @@ spec = describe "inferQueryTypes" do
           pure (postgisQueryTypes, postgisTableQueryTypes)
 
     map (\param -> (param.isNullable, param.type_)) postgisQueryTypes.params
-      `shouldBe` [ (True, primitiveValue Gen.Input.PrimitiveGeometry),
-                   (True, primitiveValue Gen.Input.PrimitiveGeography),
-                   (True, primitiveValue Gen.Input.PrimitiveBox2D),
-                   (True, primitiveValue Gen.Input.PrimitiveBox3D),
-                   (True, arrayValue 1 Gen.Input.PrimitiveGeometry)
+      `shouldBe` [ (True, primitiveValue Gen.Input.GeometryPrimitive),
+                   (True, primitiveValue Gen.Input.GeographyPrimitive),
+                   (True, primitiveValue Gen.Input.Box2DPrimitive),
+                   (True, primitiveValue Gen.Input.Box3DPrimitive),
+                   (True, arrayValue 1 Gen.Input.GeometryPrimitive)
                  ]
     map (\column -> (column.pgName, column.isNullable, column.value)) postgisQueryTypes.resultColumns
-      `shouldBe` [ ("geom", True, primitiveValue Gen.Input.PrimitiveGeometry),
-                   ("geog", True, primitiveValue Gen.Input.PrimitiveGeography),
-                   ("bbox2d", True, primitiveValue Gen.Input.PrimitiveBox2D),
-                   ("bbox3d", True, primitiveValue Gen.Input.PrimitiveBox3D),
-                   ("geom_array", True, arrayValue 1 Gen.Input.PrimitiveGeometry)
+      `shouldBe` [ ("geom", True, primitiveValue Gen.Input.GeometryPrimitive),
+                   ("geog", True, primitiveValue Gen.Input.GeographyPrimitive),
+                   ("bbox2d", True, primitiveValue Gen.Input.Box2DPrimitive),
+                   ("bbox3d", True, primitiveValue Gen.Input.Box3DPrimitive),
+                   ("geom_array", True, arrayValue 1 Gen.Input.GeometryPrimitive)
                  ]
     postgisQueryTypes.mentionedCustomTypes `shouldBe` []
 
     postgisTableQueryTypes.params `shouldBe` []
     map (\column -> (column.pgName, column.isNullable, column.value)) postgisTableQueryTypes.resultColumns
-      `shouldBe` [ ("geom", False, primitiveValue Gen.Input.PrimitiveGeometry),
-                   ("geog", True, primitiveValue Gen.Input.PrimitiveGeography),
-                   ("bbox2d", True, primitiveValue Gen.Input.PrimitiveBox2D),
-                   ("bbox3d", True, primitiveValue Gen.Input.PrimitiveBox3D)
+      `shouldBe` [ ("geom", False, primitiveValue Gen.Input.GeometryPrimitive),
+                   ("geog", True, primitiveValue Gen.Input.GeographyPrimitive),
+                   ("bbox2d", True, primitiveValue Gen.Input.Box2DPrimitive),
+                   ("bbox3d", True, primitiveValue Gen.Input.Box3DPrimitive)
                  ]
     postgisTableQueryTypes.mentionedCustomTypes `shouldBe` []
 
@@ -389,7 +389,7 @@ primitiveValue :: Gen.Input.Primitive -> Gen.Input.Value
 primitiveValue primitive =
   Gen.Input.Value
     { arraySettings = Nothing,
-      scalar = Gen.Input.ScalarPrimitive primitive
+      scalar = Gen.Input.PrimitiveScalar primitive
     }
 
 arrayValue :: Natural -> Gen.Input.Primitive -> Gen.Input.Value
@@ -401,5 +401,5 @@ arrayValue dimensionality primitive =
             { dimensionality,
               elementIsNullable = True
             },
-      scalar = Gen.Input.ScalarPrimitive primitive
+      scalar = Gen.Input.PrimitiveScalar primitive
     }

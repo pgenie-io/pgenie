@@ -134,12 +134,12 @@ toGenQueryFragments (SqlTemplate segments) =
       (indices, count) <- get
       case segment of
         NonWhitespace text -> do
-          return [Gen.QueryFragmentSql text]
+          return [Gen.SqlQueryFragment text]
         Param name -> do
           case Map.lookup name indices of
             Just index -> do
               return
-                [ Gen.QueryFragmentVar
+                [ Gen.VarQueryFragment
                     ( Gen.Var
                         { name = Name.toGenName name,
                           rawName = Name.toText name,
@@ -151,18 +151,18 @@ toGenQueryFragments (SqlTemplate segments) =
               put (Map.insert name count indices, succ count)
               segmentToFragment (Param name)
         Newline -> do
-          return [Gen.QueryFragmentSql "\n"]
+          return [Gen.SqlQueryFragment "\n"]
         LineWhitespace text -> do
-          return [Gen.QueryFragmentSql text]
+          return [Gen.SqlQueryFragment text]
         SingleQuotedLiteral text -> do
-          return [Gen.QueryFragmentSql ("'" <> text <> "'")]
+          return [Gen.SqlQueryFragment ("'" <> text <> "'")]
         DoubleQuotedLiteral text -> do
-          return [Gen.QueryFragmentSql ("\"" <> text <> "\"")]
+          return [Gen.SqlQueryFragment ("\"" <> text <> "\"")]
 
     normalizeFragments :: [Gen.QueryFragment] -> [Gen.QueryFragment]
     normalizeFragments = \case
-      Gen.QueryFragmentSql left : Gen.QueryFragmentSql right : rest ->
-        normalizeFragments (Gen.QueryFragmentSql (left <> right) : rest)
+      Gen.SqlQueryFragment left : Gen.SqlQueryFragment right : rest ->
+        normalizeFragments (Gen.SqlQueryFragment (left <> right) : rest)
       fragment : rest ->
         fragment : normalizeFragments rest
       [] -> []

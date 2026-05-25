@@ -69,7 +69,7 @@ run Params {projectFile, project} =
             let (compileFn, genUrl, newHash) = compileFnWithHash
                 output = compileFn project
             case output.result of
-              Gen.Output.ResultErr report ->
+              Gen.Output.ErrResult report ->
                 throwError
                   ( Report
                       report.path
@@ -82,7 +82,7 @@ run Params {projectFile, project} =
                         )
                       ]
                   )
-              Gen.Output.ResultOk generatedFiles -> do
+              Gen.Output.OkResult generatedFiles -> do
                 artifactPath <- case Path.maybeFromText name of
                   Nothing ->
                     throwError

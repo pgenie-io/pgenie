@@ -75,75 +75,75 @@ adaptType type_ = do
 adaptScalar :: Sessions.Scalar -> Embed Gen.Input.Scalar
 adaptScalar = \case
   Sessions.PrimitiveScalar prim ->
-    pure $ Gen.Input.ScalarPrimitive (adaptPrimitive prim)
+    pure $ Gen.Input.PrimitiveScalar (adaptPrimitive prim)
   Sessions.CompositeScalar comp ->
-    Gen.Input.ScalarCustom <$> textToName comp.name
+    Gen.Input.CustomScalar <$> textToName comp.name
   Sessions.EnumScalar enum ->
-    Gen.Input.ScalarCustom <$> textToName enum.name
+    Gen.Input.CustomScalar <$> textToName enum.name
 
 adaptPrimitive :: Sessions.Primitive -> Gen.Input.Primitive
 adaptPrimitive = \case
-  Sessions.BoolPrimitive -> Gen.Input.PrimitiveBool
-  Sessions.ByteaPrimitive -> Gen.Input.PrimitiveBytea
-  Sessions.CharPrimitive -> Gen.Input.PrimitiveChar
-  Sessions.CidrPrimitive -> Gen.Input.PrimitiveCidr
-  Sessions.DatePrimitive -> Gen.Input.PrimitiveDate
-  Sessions.DatemultirangePrimitive -> Gen.Input.PrimitiveDatemultirange
-  Sessions.DaterangePrimitive -> Gen.Input.PrimitiveDaterange
-  Sessions.Float4Primitive -> Gen.Input.PrimitiveFloat4
-  Sessions.Float8Primitive -> Gen.Input.PrimitiveFloat8
-  Sessions.InetPrimitive -> Gen.Input.PrimitiveInet
-  Sessions.Int2Primitive -> Gen.Input.PrimitiveInt2
-  Sessions.Int4Primitive -> Gen.Input.PrimitiveInt4
-  Sessions.Int4multirangePrimitive -> Gen.Input.PrimitiveInt4multirange
-  Sessions.Int4rangePrimitive -> Gen.Input.PrimitiveInt4range
-  Sessions.Int8Primitive -> Gen.Input.PrimitiveInt8
-  Sessions.Int8multirangePrimitive -> Gen.Input.PrimitiveInt8multirange
-  Sessions.Int8rangePrimitive -> Gen.Input.PrimitiveInt8range
-  Sessions.IntervalPrimitive -> Gen.Input.PrimitiveInterval
-  Sessions.JsonPrimitive -> Gen.Input.PrimitiveJson
-  Sessions.JsonbPrimitive -> Gen.Input.PrimitiveJsonb
-  Sessions.MacaddrPrimitive -> Gen.Input.PrimitiveMacaddr
-  Sessions.Macaddr8Primitive -> Gen.Input.PrimitiveMacaddr8
-  Sessions.MoneyPrimitive -> Gen.Input.PrimitiveMoney
-  Sessions.NumericPrimitive -> Gen.Input.PrimitiveNumeric
-  Sessions.NummultirangePrimitive -> Gen.Input.PrimitiveNummultirange
-  Sessions.NumrangePrimitive -> Gen.Input.PrimitiveNumrange
-  Sessions.TextPrimitive -> Gen.Input.PrimitiveText
-  Sessions.TimePrimitive -> Gen.Input.PrimitiveTime
-  Sessions.TimestampPrimitive -> Gen.Input.PrimitiveTimestamp
-  Sessions.TimestamptzPrimitive -> Gen.Input.PrimitiveTimestamptz
-  Sessions.TimetzPrimitive -> Gen.Input.PrimitiveTimetz
-  Sessions.TsmultirangePrimitive -> Gen.Input.PrimitiveTsmultirange
-  Sessions.TsrangePrimitive -> Gen.Input.PrimitiveTsrange
-  Sessions.TstzmultirangePrimitive -> Gen.Input.PrimitiveTstzmultirange
-  Sessions.TstzrangePrimitive -> Gen.Input.PrimitiveTstzrange
-  Sessions.UuidPrimitive -> Gen.Input.PrimitiveUuid
-  Sessions.XmlPrimitive -> Gen.Input.PrimitiveXml
-  Sessions.VarcharPrimitive -> Gen.Input.PrimitiveVarchar
-  Sessions.BpcharPrimitive -> Gen.Input.PrimitiveBpchar
-  Sessions.BitPrimitive -> Gen.Input.PrimitiveBit
-  Sessions.VarbitPrimitive -> Gen.Input.PrimitiveVarbit
-  Sessions.TsvectorPrimitive -> Gen.Input.PrimitiveTsvector
-  Sessions.TsqueryPrimitive -> Gen.Input.PrimitiveTsquery
-  Sessions.PointPrimitive -> Gen.Input.PrimitivePoint
-  Sessions.LinePrimitive -> Gen.Input.PrimitiveLine
-  Sessions.LsegPrimitive -> Gen.Input.PrimitiveLseg
-  Sessions.BoxPrimitive -> Gen.Input.PrimitiveBox
-  Sessions.Box2DPrimitive -> Gen.Input.PrimitiveBox2D
-  Sessions.Box3DPrimitive -> Gen.Input.PrimitiveBox3D
-  Sessions.PathPrimitive -> Gen.Input.PrimitivePath
-  Sessions.LtreePrimitive -> Gen.Input.PrimitiveLtree
-  Sessions.PolygonPrimitive -> Gen.Input.PrimitivePolygon
-  Sessions.CirclePrimitive -> Gen.Input.PrimitiveCircle
-  Sessions.PgSnapshotPrimitive -> Gen.Input.PrimitivePgSnapshot
-  Sessions.PgLsnPrimitive -> Gen.Input.PrimitivePgLsn
-  Sessions.NamePrimitive -> Gen.Input.PrimitiveName
-  Sessions.HstorePrimitive -> Gen.Input.PrimitiveHstore
-  Sessions.CitextPrimitive -> Gen.Input.PrimitiveCitext
-  Sessions.GeometryPrimitive -> Gen.Input.PrimitiveGeometry
-  Sessions.GeographyPrimitive -> Gen.Input.PrimitiveGeography
-  Sessions.OidPrimitive -> Gen.Input.PrimitiveOid
+  Sessions.BoolPrimitive -> Gen.Input.BoolPrimitive
+  Sessions.ByteaPrimitive -> Gen.Input.ByteaPrimitive
+  Sessions.CharPrimitive -> Gen.Input.CharPrimitive
+  Sessions.CidrPrimitive -> Gen.Input.CidrPrimitive
+  Sessions.DatePrimitive -> Gen.Input.DatePrimitive
+  Sessions.DatemultirangePrimitive -> Gen.Input.DatemultirangePrimitive
+  Sessions.DaterangePrimitive -> Gen.Input.DaterangePrimitive
+  Sessions.Float4Primitive -> Gen.Input.Float4Primitive
+  Sessions.Float8Primitive -> Gen.Input.Float8Primitive
+  Sessions.InetPrimitive -> Gen.Input.InetPrimitive
+  Sessions.Int2Primitive -> Gen.Input.Int2Primitive
+  Sessions.Int4Primitive -> Gen.Input.Int4Primitive
+  Sessions.Int4multirangePrimitive -> Gen.Input.Int4multirangePrimitive
+  Sessions.Int4rangePrimitive -> Gen.Input.Int4rangePrimitive
+  Sessions.Int8Primitive -> Gen.Input.Int8Primitive
+  Sessions.Int8multirangePrimitive -> Gen.Input.Int8multirangePrimitive
+  Sessions.Int8rangePrimitive -> Gen.Input.Int8rangePrimitive
+  Sessions.IntervalPrimitive -> Gen.Input.IntervalPrimitive
+  Sessions.JsonPrimitive -> Gen.Input.JsonPrimitive
+  Sessions.JsonbPrimitive -> Gen.Input.JsonbPrimitive
+  Sessions.MacaddrPrimitive -> Gen.Input.MacaddrPrimitive
+  Sessions.Macaddr8Primitive -> Gen.Input.Macaddr8Primitive
+  Sessions.MoneyPrimitive -> Gen.Input.MoneyPrimitive
+  Sessions.NumericPrimitive -> Gen.Input.NumericPrimitive
+  Sessions.NummultirangePrimitive -> Gen.Input.NummultirangePrimitive
+  Sessions.NumrangePrimitive -> Gen.Input.NumrangePrimitive
+  Sessions.TextPrimitive -> Gen.Input.TextPrimitive
+  Sessions.TimePrimitive -> Gen.Input.TimePrimitive
+  Sessions.TimestampPrimitive -> Gen.Input.TimestampPrimitive
+  Sessions.TimestamptzPrimitive -> Gen.Input.TimestamptzPrimitive
+  Sessions.TimetzPrimitive -> Gen.Input.TimetzPrimitive
+  Sessions.TsmultirangePrimitive -> Gen.Input.TsmultirangePrimitive
+  Sessions.TsrangePrimitive -> Gen.Input.TsrangePrimitive
+  Sessions.TstzmultirangePrimitive -> Gen.Input.TstzmultirangePrimitive
+  Sessions.TstzrangePrimitive -> Gen.Input.TstzrangePrimitive
+  Sessions.UuidPrimitive -> Gen.Input.UuidPrimitive
+  Sessions.XmlPrimitive -> Gen.Input.XmlPrimitive
+  Sessions.VarcharPrimitive -> Gen.Input.VarcharPrimitive
+  Sessions.BpcharPrimitive -> Gen.Input.BpcharPrimitive
+  Sessions.BitPrimitive -> Gen.Input.BitPrimitive
+  Sessions.VarbitPrimitive -> Gen.Input.VarbitPrimitive
+  Sessions.TsvectorPrimitive -> Gen.Input.TsvectorPrimitive
+  Sessions.TsqueryPrimitive -> Gen.Input.TsqueryPrimitive
+  Sessions.PointPrimitive -> Gen.Input.PointPrimitive
+  Sessions.LinePrimitive -> Gen.Input.LinePrimitive
+  Sessions.LsegPrimitive -> Gen.Input.LsegPrimitive
+  Sessions.BoxPrimitive -> Gen.Input.BoxPrimitive
+  Sessions.Box2DPrimitive -> Gen.Input.Box2DPrimitive
+  Sessions.Box3DPrimitive -> Gen.Input.Box3DPrimitive
+  Sessions.PathPrimitive -> Gen.Input.PathPrimitive
+  Sessions.LtreePrimitive -> Gen.Input.LtreePrimitive
+  Sessions.PolygonPrimitive -> Gen.Input.PolygonPrimitive
+  Sessions.CirclePrimitive -> Gen.Input.CirclePrimitive
+  Sessions.PgSnapshotPrimitive -> Gen.Input.PgSnapshotPrimitive
+  Sessions.PgLsnPrimitive -> Gen.Input.PgLsnPrimitive
+  Sessions.NamePrimitive -> Gen.Input.NamePrimitive
+  Sessions.HstorePrimitive -> Gen.Input.HstorePrimitive
+  Sessions.CitextPrimitive -> Gen.Input.CitextPrimitive
+  Sessions.GeometryPrimitive -> Gen.Input.GeometryPrimitive
+  Sessions.GeographyPrimitive -> Gen.Input.GeographyPrimitive
+  Sessions.OidPrimitive -> Gen.Input.OidPrimitive
 
 collectCustomTypes :: Sessions.Query -> Embed [Gen.Input.CustomType]
 collectCustomTypes query = do
@@ -179,7 +179,7 @@ adaptComposite comp = do
         pgSchema = comp.schemaName,
         pgName = comp.name,
         definition =
-          Gen.Input.CustomTypeDefinitionComposite fields
+          Gen.Input.CompositeCustomTypeDefinition fields
       }
 
 adaptCompositeField :: Sessions.CompositeField -> Embed Gen.Input.Member
@@ -204,7 +204,7 @@ adaptEnum enum = do
         pgSchema = enum.schemaName,
         pgName = enum.name,
         definition =
-          Gen.Input.CustomTypeDefinitionEnum variants
+          Gen.Input.EnumCustomTypeDefinition variants
       }
 
 adaptEnumVariant :: Text -> Embed Gen.Input.EnumVariant

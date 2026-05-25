@@ -1,3 +1,9 @@
+# Upcoming
+
+## Non-breaking changes
+
+- Update the bundled `pgenie-gen` SDK, including compatibility with the new query result classification model (`void`, `rows_affected`, and row-returning results).
+
 # v0.6.0
 
 ## Breaking changes

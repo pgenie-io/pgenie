@@ -161,13 +161,20 @@ run Params {projectFile} =
                       then fallbackSeqScanFindings
                       else querySeqScanFindings
 
-              result :: Maybe Gen.Input.ResultRows <-
-                let byCardinality cardinality =
-                      pure case nonEmpty resultColumns of
+              result :: Gen.Input.Result <-
+                let rowsByCardinality cardinality =
+                      case nonEmpty resultColumns of
                         Nothing ->
                           Nothing
                         Just columns ->
                           Just (Gen.Input.ResultRows cardinality columns)
+                    classifyResult affectsRows = \case
+                      Just rows ->
+                        Gen.Input.RowsResult rows
+                      Nothing ->
+                        if affectsRows
+                          then Gen.Input.RowsAffectedResult
+                          else Gen.Input.VoidResult
                  in case SyntaxAnalyser.resolveText nativeTemplate of
                       Left err -> do
                         warn
@@ -177,23 +184,23 @@ run Params {projectFile} =
                               Nothing
                               [("error", err)]
                           )
-                        byCardinality Gen.Input.ResultRowsCardinalityMultiple
-                      Right SyntaxAnalyser.QuerySyntaxAnalysis {resultRowAmount} ->
+                        pure $ classifyResult True (rowsByCardinality Gen.Input.MultipleResultRowsCardinality)
+                      Right SyntaxAnalyser.QuerySyntaxAnalysis {affectsRows, resultRowAmount} ->
                         case resultRowAmount of
                           SyntaxAnalyser.SpecificRowAmount 0 ->
-                            pure Nothing
+                            pure $ classifyResult affectsRows Nothing
                           SyntaxAnalyser.SpecificRowAmount 1 ->
-                            byCardinality Gen.Input.ResultRowsCardinalitySingle
+                            pure $ classifyResult affectsRows (rowsByCardinality Gen.Input.SingleResultRowsCardinality)
                           SyntaxAnalyser.SpecificRowAmount _ ->
-                            byCardinality Gen.Input.ResultRowsCardinalityMultiple
+                            pure $ classifyResult affectsRows (rowsByCardinality Gen.Input.MultipleResultRowsCardinality)
                           SyntaxAnalyser.UpToRowAmount 0 ->
-                            pure Nothing
+                            pure $ classifyResult affectsRows Nothing
                           SyntaxAnalyser.UpToRowAmount 1 ->
-                            byCardinality Gen.Input.ResultRowsCardinalityOptional
+                            pure $ classifyResult affectsRows (rowsByCardinality Gen.Input.OptionalResultRowsCardinality)
                           SyntaxAnalyser.UpToRowAmount _ ->
-                            byCardinality Gen.Input.ResultRowsCardinalityMultiple
+                            pure $ classifyResult affectsRows (rowsByCardinality Gen.Input.MultipleResultRowsCardinality)
                           SyntaxAnalyser.AnyRowAmount ->
-                            byCardinality Gen.Input.ResultRowsCardinalityMultiple
+                            pure $ classifyResult affectsRows (rowsByCardinality Gen.Input.MultipleResultRowsCardinality)
 
               let interpretedParams =
                     zipWith
@@ -224,6 +231,7 @@ run Params {projectFile} =
                 ( Gen.Input.Query
                     { name = Name.toGenName queryListed.name,
                       srcPath = queryListed.filePath,
+                      identity = False,
                       idempotent = genSigResult.idempotent,
                       params = genSigResult.params,
                       result = genSigResult.result,

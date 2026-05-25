@@ -14,12 +14,12 @@ data Params = Params
   { sigPath :: Path,
     inferredSig :: SignatureFile.Signature,
     inferredParams :: [Gen.Input.Member],
-    inferredResult :: Maybe Gen.Input.ResultRows
+    inferredResult :: Gen.Input.Result
   }
 
 data Result = Result
   { params :: [Gen.Input.Member],
-    result :: Maybe Gen.Input.ResultRows,
+    result :: Gen.Input.Result,
     idempotent :: Bool
   }
 

@@ -52,20 +52,65 @@ jobs:
             exit 1
           fi
 
-  prepare-release:
-    name: Prepare release commit
+  build-linux:
+    name: Build and test (Linux-x64)
     needs: validate
+    uses: ./.github/workflows/build-linux.yaml
+    secrets: inherit
+    with:
+      version: ${{ inputs.version }}
+
+  build-macos-arm64:
+    name: Build and test (macOS-arm64)
+    needs: validate
+    uses: ./.github/workflows/build-macos-arm64.yaml
+    secrets: inherit
+    with:
+      version: ${{ inputs.version }}
+
+  build-macos-x64:
+    name: Build and test (macOS-x64)
+    needs: validate
+    uses: ./.github/workflows/build-macos-x64.yaml
+    secrets: inherit
+    with:
+      version: ${{ inputs.version }}
+
+  build-windows:
+    name: Build and test (Windows-x64)
+    needs: validate
+    uses: ./.github/workflows/build-windows.yaml
+    secrets: inherit
+    with:
+      version: ${{ inputs.version }}
+
+  sdist:
+    name: Build sdist
+    needs: validate
+    uses: ./.github/workflows/sdist.yaml
+    secrets: inherit
+    with:
+      version: ${{ inputs.version }}
+
+  # ── Publish ──────────────────────────────────────────────────────────────────
+  release:
+    name: Create GitHub release
+    needs: [build-linux, build-macos-arm64, build-macos-x64, build-windows, sdist]
     runs-on: ubuntu-latest
-    outputs:
-      commit-sha: ${{ steps.commit.outputs.commit-sha }}
     steps:
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.ref }}
           fetch-depth: 0
 
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v8
+        with:
+          merge-multiple: true
+          path: artifacts
+
       - name: Prepare changelog for release
-        id: commit
+        id: prepare
         shell: bash
         run: |
           set -euo pipefail
@@ -92,67 +137,6 @@ jobs:
 
           echo "commit-sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-  build-linux:
-    name: Build and test (Linux-x64)
-    needs: prepare-release
-    uses: ./.github/workflows/build-linux.yaml
-    secrets: inherit
-    with:
-      version: ${{ inputs.version }}
-      ref: ${{ needs.prepare-release.outputs.commit-sha }}
-
-  build-macos-arm64:
-    name: Build and test (macOS-arm64)
-    needs: prepare-release
-    uses: ./.github/workflows/build-macos-arm64.yaml
-    secrets: inherit
-    with:
-      version: ${{ inputs.version }}
-      ref: ${{ needs.prepare-release.outputs.commit-sha }}
-
-  build-macos-x64:
-    name: Build and test (macOS-x64)
-    needs: prepare-release
-    uses: ./.github/workflows/build-macos-x64.yaml
-    secrets: inherit
-    with:
-      version: ${{ inputs.version }}
-      ref: ${{ needs.prepare-release.outputs.commit-sha }}
-
-  build-windows:
-    name: Build and test (Windows-x64)
-    needs: prepare-release
-    uses: ./.github/workflows/build-windows.yaml
-    secrets: inherit
-    with:
-      version: ${{ inputs.version }}
-      ref: ${{ needs.prepare-release.outputs.commit-sha }}
-
-  sdist:
-    name: Build sdist
-    needs: prepare-release
-    uses: ./.github/workflows/sdist.yaml
-    secrets: inherit
-    with:
-      version: ${{ inputs.version }}
-      ref: ${{ needs.prepare-release.outputs.commit-sha }}
-
-  # ── Publish ──────────────────────────────────────────────────────────────────
-  release:
-    name: Create GitHub release
-    needs: [prepare-release, build-linux, build-macos-arm64, build-macos-x64, build-windows, sdist]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ needs.prepare-release.outputs.commit-sha }}
-
-      - name: Download all build artifacts
-        uses: actions/download-artifact@v8
-        with:
-          merge-multiple: true
-          path: artifacts
-
       - name: Create release and upload artifacts
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -160,7 +144,7 @@ jobs:
         run: |
           gh release create "v${{ inputs.version }}" \
             --title "v${{ inputs.version }}" \
-            --target "${{ needs.prepare-release.outputs.commit-sha }}" \
+            --target "${{ steps.prepare.outputs.commit-sha }}" \
             artifacts/*
 
   # ── Post-release ─────────────────────────────────────────────────────────────

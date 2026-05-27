@@ -12,6 +12,11 @@ on:
           - minor
           - major
         default: patch
+      fast:
+        description: Skip some long-running tests for hotfix releases
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -71,3 +76,4 @@ jobs:
     secrets: inherit
     with:
       version: ${{ needs.compute-version.outputs.version }}
+      fast: ${{ inputs.fast }}

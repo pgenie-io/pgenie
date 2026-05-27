@@ -16,6 +16,11 @@ on:
         type: string
         required: false
         default: ""
+      fast:
+        description: Skip e2e tests for hotfix releases.
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -108,6 +113,7 @@ jobs:
 
   e2e-docker-mode:
     needs: build
+    if: inputs.fast != true
     runs-on: macos-15-intel
 
     steps:

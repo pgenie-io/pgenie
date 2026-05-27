@@ -4,15 +4,25 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version in SemVer format (e.g. 1.2.3)"
+        description: Release version in SemVer format (e.g. 1.2.3)
         required: true
         type: string
+      fast:
+        description: Skip some long-running tests for hotfix releases
+        required: false
+        type: boolean
+        default: false
   workflow_call:
     inputs:
       version:
-        description: "Release version in SemVer format (e.g. 1.2.3)"
+        description: Release version in SemVer format (e.g. 1.2.3)
         required: true
         type: string
+      fast:
+        description: Skip some long-running tests for hotfix releases
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -75,6 +85,7 @@ jobs:
     secrets: inherit
     with:
       version: ${{ inputs.version }}
+      fast: ${{ inputs.fast }}
 
   build-windows:
     name: Build and test (Windows-x64)

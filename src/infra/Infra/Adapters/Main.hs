@@ -132,7 +132,26 @@ instance FsOps (Fx Device Report.Report) where
 
 instance LoadsGen (Fx Device Report.Report) where
   loadGen location maybeHash =
-    runExceptionalIO (const (Gen.load location maybeHash (const (pure ()))))
+    runExceptionalIO
+      ( \dev ->
+          let logInfo _ = pure ()
+              logWarning msg =
+                let report =
+                      Report.Report
+                        { path = [],
+                          message = msg,
+                          suggestion = Nothing,
+                          details =
+                            [ ( "location",
+                                case location of
+                                  Gen.LocationUrl url -> onto url
+                                  Gen.LocationPath path -> onto (Path.toText path)
+                              )
+                            ]
+                        }
+                 in dev.observe (Observing.WarningEmitted report)
+           in Gen.load location maybeHash logInfo logWarning
+      )
       & first
         ( \err ->
             Report.Report

@@ -1,3 +1,9 @@
+# Upcoming
+
+## Fixes
+
+- Prevent garbled terminal output during generator loading upon Dhall warning emission.
+
 # v0.6.1
 
 ## Non-breaking changes

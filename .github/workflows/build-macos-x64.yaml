@@ -73,7 +73,7 @@ jobs:
         uses: ./.github/actions/build
         with:
           version: ${{ inputs.version }}
-          test-integration: true
+          test-integration: ${{ inputs.fast != true }}
 
       - name: Package
         shell: bash

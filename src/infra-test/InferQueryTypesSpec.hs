@@ -172,8 +172,7 @@ spec = describe "inferQueryTypes" do
         selectPostgisTableQuery = "select geom, geog, bbox2d, bbox3d from places"
 
     (postgisQueryTypes, postgisTableQueryTypes) <-
-      withDockerDefaultPlatform "linux/amd64"
-        $ expectRight
+      expectRight
         =<< runWithAnalyserOn postgisImage do
           executeMigration createPostgisExtension
           executeMigration postgisTableMigration
@@ -363,20 +362,6 @@ listPgenieTempDbs connSettings = do
                   fmap (foldMap TextEncoding.decodeUtf8Lenient) (Pq.getvalue res i 0)
   Pq.finish conn
   pure names
-
-withDockerDefaultPlatform :: String -> IO a -> IO a
-withDockerDefaultPlatform platform =
-  bracket acquire restore . const
-  where
-    acquire = do
-      previousPlatform <- lookupEnv "DOCKER_DEFAULT_PLATFORM"
-      setEnv "DOCKER_DEFAULT_PLATFORM" platform
-      pure previousPlatform
-
-    restore previousPlatform =
-      case previousPlatform of
-        Just value -> setEnv "DOCKER_DEFAULT_PLATFORM" value
-        Nothing -> unsetEnv "DOCKER_DEFAULT_PLATFORM"
 
 expectRight :: (Show err) => Either err a -> IO a
 expectRight = \case

@@ -1,3 +1,9 @@
+# Upcoming
+
+## Fixes
+
+- Fix false seq-scan findings when EXPLAIN succeeds with no seq scans (#57 and #58)
+
 # v0.6.2
 
 ## Fixes

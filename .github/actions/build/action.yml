@@ -49,7 +49,7 @@ runs:
       uses: actions/cache/restore@v5
       id: cache
       env:
-        key: ${{ runner.os }}-${{ steps.system-info.outputs.release }}-${{ steps.setup.outputs.cabal-version }}-${{ steps.setup.outputs.ghc-version }}-${{ github.job }}
+        key: ${{ runner.os }}-${{ runner.arch }}-${{ steps.system-info.outputs.release }}-${{ steps.setup.outputs.cabal-version }}-${{ steps.setup.outputs.ghc-version }}-${{ github.job }}
       with:
         path: ${{ steps.setup.outputs.cabal-store }}
         key: ${{ env.key }}-${{ hashFiles('**/plan.json') }}

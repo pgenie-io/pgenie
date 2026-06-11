@@ -18,8 +18,9 @@ jobs:
     uses: ./.github/workflows/check-formatting.yaml
     secrets: inherit
 
-  build-linux:
-    uses: ./.github/workflows/build-linux.yaml
+  build-linux-x64:
+    name: Build and test on Linux-x64
+    uses: ./.github/workflows/build-linux-x64.yaml
     secrets: inherit
 
   build-macos-arm64:
@@ -32,9 +33,9 @@ jobs:
     uses: ./.github/workflows/build-macos-x64.yaml
     secrets: inherit
 
-  build-windows:
+  build-windows-x64:
     name: Build and test on Windows-x64
-    uses: ./.github/workflows/build-windows.yaml
+    uses: ./.github/workflows/build-windows-x64.yaml
     secrets: inherit
 
   sdist:

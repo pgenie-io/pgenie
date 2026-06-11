@@ -62,10 +62,10 @@ jobs:
             exit 1
           fi
 
-  build-linux:
+  build-linux-x64:
     name: Build and test (Linux-x64)
     needs: validate
-    uses: ./.github/workflows/build-linux.yaml
+    uses: ./.github/workflows/build-linux-x64.yaml
     secrets: inherit
     with:
       version: ${{ inputs.version }}
@@ -87,10 +87,10 @@ jobs:
       version: ${{ inputs.version }}
       fast: ${{ inputs.fast }}
 
-  build-windows:
+  build-windows-x64:
     name: Build and test (Windows-x64)
     needs: validate
-    uses: ./.github/workflows/build-windows.yaml
+    uses: ./.github/workflows/build-windows-x64.yaml
     secrets: inherit
     with:
       version: ${{ inputs.version }}
@@ -106,7 +106,7 @@ jobs:
   # ── Publish ──────────────────────────────────────────────────────────────────
   release:
     name: Create GitHub release
-    needs: [build-linux, build-macos-arm64, build-macos-x64, build-windows, sdist]
+    needs: [build-linux-x64, build-macos-arm64, build-macos-x64, build-windows-x64, sdist]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

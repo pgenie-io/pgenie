@@ -144,22 +144,21 @@ run Params {projectFile} =
                   for warnings warn
                   pure queryTypes
 
-              querySeqScanFindings <-
+              maybeExplainFindings <-
                 catchError
                   ( do
                       explainLines <- explainQuery nativeTemplate
                       let findings = SeqScanDetector.detectSeqScans explainLines
-                      pure (map (Name.inSnakeCase queryListed.name,) findings)
+                      pure (Just (map (Name.inSnakeCase queryListed.name,) findings))
                   )
-                  (\_ -> pure [])
+                  (\_ -> pure Nothing)
 
-              let fallbackSeqScanFindings =
-                    inferSeqScanFindingsFromSql nativeTemplate
-                      & map (Name.inSnakeCase queryListed.name,)
-                  effectiveSeqScanFindings =
-                    if null querySeqScanFindings
-                      then fallbackSeqScanFindings
-                      else querySeqScanFindings
+              let effectiveSeqScanFindings =
+                    case maybeExplainFindings of
+                      Just findings -> findings
+                      Nothing ->
+                        inferSeqScanFindingsFromSql nativeTemplate
+                          & map (Name.inSnakeCase queryListed.name,)
 
               result :: Gen.Input.Result <-
                 let rowsByCardinality cardinality =

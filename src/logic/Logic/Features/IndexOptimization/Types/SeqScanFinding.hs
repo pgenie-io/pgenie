@@ -147,6 +147,20 @@ spec = do
           finding.filterCondition `shouldBe` "(active = $1)"
         findings -> expectationFailure $ "Expected 1 finding, got " <> show (length findings)
 
+    it "does not flag a CTE Scan as a sequential scan" do
+      let explainOutput =
+            [ "CTE Scan on inserted  (cost=0.00..0.02 rows=1 width=100)",
+              "  Filter: (status = $1)"
+            ]
+      detectSeqScans explainOutput `shouldBe` []
+
+    it "does not flag a Function Scan as a sequential scan" do
+      let explainOutput =
+            [ "Function Scan on unnest v  (cost=0.00..1.00 rows=100 width=32)",
+              "  Filter: (v = $1)"
+            ]
+      detectSeqScans explainOutput `shouldBe` []
+
   describe "extractFilterColumns" do
     it "extracts single column from simple equality" do
       extractFilterColumns "(format = $1)" `shouldBe` ["format"]

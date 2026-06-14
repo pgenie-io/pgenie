@@ -13,6 +13,7 @@ import Logic.Features.QueryAnalysis.Port
 import Logic.Features.QueryAnalysis.Types.QueryAnalysis
 import Logic.Features.Reporting.Types.Report (Report (..))
 import PGenieGen.Model.Input qualified as Gen.Input
+import System.Info (arch)
 import Test.Hspec
 import TestContainers qualified as Tc
 import TestContainers.Monad qualified as Tc
@@ -148,63 +149,65 @@ spec = describe "inferQueryTypes" do
                  ]
     ltreeTableQueryTypes.mentionedCustomTypes `shouldBe` []
 
-  it "infers PostGIS types from casted queries and table columns" do
-    let postgisImage :: Text
-        postgisImage = "postgis/postgis:18-3.6"
+  it "infers PostGIS types from casted queries and table columns" $
+    if arch /= "x86_64"
+      then pendingWith "PostGIS Docker images are not available for non-x86_64 architectures"
+      else do
+        let postgisImage :: Text
+            postgisImage = "postgis/postgis:18-3.6"
 
-        createPostgisExtension :: Text
-        createPostgisExtension = "create extension if not exists postgis;"
+            createPostgisExtension :: Text
+            createPostgisExtension = "create extension if not exists postgis;"
 
-        postgisQuery :: Text
-        postgisQuery =
-          "select $1::geometry as geom, $2::geography as geog, $3::box2d as bbox2d, $4::box3d as bbox3d, $5::geometry[] as geom_array"
+            postgisQuery :: Text
+            postgisQuery =
+              "select $1::geometry as geom, $2::geography as geog, $3::box2d as bbox2d, $4::box3d as bbox3d, $5::geometry[] as geom_array"
 
-        postgisTableMigration :: Text
-        postgisTableMigration =
-          "create table places (\
-          \  geom geometry not null,\
-          \  geog geography null,\
-          \  bbox2d box2d null,\
-          \  bbox3d box3d null\
-          \);"
+            postgisTableMigration :: Text
+            postgisTableMigration =
+              "create table places (\
+              \  geom geometry not null,\
+              \  geog geography null,\
+              \  bbox2d box2d null,\
+              \  bbox3d box3d null\
+              \);"
 
-        selectPostgisTableQuery :: Text
-        selectPostgisTableQuery = "select geom, geog, bbox2d, bbox3d from places"
+            selectPostgisTableQuery :: Text
+            selectPostgisTableQuery = "select geom, geog, bbox2d, bbox3d from places"
 
-    (postgisQueryTypes, postgisTableQueryTypes) <-
-      withDockerDefaultPlatform "linux/amd64"
-        $ expectRight
-        =<< runWithAnalyserOn postgisImage do
-          executeMigration createPostgisExtension
-          executeMigration postgisTableMigration
-          postgisQueryTypes <- fst <$> inferQueryTypes postgisQuery
-          postgisTableQueryTypes <- fst <$> inferQueryTypes selectPostgisTableQuery
-          pure (postgisQueryTypes, postgisTableQueryTypes)
+        (postgisQueryTypes, postgisTableQueryTypes) <-
+          expectRight
+            =<< runWithAnalyserOn postgisImage do
+              executeMigration createPostgisExtension
+              executeMigration postgisTableMigration
+              postgisQueryTypes <- fst <$> inferQueryTypes postgisQuery
+              postgisTableQueryTypes <- fst <$> inferQueryTypes selectPostgisTableQuery
+              pure (postgisQueryTypes, postgisTableQueryTypes)
 
-    map (\param -> (param.isNullable, param.type_)) postgisQueryTypes.params
-      `shouldBe` [ (True, primitiveValue Gen.Input.GeometryPrimitive),
-                   (True, primitiveValue Gen.Input.GeographyPrimitive),
-                   (True, primitiveValue Gen.Input.Box2DPrimitive),
-                   (True, primitiveValue Gen.Input.Box3DPrimitive),
-                   (True, arrayValue 1 Gen.Input.GeometryPrimitive)
-                 ]
-    map (\column -> (column.pgName, column.isNullable, column.value)) postgisQueryTypes.resultColumns
-      `shouldBe` [ ("geom", True, primitiveValue Gen.Input.GeometryPrimitive),
-                   ("geog", True, primitiveValue Gen.Input.GeographyPrimitive),
-                   ("bbox2d", True, primitiveValue Gen.Input.Box2DPrimitive),
-                   ("bbox3d", True, primitiveValue Gen.Input.Box3DPrimitive),
-                   ("geom_array", True, arrayValue 1 Gen.Input.GeometryPrimitive)
-                 ]
-    postgisQueryTypes.mentionedCustomTypes `shouldBe` []
+        map (\param -> (param.isNullable, param.type_)) postgisQueryTypes.params
+          `shouldBe` [ (True, primitiveValue Gen.Input.GeometryPrimitive),
+                       (True, primitiveValue Gen.Input.GeographyPrimitive),
+                       (True, primitiveValue Gen.Input.Box2DPrimitive),
+                       (True, primitiveValue Gen.Input.Box3DPrimitive),
+                       (True, arrayValue 1 Gen.Input.GeometryPrimitive)
+                     ]
+        map (\column -> (column.pgName, column.isNullable, column.value)) postgisQueryTypes.resultColumns
+          `shouldBe` [ ("geom", True, primitiveValue Gen.Input.GeometryPrimitive),
+                       ("geog", True, primitiveValue Gen.Input.GeographyPrimitive),
+                       ("bbox2d", True, primitiveValue Gen.Input.Box2DPrimitive),
+                       ("bbox3d", True, primitiveValue Gen.Input.Box3DPrimitive),
+                       ("geom_array", True, arrayValue 1 Gen.Input.GeometryPrimitive)
+                     ]
+        postgisQueryTypes.mentionedCustomTypes `shouldBe` []
 
-    postgisTableQueryTypes.params `shouldBe` []
-    map (\column -> (column.pgName, column.isNullable, column.value)) postgisTableQueryTypes.resultColumns
-      `shouldBe` [ ("geom", False, primitiveValue Gen.Input.GeometryPrimitive),
-                   ("geog", True, primitiveValue Gen.Input.GeographyPrimitive),
-                   ("bbox2d", True, primitiveValue Gen.Input.Box2DPrimitive),
-                   ("bbox3d", True, primitiveValue Gen.Input.Box3DPrimitive)
-                 ]
-    postgisTableQueryTypes.mentionedCustomTypes `shouldBe` []
+        postgisTableQueryTypes.params `shouldBe` []
+        map (\column -> (column.pgName, column.isNullable, column.value)) postgisTableQueryTypes.resultColumns
+          `shouldBe` [ ("geom", False, primitiveValue Gen.Input.GeometryPrimitive),
+                       ("geog", True, primitiveValue Gen.Input.GeographyPrimitive),
+                       ("bbox2d", True, primitiveValue Gen.Input.Box2DPrimitive),
+                       ("bbox3d", True, primitiveValue Gen.Input.Box3DPrimitive)
+                     ]
+        postgisTableQueryTypes.mentionedCustomTypes `shouldBe` []
 
   describe "running-server mode" do
     it "succeeds with a matching server version" do
@@ -363,20 +366,6 @@ listPgenieTempDbs connSettings = do
                   fmap (foldMap TextEncoding.decodeUtf8Lenient) (Pq.getvalue res i 0)
   Pq.finish conn
   pure names
-
-withDockerDefaultPlatform :: String -> IO a -> IO a
-withDockerDefaultPlatform platform =
-  bracket acquire restore . const
-  where
-    acquire = do
-      previousPlatform <- lookupEnv "DOCKER_DEFAULT_PLATFORM"
-      setEnv "DOCKER_DEFAULT_PLATFORM" platform
-      pure previousPlatform
-
-    restore previousPlatform =
-      case previousPlatform of
-        Just value -> setEnv "DOCKER_DEFAULT_PLATFORM" value
-        Nothing -> unsetEnv "DOCKER_DEFAULT_PLATFORM"
 
 expectRight :: (Show err) => Either err a -> IO a
 expectRight = \case

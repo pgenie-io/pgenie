@@ -28,6 +28,11 @@ source-repository-package
   tag: 2331f0e29582c0580728110912548f06f406c469
   subdir: dhall
 
+source-repository-package
+  type: git
+  location: https://github.com/nikita-volkov/testcontainers-hs
+  tag: 0955e63d5fa3fe95bc8002dbc230bb3cd3ea5c71
+
 constraints:
   autoexporter >=2.0.0.13 && <3,
   base >=4.11 && <5,

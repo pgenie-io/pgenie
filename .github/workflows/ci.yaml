@@ -23,6 +23,11 @@ jobs:
     uses: ./.github/workflows/build-linux-x64.yaml
     secrets: inherit
 
+  build-linux-arm64:
+    name: Build and test on Linux-arm64
+    uses: ./.github/workflows/build-linux-arm64.yaml
+    secrets: inherit
+
   build-macos-arm64:
     name: Build and test on macOS-arm64
     uses: ./.github/workflows/build-macos-arm64.yaml

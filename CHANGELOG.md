@@ -1,3 +1,10 @@
+# Upcoming
+
+## Non-breaking changes
+
+- Add support for the arm64 architecture in docker execution mode
+- Add support for Windows in docker execution mode
+
 # v0.6.4
 
 ## Fixes

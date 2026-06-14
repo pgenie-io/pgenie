@@ -40,8 +40,7 @@ jobs:
         uses: ./.github/actions/build
         with:
           version: ${{ inputs.version }}
-          # The postgis images lack support of the arm architecture leading to errors in the integration tests
-          test-integration: false
+          test-integration: true
 
       - name: Package
         shell: bash

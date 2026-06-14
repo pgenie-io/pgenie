@@ -226,6 +226,7 @@ test-suite infra-test
     hspec-discover:hspec-discover
 
   build-depends:
+    base,
     fx,
     hspec,
     pgenie-gen,

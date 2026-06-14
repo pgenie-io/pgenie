@@ -49,7 +49,10 @@ run params =
               ( Report
                   []
                   "Sequential scan detected"
-                  (Just "Run 'manage-indexes' to generate index migration")
+                  ( if null finding.suggestedIndexColumns
+                      then Nothing
+                      else Just "Run 'manage-indexes' to generate index migration"
+                  )
                   [ ("query", queryName),
                     ("table", finding.tableName),
                     ("columns", Text.intercalate ", " finding.suggestedIndexColumns)

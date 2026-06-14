@@ -1,3 +1,9 @@
+# Upcoming
+
+## Fixes
+
+- Remove an unactionable suggestion (#61)
+
 # v0.6.3
 
 ## Fixes

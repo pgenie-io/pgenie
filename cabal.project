@@ -25,7 +25,7 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/nikita-volkov/dhall-haskell
-  tag: 2331f0e29582c0580728110912548f06f406c469
+  tag: 2e0e971ca1dcde0efdc05b4632c1067e0c599950
   subdir: dhall
 
 source-repository-package

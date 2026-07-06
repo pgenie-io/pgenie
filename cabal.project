@@ -31,7 +31,7 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/nikita-volkov/testcontainers-hs
-  tag: 0955e63d5fa3fe95bc8002dbc230bb3cd3ea5c71
+  tag: b9401e32bb5de483638d9482b58b684dc40c6846
 
 constraints:
   autoexporter >=2.0.0.13 && <3,

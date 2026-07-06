@@ -1,3 +1,9 @@
+# Upcoming
+
+## Non-breaking changes
+
+- Support psql-style `:arg` parameter syntax as an alternative to `$arg` (#64)
+
 # v0.6.6
 
 ## Fixes

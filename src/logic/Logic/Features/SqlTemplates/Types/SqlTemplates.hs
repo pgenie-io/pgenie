@@ -55,7 +55,7 @@ instance Qc.Arbitrary Segment where
       [ Param <$> arbitrary,
         pure Newline,
         LineWhitespace . onfrom <$> Qc.listOf1 (Qc.elements [' ', '\t']),
-        NonWhitespace . onfrom <$> Qc.listOf1 (Qc.arbitrary `Qc.suchThat` (\c -> not (isSpace c) && c /= '$' && c /= '\'' && c /= '"')),
+        NonWhitespace . onfrom <$> Qc.listOf1 (Qc.arbitrary `Qc.suchThat` (\c -> not (isSpace c) && c /= '$' && c /= '\'' && c /= '"' && c /= ':')),
         SingleQuotedLiteral . onfrom <$> Qc.listOf (Qc.arbitrary `Qc.suchThat` (/= '\'')),
         DoubleQuotedLiteral . onfrom <$> Qc.listOf (Qc.arbitrary `Qc.suchThat` (/= '"'))
       ]
@@ -171,26 +171,67 @@ toGenParamNames :: SqlTemplate -> [Name.Name]
 toGenParamNames (SqlTemplate segments) =
   nub [name | Param name <- segments]
 
+data ParamStyle
+  = DollarParamStyle
+  | ColonParamStyle
+  deriving stock (Eq, Show)
+
 megaparsecOf :: Megaparsec.Parsec Void Text SqlTemplate
-megaparsecOf =
-  normalizeParsed . SqlTemplate <$> Megaparsec.many segmentParser
+megaparsecOf = do
+  segmentsAndStyles <- Megaparsec.many segmentParser
+  case nub (mapMaybe snd segmentsAndStyles) of
+    _ : _ : _ ->
+      fail "SQL template mixes `$name` and `:name` parameter styles. Use only one style per template."
+    _ ->
+      pure ()
+  pure (normalizeParsed (SqlTemplate (fmap fst segmentsAndStyles)))
   where
+    segmentParser :: Megaparsec.Parsec Void Text (Segment, Maybe ParamStyle)
     segmentParser =
       Megaparsec.choice
-        [ paramParser,
-          singleQuotedLiteralParser,
-          doubleQuotedLiteralParser,
-          newlineParser,
-          lineWhitespaceParser,
-          nonWhitespaceParser
+        [ (,Just DollarParamStyle) <$> dollarParamParser,
+          (,Nothing) <$> castOperatorParser,
+          (,Just ColonParamStyle) <$> colonParamParser,
+          (,Nothing) <$> singleQuotedLiteralParser,
+          (,Nothing) <$> doubleQuotedLiteralParser,
+          (,Nothing) <$> newlineParser,
+          (,Nothing) <$> lineWhitespaceParser,
+          (,Nothing) <$> literalColonParser,
+          (,Nothing) <$> nonWhitespaceParser
         ]
 
-    paramParser =
+    dollarParamParser =
       Megaparsec.label "dollar-parameter" do
         Megaparsec.try do
           Megaparsec.char '$'
         name <- Name.megaparsecOf
         pure (Param name)
+
+    -- `::` must never be treated as the start of a colon-parameter (in either
+    -- direction), so any two adjacent colons are consumed together as a
+    -- literal unit before a lone `:` ever gets a chance to match. This also
+    -- protects the second colon of a `::` pair from being mistaken for the
+    -- start of a fresh param, since it's never reached on its own.
+    castOperatorParser =
+      Megaparsec.label "cast-operator" do
+        Megaparsec.try do
+          Megaparsec.char ':'
+          Megaparsec.char ':'
+        pure (NonWhitespace "::")
+
+    colonParamParser =
+      Megaparsec.label "colon-parameter" do
+        name <- Megaparsec.try do
+          Megaparsec.char ':'
+          Name.megaparsecOf
+        pure (Param name)
+
+    -- A `:` that isn't part of a `::` cast and isn't followed by a valid
+    -- identifier (e.g. array-slice syntax like `arr[1:2]`) falls back to
+    -- literal text rather than failing the parse.
+    literalColonParser = do
+      Megaparsec.char ':'
+      pure (NonWhitespace ":")
 
     newlineParser =
       Megaparsec.label "newline" do
@@ -229,7 +270,7 @@ megaparsecOf =
       pure (DoubleQuotedLiteral content)
 
     nonWhitespaceParser = do
-      text <- Megaparsec.takeWhile1P (Just "non-whitespace") (\c -> not (isSpace c) && c /= '$' && c /= '\'' && c /= '"')
+      text <- Megaparsec.takeWhile1P (Just "non-whitespace") (\c -> not (isSpace c) && c /= '$' && c /= '\'' && c /= '"' && c /= ':')
       pure (NonWhitespace text)
 
 normalizeParsed :: SqlTemplate -> SqlTemplate
@@ -432,6 +473,58 @@ spec = do
           let rendered = render True (\_ _ -> "?") template
           rendered `shouldBe` "SELECT  \t  1"
 
+    it "parses a query with a colon-style parameter" do
+      let input = "SELECT :user_id"
+      let result = Megaparsec.parse megaparsecOf "" input
+      case result of
+        Left err -> expectationFailure ("Failed to parse query with colon parameter: " <> Megaparsec.errorBundlePretty err)
+        Right template -> do
+          let rendered = render True (\_ i -> "$" <> to @TextBuilder (Text.pack (show (i + 1)))) template
+          rendered `shouldBe` "SELECT $1"
+
+    it "handles repeated colon-style params with same index" do
+      let input = "SELECT :user_id, :user_id"
+      let result = Megaparsec.parse megaparsecOf "" input
+      case result of
+        Left err -> expectationFailure ("Failed to parse repeated colon parameter: " <> Megaparsec.errorBundlePretty err)
+        Right template -> do
+          let rendered = render True (\_ i -> "$" <> to @TextBuilder (Text.pack (show (i + 1)))) template
+          rendered `shouldBe` "SELECT $1, $1"
+
+    it "does not treat a `::` cast operator as a parameter" do
+      let input = "SELECT x::text"
+      let result = Megaparsec.parse megaparsecOf "" input
+      case result of
+        Left err -> expectationFailure ("Failed to parse cast operator: " <> Megaparsec.errorBundlePretty err)
+        Right template -> do
+          let rendered = render True (\_ _ -> "PARAM") template
+          rendered `shouldBe` "SELECT x::text"
+
+    it "does not treat chained `::` casts as parameters" do
+      let input = "SELECT x::int::text"
+      let result = Megaparsec.parse megaparsecOf "" input
+      case result of
+        Left err -> expectationFailure ("Failed to parse chained cast operators: " <> Megaparsec.errorBundlePretty err)
+        Right template -> do
+          let rendered = render True (\_ _ -> "PARAM") template
+          rendered `shouldBe` "SELECT x::int::text"
+
+    it "treats a colon not followed by a valid identifier as literal text" do
+      let input = "SELECT arr[1:2]"
+      let result = Megaparsec.parse megaparsecOf "" input
+      case result of
+        Left err -> expectationFailure ("Failed to parse array-slice syntax: " <> Megaparsec.errorBundlePretty err)
+        Right template -> do
+          let rendered = render True (\_ _ -> "PARAM") template
+          rendered `shouldBe` "SELECT arr[1:2]"
+
+    it "rejects a template mixing dollar-style and colon-style parameters" do
+      let input = "SELECT * FROM users WHERE id = $user_id AND name = :user_name"
+      let result = Megaparsec.parse megaparsecOf "" input
+      case result of
+        Left _ -> pure ()
+        Right _ -> expectationFailure "Expected parsing to fail for mixed parameter styles"
+
   describe "normalize" do
     it "removes leading whitespace" do
       let input = "  SELECT 1"
@@ -521,6 +614,25 @@ spec = do
               ( render
                   True
                   (\name _ -> "$" <> to name)
+                  sqlTemplate
+              )
+          parsed =
+            Megaparsec.parse megaparsecOf "" rendered
+       in case parsed of
+            Left err ->
+              Qc.counterexample
+                ("Failed to parse rendered template:\n" <> Megaparsec.errorBundlePretty err)
+                False
+            Right parsedTemplate ->
+              Qc.counterexample
+                ("Rendered template:\n" <> to rendered)
+                (sqlTemplate Qc.=== parsedTemplate)
+    prop "parse and render idempotently with colon-style params" \(sqlTemplate :: SqlTemplate) ->
+      let rendered =
+            to
+              ( render
+                  True
+                  (\name _ -> ":" <> to name)
                   sqlTemplate
               )
           parsed =

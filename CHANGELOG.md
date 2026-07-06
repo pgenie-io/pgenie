@@ -1,3 +1,9 @@
+# Upcoming
+
+## Fixes
+
+- Text/replace issues in codegens (#62)
+
 # v0.6.5
 
 ## Non-breaking changes

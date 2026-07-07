@@ -11,6 +11,7 @@
 !/LICENSE
 !/README.md
 !/CHANGELOG.md
+!/AGENTS.md
 !/*.cabal
 !/cabal.project
 !/cabal.project.freeze

@@ -1,8 +1,8 @@
 module Logic (spec) where
 
-import Logic.Features qualified as Features
+import Logic.Domain qualified as Domain
 import Test.Hspec
 
 spec :: Spec
 spec = do
-  describe "Features" Features.spec
+  describe "Domain" Domain.spec

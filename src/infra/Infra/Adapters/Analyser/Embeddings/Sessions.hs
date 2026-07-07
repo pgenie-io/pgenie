@@ -3,9 +3,9 @@ module Infra.Adapters.Analyser.Embeddings.Sessions where
 
 import Data.Vector qualified as Vector
 import Infra.Adapters.Analyser.Sessions qualified as Sessions
-import Logic.Features.Naming.Types.Name qualified as Name
-import Logic.Features.QueryAnalysis.Types.QueryAnalysis (InferredParam (..), InferredQueryTypes (..))
-import Logic.Features.Reporting.Types.Report qualified as Report
+import Logic.Domain.Name qualified as Name
+import Logic.Domain.QueryAnalysis (InferredParam (..), InferredQueryTypes (..))
+import Logic.Domain.Report qualified as Report
 import PGenieGen.Model.Input qualified as Gen.Input
 import Utils.Prelude
 

@@ -4,9 +4,9 @@ module Ui
 where
 
 import Interpreters.Observing qualified as Observing
-import Logic.Features.AnalyseProject.Workflows.AnalyseProject qualified as AnalyseProject
-import Logic.Features.GeneratorRuntime.Workflows.GenerateCode qualified as GenerateCode
-import Logic.Features.ProjectModel.Types.ProjectModel qualified as ProjectFile
+import Logic.Domain.ProjectFile qualified as ProjectFile
+import Logic.Procedures.AnalyseProject qualified as AnalyseProject
+import Logic.Procedures.GenerateCode qualified as GenerateCode
 import Ui.Commands qualified as Commands
 import Ui.Display qualified as Display
 import Ui.Framework qualified as Framework

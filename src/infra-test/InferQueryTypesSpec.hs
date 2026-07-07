@@ -8,10 +8,10 @@ import Data.Text.Encoding qualified as TextEncoding
 import Database.PostgreSQL.LibPQ qualified as Pq
 import Fx
 import Infra.Adapters.Analyser qualified as Analyser
-import Logic.Features.Migrations.Port
-import Logic.Features.QueryAnalysis.Port
-import Logic.Features.QueryAnalysis.Types.QueryAnalysis
-import Logic.Features.Reporting.Types.Report (Report (..))
+import Logic.Capabilities.Migrations
+import Logic.Capabilities.QueryAnalysis
+import Logic.Domain.QueryAnalysis
+import Logic.Domain.Report (Report (..))
 import PGenieGen.Model.Input qualified as Gen.Input
 import System.Info (arch)
 import Test.Hspec

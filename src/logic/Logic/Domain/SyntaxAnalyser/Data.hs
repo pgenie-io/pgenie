@@ -1,0 +1,19 @@
+module Logic.Domain.SyntaxAnalyser.Data
+  ( RowAmount (..),
+    QuerySyntaxAnalysis (..),
+  )
+where
+
+import Utils.Prelude
+
+data RowAmount
+  = SpecificRowAmount Int
+  | UpToRowAmount Int
+  | AnyRowAmount
+  deriving stock (Show, Eq)
+
+data QuerySyntaxAnalysis = QuerySyntaxAnalysis
+  { affectsRows :: Bool,
+    resultRowAmount :: RowAmount
+  }
+  deriving stock (Show, Eq)

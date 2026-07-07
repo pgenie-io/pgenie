@@ -10,15 +10,15 @@ where
 
 import Control.Monad.Parallel qualified as MonadParallel
 import Data.Text qualified as Text
-import Logic.Features.Fs.Port (FsOps (..))
-import Logic.Features.GeneratorRuntime.Port (LoadsGen (..))
-import Logic.Features.IndexCatalog.Port (LoadsIndexes (..))
-import Logic.Features.Migrations.Port (ExecutesMigrations (..))
-import Logic.Features.QueryAnalysis.Port (InfersQueryTypes (..))
-import Logic.Features.Reporting.Port (Warns (..))
-import Logic.Features.Reporting.Types.Report qualified as Report
-import Logic.Features.SeqScanExplain.Port (ExplainsQuery (..))
-import Logic.Features.Staging.Port (Stages (..))
+import Logic.Capabilities.Fs (FsOps (..))
+import Logic.Capabilities.GeneratorRuntime (LoadsGen (..))
+import Logic.Capabilities.IndexCatalog (LoadsIndexes (..))
+import Logic.Capabilities.Migrations (ExecutesMigrations (..))
+import Logic.Capabilities.QueryAnalysis (InfersQueryTypes (..))
+import Logic.Capabilities.Reporting (Warns (..))
+import Logic.Capabilities.SeqScanExplain (ExplainsQuery (..))
+import Logic.Capabilities.Staging (Stages (..))
+import Logic.Domain.Report qualified as Report
 import Utils.Prelude hiding (readFile, writeFile)
 
 -- | Observations produced while executing capability-based logic.

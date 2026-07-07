@@ -6,8 +6,8 @@
 -- for using the application as a source of analysis data.
 module Ui.Commands.Analyse (analyse) where
 
-import Logic.Features.Analyse.Workflows.Analyse qualified as Analyse
-import Logic.Features.ProjectModel.Types.ProjectModel qualified as ProjectFile
+import Logic.Domain.ProjectFile qualified as ProjectFile
+import Logic.Procedures.Analyse qualified as Analyse
 import Options.Applicative qualified as Opt
 import Ui.Framework
 import Utils.Prelude

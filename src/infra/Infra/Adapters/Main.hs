@@ -11,14 +11,14 @@ import Data.Text.IO qualified as Text
 import Fx
 import Infra.Adapters.Analyser qualified as Analyser
 import Interpreters.Observing qualified as Observing
-import Logic.Features.Fs.Port (FsOps (..))
-import Logic.Features.GeneratorRuntime.Port (LoadsGen (..))
-import Logic.Features.IndexCatalog.Port (LoadsIndexes (..))
-import Logic.Features.Migrations.Port (ExecutesMigrations (..))
-import Logic.Features.ProjectModel.Types.ProjectModel qualified as ProjectFile
-import Logic.Features.QueryAnalysis.Port (InfersQueryTypes (..))
-import Logic.Features.Reporting.Types.Report qualified as Report
-import Logic.Features.SeqScanExplain.Port (ExplainsQuery (..))
+import Logic.Capabilities.Fs (FsOps (..))
+import Logic.Capabilities.GeneratorRuntime (LoadsGen (..))
+import Logic.Capabilities.IndexCatalog (LoadsIndexes (..))
+import Logic.Capabilities.Migrations (ExecutesMigrations (..))
+import Logic.Capabilities.QueryAnalysis (InfersQueryTypes (..))
+import Logic.Capabilities.SeqScanExplain (ExplainsQuery (..))
+import Logic.Domain.ProjectFile qualified as ProjectFile
+import Logic.Domain.Report qualified as Report
 import PGenieGen qualified as Gen
 import System.Directory qualified as Directory
 import System.Info qualified as Info

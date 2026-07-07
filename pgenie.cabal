@@ -140,6 +140,15 @@ library logic
   hs-source-dirs: src/logic/
   exposed-modules:
     Logic
+    Logic.Capabilities
+    Logic.Capabilities.Fs
+    Logic.Capabilities.GeneratorRuntime
+    Logic.Capabilities.IndexCatalog
+    Logic.Capabilities.Migrations
+    Logic.Capabilities.QueryAnalysis
+    Logic.Capabilities.Reporting
+    Logic.Capabilities.SeqScanExplain
+    Logic.Capabilities.Staging
     Logic.Domain
     Logic.Domain.CustomTypeSignature
     Logic.Domain.GeneratorHashes
@@ -152,15 +161,6 @@ library logic
     Logic.Domain.SeqScanFinding
     Logic.Domain.SqlTemplate
     Logic.Domain.SyntaxAnalyser
-    Logic.Capabilities
-    Logic.Capabilities.Fs
-    Logic.Capabilities.GeneratorRuntime
-    Logic.Capabilities.IndexCatalog
-    Logic.Capabilities.Migrations
-    Logic.Capabilities.QueryAnalysis
-    Logic.Capabilities.Reporting
-    Logic.Capabilities.SeqScanExplain
-    Logic.Capabilities.Staging
     Logic.Procedures.Analyse
     Logic.Procedures.AnalyseProject
     Logic.Procedures.Generate

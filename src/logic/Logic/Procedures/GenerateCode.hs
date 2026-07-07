@@ -72,17 +72,8 @@ run Params {projectFile, project} =
           stage "Compiling" 0 do
             let (compileFn, genUrl, newHash) = compileFnWithHash
                 output = compileFn project
-            for_ output.warnings \genReport ->
-              warn
-                ( Report
-                    { path = genReport.path,
-                      message = genReport.message,
-                      suggestion = Nothing,
-                      details = []
-                    }
-                )
-            case output.result of
-              Gen.Output.ErrResult report ->
+            case output of
+              Gen.Output.ErrOutput report ->
                 throwError
                   ( Report
                       report.path
@@ -90,7 +81,16 @@ run Params {projectFile, project} =
                       Nothing
                       []
                   )
-              Gen.Output.OkResult generatedFiles -> do
+              Gen.Output.OkOutput Gen.Output.OutputOk {warnings, value = generatedFiles} -> do
+                for_ warnings \genReport ->
+                  warn
+                    ( Report
+                        { path = genReport.path,
+                          message = genReport.message,
+                          suggestion = Nothing,
+                          details = []
+                        }
+                    )
                 artifactPath <- case Path.maybeFromText name of
                   Nothing ->
                     throwError
@@ -106,7 +106,7 @@ run Params {projectFile, project} =
                   let modifiedPath = artifactPath <> file.path
                   writeFile modifiedPath file.content
                   pure modifiedPath
-                pure (Artifact name output.warnings generatedFilePaths, (genUrl, newHash))
+                pure (Artifact name warnings generatedFilePaths, (genUrl, newHash))
 
     let (artifacts, hashPairs) = unzip artifactsWithHashes
         updatedHashes = Map.union (Map.fromList hashPairs) existingHashes
@@ -181,7 +181,7 @@ spec = do
     it "emits generator warnings on success" do
       let warning = Gen.Output.Report {path = ["unit", "foo"], message = "Unsupported unit skipped"}
           genReport = Report {path = ["unit", "foo"], message = "Unsupported unit skipped", suggestion = Nothing, details = []}
-          gen = stubGen warning (Gen.Output.OkResult [])
+          gen = stubGen (Gen.Output.OkOutput Gen.Output.OutputOk {warnings = [warning], value = []})
           projectFile =
             ProjectFile.ProjectFile
               { space = "space",
@@ -204,11 +204,9 @@ spec = do
       result `shouldBe` Right Result {artifacts = [Artifact {name = "my_artifact", warnings = [warning], paths = []}]}
       state.warnings `shouldBe` [genReport]
 
-    it "emits generator warnings before failure and omits the warnings blob" do
-      let warning = Gen.Output.Report {path = ["unit", "bar"], message = "Unsupported unit skipped"}
-          genReport = Report {path = ["unit", "bar"], message = "Unsupported unit skipped", suggestion = Nothing, details = []}
-          errorReport = Gen.Output.Report {path = ["err"], message = "boom"}
-          gen = stubGen warning (Gen.Output.ErrResult errorReport)
+    it "fails without emitting warnings when the generator errors" do
+      let errorReport = Gen.Output.Report {path = ["err"], message = "boom"}
+          gen = stubGen (Gen.Output.ErrOutput errorReport)
           projectFile =
             ProjectFile.ProjectFile
               { space = "space",
@@ -229,7 +227,7 @@ spec = do
           params = Params {projectFile, project}
       (result, state) <- runTestM gen (run params)
       result `shouldBe` Left (Report {path = ["err"], message = "boom", suggestion = Nothing, details = []})
-      state.warnings `shouldBe` [genReport]
+      state.warnings `shouldBe` []
 
-stubGen :: Gen.Output.Report -> Gen.Output.Result -> Gen.Gen
-stubGen warning result _config = Right (\_project -> Gen.Output.Output {warnings = [warning], result = result})
+stubGen :: Gen.Output.Output -> Gen.Gen
+stubGen output _config = Right (const output)

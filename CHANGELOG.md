@@ -1,4 +1,4 @@
-# Upcoming
+# v0.7.1
 
 ## Fixes
 

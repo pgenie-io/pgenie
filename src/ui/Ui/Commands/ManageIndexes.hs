@@ -2,8 +2,8 @@
 -- indexes and remove redundant or excessive ones.
 module Ui.Commands.ManageIndexes (manageIndexes) where
 
-import Logic.Features.ManageIndexes.Workflows.ManageIndexes qualified as ManageIndexes
-import Logic.Features.ProjectModel.Types.ProjectModel qualified as ProjectFile
+import Logic.Domain.ProjectFile qualified as ProjectFile
+import Logic.Procedures.ManageIndexes qualified as ManageIndexes
 import Options.Applicative qualified as Opt
 import Ui.Framework
 import Utils.Prelude

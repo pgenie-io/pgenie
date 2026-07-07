@@ -5,7 +5,7 @@ Study the contents of the `cabal.project` file. In the `source-repository-packag
 # Instructions
 
 - Avoid polluting the top namespace with definitions that could be placed in `where` blocks. Alternatively introduce helper modules if the definitions are more general. Place the helper modules in a deeper namespace of the current module, e.g. `A.B.Helper` for `A.B`.
-- Keep logic tests in the same hierarchy as the production code: use `Logic.spec` as the root test entry point, group feature specs under `Logic.Features.spec`, group workflow specs under `Logic.Workflows.spec`, and keep leaf specs next to the code they exercise.
+- Keep logic tests in the same hierarchy as the production code: use `Logic.spec` as the root test entry point, group domain specs under `Logic.Domain.spec`, and keep leaf specs next to the code they exercise.
 
 # Changelog management
 

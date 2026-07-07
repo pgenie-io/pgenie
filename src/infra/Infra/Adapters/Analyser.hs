@@ -22,11 +22,11 @@ import Infra.Adapters.Analyser.Scopes.Testcontainers qualified
 import Infra.Adapters.Analyser.Sessions qualified as Sessions
 import Infra.Adapters.Analyser.Sessions.Procedures.GetIndexes qualified as GetIndexes
 import Interpreters.Observing qualified as Observing
-import Logic.Features.IndexCatalog.Port (LoadsIndexes (..))
-import Logic.Features.Migrations.Port (ExecutesMigrations (..))
-import Logic.Features.QueryAnalysis.Port (InfersQueryTypes (..))
-import Logic.Features.Reporting.Types.Report qualified as Report
-import Logic.Features.SeqScanExplain.Port (ExplainsQuery (..))
+import Logic.Capabilities.IndexCatalog (LoadsIndexes (..))
+import Logic.Capabilities.Migrations (ExecutesMigrations (..))
+import Logic.Capabilities.QueryAnalysis (InfersQueryTypes (..))
+import Logic.Capabilities.SeqScanExplain (ExplainsQuery (..))
+import Logic.Domain.Report qualified as Report
 import TestcontainersPostgresql qualified
 import Utils.Prelude
 import Utils.Text qualified

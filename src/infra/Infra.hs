@@ -8,8 +8,8 @@ import Data.Text.IO qualified as TextIO
 import Fx
 import Infra.Adapters.Main qualified as MainAdapter
 import Interpreters.Observing qualified as Observing
-import Logic.Features.ProjectModel.Types.ProjectModel qualified as ProjectFile
-import Logic.Features.Reporting.Types.Report qualified as Report
+import Logic.Domain.ProjectFile qualified as ProjectFile
+import Logic.Domain.Report qualified as Report
 import System.Exit qualified as Exit
 import Utils.Prelude
 

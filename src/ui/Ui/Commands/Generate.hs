@@ -3,8 +3,8 @@
 -- Forces the intended use of the application. The user has no option not to generate the signature files.
 module Ui.Commands.Generate (generate) where
 
-import Logic.Features.Generate.Workflows.Generate qualified as Generate
-import Logic.Features.ProjectModel.Types.ProjectModel qualified as ProjectFile
+import Logic.Domain.ProjectFile qualified as ProjectFile
+import Logic.Procedures.Generate qualified as Generate
 import Options.Applicative qualified as Opt
 import Ui.Framework
 import Utils.Prelude

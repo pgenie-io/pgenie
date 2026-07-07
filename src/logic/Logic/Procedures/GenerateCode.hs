@@ -156,7 +156,7 @@ instance Warns TestM where
         )
 
 instance FsOps TestM where
-  readFile _ = throwError (Report [] "readFile not implemented in tests" Nothing [])
+  readFile _ = throwError "readFile not implemented in tests"
   writeFile path content = TestM do
     env <- ask
     liftIO

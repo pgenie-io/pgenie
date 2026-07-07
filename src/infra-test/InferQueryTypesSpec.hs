@@ -244,13 +244,7 @@ spec = describe "inferQueryTypes" do
         let url = serverConnSettings host port
         _ <- runWithAnalyserViaUrl url 18 do
           -- Deliberate failure after the temp DB has been created.
-          throwError
-            Report
-              { path = [],
-                message = "deliberate test failure",
-                suggestion = Nothing,
-                details = []
-              }
+          throwError "deliberate test failure"
         remaining <- listPgenieTempDbs url
         remaining `shouldBe` []
 

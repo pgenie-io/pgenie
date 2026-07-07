@@ -16,6 +16,15 @@ data Report = Report
   }
   deriving stock (Eq, Show)
 
+instance IsString Report where
+  fromString message =
+    Report
+      { path = [],
+        message = fromString message,
+        suggestion = Nothing,
+        details = []
+      }
+
 nest :: [Text] -> Report -> Report
 nest path err =
   let newPath = err.path <> path

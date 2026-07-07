@@ -36,6 +36,8 @@ data Segment
   | -- | We need to distinguish literals to avoid capturing params inside them.
     SingleQuotedLiteral Text
   | DoubleQuotedLiteral Text
+  | -- | SQL comment, including its delimiters, preserved verbatim.
+    Comment Text
   deriving stock (Eq, Show)
 
 instance Qc.Arbitrary SqlTemplate where
@@ -80,6 +82,8 @@ instance Qc.Arbitrary Segment where
         SingleQuotedLiteral . onfrom <$> Qc.shrink text
       DoubleQuotedLiteral text ->
         DoubleQuotedLiteral . onfrom <$> Qc.shrink text
+      Comment text ->
+        Comment <$> Qc.shrink text
 
 instance IsString SqlTemplate where
   fromString str =
@@ -125,6 +129,8 @@ render keepWhitespace renderParam (SqlTemplate segments) =
           newlineHanger <> "'" <> from text <> "'" <> next indices count ""
         DoubleQuotedLiteral text ->
           newlineHanger <> "\"" <> from text <> "\"" <> next indices count ""
+        Comment text ->
+          newlineHanger <> from text <> next indices count ""
 
 toGenQueryFragments :: SqlTemplate -> [Gen.QueryFragment]
 toGenQueryFragments (SqlTemplate segments) =
@@ -158,6 +164,8 @@ toGenQueryFragments (SqlTemplate segments) =
           return [Gen.SqlQueryFragment ("'" <> text <> "'")]
         DoubleQuotedLiteral text -> do
           return [Gen.SqlQueryFragment ("\"" <> text <> "\"")]
+        Comment text -> do
+          return [Gen.SqlQueryFragment text]
 
     normalizeFragments :: [Gen.QueryFragment] -> [Gen.QueryFragment]
     normalizeFragments = \case
@@ -189,7 +197,9 @@ megaparsecOf = do
     segmentParser :: Megaparsec.Parsec Void Text (Segment, Maybe ParamStyle)
     segmentParser =
       Megaparsec.choice
-        [ (,Just DollarParamStyle) <$> dollarParamParser,
+        [ (,Nothing) <$> lineCommentParser,
+          (,Nothing) <$> blockCommentParser,
+          (,Just DollarParamStyle) <$> dollarParamParser,
           (,Nothing) <$> castOperatorParser,
           (,Just ColonParamStyle) <$> colonParamParser,
           (,Nothing) <$> singleQuotedLiteralParser,
@@ -199,6 +209,20 @@ megaparsecOf = do
           (,Nothing) <$> literalColonParser,
           (,Nothing) <$> nonWhitespaceParser
         ]
+
+    lineCommentParser =
+      Megaparsec.label "line comment" do
+        Megaparsec.try do
+          Megaparsec.string "--"
+        content <- Megaparsec.takeWhileP (Just "line comment") (/= '\n')
+        pure (Comment ("--" <> content))
+
+    blockCommentParser =
+      Megaparsec.label "block comment" do
+        Megaparsec.try do
+          Megaparsec.string "/*"
+        content <- Megaparsec.manyTill Megaparsec.anySingle (Megaparsec.string "*/")
+        pure (Comment ("/*" <> onfrom content <> "*/"))
 
     dollarParamParser =
       Megaparsec.label "dollar-parameter" do
@@ -389,6 +413,26 @@ spec = do
       let rendered = render True (\_ _ -> "PARAM") template
       rendered `shouldBe` "SELECT '$user_id'"
 
+    it "does not interpret params inside line comments" do
+      let template = "-- fall back when $cursor_id is absent\nSELECT $cursor_id"
+      let rendered = render True (\_ i -> "$" <> to @TextBuilder (Text.pack (show (i + 1)))) template
+      rendered `shouldBe` "-- fall back when $cursor_id is absent\nSELECT $1"
+
+    it "does not interpret params inside block comments" do
+      let template = "/* $cursor_id is optional */ SELECT $cursor_id"
+      let rendered = render True (\_ i -> "$" <> to @TextBuilder (Text.pack (show (i + 1)))) template
+      rendered `shouldBe` "/* $cursor_id is optional */ SELECT $1"
+
+    it "does not create phantom params from commented placeholders" do
+      let template = "-- fall back when $cursor_id is absent\n-- also mentions $notaparam\nSELECT id FROM action_runs WHERE id > $cursor_id"
+      let paramNames = toGenParamNames template
+      paramNames `shouldBe` ["cursor_id"]
+
+    it "does not interpret colon-style params inside comments" do
+      let template = "-- use :cursor_id\nSELECT id FROM action_runs WHERE id > :cursor_id"
+      let rendered = render True (\_ i -> ":" <> to @TextBuilder (Text.pack (show (i + 1)))) template
+      rendered `shouldBe` "-- use :cursor_id\nSELECT id FROM action_runs WHERE id > :1"
+
   describe "megaparsecOf" do
     it "parses a simple SQL query" do
       let input = "SELECT 1"
@@ -454,6 +498,33 @@ spec = do
       case result of
         Left _ -> expectationFailure "Failed to parse empty quoted string"
         Right _ -> pure ()
+
+    it "parses line comments" do
+      let input = "-- a comment\nSELECT 1"
+      let result = Megaparsec.parse megaparsecOf "" input
+      case result of
+        Left _ -> expectationFailure "Failed to parse line comment"
+        Right template -> do
+          let rendered = render True (\_ _ -> "?") template
+          rendered `shouldBe` "-- a comment\nSELECT 1"
+
+    it "parses block comments" do
+      let input = "/* a comment */ SELECT 1"
+      let result = Megaparsec.parse megaparsecOf "" input
+      case result of
+        Left _ -> expectationFailure "Failed to parse block comment"
+        Right template -> do
+          let rendered = render True (\_ _ -> "?") template
+          rendered `shouldBe` "/* a comment */ SELECT 1"
+
+    it "parses block comments spanning multiple lines" do
+      let input = "/* line 1\nline 2 */ SELECT 1"
+      let result = Megaparsec.parse megaparsecOf "" input
+      case result of
+        Left _ -> expectationFailure "Failed to parse multiline block comment"
+        Right template -> do
+          let rendered = render True (\_ _ -> "?") template
+          rendered `shouldBe` "/* line 1\nline 2 */ SELECT 1"
 
     it "handles tabs as whitespace" do
       let input = "SELECT\t1"

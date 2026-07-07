@@ -1,3 +1,9 @@
+# Upcoming
+
+## Fixes
+
+- Make the placeholder tokenizer ignore SQL comments, so `$name` and `:name` inside `--` and `/* */` comments are treated as literal text (#65)
+
 # v0.7.0
 
 ## Non-breaking changes

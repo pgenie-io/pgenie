@@ -1,3 +1,9 @@
+# Upcoming
+
+## Breaking changes
+
+- Updated `gen-sdk` to v0.11.0, bumping the generator contract version to 4.0. Generators targeting contract major version 3 are no longer compatible and must be updated to the new `Lude` v5.0.0 `Compiled` abstraction, where `Compiled` is now `Result {warnings : List Report, value : a}` instead of `{warnings : List Report, value : Result a}`.
+
 # v0.7.1
 
 ## Fixes

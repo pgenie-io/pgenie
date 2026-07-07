@@ -1,3 +1,9 @@
+# Upcoming
+
+## Fixes
+
+- Surface generator warnings during `pgn generate` instead of silently discarding them (#67). E.g., queries skipped due to use of types unsupported by the gen.
+
 # v0.7.1
 
 ## Fixes

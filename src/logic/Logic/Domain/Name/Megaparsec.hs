@@ -22,9 +22,11 @@ complete parser = parser <* eof
 parts :: Parser [Text]
 parts = do
   firstWord <- wordPart
-  tailParts <- many do
-    _ <- optional separator
-    tailPart
+  -- Wrapped in `try`: a trailing separator not followed by a valid part
+  -- (e.g. the `-` opening a `--` comment right after a param name, as in
+  -- `$foo--comment`) must not consume input, or `many` can't stop cleanly
+  -- and the whole parse fails instead of ending the name before the `-`.
+  tailParts <- many (Text.Megaparsec.try (optional separator *> tailPart))
 
   pure (firstWord : tailParts)
   where

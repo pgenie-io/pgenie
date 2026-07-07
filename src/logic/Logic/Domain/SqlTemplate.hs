@@ -36,6 +36,10 @@ data Segment
   | -- | We need to distinguish literals to avoid capturing params inside them.
     SingleQuotedLiteral Text
   | DoubleQuotedLiteral Text
+  | -- | Text following @--@ up to (but excluding) the terminating newline.
+    InlineComment Text
+  | -- | Text between @/*@ and @*/@, excluding the delimiters.
+    MultilineComment Text
   deriving stock (Eq, Show)
 
 instance Qc.Arbitrary SqlTemplate where
@@ -55,9 +59,17 @@ instance Qc.Arbitrary Segment where
       [ Param <$> arbitrary,
         pure Newline,
         LineWhitespace . onfrom <$> Qc.listOf1 (Qc.elements [' ', '\t']),
-        NonWhitespace . onfrom <$> Qc.listOf1 (Qc.arbitrary `Qc.suchThat` (\c -> not (isSpace c) && c /= '$' && c /= '\'' && c /= '"' && c /= ':')),
+        -- Excludes `-` and `/` too: a lone `-` or `/` at the end of one
+        -- `NonWhitespace` segment can combine with the start of an adjacent
+        -- segment to form `--` or `/*`, which the parser always treats as
+        -- the start of a comment. Since segments here are placed next to
+        -- each other with no separator, allowing those characters would let
+        -- `arbitrary` construct SqlTemplates that don't round-trip.
+        NonWhitespace . onfrom <$> Qc.listOf1 (Qc.arbitrary `Qc.suchThat` (\c -> not (isSpace c) && c /= '$' && c /= '\'' && c /= '"' && c /= ':' && c /= '-' && c /= '/')),
         SingleQuotedLiteral . onfrom <$> Qc.listOf (Qc.arbitrary `Qc.suchThat` (/= '\'')),
-        DoubleQuotedLiteral . onfrom <$> Qc.listOf (Qc.arbitrary `Qc.suchThat` (/= '"'))
+        DoubleQuotedLiteral . onfrom <$> Qc.listOf (Qc.arbitrary `Qc.suchThat` (/= '"')),
+        InlineComment . onfrom <$> Qc.listOf (Qc.arbitrary `Qc.suchThat` (\c -> c /= '\n' && c /= '\r')),
+        MultilineComment . onfrom <$> Qc.listOf (Qc.arbitrary `Qc.suchThat` (\c -> c /= '*' && c /= '/'))
       ]
 
   shrink segment =
@@ -80,6 +92,10 @@ instance Qc.Arbitrary Segment where
         SingleQuotedLiteral . onfrom <$> Qc.shrink text
       DoubleQuotedLiteral text ->
         DoubleQuotedLiteral . onfrom <$> Qc.shrink text
+      InlineComment text ->
+        InlineComment . onfrom <$> Qc.shrink text
+      MultilineComment text ->
+        MultilineComment . onfrom <$> Qc.shrink text
 
 instance IsString SqlTemplate where
   fromString str =
@@ -125,6 +141,10 @@ render keepWhitespace renderParam (SqlTemplate segments) =
           newlineHanger <> "'" <> from text <> "'" <> next indices count ""
         DoubleQuotedLiteral text ->
           newlineHanger <> "\"" <> from text <> "\"" <> next indices count ""
+        InlineComment text ->
+          newlineHanger <> "--" <> from text <> next indices count ""
+        MultilineComment text ->
+          newlineHanger <> "/*" <> from text <> "*/" <> next indices count ""
 
 toGenQueryFragments :: SqlTemplate -> [Gen.QueryFragment]
 toGenQueryFragments (SqlTemplate segments) =
@@ -158,6 +178,10 @@ toGenQueryFragments (SqlTemplate segments) =
           return [Gen.SqlQueryFragment ("'" <> text <> "'")]
         DoubleQuotedLiteral text -> do
           return [Gen.SqlQueryFragment ("\"" <> text <> "\"")]
+        InlineComment text -> do
+          return [Gen.SqlQueryFragment ("--" <> text)]
+        MultilineComment text -> do
+          return [Gen.SqlQueryFragment ("/*" <> text <> "*/")]
 
     normalizeFragments :: [Gen.QueryFragment] -> [Gen.QueryFragment]
     normalizeFragments = \case
@@ -189,7 +213,9 @@ megaparsecOf = do
     segmentParser :: Megaparsec.Parsec Void Text (Segment, Maybe ParamStyle)
     segmentParser =
       Megaparsec.choice
-        [ (,Just DollarParamStyle) <$> dollarParamParser,
+        [ (,Nothing) <$> lineCommentParser,
+          (,Nothing) <$> blockCommentParser,
+          (,Just DollarParamStyle) <$> dollarParamParser,
           (,Nothing) <$> castOperatorParser,
           (,Just ColonParamStyle) <$> colonParamParser,
           (,Nothing) <$> singleQuotedLiteralParser,
@@ -199,6 +225,20 @@ megaparsecOf = do
           (,Nothing) <$> literalColonParser,
           (,Nothing) <$> nonWhitespaceParser
         ]
+
+    lineCommentParser =
+      Megaparsec.label "line comment" do
+        Megaparsec.try do
+          Megaparsec.string "--"
+        content <- Megaparsec.takeWhileP (Just "line comment") (\c -> c /= '\n' && c /= '\r')
+        pure (InlineComment content)
+
+    blockCommentParser =
+      Megaparsec.label "block comment" do
+        Megaparsec.try do
+          Megaparsec.string "/*"
+        content <- Megaparsec.manyTill Megaparsec.anySingle (Megaparsec.string "*/")
+        pure (MultilineComment (onfrom content))
 
     dollarParamParser =
       Megaparsec.label "dollar-parameter" do
@@ -269,9 +309,15 @@ megaparsecOf = do
       Megaparsec.char '"'
       pure (DoubleQuotedLiteral content)
 
+    -- Consumed one character at a time (rather than via `takeWhile1P`) so that
+    -- a `--` or `/*` appearing mid-token (e.g. `1--comment`, `x/*comment*/`)
+    -- stops the run and hands control back to the comment parsers, instead of
+    -- being swallowed as literal text.
     nonWhitespaceParser = do
-      text <- Megaparsec.takeWhile1P (Just "non-whitespace") (\c -> not (isSpace c) && c /= '$' && c /= '\'' && c /= '"' && c /= ':')
-      pure (NonWhitespace text)
+      chars <- Megaparsec.some do
+        Megaparsec.notFollowedBy (Megaparsec.choice [Megaparsec.string "--", Megaparsec.string "/*"])
+        Megaparsec.satisfy (\c -> not (isSpace c) && c /= '$' && c /= '\'' && c /= '"' && c /= ':')
+      pure (NonWhitespace (onfrom chars))
 
 normalizeParsed :: SqlTemplate -> SqlTemplate
 normalizeParsed =
@@ -288,8 +334,23 @@ normalizeParsed =
 
 normalizeArbitrary :: SqlTemplate -> SqlTemplate
 normalizeArbitrary (SqlTemplate segments) =
-  SqlTemplate (dropLeadingWhitespace (foldr step [] segments))
+  SqlTemplate (terminateInlineComments (dropLeadingWhitespace (foldr step [] segments)))
   where
+    -- An `InlineComment` extends to the next newline (or end of input) when
+    -- rendered and reparsed, so any segment placed right after one with no
+    -- `Newline` in between would be silently absorbed into the comment on
+    -- reparse. Insert one where it's missing so `arbitrary` never produces a
+    -- SqlTemplate that can't round-trip.
+    terminateInlineComments = \case
+      [] -> []
+      segment@(InlineComment _) : rest ->
+        segment : case rest of
+          [] -> []
+          Newline : _ -> terminateInlineComments rest
+          _ -> Newline : terminateInlineComments rest
+      segment : rest ->
+        segment : terminateInlineComments rest
+
     step segment acc =
       case segment of
         LineWhitespace left ->
@@ -389,6 +450,41 @@ spec = do
       let rendered = render True (\_ _ -> "PARAM") template
       rendered `shouldBe` "SELECT '$user_id'"
 
+    it "does not interpret params inside line comments" do
+      let template = "-- fall back when $cursor_id is absent\nSELECT $cursor_id"
+      let rendered = render True (\_ i -> "$" <> to @TextBuilder (Text.pack (show (i + 1)))) template
+      rendered `shouldBe` "-- fall back when $cursor_id is absent\nSELECT $1"
+
+    it "does not interpret params inside block comments" do
+      let template = "/* $cursor_id is optional */ SELECT $cursor_id"
+      let rendered = render True (\_ i -> "$" <> to @TextBuilder (Text.pack (show (i + 1)))) template
+      rendered `shouldBe` "/* $cursor_id is optional */ SELECT $1"
+
+    it "does not interpret params inside an inline line comment with no preceding whitespace" do
+      let template = "SELECT 1-- fall back when $cursor_id is absent"
+      let rendered = render True (\_ i -> "$" <> to @TextBuilder (Text.pack (show (i + 1)))) template
+      rendered `shouldBe` "SELECT 1-- fall back when $cursor_id is absent"
+
+    it "does not interpret params inside an inline block comment with no preceding whitespace" do
+      let template = "SELECT 1/* $cursor_id is optional */FROM x"
+      let rendered = render True (\_ i -> "$" <> to @TextBuilder (Text.pack (show (i + 1)))) template
+      rendered `shouldBe` "SELECT 1/* $cursor_id is optional */FROM x"
+
+    it "ends a param name at a line comment starting right after it" do
+      let template = "SELECT $cursor_id--fallback"
+      let rendered = render True (\_ i -> "$" <> to @TextBuilder (Text.pack (show (i + 1)))) template
+      rendered `shouldBe` "SELECT $1--fallback"
+
+    it "does not create phantom params from commented placeholders" do
+      let template = "-- fall back when $cursor_id is absent\n-- also mentions $notaparam\nSELECT id FROM action_runs WHERE id > $cursor_id"
+      let paramNames = toGenParamNames template
+      paramNames `shouldBe` ["cursor_id"]
+
+    it "does not interpret colon-style params inside comments" do
+      let template = "-- use :cursor_id\nSELECT id FROM action_runs WHERE id > :cursor_id"
+      let rendered = render True (\_ i -> ":" <> to @TextBuilder (Text.pack (show (i + 1)))) template
+      rendered `shouldBe` "-- use :cursor_id\nSELECT id FROM action_runs WHERE id > :1"
+
   describe "megaparsecOf" do
     it "parses a simple SQL query" do
       let input = "SELECT 1"
@@ -454,6 +550,60 @@ spec = do
       case result of
         Left _ -> expectationFailure "Failed to parse empty quoted string"
         Right _ -> pure ()
+
+    it "parses line comments" do
+      let input = "-- a comment\nSELECT 1"
+      let result = Megaparsec.parse megaparsecOf "" input
+      case result of
+        Left _ -> expectationFailure "Failed to parse line comment"
+        Right template -> do
+          let rendered = render True (\_ _ -> "?") template
+          rendered `shouldBe` "-- a comment\nSELECT 1"
+
+    it "parses block comments" do
+      let input = "/* a comment */ SELECT 1"
+      let result = Megaparsec.parse megaparsecOf "" input
+      case result of
+        Left _ -> expectationFailure "Failed to parse block comment"
+        Right template -> do
+          let rendered = render True (\_ _ -> "?") template
+          rendered `shouldBe` "/* a comment */ SELECT 1"
+
+    it "parses block comments spanning multiple lines" do
+      let input = "/* line 1\nline 2 */ SELECT 1"
+      let result = Megaparsec.parse megaparsecOf "" input
+      case result of
+        Left _ -> expectationFailure "Failed to parse multiline block comment"
+        Right template -> do
+          let rendered = render True (\_ _ -> "?") template
+          rendered `shouldBe` "/* line 1\nline 2 */ SELECT 1"
+
+    it "parses an inline line comment with no preceding whitespace" do
+      let input = "SELECT 1-- a comment"
+      let result = Megaparsec.parse megaparsecOf "" input
+      case result of
+        Left _ -> expectationFailure "Failed to parse inline line comment"
+        Right template -> do
+          let rendered = render True (\_ _ -> "?") template
+          rendered `shouldBe` "SELECT 1-- a comment"
+
+    it "parses an inline block comment with no preceding whitespace" do
+      let input = "SELECT 1/* a comment */FROM x"
+      let result = Megaparsec.parse megaparsecOf "" input
+      case result of
+        Left _ -> expectationFailure "Failed to parse inline block comment"
+        Right template -> do
+          let rendered = render True (\_ _ -> "?") template
+          rendered `shouldBe` "SELECT 1/* a comment */FROM x"
+
+    it "does not absorb a trailing CR into a line comment" do
+      let input = "-- a comment\r\nSELECT 1"
+      let result = Megaparsec.parse megaparsecOf "" input
+      case result of
+        Left _ -> expectationFailure "Failed to parse line comment with CRLF"
+        Right template -> do
+          let rendered = render False (\_ _ -> "?") template
+          rendered `shouldBe` "-- a comment SELECT 1"
 
     it "handles tabs as whitespace" do
       let input = "SELECT\t1"

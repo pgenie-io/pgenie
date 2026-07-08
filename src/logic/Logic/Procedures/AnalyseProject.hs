@@ -229,7 +229,7 @@ run Params {projectFile} =
               pure
                 ( Gen.Input.Query
                     { name = Name.toGenName queryListed.name,
-                      srcPath = queryListed.filePath,
+                      srcPath = Path.toText queryListed.filePath,
                       identity = False,
                       idempotent = genSigResult.idempotent,
                       params = genSigResult.params,

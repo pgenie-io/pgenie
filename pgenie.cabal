@@ -135,6 +135,45 @@ library utils
     vector-instances,
     witherable,
 
+library gen-bridge
+  import: base
+  hs-source-dirs: src/gen-bridge/
+  exposed-modules:
+    PGenieGen
+    PGenieGen.Bundle
+    PGenieGen.ContractVersion
+    PGenieGen.Dhall.Decode
+    PGenieGen.Dhall.ExprViews
+    PGenieGen.Dhall.Orphans
+    PGenieGen.Load
+    PGenieGen.Location
+    PGenieGen.Model
+    PGenieGen.Model.Aeson
+    PGenieGen.Model.Input
+    PGenieGen.Model.Output
+    PGenieGen.Model.Output.Report
+    PGenieGen.Prelude.Path
+
+  other-modules:
+    PGenieGen.Dhall.Deriving
+    PGenieGen.Dhall.Orphans.NonEmpty
+    PGenieGen.Dhall.Orphans.Path
+    PGenieGen.Model.Input.Name
+    PGenieGen.Prelude
+
+  build-depends:
+    aeson,
+    algebraic-path,
+    base,
+    dhall,
+    dhall-json,
+    microlens,
+    pgenie:utils,
+    prettyprinter,
+    template-haskell,
+    text,
+    text-builder,
+
 library logic
   import: base
   hs-source-dirs: src/logic/
@@ -183,7 +222,7 @@ library logic
     hspec,
     megaparsec,
     monad-parallel,
-    pgenie-gen,
+    pgenie:gen-bridge,
     pgenie:utils,
     postgresql-syntax,
     QuickCheck,
@@ -230,7 +269,7 @@ test-suite infra-test
     base,
     fx,
     hspec,
-    pgenie-gen,
+    pgenie:gen-bridge,
     pgenie:infra,
     pgenie:logic,
     pgenie:utils,
@@ -286,7 +325,7 @@ library infra
     hasql-mapping,
     hasql-pool,
     hasql-th,
-    pgenie-gen,
+    pgenie:gen-bridge,
     pgenie:interpreters,
     pgenie:logic,
     pgenie:utils,
@@ -344,3 +383,51 @@ test-suite ui-test
     pgenie:utils,
     text,
     text-builder,
+
+test-suite gen-bridge-integration-test
+  import: test
+  type: exitcode-stdio-1.0
+  hs-source-dirs:
+    src/gen-bridge-integration-test
+    src/gen-bridge-test-fixtures
+
+  main-is: Main.hs
+  other-modules: PGenieGen.Fixtures.Project1
+  build-depends:
+    aeson,
+    cases,
+    hspec,
+    pgenie:gen-bridge,
+    pgenie:utils,
+    rerebase,
+
+test-suite gen-bridge-bundling-test
+  import: test
+  type: exitcode-stdio-1.0
+  hs-source-dirs:
+    src/gen-bridge-bundling-test
+    src/gen-bridge-test-fixtures
+
+  main-is: Main.hs
+  other-modules: PGenieGen.Fixtures.Project1
+  build-depends:
+    aeson,
+    cases,
+    hspec,
+    pgenie:gen-bridge,
+    pgenie:utils,
+    rerebase,
+
+test-suite gen-bridge-model-test
+  import: test
+  type: exitcode-stdio-1.0
+  hs-source-dirs: src/gen-bridge-model-test
+  main-is: Main.hs
+  build-depends:
+    base,
+    containers,
+    dhall,
+    either,
+    hspec >=2.11 && <3,
+    pgenie:gen-bridge,
+    text,

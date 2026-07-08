@@ -10,6 +10,7 @@ import Logic.Domain.ProjectFile qualified as ProjectFile
 import Logic.Domain.Report (Report (..))
 import Logic.Domain.SeqScanFinding (SeqScanFinding (..))
 import Logic.Procedures.AnalyseProject qualified as AnalyseProject
+import PGenieGen.Model.Aeson ()
 import Utils.Prelude
 
 type Port m = AnalyseProject.Port m

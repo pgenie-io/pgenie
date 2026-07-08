@@ -1,3 +1,14 @@
+# Upcoming
+
+## Breaking
+
+- Depend on `gen-contract` instead of `gen-sdk`. The Haskell runtime bridge (`PGenieGen`, `.Load`, `.Bundle`, `.ContractVersion`, `.Dhall.Decode`, `.Dhall.ExprViews`) moved in-repo as the new `gen-bridge` library, and `Query.srcPath`/`Output.File.path` changed from `Path` to `Text`.
+- Absorbed the `PGenieGen.Model.Input`/`PGenieGen.Model.Output` Haskell model projection from `gen-contract`, which dropped its Haskell side entirely. The `pgenie-gen-contract` cabal dependency is gone; the model now lives in `gen-bridge` alongside the rest of the bridge, and the Dhall/Haskell compatibility suite moved here as `gen-bridge-model-test`.
+
+## Non-breaking
+
+- Bring the `Project1` fixture in-house for the `gen-bridge-integration-test`/`gen-bridge-bundling-test` suites, dropping the build dependency on `gen-sdk`.
+
 # v0.8.0
 
 ## Breaking changes

@@ -155,6 +155,7 @@ library gen-bridge
     PGenieGen.Prelude.Path
 
   other-modules:
+    PGenieGen.AesonDeriver
     PGenieGen.Dhall.Deriving
     PGenieGen.Dhall.Orphans.NonEmpty
     PGenieGen.Dhall.Orphans.Path
@@ -165,6 +166,7 @@ library gen-bridge
     aeson,
     algebraic-path,
     base,
+    cases,
     dhall,
     dhall-json,
     microlens,

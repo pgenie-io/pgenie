@@ -85,6 +85,66 @@ main = hspec do
           }
         |]
 
+    it "encodes a composite custom type definition tagged by stripping the type name" do
+      Aeson.toJSON (Input.CompositeCustomTypeDefinition [])
+        `shouldBe` [aesonQQ| { "composite": [] } |]
+
+    it "encodes an enum custom type definition tagged by stripping the type name, kebab-casing enum variant fields" do
+      Aeson.toJSON (Input.EnumCustomTypeDefinition [Input.EnumVariant {name = exampleName, pgName = "raw_enum"}])
+        `shouldBe` [aesonQQ|
+          {
+            "enum": [
+              {
+                "name": {
+                  "inCamelCase": "c", "inPascalCase": "p", "inKebabCase": "k", "inTrainCase": "t",
+                  "inScreamingKebabCase": "sk", "inSnakeCase": "s", "inCamelSnakeCase": "cs", "inScreamingSnakeCase": "ss"
+                },
+                "pg-name": "raw_enum"
+              }
+            ]
+          }
+        |]
+
+    it "encodes a domain custom type definition tagged by stripping the type name" do
+      Aeson.toJSON
+        ( Input.DomainCustomTypeDefinition
+            Input.Value {arraySettings = Nothing, scalar = Input.PrimitiveScalar Input.Int4Primitive}
+        )
+        `shouldBe` [aesonQQ| { "domain": { "array-settings": null, "scalar": { "primitive": "int-4" } } } |]
+
+    it "encodes a CustomType record with kebab-cased pg-schema/pg-name fields" do
+      Aeson.toJSON
+        Input.CustomType
+          { name = exampleName,
+            pgSchema = "public",
+            pgName = "status",
+            definition = Input.EnumCustomTypeDefinition []
+          }
+        `shouldBe` [aesonQQ|
+          {
+            "name": {
+              "inCamelCase": "c", "inPascalCase": "p", "inKebabCase": "k", "inTrainCase": "t",
+              "inScreamingKebabCase": "sk", "inSnakeCase": "s", "inCamelSnakeCase": "cs", "inScreamingSnakeCase": "ss"
+            },
+            "pg-schema": "public",
+            "pg-name": "status",
+            "definition": { "enum": [] }
+          }
+        |]
+
+    it "encodes non-null ArraySettings with kebab-cased dimensionality/element-is-nullable fields" do
+      Aeson.toJSON
+        Input.Value
+          { arraySettings = Just Input.ArraySettings {dimensionality = 2, elementIsNullable = True},
+            scalar = Input.PrimitiveScalar Input.Int4Primitive
+          }
+        `shouldBe` [aesonQQ|
+          {
+            "array-settings": {"dimensionality": 2, "element-is-nullable": true},
+            "scalar": {"primitive": "int-4"}
+          }
+        |]
+
 exampleName :: Input.Name
 exampleName =
   Input.Name

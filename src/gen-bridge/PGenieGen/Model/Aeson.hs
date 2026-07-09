@@ -2,10 +2,10 @@
 
 module PGenieGen.Model.Aeson where
 
-import Control.Applicative ((<$>), (<*>))
 import Data.Aeson qualified as Aeson
 import PGenieGen.AesonDeriver qualified as AesonDeriver
 import PGenieGen.Model.Input qualified as Input
+import PGenieGen.Prelude
 
 -- * Name
 
@@ -30,21 +30,21 @@ instance Aeson.FromJSON Input.Name where
   parseJSON = Aeson.withObject "Name" \obj ->
     Input.Name
       <$> obj
-        Aeson..: "inCamelCase"
+      Aeson..: "inCamelCase"
       <*> obj
-        Aeson..: "inPascalCase"
+      Aeson..: "inPascalCase"
       <*> obj
-        Aeson..: "inKebabCase"
+      Aeson..: "inKebabCase"
       <*> obj
-        Aeson..: "inTrainCase"
+      Aeson..: "inTrainCase"
       <*> obj
-        Aeson..: "inScreamingKebabCase"
+      Aeson..: "inScreamingKebabCase"
       <*> obj
-        Aeson..: "inSnakeCase"
+      Aeson..: "inSnakeCase"
       <*> obj
-        Aeson..: "inCamelSnakeCase"
+      Aeson..: "inCamelSnakeCase"
       <*> obj
-        Aeson..: "inScreamingSnakeCase"
+      Aeson..: "inScreamingSnakeCase"
 
 -- * Everything else
 

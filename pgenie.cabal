@@ -431,3 +431,20 @@ test-suite gen-bridge-model-test
     hspec >=2.11 && <3,
     pgenie:gen-bridge,
     text,
+
+test-suite gen-bridge-aeson-test
+  import: test
+  type: exitcode-stdio-1.0
+  hs-source-dirs:
+    src/gen-bridge-aeson-test
+    src/gen-bridge-test-fixtures
+
+  main-is: Main.hs
+  other-modules: PGenieGen.Fixtures.Project1
+  build-depends:
+    aeson,
+    cases,
+    hspec,
+    pgenie:gen-bridge,
+    pgenie:utils,
+    rerebase,

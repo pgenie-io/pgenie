@@ -1,3 +1,15 @@
+# Upcoming
+
+## Breaking
+
+- The JSON output of `pgn analyse --output json` has changed the format and now has all object keys in kebab-case.
+  - Make the `Input` model JSON contract consistently kebab-case: the `Name` record, which had kept its literal camelCase Haskell field names as JSON keys, now uses kebab-case keys as well.
+
+## Non-breaking
+
+- Depend on `gen-contract` instead of `gen-sdk`. The Haskell runtime bridge (`GenBridge`, `.Load`, `.Bundle`, `.ContractVersion`, `.Dhall.Decode`, `.Dhall.ExprViews`) moved in-repo as the new `gen-bridge` library, and `Query.srcPath`/`Output.File.path` changed from `Path` to `Text`.
+- Absorbed the `GenBridge.Model.Input`/`GenBridge.Model.Output` Haskell model projection from `gen-sdk`, which dropped its Haskell side entirely. The `gen-sdk` dependency is gone; the model now lives in `gen-bridge` alongside the rest of the bridge.
+
 # v0.8.0
 
 ## Breaking changes

@@ -15,13 +15,6 @@ source-repository-package
   location: https://github.com/nikita-volkov/relations
   tag: fac9e0445677a6493f1954f491921c5a7442cd58
 
--- Provides `pgenie-gen`
-source-repository-package
-  type: git
-  location: https://github.com/pgenie-io/gen-sdk
-  tag: v0.11.0
-  subdir: haskell
-
 source-repository-package
   type: git
   location: https://github.com/nikita-volkov/dhall-haskell

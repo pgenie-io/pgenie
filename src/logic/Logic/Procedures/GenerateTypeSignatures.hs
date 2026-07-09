@@ -1,11 +1,11 @@
 module Logic.Procedures.GenerateTypeSignatures where
 
 import AlgebraicPath qualified as Path
+import GenBridge.Model.Input qualified as Gen.Input
 import Logic.Capabilities.Fs (FsOps (..))
 import Logic.Capabilities.Staging (Stages (..))
 import Logic.Domain.CustomTypeSignature qualified as CustomTypeSignatureFile
 import Logic.Domain.Report (Report (..))
-import PGenieGen.Model.Input qualified as Gen.Input
 import Utils.Prelude hiding (readFile, writeFile)
 
 type Port m = (Stages m, FsOps m, MonadError Report m)

@@ -135,6 +135,46 @@ library utils
     vector-instances,
     witherable,
 
+library gen-bridge
+  import: base
+  hs-source-dirs: src/gen-bridge/
+  exposed-modules:
+    GenBridge
+    GenBridge.Bundle
+    GenBridge.ContractVersion
+    GenBridge.Dhall.Decode
+    GenBridge.Dhall.ExprViews
+    GenBridge.Dhall.Orphans
+    GenBridge.Load
+    GenBridge.Location
+    GenBridge.Model
+    GenBridge.Model.Input
+    GenBridge.Model.Output
+    GenBridge.Model.Output.Report
+    GenBridge.Prelude.Path
+
+  other-modules:
+    GenBridge.Aeson.Deriver
+    GenBridge.Dhall.Deriving
+    GenBridge.Dhall.Orphans.NonEmpty
+    GenBridge.Dhall.Orphans.Path
+    GenBridge.Model.Input.Name
+    GenBridge.Prelude
+
+  build-depends:
+    aeson,
+    algebraic-path,
+    base,
+    cases,
+    dhall,
+    dhall-json,
+    microlens,
+    pgenie:utils,
+    prettyprinter,
+    template-haskell,
+    text,
+    text-builder,
+
 library logic
   import: base
   hs-source-dirs: src/logic/
@@ -183,7 +223,7 @@ library logic
     hspec,
     megaparsec,
     monad-parallel,
-    pgenie-gen,
+    pgenie:gen-bridge,
     pgenie:utils,
     postgresql-syntax,
     QuickCheck,
@@ -230,7 +270,7 @@ test-suite infra-test
     base,
     fx,
     hspec,
-    pgenie-gen,
+    pgenie:gen-bridge,
     pgenie:infra,
     pgenie:logic,
     pgenie:utils,
@@ -286,7 +326,7 @@ library infra
     hasql-mapping,
     hasql-pool,
     hasql-th,
-    pgenie-gen,
+    pgenie:gen-bridge,
     pgenie:interpreters,
     pgenie:logic,
     pgenie:utils,
@@ -344,3 +384,29 @@ test-suite ui-test
     pgenie:utils,
     text,
     text-builder,
+
+test-suite gen-bridge-test
+  import: test
+  type: exitcode-stdio-1.0
+  hs-source-dirs: src/gen-bridge-test
+  main-is: Main.hs
+  other-modules:
+    GenBridge.BundleSpec
+    GenBridge.Fixtures.Project1
+    GenBridge.LoadSpec
+    GenBridge.Model.InputAesonSpec
+    GenBridge.Model.InputDhallSpec
+
+  build-tool-depends:
+    hspec-discover:hspec-discover
+
+  build-depends:
+    aeson,
+    cases,
+    containers,
+    dhall,
+    either,
+    hspec >=2.11 && <3,
+    pgenie:gen-bridge,
+    pgenie:utils,
+    rerebase,

@@ -2,11 +2,11 @@
 module Infra.Adapters.Analyser.Embeddings.Sessions where
 
 import Data.Vector qualified as Vector
+import GenBridge.Model.Input qualified as Gen.Input
 import Infra.Adapters.Analyser.Sessions qualified as Sessions
 import Logic.Domain.Name qualified as Name
 import Logic.Domain.QueryAnalysis (InferredParam (..), InferredQueryTypes (..))
 import Logic.Domain.Report qualified as Report
-import PGenieGen.Model.Input qualified as Gen.Input
 import Utils.Prelude
 
 type Embed = Either Report.Report

@@ -1,11 +1,11 @@
 module Logic.Procedures.GenerateQuerySignatures where
 
 import AlgebraicPath qualified as Path
+import GenBridge.Model.Input qualified as Gen.Input
 import Logic.Capabilities.Fs (FsOps (..))
 import Logic.Capabilities.Reporting (Warns (..))
 import Logic.Domain.QuerySignature qualified as SignatureFile
 import Logic.Domain.Report (Report (..))
-import PGenieGen.Model.Input qualified as Gen.Input
 import Utils.Prelude hiding (readFile, writeFile)
 
 type Port m = (MonadError Report m, Warns m, FsOps m)

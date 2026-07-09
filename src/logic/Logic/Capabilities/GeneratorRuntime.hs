@@ -3,7 +3,7 @@ module Logic.Capabilities.GeneratorRuntime
   )
 where
 
-import PGenieGen qualified as Gen
+import GenBridge qualified as Gen
 import Utils.Prelude
 
 class (Monad m) => LoadsGen m where

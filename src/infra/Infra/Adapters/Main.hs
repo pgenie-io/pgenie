@@ -9,6 +9,7 @@ import AlgebraicPath qualified as Path
 import Data.Text qualified as Text
 import Data.Text.IO qualified as Text
 import Fx
+import GenBridge qualified as Gen
 import Infra.Adapters.Analyser qualified as Analyser
 import Interpreters.Observing qualified as Observing
 import Logic.Capabilities.Fs (FsOps (..))
@@ -19,7 +20,6 @@ import Logic.Capabilities.QueryAnalysis (InfersQueryTypes (..))
 import Logic.Capabilities.SeqScanExplain (ExplainsQuery (..))
 import Logic.Domain.ProjectFile qualified as ProjectFile
 import Logic.Domain.Report qualified as Report
-import PGenieGen qualified as Gen
 import System.Directory qualified as Directory
 import System.Info qualified as Info
 import Utils.Prelude

@@ -10,8 +10,8 @@ where
 
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
+import GenBridge.Model.Input qualified as Gen
 import Logic.Domain.Name qualified as Name
-import PGenieGen.Model.Input qualified as Gen
 import Test.Hspec
 import Test.Hspec.QuickCheck
 import Test.QuickCheck qualified as Qc

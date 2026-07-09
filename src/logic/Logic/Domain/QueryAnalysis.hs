@@ -6,7 +6,7 @@ module Logic.Domain.QueryAnalysis
   )
 where
 
-import PGenieGen.Model.Input qualified as Gen.Input
+import GenBridge.Model.Input qualified as Gen.Input
 import Utils.Prelude
 
 -- | Inferred parameter and result types for a query.

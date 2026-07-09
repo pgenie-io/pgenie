@@ -7,12 +7,12 @@ import Data.Text qualified as Text
 import Data.Text.Encoding qualified as TextEncoding
 import Database.PostgreSQL.LibPQ qualified as Pq
 import Fx
+import GenBridge.Model.Input qualified as Gen.Input
 import Infra.Adapters.Analyser qualified as Analyser
 import Logic.Capabilities.Migrations
 import Logic.Capabilities.QueryAnalysis
 import Logic.Domain.QueryAnalysis
 import Logic.Domain.Report (Report (..))
-import PGenieGen.Model.Input qualified as Gen.Input
 import System.Info (arch)
 import Test.Hspec
 import TestContainers qualified as Tc

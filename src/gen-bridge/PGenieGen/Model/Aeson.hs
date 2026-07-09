@@ -2,12 +2,13 @@
 
 module PGenieGen.Model.Aeson where
 
-import Control.Applicative ((<*>), (<$>))
+import Control.Applicative ((<$>), (<*>))
 import Data.Aeson qualified as Aeson
 import PGenieGen.AesonDeriver qualified as AesonDeriver
 import PGenieGen.Model.Input qualified as Input
 
 -- * Name
+
 --
 -- Hand-written, not run through 'AesonDeriver.derive': its fields keep
 -- their literal camelCase Haskell names as JSON keys.
@@ -26,26 +27,27 @@ instance Aeson.ToJSON Input.Name where
       ]
 
 instance Aeson.FromJSON Input.Name where
-  parseJSON = Aeson.withObject "Name" (\obj ->
+  parseJSON = Aeson.withObject "Name" \obj ->
     Input.Name
       <$> obj
-      Aeson..: "inCamelCase"
+        Aeson..: "inCamelCase"
       <*> obj
-      Aeson..: "inPascalCase"
+        Aeson..: "inPascalCase"
       <*> obj
-      Aeson..: "inKebabCase"
+        Aeson..: "inKebabCase"
       <*> obj
-      Aeson..: "inTrainCase"
+        Aeson..: "inTrainCase"
       <*> obj
-      Aeson..: "inScreamingKebabCase"
+        Aeson..: "inScreamingKebabCase"
       <*> obj
-      Aeson..: "inSnakeCase"
+        Aeson..: "inSnakeCase"
       <*> obj
-      Aeson..: "inCamelSnakeCase"
+        Aeson..: "inCamelSnakeCase"
       <*> obj
-      Aeson..: "inScreamingSnakeCase")
+        Aeson..: "inScreamingSnakeCase"
 
 -- * Everything else
+
 --
 -- Kebab-case field names, ObjectWithSingleField sum encoding.
 

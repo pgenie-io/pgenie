@@ -2,79 +2,69 @@
 
 module PGenieGen.Model.Aeson where
 
+import Control.Applicative ((<*>), (<$>))
 import Data.Aeson qualified as Aeson
+import PGenieGen.AesonDeriver qualified as AesonDeriver
 import PGenieGen.Model.Input qualified as Input
 
--- * Input
+-- * Name
+--
+-- Hand-written, not run through 'AesonDeriver.derive': its fields keep
+-- their literal camelCase Haskell names as JSON keys.
 
-deriving anyclass instance Aeson.ToJSON Input.Name
+instance Aeson.ToJSON Input.Name where
+  toJSON (Input.Name cc pc kc tc skc sc csc ssc) =
+    Aeson.object
+      [ "inCamelCase" Aeson..= cc,
+        "inPascalCase" Aeson..= pc,
+        "inKebabCase" Aeson..= kc,
+        "inTrainCase" Aeson..= tc,
+        "inScreamingKebabCase" Aeson..= skc,
+        "inSnakeCase" Aeson..= sc,
+        "inCamelSnakeCase" Aeson..= csc,
+        "inScreamingSnakeCase" Aeson..= ssc
+      ]
 
-deriving anyclass instance Aeson.FromJSON Input.Name
+instance Aeson.FromJSON Input.Name where
+  parseJSON = Aeson.withObject "Name" (\obj ->
+    Input.Name
+      <$> obj
+      Aeson..: "inCamelCase"
+      <*> obj
+      Aeson..: "inPascalCase"
+      <*> obj
+      Aeson..: "inKebabCase"
+      <*> obj
+      Aeson..: "inTrainCase"
+      <*> obj
+      Aeson..: "inScreamingKebabCase"
+      <*> obj
+      Aeson..: "inSnakeCase"
+      <*> obj
+      Aeson..: "inCamelSnakeCase"
+      <*> obj
+      Aeson..: "inScreamingSnakeCase")
 
-deriving anyclass instance Aeson.ToJSON Input.Version
+-- * Everything else
+--
+-- Kebab-case field names, ObjectWithSingleField sum encoding.
 
-deriving anyclass instance Aeson.FromJSON Input.Version
-
-deriving anyclass instance Aeson.ToJSON Input.Primitive
-
-deriving anyclass instance Aeson.FromJSON Input.Primitive
-
-deriving anyclass instance Aeson.ToJSON Input.Scalar
-
-deriving anyclass instance Aeson.FromJSON Input.Scalar
-
-deriving anyclass instance Aeson.ToJSON Input.ArraySettings
-
-deriving anyclass instance Aeson.FromJSON Input.ArraySettings
-
-deriving anyclass instance Aeson.ToJSON Input.Value
-
-deriving anyclass instance Aeson.FromJSON Input.Value
-
-deriving anyclass instance Aeson.ToJSON Input.Member
-
-deriving anyclass instance Aeson.FromJSON Input.Member
-
-deriving anyclass instance Aeson.ToJSON Input.EnumVariant
-
-deriving anyclass instance Aeson.FromJSON Input.EnumVariant
-
-deriving anyclass instance Aeson.ToJSON Input.CustomTypeDefinition
-
-deriving anyclass instance Aeson.FromJSON Input.CustomTypeDefinition
-
-deriving anyclass instance Aeson.ToJSON Input.CustomType
-
-deriving anyclass instance Aeson.FromJSON Input.CustomType
-
-deriving anyclass instance Aeson.ToJSON Input.ResultRowsCardinality
-
-deriving anyclass instance Aeson.FromJSON Input.ResultRowsCardinality
-
-deriving anyclass instance Aeson.ToJSON Input.ResultRows
-
-deriving anyclass instance Aeson.FromJSON Input.ResultRows
-
-deriving anyclass instance Aeson.ToJSON Input.Result
-
-deriving anyclass instance Aeson.FromJSON Input.Result
-
-deriving anyclass instance Aeson.ToJSON Input.Var
-
-deriving anyclass instance Aeson.FromJSON Input.Var
-
-deriving anyclass instance Aeson.ToJSON Input.QueryFragment
-
-deriving anyclass instance Aeson.FromJSON Input.QueryFragment
-
-deriving anyclass instance Aeson.ToJSON Input.Query
-
-deriving anyclass instance Aeson.FromJSON Input.Query
-
-deriving anyclass instance Aeson.ToJSON Input.Migration
-
-deriving anyclass instance Aeson.FromJSON Input.Migration
-
-deriving anyclass instance Aeson.ToJSON Input.Project
-
-deriving anyclass instance Aeson.FromJSON Input.Project
+AesonDeriver.derive
+  [ ''Input.Version,
+    ''Input.Primitive,
+    ''Input.Scalar,
+    ''Input.ArraySettings,
+    ''Input.Value,
+    ''Input.Member,
+    ''Input.EnumVariant,
+    ''Input.CustomTypeDefinition,
+    ''Input.CustomType,
+    ''Input.ResultRowsCardinality,
+    ''Input.ResultRows,
+    ''Input.Result,
+    ''Input.Var,
+    ''Input.QueryFragment,
+    ''Input.Query,
+    ''Input.Project,
+    ''Input.Migration
+  ]

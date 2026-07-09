@@ -8,6 +8,7 @@
 ## Fixes
 
 - Restore the pre-`gen-contract` JSON encoding for the `Input` project model (kebab-case field names, single-field-object sum encoding), used by `pgn analyse --output json`. This had been silently replaced with Aeson's default encoding when the Haskell bridge was absorbed from `gen-sdk` in this release, changing the shape of that command's output without documentation.
+- Make the `Input` model JSON contract consistently kebab-case: the `Name` record, which had kept its literal camelCase Haskell field names as JSON keys, now uses kebab-case keys as well.
 
 # v0.8.0
 

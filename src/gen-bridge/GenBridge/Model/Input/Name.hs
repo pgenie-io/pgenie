@@ -20,36 +20,36 @@ data Name = Name
   deriving anyclass (Dhall.ToDhall, Dhall.FromDhall)
 
 -- | Hand-written, not run through 'GenBridge.AesonDeriver.derive': fields
--- keep their literal camelCase Haskell names as JSON keys.
+-- are kebab-cased to match the rest of the 'Input' model JSON contract.
 instance Aeson.ToJSON Name where
   toJSON (Name cc pc kc tc skc sc csc ssc) =
     Aeson.object
-      [ "inCamelCase" Aeson..= cc,
-        "inPascalCase" Aeson..= pc,
-        "inKebabCase" Aeson..= kc,
-        "inTrainCase" Aeson..= tc,
-        "inScreamingKebabCase" Aeson..= skc,
-        "inSnakeCase" Aeson..= sc,
-        "inCamelSnakeCase" Aeson..= csc,
-        "inScreamingSnakeCase" Aeson..= ssc
+      [ "in-camel-case" Aeson..= cc,
+        "in-pascal-case" Aeson..= pc,
+        "in-kebab-case" Aeson..= kc,
+        "in-train-case" Aeson..= tc,
+        "in-screaming-kebab-case" Aeson..= skc,
+        "in-snake-case" Aeson..= sc,
+        "in-camel-snake-case" Aeson..= csc,
+        "in-screaming-snake-case" Aeson..= ssc
       ]
 
 instance Aeson.FromJSON Name where
   parseJSON = Aeson.withObject "Name" \obj ->
     Name
       <$> obj
-      Aeson..: "inCamelCase"
+      Aeson..: "in-camel-case"
       <*> obj
-      Aeson..: "inPascalCase"
+      Aeson..: "in-pascal-case"
       <*> obj
-      Aeson..: "inKebabCase"
+      Aeson..: "in-kebab-case"
       <*> obj
-      Aeson..: "inTrainCase"
+      Aeson..: "in-train-case"
       <*> obj
-      Aeson..: "inScreamingKebabCase"
+      Aeson..: "in-screaming-kebab-case"
       <*> obj
-      Aeson..: "inSnakeCase"
+      Aeson..: "in-snake-case"
       <*> obj
-      Aeson..: "inCamelSnakeCase"
+      Aeson..: "in-camel-snake-case"
       <*> obj
-      Aeson..: "inScreamingSnakeCase"
+      Aeson..: "in-screaming-snake-case"

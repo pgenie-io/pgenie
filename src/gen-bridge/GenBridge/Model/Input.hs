@@ -298,8 +298,7 @@ data Project = Project
 --
 -- Kebab-case field names, ObjectWithSingleField sum encoding.
 -- 'Name' is hand-written in "GenBridge.Model.Input.Name", not run through
--- 'AesonDeriver.derive': its fields keep their literal camelCase Haskell
--- names as JSON keys.
+-- 'AesonDeriver.derive', but it follows the same kebab-case convention.
 
 AesonDeriver.derive
   [ ''Version,

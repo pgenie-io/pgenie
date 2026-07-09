@@ -18,10 +18,10 @@ spec = do
         Aeson.Error err -> expectationFailure err
         Aeson.Success decoded -> decoded `shouldBe` Fixtures.Project1.input
 
-    it "encodes Name fields as literal camelCase keys, not kebab-case" do
+    it "encodes Name fields as kebab-case keys" do
       Aeson.toJSON exampleName `shouldBe` exampleNameJson
 
-    it "decodes a Name from the pinned camelCase-keyed JSON" do
+    it "decodes a Name from the pinned kebab-case-keyed JSON" do
       case Aeson.fromJSON exampleNameJson of
         Aeson.Error err -> expectationFailure err
         Aeson.Success decoded -> decoded `shouldBe` exampleName
@@ -122,14 +122,14 @@ exampleNameJson :: Aeson.Value
 exampleNameJson =
   [aesonQQ|
     {
-      "inCamelCase": "userId",
-      "inPascalCase": "UserId",
-      "inKebabCase": "user-id",
-      "inTrainCase": "User-Id",
-      "inScreamingKebabCase": "USER-ID",
-      "inSnakeCase": "user_id",
-      "inCamelSnakeCase": "User_Id",
-      "inScreamingSnakeCase": "USER_ID"
+      "in-camel-case": "userId",
+      "in-pascal-case": "UserId",
+      "in-kebab-case": "user-id",
+      "in-train-case": "User-Id",
+      "in-screaming-kebab-case": "USER-ID",
+      "in-snake-case": "user_id",
+      "in-camel-snake-case": "User_Id",
+      "in-screaming-snake-case": "USER_ID"
     }
   |]
 
@@ -143,23 +143,23 @@ project1Json =
   [aesonQQ|
     {
       "space": {
-        "inCamelCase": "demo", "inCamelSnakeCase": "Demo", "inKebabCase": "demo",
-        "inPascalCase": "Demo", "inScreamingKebabCase": "DEMO", "inScreamingSnakeCase": "DEMO",
-        "inSnakeCase": "demo", "inTrainCase": "Demo"
+        "in-camel-case": "demo", "in-camel-snake-case": "Demo", "in-kebab-case": "demo",
+        "in-pascal-case": "Demo", "in-screaming-kebab-case": "DEMO", "in-screaming-snake-case": "DEMO",
+        "in-snake-case": "demo", "in-train-case": "Demo"
       },
       "name": {
-        "inCamelCase": "demoProject", "inCamelSnakeCase": "Demo_Project", "inKebabCase": "demo-project",
-        "inPascalCase": "DemoProject", "inScreamingKebabCase": "DEMO-PROJECT", "inScreamingSnakeCase": "DEMO_PROJECT",
-        "inSnakeCase": "demo_project", "inTrainCase": "Demo-Project"
+        "in-camel-case": "demoProject", "in-camel-snake-case": "Demo_Project", "in-kebab-case": "demo-project",
+        "in-pascal-case": "DemoProject", "in-screaming-kebab-case": "DEMO-PROJECT", "in-screaming-snake-case": "DEMO_PROJECT",
+        "in-snake-case": "demo_project", "in-train-case": "Demo-Project"
       },
       "version": { "major": 1, "minor": 0, "patch": 0 },
       "custom-types": [],
       "queries": [
         {
           "name": {
-            "inCamelCase": "getUser", "inCamelSnakeCase": "Get_User", "inKebabCase": "get-user",
-            "inPascalCase": "GetUser", "inScreamingKebabCase": "GET-USER", "inScreamingSnakeCase": "GET_USER",
-            "inSnakeCase": "get_user", "inTrainCase": "Get-User"
+            "in-camel-case": "getUser", "in-camel-snake-case": "Get_User", "in-kebab-case": "get-user",
+            "in-pascal-case": "GetUser", "in-screaming-kebab-case": "GET-USER", "in-screaming-snake-case": "GET_USER",
+            "in-snake-case": "get_user", "in-train-case": "Get-User"
           },
           "src-path": "queries/get_user.sql",
           "identity": false,
@@ -167,9 +167,9 @@ project1Json =
           "params": [
             {
               "name": {
-                "inCamelCase": "userId", "inCamelSnakeCase": "User_Id", "inKebabCase": "user-id",
-                "inPascalCase": "UserId", "inScreamingKebabCase": "USER-ID", "inScreamingSnakeCase": "USER_ID",
-                "inSnakeCase": "user_id", "inTrainCase": "User-Id"
+                "in-camel-case": "userId", "in-camel-snake-case": "User_Id", "in-kebab-case": "user-id",
+                "in-pascal-case": "UserId", "in-screaming-kebab-case": "USER-ID", "in-screaming-snake-case": "USER_ID",
+                "in-snake-case": "user_id", "in-train-case": "User-Id"
               },
               "pg-name": "user_id",
               "is-nullable": false,
@@ -182,9 +182,9 @@ project1Json =
               "columns": [
                 {
                   "name": {
-                    "inCamelCase": "id", "inCamelSnakeCase": "Id", "inKebabCase": "id",
-                    "inPascalCase": "Id", "inScreamingKebabCase": "ID", "inScreamingSnakeCase": "ID",
-                    "inSnakeCase": "id", "inTrainCase": "Id"
+                    "in-camel-case": "id", "in-camel-snake-case": "Id", "in-kebab-case": "id",
+                    "in-pascal-case": "Id", "in-screaming-kebab-case": "ID", "in-screaming-snake-case": "ID",
+                    "in-snake-case": "id", "in-train-case": "Id"
                   },
                   "pg-name": "id",
                   "is-nullable": false,
@@ -192,9 +192,9 @@ project1Json =
                 },
                 {
                   "name": {
-                    "inCamelCase": "name", "inCamelSnakeCase": "Name", "inKebabCase": "name",
-                    "inPascalCase": "Name", "inScreamingKebabCase": "NAME", "inScreamingSnakeCase": "NAME",
-                    "inSnakeCase": "name", "inTrainCase": "Name"
+                    "in-camel-case": "name", "in-camel-snake-case": "Name", "in-kebab-case": "name",
+                    "in-pascal-case": "Name", "in-screaming-kebab-case": "NAME", "in-screaming-snake-case": "NAME",
+                    "in-snake-case": "name", "in-train-case": "Name"
                   },
                   "pg-name": "name",
                   "is-nullable": false,
@@ -202,9 +202,9 @@ project1Json =
                 },
                 {
                   "name": {
-                    "inCamelCase": "email", "inCamelSnakeCase": "Email", "inKebabCase": "email",
-                    "inPascalCase": "Email", "inScreamingKebabCase": "EMAIL", "inScreamingSnakeCase": "EMAIL",
-                    "inSnakeCase": "email", "inTrainCase": "Email"
+                    "in-camel-case": "email", "in-camel-snake-case": "Email", "in-kebab-case": "email",
+                    "in-pascal-case": "Email", "in-screaming-kebab-case": "EMAIL", "in-screaming-snake-case": "EMAIL",
+                    "in-snake-case": "email", "in-train-case": "Email"
                   },
                   "pg-name": "email",
                   "is-nullable": true,
@@ -218,9 +218,9 @@ project1Json =
             {
               "var": {
                 "name": {
-                  "inCamelCase": "userId", "inCamelSnakeCase": "User_Id", "inKebabCase": "user-id",
-                  "inPascalCase": "UserId", "inScreamingKebabCase": "USER-ID", "inScreamingSnakeCase": "USER_ID",
-                  "inSnakeCase": "user_id", "inTrainCase": "User-Id"
+                  "in-camel-case": "userId", "in-camel-snake-case": "User_Id", "in-kebab-case": "user-id",
+                  "in-pascal-case": "UserId", "in-screaming-kebab-case": "USER-ID", "in-screaming-snake-case": "USER_ID",
+                  "in-snake-case": "user_id", "in-train-case": "User-Id"
                 },
                 "raw-name": "user_id",
                 "param-index": 1

@@ -4,7 +4,6 @@ module GenBridge.Model.InputDhallSpec (spec) where
 
 import Data.Either.Validation qualified as Validation
 import Data.Set qualified as Set
-import Data.Text (Text)
 import Dhall qualified
 import Dhall.Core qualified
 import Dhall.Map qualified
@@ -12,103 +11,94 @@ import GenBridge.Model.Input qualified as Input
 import Test.Hspec
 import Prelude
 
--- | Pinned reference to the pGenie generator contract, at a specific commit.
--- The sha256 pins the fully-resolved Dhall expression as an integrity check.
---
--- https://github.com/pgenie-io/gen-contract
-contract :: Text
-contract =
-  "(https://raw.githubusercontent.com/pgenie-io/gen-contract/2e5a24caee29099b3aff89b036f11a2b630c7371/src/package.dhall\
-  \ sha256:7ee818a7147e18f180a80fcd2b2dcc11a3bb7efe1859d49fad2dccc37430fcec)"
-
 spec :: Spec
 spec = do
   describe "Dhall/Haskell model compatibility" do
-    it "Name record fields match"
-      $ checkRecordFields @Input.Name
+    it "Name record fields match" do
+      checkRecordFields @Input.Name
         (contract <> ".Name")
 
-    it "Version record fields match"
-      $ checkRecordFields @Input.Version
+    it "Version record fields match" do
+      checkRecordFields @Input.Version
         (contract <> ".Version")
 
-    it "ArraySettings record fields match"
-      $ checkRecordFields @Input.ArraySettings
+    it "ArraySettings record fields match" do
+      checkRecordFields @Input.ArraySettings
         (contract <> ".ArraySettings")
 
-    it "Value record fields match"
-      $ checkRecordFields @Input.Value
+    it "Value record fields match" do
+      checkRecordFields @Input.Value
         (contract <> ".Value")
 
-    it "Member record fields match"
-      $ checkRecordFields @Input.Member
+    it "Member record fields match" do
+      checkRecordFields @Input.Member
         (contract <> ".Member")
 
-    it "EnumVariant record fields match"
-      $ checkRecordFields @Input.EnumVariant
+    it "EnumVariant record fields match" do
+      checkRecordFields @Input.EnumVariant
         (contract <> ".EnumVariant")
 
-    it "CustomType record fields match"
-      $ checkRecordFields @Input.CustomType
+    it "CustomType record fields match" do
+      checkRecordFields @Input.CustomType
         (contract <> ".CustomType")
 
-    it "ResultRows record fields match"
-      $ checkRecordFields @Input.ResultRows
+    it "ResultRows record fields match" do
+      checkRecordFields @Input.ResultRows
         (contract <> ".ResultRows")
 
-    it "Var record fields match"
-      $ checkRecordFields @Input.Var
+    it "Var record fields match" do
+      checkRecordFields @Input.Var
         (contract <> ".Var")
 
-    it "Query record fields match"
-      $ checkRecordFields @Input.Query
+    it "Query record fields match" do
+      checkRecordFields @Input.Query
         (contract <> ".Query")
 
-    it "Project record fields match"
-      $ checkRecordFields @Input.Project
+    it "Project record fields match" do
+      checkRecordFields @Input.Project
         (contract <> ".Project")
 
-    it "Primitive union alternatives match"
-      $ checkUnionAlternatives @Input.Primitive
+    it "Primitive union alternatives match" do
+      checkUnionAlternatives @Input.Primitive
         (contract <> ".Primitive")
 
-    it "Scalar union alternatives match"
-      $ checkUnionAlternatives @Input.Scalar
+    it "Scalar union alternatives match" do
+      checkUnionAlternatives @Input.Scalar
         (contract <> ".Scalar")
 
-    it "CustomTypeDefinition union alternatives match"
-      $ checkUnionAlternatives @Input.CustomTypeDefinition
+    it "CustomTypeDefinition union alternatives match" do
+      checkUnionAlternatives @Input.CustomTypeDefinition
         (contract <> ".CustomTypeDefinition")
 
-    it "ResultRowsCardinality union alternatives match"
-      $ checkUnionAlternatives @Input.ResultRowsCardinality
+    it "ResultRowsCardinality union alternatives match" do
+      checkUnionAlternatives @Input.ResultRowsCardinality
         (contract <> ".ResultRowsCardinality")
 
-    it "Result union alternatives match"
-      $ checkUnionAlternatives @Input.Result
+    it "Result union alternatives match" do
+      checkUnionAlternatives @Input.Result
         (contract <> ".Result")
 
-    it "QueryFragment union alternatives match"
-      $ checkUnionAlternatives @Input.QueryFragment
+    it "QueryFragment union alternatives match" do
+      checkUnionAlternatives @Input.QueryFragment
         (contract <> ".QueryFragment")
 
-    it "ResultRowsCardinality Optional serializes/deserializes"
-      $ checkSerialization
+    it "ResultRowsCardinality Optional serializes/deserializes" do
+      checkSerialization
         Input.OptionalResultRowsCardinality
         (contract <> ".ResultRowsCardinality.Optional")
 
-    it "Result RowsAffected serializes/deserializes"
-      $ checkSerialization
+    it "Result RowsAffected serializes/deserializes" do
+      checkSerialization
         Input.RowsAffectedResult
         (contract <> ".Result.RowsAffected")
 
-    it "Scalar Primitive payload serializes/deserializes"
-      $ checkSerialization
+    it "Scalar Primitive payload serializes/deserializes" do
+      checkSerialization
         (Input.PrimitiveScalar Input.Int4Primitive)
         (contract <> ".Scalar.Primitive " <> contract <> ".Primitive.Int4")
 
-    it "Name serializes/deserializes"
-      $ checkSerialization
+    it "Name serializes/deserializes" do
+      checkSerialization
         exampleName
         "{ inCamelCase = \"userId\", inPascalCase = \"UserId\", inKebabCase = \"user-id\", inTrainCase = \"User-Id\", inScreamingKebabCase = \"USER-ID\", inSnakeCase = \"user_id\", inCamelSnakeCase = \"User_Id\", inScreamingSnakeCase = \"USER_ID\" }"
 
@@ -175,3 +165,7 @@ checkSerialization value dhallExpr = do
   expected <- Dhall.inputExpr dhallExpr
   let encoded = Dhall.embed Dhall.inject value
   Dhall.Core.judgmentallyEqual encoded expected `shouldBe` True
+
+-- | Pinned reference to the pGenie generator contract.
+contract :: Text
+contract = "(./src/gen-bridge-test/Contract.dhall)"

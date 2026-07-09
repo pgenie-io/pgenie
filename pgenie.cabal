@@ -154,7 +154,7 @@ library gen-bridge
     GenBridge.Prelude.Path
 
   other-modules:
-    GenBridge.AesonDeriver
+    GenBridge.Aeson.Deriver
     GenBridge.Dhall.Deriving
     GenBridge.Dhall.Orphans.NonEmpty
     GenBridge.Dhall.Orphans.Path

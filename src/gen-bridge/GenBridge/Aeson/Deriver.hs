@@ -1,4 +1,4 @@
-module GenBridge.AesonDeriver
+module GenBridge.Aeson.Deriver
   ( derive,
   )
 where

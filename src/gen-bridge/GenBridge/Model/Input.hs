@@ -5,7 +5,7 @@ module GenBridge.Model.Input
 where
 
 import Dhall qualified
-import GenBridge.AesonDeriver qualified as AesonDeriver
+import GenBridge.Aeson.Deriver qualified as AesonDeriver
 import GenBridge.Dhall.Deriving qualified as Dhall.Deriving
 import GenBridge.Dhall.Orphans ()
 import GenBridge.Model.Input.Name (Name (..))

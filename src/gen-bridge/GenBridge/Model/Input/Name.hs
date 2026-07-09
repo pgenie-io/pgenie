@@ -19,7 +19,7 @@ data Name = Name
   deriving stock (Show, Eq, Generic)
   deriving anyclass (Dhall.ToDhall, Dhall.FromDhall)
 
--- | Hand-written, not run through 'GenBridge.AesonDeriver.derive': fields
+-- | Hand-written, not run through 'GenBridge.Aeson.Deriver.derive': fields
 -- are kebab-cased to match the rest of the 'Input' model JSON contract.
 instance Aeson.ToJSON Name where
   toJSON (Name cc pc kc tc skc sc csc ssc) =

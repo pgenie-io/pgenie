@@ -2,13 +2,13 @@
 
 ## Breaking
 
+- The JSON output of `pgn analyse --output json` has changed the format and now has all object keys in kebab-case.
+  - Make the `Input` model JSON contract consistently kebab-case: the `Name` record, which had kept its literal camelCase Haskell field names as JSON keys, now uses kebab-case keys as well.
+
+## Non-breaking
+
 - Depend on `gen-contract` instead of `gen-sdk`. The Haskell runtime bridge (`GenBridge`, `.Load`, `.Bundle`, `.ContractVersion`, `.Dhall.Decode`, `.Dhall.ExprViews`) moved in-repo as the new `gen-bridge` library, and `Query.srcPath`/`Output.File.path` changed from `Path` to `Text`.
-- Absorbed the `GenBridge.Model.Input`/`GenBridge.Model.Output` Haskell model projection from `gen-contract`, which dropped its Haskell side entirely. The `pgenie-gen-contract` cabal dependency is gone; the model now lives in `gen-bridge` alongside the rest of the bridge.
-
-## Fixes
-
-- Restore the pre-`gen-contract` JSON encoding for the `Input` project model (kebab-case field names, single-field-object sum encoding), used by `pgn analyse --output json`. This had been silently replaced with Aeson's default encoding when the Haskell bridge was absorbed from `gen-sdk` in this release, changing the shape of that command's output without documentation.
-- Make the `Input` model JSON contract consistently kebab-case: the `Name` record, which had kept its literal camelCase Haskell field names as JSON keys, now uses kebab-case keys as well.
+- Absorbed the `GenBridge.Model.Input`/`GenBridge.Model.Output` Haskell model projection from `gen-sdk`, which dropped its Haskell side entirely. The `gen-sdk` dependency is gone; the model now lives in `gen-bridge` alongside the rest of the bridge.
 
 # v0.8.0
 

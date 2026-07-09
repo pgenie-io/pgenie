@@ -139,28 +139,27 @@ library gen-bridge
   import: base
   hs-source-dirs: src/gen-bridge/
   exposed-modules:
-    PGenieGen
-    PGenieGen.Bundle
-    PGenieGen.ContractVersion
-    PGenieGen.Dhall.Decode
-    PGenieGen.Dhall.ExprViews
-    PGenieGen.Dhall.Orphans
-    PGenieGen.Load
-    PGenieGen.Location
-    PGenieGen.Model
-    PGenieGen.Model.Aeson
-    PGenieGen.Model.Input
-    PGenieGen.Model.Output
-    PGenieGen.Model.Output.Report
-    PGenieGen.Prelude.Path
+    GenBridge
+    GenBridge.Bundle
+    GenBridge.ContractVersion
+    GenBridge.Dhall.Decode
+    GenBridge.Dhall.ExprViews
+    GenBridge.Dhall.Orphans
+    GenBridge.Load
+    GenBridge.Location
+    GenBridge.Model
+    GenBridge.Model.Input
+    GenBridge.Model.Output
+    GenBridge.Model.Output.Report
+    GenBridge.Prelude.Path
 
   other-modules:
-    PGenieGen.AesonDeriver
-    PGenieGen.Dhall.Deriving
-    PGenieGen.Dhall.Orphans.NonEmpty
-    PGenieGen.Dhall.Orphans.Path
-    PGenieGen.Model.Input.Name
-    PGenieGen.Prelude
+    GenBridge.AesonDeriver
+    GenBridge.Dhall.Deriving
+    GenBridge.Dhall.Orphans.NonEmpty
+    GenBridge.Dhall.Orphans.Path
+    GenBridge.Model.Input.Name
+    GenBridge.Prelude
 
   build-depends:
     aeson,
@@ -386,67 +385,28 @@ test-suite ui-test
     text,
     text-builder,
 
-test-suite gen-bridge-integration-test
+test-suite gen-bridge-test
   import: test
   type: exitcode-stdio-1.0
-  hs-source-dirs:
-    src/gen-bridge-integration-test
-    src/gen-bridge-test-fixtures
-
+  hs-source-dirs: src/gen-bridge-test
   main-is: Main.hs
-  other-modules: PGenieGen.Fixtures.Project1
+  other-modules:
+    GenBridge.BundleSpec
+    GenBridge.Fixtures.Project1
+    GenBridge.LoadSpec
+    GenBridge.Model.InputAesonSpec
+    GenBridge.Model.InputDhallSpec
+
+  build-tool-depends:
+    hspec-discover:hspec-discover
+
   build-depends:
     aeson,
     cases,
-    hspec,
-    pgenie:gen-bridge,
-    pgenie:utils,
-    rerebase,
-
-test-suite gen-bridge-bundling-test
-  import: test
-  type: exitcode-stdio-1.0
-  hs-source-dirs:
-    src/gen-bridge-bundling-test
-    src/gen-bridge-test-fixtures
-
-  main-is: Main.hs
-  other-modules: PGenieGen.Fixtures.Project1
-  build-depends:
-    aeson,
-    cases,
-    hspec,
-    pgenie:gen-bridge,
-    pgenie:utils,
-    rerebase,
-
-test-suite gen-bridge-model-test
-  import: test
-  type: exitcode-stdio-1.0
-  hs-source-dirs: src/gen-bridge-model-test
-  main-is: Main.hs
-  build-depends:
-    base,
     containers,
     dhall,
     either,
     hspec >=2.11 && <3,
-    pgenie:gen-bridge,
-    text,
-
-test-suite gen-bridge-aeson-test
-  import: test
-  type: exitcode-stdio-1.0
-  hs-source-dirs:
-    src/gen-bridge-aeson-test
-    src/gen-bridge-test-fixtures
-
-  main-is: Main.hs
-  other-modules: PGenieGen.Fixtures.Project1
-  build-depends:
-    aeson,
-    cases,
-    hspec,
     pgenie:gen-bridge,
     pgenie:utils,
     rerebase,

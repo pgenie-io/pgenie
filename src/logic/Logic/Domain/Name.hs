@@ -14,8 +14,8 @@ module Logic.Domain.Name
 where
 
 import Data.Text qualified as Text
+import GenBridge.Model.Input qualified as Gen
 import Logic.Domain.Name.Megaparsec qualified as Megaparsec
-import PGenieGen.Model.Input qualified as Gen
 import Test.Hspec
 import Test.QuickCheck qualified as Qc
 import TextBuilder qualified

@@ -4,6 +4,9 @@ import AlgebraicPath qualified as Path
 import Control.Monad.Parallel qualified as MonadParallel
 import Data.Aeson.Text qualified as Aeson.Text
 import Data.Map.Strict qualified as Map
+import GenBridge qualified as Gen
+import GenBridge.Model.Input qualified as Gen.Input
+import GenBridge.Model.Output qualified as Gen.Output
 import Logic.Capabilities.Fs (FsOps (..))
 import Logic.Capabilities.GeneratorRuntime (LoadsGen (..))
 import Logic.Capabilities.Reporting (Warns (..))
@@ -12,9 +15,6 @@ import Logic.Domain.GeneratorHashes qualified as GeneratorHashes
 import Logic.Domain.Name qualified as Name
 import Logic.Domain.ProjectFile qualified as ProjectFile
 import Logic.Domain.Report (Report (..))
-import PGenieGen qualified as Gen
-import PGenieGen.Model.Input qualified as Gen.Input
-import PGenieGen.Model.Output qualified as Gen.Output
 import Test.Hspec
 import Utils.Prelude hiding (readFile, writeFile)
 

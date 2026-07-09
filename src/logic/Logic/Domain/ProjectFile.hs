@@ -13,10 +13,10 @@ import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Text qualified as Text
 import Data.Vector qualified as Vector
+import GenBridge qualified as Gen
+import GenBridge.Model.Input qualified as Gen
 import Logic.Domain.Name qualified as Name
 import Logic.Domain.Report qualified as Report
-import PGenieGen qualified as Gen
-import PGenieGen.Model.Input qualified as Gen
 import Test.Hspec
 import Utils.Prelude hiding (Version)
 import YamlUnscrambler qualified as U

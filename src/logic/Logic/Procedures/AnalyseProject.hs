@@ -5,6 +5,7 @@ import Control.Monad.Parallel qualified as MonadParallel
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as Text
+import GenBridge.Model.Input qualified as Gen.Input
 import Logic.Capabilities.Fs (FsOps (..))
 import Logic.Capabilities.IndexCatalog (LoadsIndexes (..))
 import Logic.Capabilities.Migrations (ExecutesMigrations (..))
@@ -24,7 +25,6 @@ import Logic.Domain.SqlTemplate qualified as SqlTemplate
 import Logic.Domain.SyntaxAnalyser qualified as SyntaxAnalyser
 import Logic.Procedures.GenerateQuerySignatures qualified as GenerateQuerySigs
 import Logic.Procedures.GenerateTypeSignatures qualified as GenerateTypeSigs
-import PGenieGen.Model.Input qualified as Gen.Input
 import SyntacticClass qualified as Syntactic
 import Utils.Prelude hiding (readFile, writeFile)
 

@@ -9,6 +9,10 @@
 
 - Bring the `Project1` fixture in-house for the `gen-bridge-integration-test`/`gen-bridge-bundling-test` suites, dropping the build dependency on `gen-sdk`.
 
+## Fixes
+
+- Restore the pre-`gen-contract` JSON encoding for the `Input` project model (kebab-case field names, single-field-object sum encoding), used by `pgn analyse --output json`. This had been silently replaced with Aeson's default encoding when the Haskell bridge was absorbed from `gen-sdk` in this release, changing the shape of that command's output without documentation.
+
 # v0.8.0
 
 ## Breaking changes

@@ -1,3 +1,7 @@
+-- |
+-- Top-level infrastructure device: wires the project file, the observer, and
+-- the 'Analyser.Device' together, and implements the application's logic
+-- Ports (migrations, query analysis, filesystem, gen loading) atop them.
 module Infra.Adapters.Main
   ( Device,
     getProjectFile,
@@ -7,7 +11,7 @@ where
 
 import AlgebraicPath qualified as Path
 import Data.Text qualified as Text
-import Data.Text.IO qualified as Text
+import Data.Text.IO qualified as Text.IO
 import Fx
 import GenBridge qualified as Gen
 import Infra.Adapters.Analyser qualified as Analyser
@@ -24,16 +28,23 @@ import System.Directory qualified as Directory
 import System.Info qualified as Info
 import Utils.Prelude
 
+-- | The application's top-level infrastructure device.
 data Device = Device
   { observe :: Observing.Observation -> IO (),
     analyser :: Analyser.Device,
     projectFile :: ProjectFile.ProjectFile
   }
 
+-- | The project file loaded when the device was scoped.
 getProjectFile :: Fx Device Report.Report ProjectFile.ProjectFile
 getProjectFile =
   runTotalIO \dev -> pure dev.projectFile
 
+-- |
+-- Load the project file, scope the analyser (halving its reported progress
+-- to leave room for the rest of the run), and assemble the 'Device'. Fails
+-- fast on Windows when no database URL is given, since Docker-based analysis
+-- isn't supported there yet.
 scope :: (Observing.Observation -> IO ()) -> Maybe Text -> Fx.Scope Report.Report Device
 scope observe maybeDatabaseUrl = do
   -- Terminate early on Windows in Docker mode since it's not supported yet.
@@ -50,7 +61,7 @@ scope observe maybeDatabaseUrl = do
     let path = "project1.pgn.yaml"
      in acquire do
           liftFileOp "Failed to load project file" path do
-            Text.readFile (Path.toFilePath path)
+            Text.IO.readFile (Path.toFilePath path)
 
   projectFile <- ProjectFile.tryFromYaml projectFile
 
@@ -105,12 +116,12 @@ instance LoadsIndexes (Fx Device Report.Report) where
 instance FsOps (Fx Device Report.Report) where
   readFile path =
     liftFileOp "Failed to read file" path do
-      Text.readFile (Path.toFilePath path)
+      Text.IO.readFile (Path.toFilePath path)
 
   writeFile path content =
     liftFileOp "Failed to write file" path do
       Directory.createDirectoryIfMissing True (Path.toFilePath (path <> ".."))
-      Text.writeFile (Path.toFilePath path) content
+      Text.IO.writeFile (Path.toFilePath path) content
 
   listDir path = do
     filePaths <- liftFileOp "Failed to list directory" path do

@@ -1,5 +1,7 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
+-- | 'Dhall.ToDhall'\/'Dhall.FromDhall' instances for 'NonEmpty', encoded as
+-- a Dhall record with @head@ and @tail@ fields.
 module GenBridge.Dhall.Orphans.NonEmpty where
 
 import Dhall.Marshal.Decode

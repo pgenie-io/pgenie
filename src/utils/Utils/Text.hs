@@ -1,15 +1,24 @@
-module Utils.Text where
+-- |
+-- Text helpers shared across the project.
+module Utils.Text
+  ( pointToLocation,
+  )
+where
 
 import Data.Text qualified as Text
 import Utils.Prelude
 
+-- | Renders 'queryText' with a @^@ pointer inserted on a line of its own
+-- directly below the character at 'errorPos', for showing users where a
+-- parse error occurred within a larger block of SQL.
 pointToLocation :: Text -> Int -> Text
 pointToLocation queryText errorPos =
-  let queryLines = Text.lines queryText
-      (lineIdx, columnIdx) = findErrorLocation queryLines errorPos
-      linesWithPointer = insertPointerAfterLine queryLines lineIdx columnIdx
-   in Text.unlines linesWithPointer
+  Text.unlines linesWithPointer
   where
+    queryLines = Text.lines queryText
+    (lineIdx, columnIdx) = findErrorLocation queryLines errorPos
+    linesWithPointer = insertPointerAfterLine queryLines lineIdx columnIdx
+
     findErrorLocation :: [Text] -> Int -> (Int, Int)
     findErrorLocation lines errorPos = go lines 1 0
       where

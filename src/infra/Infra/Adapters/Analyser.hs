@@ -12,13 +12,13 @@ import Data.UUID.V4 qualified as UUID.V4
 import Database.PostgreSQL.LibPQ qualified as Pq
 import Fx
 import Hasql.Connection.Settings qualified
-import Hasql.Errors qualified as Hasql
+import Hasql.Errors qualified
 import Hasql.Pool qualified
 import Hasql.Pool.Config qualified
 import Hasql.Session qualified
 import HasqlDev qualified
 import Infra.Adapters.Analyser.Embeddings.Sessions qualified as Embeddings.Sessions
-import Infra.Adapters.Analyser.Scopes.Testcontainers qualified
+import Infra.Adapters.Analyser.Scopes.Testcontainers qualified as Testcontainers
 import Infra.Adapters.Analyser.Sessions qualified as Sessions
 import Infra.Adapters.Analyser.Sessions.Procedures.GetIndexes qualified as GetIndexes
 import Interpreters.Observing qualified as Observing
@@ -31,6 +31,7 @@ import TestcontainersPostgresql qualified
 import Utils.Prelude
 import Utils.Text qualified
 
+-- | A connection pool to the PostgreSQL instance used for query analysis.
 newtype Device = Device Hasql.Pool.Pool
 
 -- | Selects the PostgreSQL backend for analysis.
@@ -41,6 +42,9 @@ data Source
     -- A temporary database is created for analysis and dropped on cleanup.
     RunningServerSource {connectionUrl :: Text, targetMajorVersion :: Int}
 
+-- | Acquire a 'Device' for the given 'Source', reporting progress via the
+-- observer, and release it (dropping any temporary database or container)
+-- when the enclosing scope exits.
 scope :: Source -> (Observing.Observation -> IO ()) -> Fx.Scope Report.Report Device
 scope source observe = case source of
   DockerSource {postgresTag} -> scopeViaDocker postgresTag observe
@@ -53,7 +57,7 @@ scopeViaDocker postgresTag observe = do
   (host, port) <-
     first
       adaptTestcontainersError
-      ( Infra.Adapters.Analyser.Scopes.Testcontainers.testContainer
+      ( Testcontainers.testContainer
           ( TestcontainersPostgresql.setup
               TestcontainersPostgresql.Config
                 { tagName = postgresTag,
@@ -251,13 +255,13 @@ instance HasqlDev.RunsSession (Fx Device Report.Report) where
               details = []
             }
 
-      adaptSessionError :: Hasql.SessionError -> Report.Report
+      adaptSessionError :: Hasql.Errors.SessionError -> Report.Report
       adaptSessionError sessionErr = case sessionErr of
-        Hasql.ScriptSessionError sql serverErr ->
+        Hasql.Errors.ScriptSessionError sql serverErr ->
           adaptServerError sql serverErr
-        Hasql.StatementSessionError _ _ sql _ _ statementErr ->
+        Hasql.Errors.StatementSessionError _ _ sql _ _ statementErr ->
           case statementErr of
-            Hasql.ServerStatementError serverErr ->
+            Hasql.Errors.ServerStatementError serverErr ->
               adaptServerError sql serverErr
             otherErr ->
               Report.Report
@@ -266,21 +270,21 @@ instance HasqlDev.RunsSession (Fx Device Report.Report) where
                   suggestion = Nothing,
                   details = [("sql", sql)]
                 }
-        Hasql.ConnectionSessionError msg ->
+        Hasql.Errors.ConnectionSessionError msg ->
           Report.Report
             { path = [],
               message = msg,
               suggestion = Nothing,
               details = []
             }
-        Hasql.MissingTypesSessionError types ->
+        Hasql.Errors.MissingTypesSessionError types ->
           Report.Report
             { path = [],
               message = "Missing database types",
               suggestion = Just "Ensure all referenced types exist in the database",
               details = [("types", Text.pack (show types))]
             }
-        Hasql.DriverSessionError msg ->
+        Hasql.Errors.DriverSessionError msg ->
           Report.Report
             { path = [],
               message = msg,
@@ -288,8 +292,8 @@ instance HasqlDev.RunsSession (Fx Device Report.Report) where
               details = []
             }
 
-      adaptServerError :: Text -> Hasql.ServerError -> Report.Report
-      adaptServerError sql (Hasql.ServerError errorCode message details hint position) =
+      adaptServerError :: Text -> Hasql.Errors.ServerError -> Report.Report
+      adaptServerError sql (Hasql.Errors.ServerError errorCode message details hint position) =
         Report.Report
           { path = [],
             message = message,

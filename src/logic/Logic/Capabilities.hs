@@ -1,3 +1,8 @@
+-- |
+-- Re-exports the Port type classes that specify everything the logic layer
+-- needs from infrastructure: filesystem access, generator loading, index
+-- catalog reads, migration execution, query type inference, warning
+-- reports, seq-scan explain, and staging.
 module Logic.Capabilities
   ( -- * Capabilities
     Logic.Capabilities.Fs.FsOps (..),

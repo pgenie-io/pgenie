@@ -1,3 +1,5 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module GenBridge.LoadSpec (spec) where
 
 import Data.Aeson qualified as Aeson
@@ -7,7 +9,7 @@ import GenBridge qualified as GenBridge
 import GenBridge.Fixtures.Project1 qualified as Fixtures.Project1
 import GenBridge.Model.Output qualified as Output
 import GenBridge.Model.Output.Report qualified as Output.Report
-import System.Exit
+import System.Exit qualified as Exit
 import Test.Hspec
 import Prelude
 
@@ -26,7 +28,7 @@ spec = do
           Left err -> do
             putStrLn "Failed to parse config JSON:"
             Text.putStrLn err
-            exitFailure
+            Exit.exitFailure
           Right compile -> pure compile
 
       let output =
@@ -37,7 +39,7 @@ spec = do
           Output.ErrOutput report -> do
             putStrLn "Generation failed!"
             Text.putStrLn (Output.Report.toErrorYamlText report)
-            exitFailure
+            Exit.exitFailure
           Output.OkOutput (Output.OutputOk {warnings, value}) -> do
             putStrLn "Generation succeeded!"
             forM_ warnings \warning -> do

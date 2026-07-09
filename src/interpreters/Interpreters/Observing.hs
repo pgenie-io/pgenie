@@ -23,14 +23,21 @@ import Utils.Prelude hiding (readFile, writeFile)
 
 -- | Observations produced while executing capability-based logic.
 data Observation
-  = StageEntered [Text]
-  | StageExited [Text] Double
-  | WarningEmitted Report.Report
-  | ExecutionFailed Report.Report
+  = -- | Execution entered the named stage path.
+    StageEntered [Text]
+  | -- | Execution left the named stage path, with the progress budget
+    -- remaining unused by that stage redistributed to the caller.
+    StageExited [Text] Double
+  | -- | A non-fatal warning was raised at the given stage path.
+    WarningEmitted Report.Report
+  | -- | Execution aborted at the given stage path.
+    ExecutionFailed Report.Report
   deriving stock (Eq, Show)
 
 -- | Capability to publish runtime observations.
 class (Monad m) => Observes m where
+  -- | Publish an observation to the host environment for rendering or
+  -- recording.
   observe :: Observation -> m ()
 
 -- | Transformer that tracks the current stage path and per-stage progress

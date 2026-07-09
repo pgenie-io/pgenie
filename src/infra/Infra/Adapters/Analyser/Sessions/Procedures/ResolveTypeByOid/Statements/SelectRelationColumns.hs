@@ -1,17 +1,23 @@
+{-# LANGUAGE QuasiQuotes #-}
+
+-- | Hasql statement fetching a relation's columns by relation name.
 module Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements.SelectRelationColumns where
 
 import Hasql.Mapping.IsStatement
 import Hasql.TH
 import Utils.Prelude
 
+-- | The relation name whose columns to fetch.
 data SelectRelationColumnsParams = SelectRelationColumnsParams
   { -- | Relation name.
     name :: Text
   }
   deriving stock (Eq, Show)
 
+-- | The relation's columns, in attribute order.
 type SelectRelationColumnsResult = Vector SelectRelationColumnsResultRow
 
+-- | One column of a relation.
 data SelectRelationColumnsResultRow = SelectRelationColumnsResultRow
   { name :: Text,
     typeId :: Int32,

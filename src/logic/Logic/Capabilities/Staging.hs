@@ -1,3 +1,5 @@
+-- |
+-- Port for wrapping actions as progress-tracked, nested stages.
 module Logic.Capabilities.Staging
   ( Stages (..),
   )

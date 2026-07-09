@@ -1,3 +1,6 @@
+-- |
+-- The freeze file that pins generator URLs to their integrity hashes, so
+-- repeated runs can detect when a generator has changed.
 module Logic.Domain.GeneratorHashes
   ( HashesMap,
     hashesFilePath,
@@ -19,6 +22,7 @@ type HashesMap = Map Text Text
 
 -- * Constants
 
+-- | Project-relative path of the freeze file.
 hashesFilePath :: Path
 hashesFilePath = "freeze1.pgn.yaml"
 
@@ -39,6 +43,8 @@ serializeHashesMap hashes =
 
 -- * Internal
 
+-- | Parse a freeze file. Malformed content is treated as an empty map,
+-- since a missing or corrupt freeze file only means no hashes are pinned yet.
 parseHashesFile :: Text -> HashesMap
 parseHashesFile text =
   case U.parseText hashesMapValue text of

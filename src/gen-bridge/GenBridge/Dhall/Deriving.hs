@@ -30,4 +30,5 @@ instance (KnownSymbol suffix) => ModifyOptions (SumModifier suffix) where
       dropSuffix text =
         fromMaybe text (Text.stripSuffix suffix text)
 
+-- | Render Haskell record field names as Dhall's conventional camelCase.
 type FieldModifier = Field CamelCase

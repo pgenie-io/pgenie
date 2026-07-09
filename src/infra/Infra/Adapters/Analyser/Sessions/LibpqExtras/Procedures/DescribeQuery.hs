@@ -26,6 +26,7 @@ import Database.PostgreSQL.LibPQ qualified as Pq
 import Infra.Adapters.Analyser.Sessions.LibpqExtras.LawfulConversions ()
 import Utils.Prelude
 
+-- | The libpq connection a description is run against.
 type Context =
   Pq.Connection
 
@@ -92,40 +93,38 @@ io conn params = runExceptT do
     _ -> error ("Bug. Unexpected status: " <> show status)
 
   lift (Result <$> readParamTypeOids res <*> readResultColumns res)
-
--- * Helpers
-
-readParamTypeOids :: Pq.Result -> IO (Vector Word32)
-readParamTypeOids res = do
-  amount <- Pq.nparams res
-  Vector.generateM amount $ \i -> do
-    fmap to $ Pq.paramtype res i
-
-readResultColumns :: Pq.Result -> IO (Vector ResultColumn)
-readResultColumns res = do
-  amount <- fromIntegral . to @Int32 <$> Pq.nfields res
-  Vector.generateM amount $ \i -> do
-    let col = onfrom @Int32 (fromIntegral i)
-    name <- Pq.fname res col
-    name <- pure case name of
-      Nothing -> error "Oops! Trying to access a missing column"
-      Just "?column?" -> Nothing
-      Just name -> either (const Nothing) Just (decodeUtf8 name)
-    typeOid <- fmap to $ Pq.ftype res col
-    typeMod <- Pq.fmod res col
-    tableOid <- fmap to $ Pq.ftable res col
-    tableCol <- fmap to $ Pq.ftablecol res col
-    return $ ResultColumn name typeOid typeMod tableOid tableCol
-
-readResultErrorDetails :: Pq.Result -> IO Error
-readResultErrorDetails res = do
-  code <- foldMap decodeUtf8Lenient <$> Pq.resultErrorField res Pq.DiagSqlstate
-  message <- foldMap decodeUtf8Lenient <$> Pq.resultErrorField res Pq.DiagMessagePrimary
-  position <- mapMaybe parseInt <$> Pq.resultErrorField res Pq.DiagStatementPosition
-  pure (ResultError code message position)
   where
-    parseInt :: ByteString -> Maybe Int
-    parseInt byteString =
-      byteString
-        & AttoparsecBs.parseOnly (AttoparsecBs.decimal <* AttoparsecBs.endOfInput)
-        & either (const Nothing) Just
+    readParamTypeOids :: Pq.Result -> IO (Vector Word32)
+    readParamTypeOids res = do
+      amount <- Pq.nparams res
+      Vector.generateM amount $ \i -> do
+        fmap to $ Pq.paramtype res i
+
+    readResultColumns :: Pq.Result -> IO (Vector ResultColumn)
+    readResultColumns res = do
+      amount <- fromIntegral . to @Int32 <$> Pq.nfields res
+      Vector.generateM amount $ \i -> do
+        let col = onfrom @Int32 (fromIntegral i)
+        name <- Pq.fname res col
+        name <- pure case name of
+          Nothing -> error "Oops! Trying to access a missing column"
+          Just "?column?" -> Nothing
+          Just name -> either (const Nothing) Just (decodeUtf8 name)
+        typeOid <- fmap to $ Pq.ftype res col
+        typeMod <- Pq.fmod res col
+        tableOid <- fmap to $ Pq.ftable res col
+        tableCol <- fmap to $ Pq.ftablecol res col
+        return $ ResultColumn name typeOid typeMod tableOid tableCol
+
+    readResultErrorDetails :: Pq.Result -> IO Error
+    readResultErrorDetails res = do
+      code <- foldMap decodeUtf8Lenient <$> Pq.resultErrorField res Pq.DiagSqlstate
+      message <- foldMap decodeUtf8Lenient <$> Pq.resultErrorField res Pq.DiagMessagePrimary
+      position <- mapMaybe parseInt <$> Pq.resultErrorField res Pq.DiagStatementPosition
+      pure (ResultError code message position)
+      where
+        parseInt :: ByteString -> Maybe Int
+        parseInt byteString =
+          byteString
+            & AttoparsecBs.parseOnly (AttoparsecBs.decimal <* AttoparsecBs.endOfInput)
+            & either (const Nothing) Just

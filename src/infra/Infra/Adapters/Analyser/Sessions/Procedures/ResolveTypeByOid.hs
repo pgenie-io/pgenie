@@ -1,20 +1,26 @@
+-- |
+-- 'IsProcedure' member that classifies a Postgres type OID into the
+-- 'Scalar' shape it represents (primitive, composite, or enum), recursing
+-- into element and field types as needed, and consulting a static table for
+-- the well-known built-in OIDs before falling back to a catalog lookup.
 module Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid
   ( ResolveTypeByOid (..),
   )
 where
 
 import Infra.Adapters.Analyser.Sessions.Algebras.Procedure
-import Infra.Adapters.Analyser.Sessions.Domain as Domain
+import Infra.Adapters.Analyser.Sessions.Domain
 import Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements qualified as Statements
 import SyntacticClass qualified as Syntactic
 import Utils.Prelude hiding (Enum)
 
+-- | The type OID to resolve.
 data ResolveTypeByOid = ResolveTypeByOid
   { oid :: Int32
   }
   deriving stock (Show, Eq)
 
-instance Procedure ResolveTypeByOid where
+instance IsProcedure ResolveTypeByOid where
   type ProcedureResult ResolveTypeByOid = Type
   runProcedure (ResolveTypeByOid oid) =
     go oid

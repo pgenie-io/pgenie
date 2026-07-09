@@ -1,3 +1,6 @@
+-- |
+-- Progress-bar sub-component: tracks fractional completion and a
+-- moving time-remaining estimate, and renders both to a terminal line.
 module Ui.Display.Components.ProgressBar
   ( Memory,
     init,
@@ -9,6 +12,8 @@ where
 import Ui.Display.Components.ProgressBar.View qualified as View
 import Utils.Prelude hiding (init)
 
+-- | Progress-bar state: fraction complete so far, when tracking started, and
+-- the current estimate of time remaining (unavailable until progress > 0).
 data Memory = Memory
   { progress :: Double,
     startTime :: UTCTime,
@@ -16,6 +21,7 @@ data Memory = Memory
   }
   deriving stock (Eq, Show)
 
+-- | Fresh progress-bar state, timed from the given start, with no estimate yet.
 init :: UTCTime -> Memory
 init startTime =
   Memory
@@ -24,6 +30,7 @@ init startTime =
       timeLeftEstimate = Nothing
     }
 
+-- | True once progress has reached (or exceeded) 100%.
 isDone :: Memory -> Bool
 isDone mem = mem.progress >= 1
 

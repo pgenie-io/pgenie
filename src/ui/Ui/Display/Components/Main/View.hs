@@ -1,3 +1,6 @@
+-- |
+-- Terminal rendering primitives for the main display component: breadcrumbs,
+-- the completion message, and warning/error reports.
 module Ui.Display.Components.Main.View
   ( eraseLine,
     printStagePath,
@@ -16,7 +19,7 @@ import Utils.Prelude
 eraseLine :: TextBuilder
 eraseLine = "\r\ESC[2K"
 
--- | Print the stage path breadcrumb.
+-- | Render the breadcrumb of nested stage names leading to the current one.
 printStagePath :: [Text] -> TextBuilder
 printStagePath path =
   if null path
@@ -35,12 +38,14 @@ printStageDone path =
 printDone :: TextBuilder
 printDone = "\r\ESC[2K" <> "\ESC[1;32mDone!\ESC[0m" <> "\n"
 
--- | Print a warning report.
+-- | Render a warning report: message, optional stage path, suggestion, and
+-- key/value details, colour-coded yellow.
 printWarning :: [Text] -> Text -> Maybe Text -> [(Text, Text)] -> TextBuilder
 printWarning path message suggestion details =
   report "1;33" "Warning" path message suggestion details
 
--- | Print an error report.
+-- | Render an error report: message, optional stage path, suggestion, and
+-- key/value details, colour-coded red.
 printError :: [Text] -> Text -> Maybe Text -> [(Text, Text)] -> TextBuilder
 printError path message suggestion details =
   report "1;31" "Error" path message suggestion details
@@ -84,12 +89,12 @@ report modifiers label path message suggestion details =
             ],
       "\n"
     ]
-
-indent :: Int -> Text -> TextBuilder
-indent level text =
-  let prefix = Text.replicate level " "
-   in prefixEachLine (to prefix) text
-
-prefixEachLine :: TextBuilder -> Text -> TextBuilder
-prefixEachLine prefix text =
-  intercalateMap "\n" (mappend prefix . to) (Text.lines text)
+  where
+    indent :: Int -> Text -> TextBuilder
+    indent level text =
+      let prefix = Text.replicate level " "
+       in prefixEachLine (to prefix) text
+      where
+        prefixEachLine :: TextBuilder -> Text -> TextBuilder
+        prefixEachLine prefix' text' =
+          intercalateMap "\n" (mappend prefix' . to) (Text.lines text')

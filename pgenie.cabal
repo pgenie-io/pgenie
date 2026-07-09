@@ -27,6 +27,7 @@ common base
     ApplicativeDo
     Arrows
     BangPatterns
+    BinaryLiterals
     BlockArguments
     ConstraintKinds
     DataKinds
@@ -46,6 +47,7 @@ common base
     FunctionalDependencies
     GADTs
     GeneralizedNewtypeDeriving
+    HexFloatLiterals
     ImportQualifiedPost
     InstanceSigs
     LambdaCase
@@ -58,17 +60,17 @@ common base
     NoImplicitPrelude
     NoMonomorphismRestriction
     NumericUnderscores
+    OverloadedLabels
     OverloadedRecordDot
     OverloadedStrings
     ParallelListComp
     PatternGuards
-    QuasiQuotes
+    PatternSynonyms
     RankNTypes
     RecordWildCards
     ScopedTypeVariables
     StandaloneDeriving
     StrictData
-    TemplateHaskell
     TupleSections
     TypeApplications
     TypeFamilies

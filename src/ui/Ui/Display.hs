@@ -1,3 +1,6 @@
+-- |
+-- Terminal display device: holds the mutable render state across the run and
+-- turns each runtime observation into output written to stderr.
 module Ui.Display
   ( Display,
     new,
@@ -15,14 +18,15 @@ data Display = Display
   { memoryVar :: MVar Main.Memory
   }
 
--- | Create a new Display instance
+-- | Construct a display with empty state, timestamped from the moment of creation.
 new :: IO Display
 new = do
   currentTime <- getCurrentTime
   memoryVar <- newMVar (Main.init currentTime)
   pure Display {memoryVar}
 
--- | Handle a runtime observation and update the display.
+-- | Fold an observation into the display's state and immediately flush the
+-- resulting output to stderr.
 handleObservation :: Display -> Observing.Observation -> IO ()
 handleObservation display observation = do
   modifyMVar_ display.memoryVar \oldMemory -> do

@@ -1,12 +1,21 @@
-module GenBridge.Dhall.Decode where
+-- |
+-- Combinators for building Dhall 'Decoder's that refine an existing decoder
+-- with extra, Haskell-side validation instead of widening the Dhall type.
+module GenBridge.Dhall.Decode
+  ( constrain,
+    narrowWith,
+    narrow,
+  )
+where
 
 import Dhall.Marshal.Decode
 import Dhall.Pretty qualified
-import Prettyprinter qualified as Pp
-import Prettyprinter.Render.Text qualified as Pp
+import Prettyprinter qualified
+import Prettyprinter.Render.Text qualified
 import Utils.Prelude
 
--- | Narrow, restrict, rectify.
+-- | Refine a 'Decoder' with a validation function. The error message
+-- returned by the validation function becomes the Dhall decode failure.
 constrain :: (a -> Either Text b) -> Decoder a -> Decoder b
 constrain f Decoder {..} =
   Decoder
@@ -18,6 +27,8 @@ constrain f Decoder {..} =
       expected
     }
 
+-- | Like 'narrow', but with a custom error message derived from the
+-- rejected value instead of the default rendering of the Dhall expression.
 narrowWith :: (a -> Text) -> (a -> Maybe b) -> Decoder a -> Decoder b
 narrowWith ontoError tryToOutput =
   constrain \a ->
@@ -25,6 +36,8 @@ narrowWith ontoError tryToOutput =
       Nothing -> Left (ontoError a)
       Just b -> Right b
 
+-- | Refine a 'Decoder' with a partial function. On failure, reports the
+-- offending Dhall expression rendered as source.
 narrow :: (a -> Maybe b) -> Decoder a -> Decoder b
 narrow f Decoder {..} =
   Decoder
@@ -37,4 +50,4 @@ narrow f Decoder {..} =
     }
   where
     renderExpr expr =
-      Pp.renderStrict (Pp.layoutCompact ("Can't narrow value: " <> Dhall.Pretty.prettyExpr expr))
+      Prettyprinter.Render.Text.renderStrict (Prettyprinter.layoutCompact ("Can't narrow value: " <> Dhall.Pretty.prettyExpr expr))

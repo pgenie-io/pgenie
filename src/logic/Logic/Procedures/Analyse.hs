@@ -1,4 +1,15 @@
-module Logic.Procedures.Analyse where
+-- |
+-- Validates a project and optionally renders its resolved model to text, for
+-- the @analyse@ CLI command: the same checks as generation, without writing
+-- any generated files.
+module Logic.Procedures.Analyse
+  ( Port,
+    Params (..),
+    ModelFormat (..),
+    Result (..),
+    run,
+  )
+where
 
 import Data.Aeson.Text qualified as Aeson.Text
 import Data.Text qualified as Text
@@ -12,21 +23,28 @@ import Logic.Domain.SeqScanFinding (SeqScanFinding (..))
 import Logic.Procedures.AnalyseProject qualified as AnalyseProject
 import Utils.Prelude
 
+-- | Everything the analyse procedure needs from its execution context.
 type Port m = AnalyseProject.Port m
 
+-- | Input to the analyse procedure.
 data Params = Params
   { projectFile :: ProjectFile.ProjectFile,
     failOnSeqScans :: Bool,
     output :: Maybe ModelFormat
   }
 
+-- | Serialization format for the optional rendered project model.
 data ModelFormat = ModelFormatJson | ModelFormatDhall
   deriving stock (Eq, Show)
 
+-- | Output of the analyse procedure: the rendered model text, or empty when
+-- no output format was requested.
 data Result = Result
   { outputText :: Text
   }
 
+-- | Analyse the project, failing or warning on detected sequential scans
+-- per 'failOnSeqScans', and optionally render the resolved model.
 run :: (Port m) => Params -> m Result
 run params =
   stage "" 2 do

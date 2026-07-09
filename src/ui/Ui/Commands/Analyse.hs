@@ -12,7 +12,7 @@ import Options.Applicative qualified as Opt
 import Ui.Framework
 import Utils.Prelude
 
-analyse :: (Analyse.Port m) => Command m
+analyse :: forall m. (Analyse.Port m) => Command m
 analyse =
   Command
     { name = "analyse",
@@ -20,40 +20,41 @@ analyse =
       parser,
       execute
     }
+  where
+    parser :: Opt.Parser Params
+    parser =
+      Params
+        <$> Opt.switch
+          ( Opt.long "fail-on-seq-scans"
+              <> Opt.help "Fail the procedure if sequential scans are detected (instead of emitting warnings)"
+          )
+        <*> optional
+          ( Opt.option
+              readFormat
+              ( Opt.long "output"
+                  <> Opt.metavar "OUTPUT"
+                  <> Opt.help "Also output the project model in the given format: json or dhall"
+              )
+          )
+      where
+        readFormat =
+          Opt.eitherReader \s -> case s of
+            "json" -> Right Analyse.ModelFormatJson
+            "dhall" -> Right Analyse.ModelFormatDhall
+            _ -> Left ("Unknown format: " <> s <> ". Expected 'json' or 'dhall'.")
 
+    execute :: ProjectFile.ProjectFile -> Params -> m Text
+    execute projectFile params =
+      Analyse.run
+        Analyse.Params
+          { projectFile,
+            failOnSeqScans = params.failOnSeqScans,
+            output = params.output
+          }
+        <&> (.outputText)
+
+-- | Parsed command-line options for the @analyse@ command.
 data Params = Params
   { failOnSeqScans :: Bool,
     output :: Maybe Analyse.ModelFormat
   }
-
-parser :: Opt.Parser Params
-parser =
-  Params
-    <$> Opt.switch
-      ( Opt.long "fail-on-seq-scans"
-          <> Opt.help "Fail the procedure if sequential scans are detected (instead of emitting warnings)"
-      )
-    <*> optional
-      ( Opt.option
-          readFormat
-          ( Opt.long "output"
-              <> Opt.metavar "OUTPUT"
-              <> Opt.help "Also output the project model in the given format: json or dhall"
-          )
-      )
-  where
-    readFormat =
-      Opt.eitherReader \s -> case s of
-        "json" -> Right Analyse.ModelFormatJson
-        "dhall" -> Right Analyse.ModelFormatDhall
-        _ -> Left ("Unknown format: " <> s <> ". Expected 'json' or 'dhall'.")
-
-execute :: (Analyse.Port m) => ProjectFile.ProjectFile -> Params -> m Text
-execute projectFile params = do
-  Analyse.run
-    Analyse.Params
-      { projectFile,
-        failOnSeqScans = params.failOnSeqScans,
-        output = params.output
-      }
-    <&> (.outputText)

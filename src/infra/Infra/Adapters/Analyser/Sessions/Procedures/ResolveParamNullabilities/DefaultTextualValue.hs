@@ -1,3 +1,7 @@
+-- |
+-- The default textual literal to send for a parameter of a given 'Type',
+-- used to probe whether the server accepts @NULL@ for it (see
+-- "Infra.Adapters.Analyser.Sessions.Procedures.ResolveParamNullabilities").
 module Infra.Adapters.Analyser.Sessions.Procedures.ResolveParamNullabilities.DefaultTextualValue
   ( fromType,
   )
@@ -8,6 +12,8 @@ import Data.Vector qualified as Vector
 import Infra.Adapters.Analyser.Sessions.Domain
 import Utils.Prelude hiding (Enum, fromEnum)
 
+-- | A non-@NULL@ textual literal that satisfies the given type's wire format.
+-- Returns 'Nothing' for types with no known literal encoding.
 fromType :: Type -> Maybe Text
 fromType (Type dimensionality scalar) =
   case dimensionality of

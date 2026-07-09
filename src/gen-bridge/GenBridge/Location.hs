@@ -1,6 +1,13 @@
-module GenBridge.Location where
+-- |
+-- Location of a Dhall generator, either fetched over the network or read
+-- from the local filesystem.
+module GenBridge.Location
+  ( Location (..),
+    toCode,
+  )
+where
 
-import AlgebraicPath qualified as Path
+import AlgebraicPath qualified
 import Utils.Prelude
 
 -- | Location of a Dhall generator file.
@@ -12,4 +19,4 @@ data Location
 toCode :: Location -> Text
 toCode = \case
   LocationUrl url -> url
-  LocationPath path -> Path.toText path
+  LocationPath path -> AlgebraicPath.toText path

@@ -9,7 +9,7 @@ import Options.Applicative qualified as Opt
 import Ui.Framework
 import Utils.Prelude
 
-generate :: (Generate.Port m) => Command m
+generate :: forall m. (Generate.Port m) => Command m
 generate =
   Command
     { name = "generate",
@@ -17,24 +17,25 @@ generate =
       parser,
       execute
     }
+  where
+    parser :: Opt.Parser Params
+    parser =
+      Params
+        <$> Opt.switch
+          ( Opt.long "fail-on-seq-scans"
+              <> Opt.help "Fail the procedure if sequential scans are detected (instead of emitting warnings)"
+          )
 
+    execute :: ProjectFile.ProjectFile -> Params -> m Text
+    execute projectFile params =
+      Generate.run
+        Generate.Params
+          { projectFile,
+            failOnSeqScans = params.failOnSeqScans
+          }
+        $> ""
+
+-- | Parsed command-line options for the @generate@ command.
 data Params = Params
   { failOnSeqScans :: Bool
   }
-
-parser :: Opt.Parser Params
-parser =
-  Params
-    <$> Opt.switch
-      ( Opt.long "fail-on-seq-scans"
-          <> Opt.help "Fail the procedure if sequential scans are detected (instead of emitting warnings)"
-      )
-
-execute :: (Generate.Port m) => ProjectFile.ProjectFile -> Params -> m Text
-execute projectFile params =
-  Generate.run
-    Generate.Params
-      { projectFile,
-        failOnSeqScans = params.failOnSeqScans
-      }
-    $> ""

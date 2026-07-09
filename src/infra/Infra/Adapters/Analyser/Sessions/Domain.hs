@@ -1,19 +1,37 @@
-module Infra.Adapters.Analyser.Sessions.Domain where
+-- |
+-- The shape of a query's parameters and result columns, as resolved by the
+-- 'Infra.Adapters.Analyser.Sessions' analysis. Mirrors the vocabulary that
+-- @Logic.Domain.QueryAnalysis@ is ultimately built from.
+module Infra.Adapters.Analyser.Sessions.Domain
+  ( Query (..),
+    Param (..),
+    ResultColumn (..),
+    Type (..),
+    Scalar (..),
+    Primitive (..),
+    Composite (..),
+    CompositeField (..),
+    Enum (..),
+  )
+where
 
 import Utils.Prelude hiding (Enum)
 
+-- | The resolved shape of a query's parameters and result columns.
 data Query = Query
   { params :: Vector Param,
     resultColumns :: Vector ResultColumn
   }
   deriving stock (Show, Eq)
 
+-- | A resolved query parameter: its type and whether the server accepts @NULL@ for it.
 data Param = Param
   { nullable :: Bool,
     type_ :: Type
   }
   deriving stock (Show, Eq)
 
+-- | A resolved result column: its name, type, and nullability.
 data ResultColumn = ResultColumn
   { name :: Text,
     nullable :: Bool,
@@ -21,12 +39,14 @@ data ResultColumn = ResultColumn
   }
   deriving stock (Show, Eq)
 
+-- | A Postgres type: its array dimensionality (0 for a scalar) and element scalar.
 data Type = Type
   { dimensionality :: Int,
     scalar :: Scalar
   }
   deriving stock (Show, Eq)
 
+-- | The scalar (non-array) shape of a type: primitive, composite, or enum.
 data Scalar
   = PrimitiveScalar Primitive
   | CompositeScalar Composite
@@ -158,6 +178,7 @@ data Primitive
     GeographyPrimitive
   deriving stock (Show, Eq)
 
+-- | A user-defined composite (row) type and its fields.
 data Composite = Composite
   { schemaName :: Text,
     name :: Text,
@@ -165,12 +186,14 @@ data Composite = Composite
   }
   deriving stock (Show, Eq)
 
+-- | One field of a 'Composite' type.
 data CompositeField = CompositeField
   { name :: Text,
     type_ :: Type
   }
   deriving stock (Show, Eq)
 
+-- | A user-defined enum type and its ordered labels.
 data Enum = Enum
   { schemaName :: Text,
     name :: Text,

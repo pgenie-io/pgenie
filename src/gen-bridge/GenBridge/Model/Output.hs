@@ -1,3 +1,8 @@
+-- |
+-- The @Output@ half of the generator contract: what a Dhall generator's
+-- @compile@ function returns after being handed an "GenBridge.Model.Input"
+-- project — either the generated 'File's (with any non-fatal 'Report'
+-- warnings), or a fatal 'Report' explaining why generation failed.
 module GenBridge.Model.Output
   ( Output (..),
     OutputOk (..),
@@ -35,6 +40,7 @@ data Output
     (Dhall.FromDhall, Dhall.ToDhall)
     via (Dhall.Deriving.Codec (Dhall.Deriving.SumModifier "Output") Output)
 
+-- | A single generated file, relative to the generation output directory.
 data File = File
   { path :: Text,
     content :: Text

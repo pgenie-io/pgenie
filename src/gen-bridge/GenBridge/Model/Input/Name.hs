@@ -1,4 +1,11 @@
-module GenBridge.Model.Input.Name where
+-- |
+-- A precomputed-case identifier, shared by every named thing in "GenBridge.Model.Input"
+-- (projects, queries, fields, ...) so each generator can pick whichever
+-- case convention its target language needs without re-deriving it.
+module GenBridge.Model.Input.Name
+  ( Name (..),
+  )
+where
 
 import Data.Aeson qualified as Aeson
 import Dhall qualified

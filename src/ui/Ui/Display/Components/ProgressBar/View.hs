@@ -1,3 +1,5 @@
+-- |
+-- Rendering of the progress-bar's fixed-width ASCII bar and percentage readout.
 module Ui.Display.Components.ProgressBar.View
   ( render,
   )
@@ -7,6 +9,8 @@ import Data.Text qualified as Text
 import TextBuilder
 import Utils.Prelude
 
+-- | Render a fixed-width (30 column) bar and a one-decimal percentage for the
+-- given fraction complete (0 to 1).
 render :: Double -> TextBuilder
 render progress =
   let width = 30

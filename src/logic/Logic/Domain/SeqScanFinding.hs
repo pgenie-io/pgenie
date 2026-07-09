@@ -1,3 +1,6 @@
+-- |
+-- Detection of PostgreSQL sequential scans with filter conditions from
+-- @EXPLAIN@ output text, used to suggest missing indexes.
 module Logic.Domain.SeqScanFinding
   ( SeqScanFinding (..),
     detectSeqScans,
@@ -38,31 +41,31 @@ detectSeqScans = go
                 : go rest
       | otherwise = go (nextLine : rest)
 
--- | Parse a line for "Seq Scan on <table>" pattern.
--- Returns the indentation level and table name.
-parseSeqScanLine :: Text -> Maybe (Int, Text)
-parseSeqScanLine line =
-  let indent = Text.length (Text.takeWhile (== ' ') line)
-      trimmed = Text.strip line
-      -- Remove plan tree arrow prefix if present (e.g., "->  ")
-      withoutArrow = case Text.stripPrefix "-> " trimmed of
-        Just rest -> Text.stripStart rest
-        Nothing -> trimmed
-   in case Text.stripPrefix "Seq Scan on " withoutArrow of
-        Just rest ->
-          let tableName = Text.takeWhile (\c -> c /= ' ' && c /= '(') rest
-           in if Text.null tableName then Nothing else Just (indent, tableName)
-        Nothing -> Nothing
+    -- Parse a line for "Seq Scan on <table>" pattern.
+    -- Returns the indentation level and table name.
+    parseSeqScanLine :: Text -> Maybe (Int, Text)
+    parseSeqScanLine line =
+      let indent = Text.length (Text.takeWhile (== ' ') line)
+          trimmed = Text.strip line
+          -- Remove plan tree arrow prefix if present (e.g., "->  ")
+          withoutArrow = case Text.stripPrefix "-> " trimmed of
+            Just rest -> Text.stripStart rest
+            Nothing -> trimmed
+       in case Text.stripPrefix "Seq Scan on " withoutArrow of
+            Just rest ->
+              let tableName = Text.takeWhile (\c -> c /= ' ' && c /= '(') rest
+               in if Text.null tableName then Nothing else Just (indent, tableName)
+            Nothing -> Nothing
 
--- | Parse a Filter line that is a child of a parent node.
--- The line must be indented more than the parent.
-parseFilterLine :: Int -> Text -> Maybe Text
-parseFilterLine parentIndent line =
-  let indent = Text.length (Text.takeWhile (== ' ') line)
-      trimmed = Text.strip line
-   in if indent > parentIndent
-        then Text.stripPrefix "Filter: " trimmed
-        else Nothing
+    -- Parse a Filter line that is a child of a parent node.
+    -- The line must be indented more than the parent.
+    parseFilterLine :: Int -> Text -> Maybe Text
+    parseFilterLine parentIndent line =
+      let indent = Text.length (Text.takeWhile (== ' ') line)
+          trimmed = Text.strip line
+       in if indent > parentIndent
+            then Text.stripPrefix "Filter: " trimmed
+            else Nothing
 
 -- | Extract column names from a filter condition.
 -- Handles common patterns like:
@@ -96,6 +99,7 @@ extractFilterColumns condition =
         [_table, col] -> col
         _ -> ident
 
+-- | Test suite for seq-scan detection and filter-column extraction.
 spec :: Spec
 spec = do
   describe "detectSeqScans" do

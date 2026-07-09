@@ -1,3 +1,6 @@
+-- |
+-- Query signature files (@.sig1.pgn.yaml@): serialization, parsing, and
+-- validation-and-merge against a query's inferred parameter and result types.
 module Logic.Domain.QuerySignature
   ( Signature (..),
     signatureFilePath,
@@ -10,6 +13,8 @@ module Logic.Domain.QuerySignature
   )
 where
 
+import Test.Hspec
+import Utils.Prelude hiding (readFile, writeFile)
 import AlgebraicPath qualified as Path
 import Control.Foldl qualified as Fold
 import Data.Map.Strict qualified as Map
@@ -18,8 +23,6 @@ import Data.Text qualified as Text
 import GenBridge.Model.Input qualified as Gen.Input
 import Logic.Domain.Name qualified as Name
 import Logic.Domain.Report qualified as Report
-import Test.Hspec
-import Utils.Prelude hiding (readFile, writeFile)
 import YamlUnscrambler qualified as U
 
 -- * Types
@@ -32,7 +35,7 @@ data Signature = Signature
   deriving stock (Eq, Show)
 
 data FieldSig
-  = FieldSig
+  = ScalarFieldSig
       { typeName :: Text,
         notNull :: Bool
       }
@@ -105,7 +108,7 @@ fieldSigFromValue value fieldNotNull =
           elementNotNull = not settings.elementIsNullable
         }
     Nothing ->
-      FieldSig
+      ScalarFieldSig
         { typeName = valueToTypeName value,
           notNull = fieldNotNull
         }
@@ -334,7 +337,7 @@ tryParse text =
               typeName = baseTypeName <> Text.replicate (fromIntegral dims) "[]"
            in if dims == 0
                 then
-                  FieldSig
+                  ScalarFieldSig
                     { typeName,
                       notNull
                     }
@@ -527,7 +530,7 @@ validateField fieldPath isParam inferred file = do
 fieldElementNotNull :: FieldSig -> Maybe Bool
 fieldElementNotNull = \case
   ArrayFieldSig {elementNotNull} -> Just elementNotNull
-  FieldSig {} -> Nothing
+  ScalarFieldSig {} -> Nothing
 
 mkFieldSig :: Text -> Bool -> Maybe Bool -> FieldSig
 mkFieldSig typeName notNull = \case
@@ -538,7 +541,7 @@ mkFieldSig typeName notNull = \case
         elementNotNull
       }
   Nothing ->
-    FieldSig
+    ScalarFieldSig
       { typeName,
         notNull
       }
@@ -618,17 +621,17 @@ spec = do
             Signature
               { idempotent = False,
                 parameters =
-                  [ ("format", FieldSig {typeName = "uuid", notNull = False}),
-                    ("name", FieldSig {typeName = "text", notNull = True})
+                  [ ("format", ScalarFieldSig {typeName = "uuid", notNull = False}),
+                    ("name", ScalarFieldSig {typeName = "text", notNull = True})
                   ],
                 result =
                   Just
                     ResultSig
                       { cardinality = CardinalityZeroOrOne,
                         columns =
-                          [ ("id", FieldSig {typeName = "uuid", notNull = True}),
-                            ("name", FieldSig {typeName = "text", notNull = True}),
-                            ("released", FieldSig {typeName = "date", notNull = False})
+                          [ ("id", ScalarFieldSig {typeName = "uuid", notNull = True}),
+                            ("name", ScalarFieldSig {typeName = "text", notNull = True}),
+                            ("released", ScalarFieldSig {typeName = "date", notNull = False})
                           ]
                       }
               }
@@ -644,7 +647,7 @@ spec = do
                     ResultSig
                       { cardinality = CardinalityMany,
                         columns =
-                          [ ("id", FieldSig {typeName = "int4", notNull = True})
+                          [ ("id", ScalarFieldSig {typeName = "int4", notNull = True})
                           ]
                       }
               }
@@ -655,7 +658,7 @@ spec = do
             Signature
               { idempotent = False,
                 parameters =
-                  [ ("id", FieldSig {typeName = "int8", notNull = True})
+                  [ ("id", ScalarFieldSig {typeName = "int8", notNull = True})
                   ],
                 result = Nothing
               }
@@ -676,14 +679,14 @@ spec = do
             Signature
               { idempotent = False,
                 parameters =
-                  [ ("format", FieldSig {typeName = "uuid", notNull = False})
+                  [ ("format", ScalarFieldSig {typeName = "uuid", notNull = False})
                   ],
                 result =
                   Just
                     ResultSig
                       { cardinality = CardinalityZeroOrOne,
                         columns =
-                          [ ("id", FieldSig {typeName = "uuid", notNull = True})
+                          [ ("id", ScalarFieldSig {typeName = "uuid", notNull = True})
                           ]
                       }
               }
@@ -781,12 +784,12 @@ spec = do
         `shouldBe` Signature
           { idempotent = False,
             parameters =
-              [ ("ltree_path", FieldSig {typeName = "ltree", notNull = True}),
-                ("citext_name", FieldSig {typeName = "citext", notNull = False}),
-                ("tags", FieldSig {typeName = "hstore", notNull = False}),
-                ("box2d", FieldSig {typeName = "box2d", notNull = False}),
-                ("box3d", FieldSig {typeName = "box3d", notNull = False}),
-                ("geom", FieldSig {typeName = "geometry", notNull = True}),
+              [ ("ltree_path", ScalarFieldSig {typeName = "ltree", notNull = True}),
+                ("citext_name", ScalarFieldSig {typeName = "citext", notNull = False}),
+                ("tags", ScalarFieldSig {typeName = "hstore", notNull = False}),
+                ("box2d", ScalarFieldSig {typeName = "box2d", notNull = False}),
+                ("box3d", ScalarFieldSig {typeName = "box3d", notNull = False}),
+                ("geom", ScalarFieldSig {typeName = "geometry", notNull = True}),
                 ( "geog_array",
                   ArrayFieldSig
                     { typeName = "geography[]",
@@ -809,7 +812,7 @@ spec = do
           ( Just
               ResultSig
                 { cardinality = CardinalityZeroOrOne,
-                  columns = [("id", FieldSig {typeName = "int4", notNull = True})]
+                  columns = [("id", ScalarFieldSig {typeName = "int4", notNull = True})]
                 }
           )
       fmap (.result) (tryParse (mkSig "one"))
@@ -817,7 +820,7 @@ spec = do
           ( Just
               ResultSig
                 { cardinality = CardinalityOne,
-                  columns = [("id", FieldSig {typeName = "int4", notNull = True})]
+                  columns = [("id", ScalarFieldSig {typeName = "int4", notNull = True})]
                 }
           )
       fmap (.result) (tryParse (mkSig "many"))
@@ -825,7 +828,7 @@ spec = do
           ( Just
               ResultSig
                 { cardinality = CardinalityMany,
-                  columns = [("id", FieldSig {typeName = "int4", notNull = True})]
+                  columns = [("id", ScalarFieldSig {typeName = "int4", notNull = True})]
                 }
           )
 
@@ -920,7 +923,7 @@ spec = do
                 { cardinality = CardinalityMany,
                   columns =
                     [ ( "tracks",
-                        FieldSig
+                        ScalarFieldSig
                           { typeName = "track_info",
                             notNull = False
                           }
@@ -962,14 +965,14 @@ spec = do
             Signature
               { idempotent = False,
                 parameters =
-                  [ ("x", FieldSig {typeName = "int4", notNull = False})
+                  [ ("x", ScalarFieldSig {typeName = "int4", notNull = False})
                   ],
                 result =
                   Just
                     ResultSig
                       { cardinality = CardinalityMany,
                         columns =
-                          [ ("id", FieldSig {typeName = "int4", notNull = True})
+                          [ ("id", ScalarFieldSig {typeName = "int4", notNull = True})
                           ]
                       }
               }
@@ -980,7 +983,7 @@ spec = do
             Signature
               { idempotent = False,
                 parameters =
-                  [ ("x", FieldSig {typeName = "int4", notNull = False})
+                  [ ("x", ScalarFieldSig {typeName = "int4", notNull = False})
                   ],
                 result = Nothing
               }
@@ -988,7 +991,7 @@ spec = do
             Signature
               { idempotent = False,
                 parameters =
-                  [ ("x", FieldSig {typeName = "int4", notNull = True})
+                  [ ("x", ScalarFieldSig {typeName = "int4", notNull = True})
                   ],
                 result = Nothing
               }
@@ -999,7 +1002,7 @@ spec = do
             Signature
               { idempotent = False,
                 parameters =
-                  [ ("x", FieldSig {typeName = "int4", notNull = True})
+                  [ ("x", ScalarFieldSig {typeName = "int4", notNull = True})
                   ],
                 result = Nothing
               }
@@ -1007,7 +1010,7 @@ spec = do
             Signature
               { idempotent = False,
                 parameters =
-                  [ ("x", FieldSig {typeName = "int4", notNull = False})
+                  [ ("x", ScalarFieldSig {typeName = "int4", notNull = False})
                   ],
                 result = Nothing
               }
@@ -1023,7 +1026,7 @@ spec = do
                     ResultSig
                       { cardinality = CardinalityMany,
                         columns =
-                          [ ("id", FieldSig {typeName = "int4", notNull = True})
+                          [ ("id", ScalarFieldSig {typeName = "int4", notNull = True})
                           ]
                       }
               }
@@ -1036,7 +1039,7 @@ spec = do
                     ResultSig
                       { cardinality = CardinalityMany,
                         columns =
-                          [ ("id", FieldSig {typeName = "int4", notNull = False})
+                          [ ("id", ScalarFieldSig {typeName = "int4", notNull = False})
                           ]
                       }
               }
@@ -1052,7 +1055,7 @@ spec = do
                     ResultSig
                       { cardinality = CardinalityMany,
                         columns =
-                          [ ("id", FieldSig {typeName = "int4", notNull = False})
+                          [ ("id", ScalarFieldSig {typeName = "int4", notNull = False})
                           ]
                       }
               }
@@ -1065,7 +1068,7 @@ spec = do
                     ResultSig
                       { cardinality = CardinalityMany,
                         columns =
-                          [ ("id", FieldSig {typeName = "int4", notNull = True})
+                          [ ("id", ScalarFieldSig {typeName = "int4", notNull = True})
                           ]
                       }
               }
@@ -1081,7 +1084,7 @@ spec = do
                     ResultSig
                       { cardinality = CardinalityMany,
                         columns =
-                          [ ("id", FieldSig {typeName = "int4", notNull = True})
+                          [ ("id", ScalarFieldSig {typeName = "int4", notNull = True})
                           ]
                       }
               }
@@ -1094,7 +1097,7 @@ spec = do
                     ResultSig
                       { cardinality = CardinalityOne,
                         columns =
-                          [ ("id", FieldSig {typeName = "int4", notNull = True})
+                          [ ("id", ScalarFieldSig {typeName = "int4", notNull = True})
                           ]
                       }
               }
@@ -1107,7 +1110,7 @@ spec = do
                     ResultSig
                       { cardinality = CardinalityOne,
                         columns =
-                          [ ("id", FieldSig {typeName = "int4", notNull = True})
+                          [ ("id", ScalarFieldSig {typeName = "int4", notNull = True})
                           ]
                       }
               }
@@ -1158,7 +1161,7 @@ spec = do
                       { cardinality = CardinalityMany,
                         columns =
                           [ ( "tracks",
-                              FieldSig
+                              ScalarFieldSig
                                 { typeName = "track_info[]",
                                   notNull = False
                                 }
@@ -1192,7 +1195,7 @@ spec = do
             Signature
               { idempotent = False,
                 parameters =
-                  [ ("x", FieldSig {typeName = "int4", notNull = False})
+                  [ ("x", ScalarFieldSig {typeName = "int4", notNull = False})
                   ],
                 result = Nothing
               }
@@ -1200,7 +1203,7 @@ spec = do
             Signature
               { idempotent = False,
                 parameters =
-                  [ ("x", FieldSig {typeName = "int8", notNull = False})
+                  [ ("x", ScalarFieldSig {typeName = "int8", notNull = False})
                   ],
                 result = Nothing
               }
@@ -1216,7 +1219,7 @@ spec = do
                     ResultSig
                       { cardinality = CardinalityMany,
                         columns =
-                          [ ("id", FieldSig {typeName = "int4", notNull = True})
+                          [ ("id", ScalarFieldSig {typeName = "int4", notNull = True})
                           ]
                       }
               }
@@ -1229,7 +1232,7 @@ spec = do
                     ResultSig
                       { cardinality = CardinalityMany,
                         columns =
-                          [ ("id", FieldSig {typeName = "uuid", notNull = True})
+                          [ ("id", ScalarFieldSig {typeName = "uuid", notNull = True})
                           ]
                       }
               }
@@ -1240,7 +1243,7 @@ spec = do
             Signature
               { idempotent = False,
                 parameters =
-                  [ ("x", FieldSig {typeName = "int4", notNull = False})
+                  [ ("x", ScalarFieldSig {typeName = "int4", notNull = False})
                   ],
                 result = Nothing
               }
@@ -1248,7 +1251,7 @@ spec = do
             Signature
               { idempotent = False,
                 parameters =
-                  [ ("y", FieldSig {typeName = "int4", notNull = False})
+                  [ ("y", ScalarFieldSig {typeName = "int4", notNull = False})
                   ],
                 result = Nothing
               }
@@ -1264,7 +1267,7 @@ spec = do
                     ResultSig
                       { cardinality = CardinalityMany,
                         columns =
-                          [ ("id", FieldSig {typeName = "int4", notNull = True})
+                          [ ("id", ScalarFieldSig {typeName = "int4", notNull = True})
                           ]
                       }
               }

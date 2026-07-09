@@ -1,4 +1,14 @@
-module Logic.Procedures.ManageIndexes where
+-- |
+-- Compares the observed index catalog and query needs to compute which
+-- indexes to drop or create, and renders the result as a migration, for
+-- the @manage-indexes@ CLI command.
+module Logic.Procedures.ManageIndexes
+  ( Port,
+    Params (..),
+    Result (..),
+    run,
+  )
+where
 
 import AlgebraicPath qualified as Path
 import Data.Text qualified as Text
@@ -6,15 +16,17 @@ import Logic.Capabilities.Fs (FsOps (..))
 import Logic.Capabilities.Reporting (Warns (..))
 import Logic.Capabilities.Staging (Stages (..))
 import Logic.Domain.IndexOptimization (DropReason (..), IndexAction (..), IndexInfo (..))
-import Logic.Domain.IndexOptimization qualified as IndexOptimizer
+import Logic.Domain.IndexOptimization qualified as IndexOptimization
 import Logic.Domain.ProjectFile qualified as ProjectFile
 import Logic.Domain.Report (Report (..))
 import Logic.Domain.SeqScanFinding (SeqScanFinding (..))
 import Logic.Procedures.AnalyseProject qualified as AnalyseProject
 import Utils.Prelude hiding (readFile, writeFile)
 
+-- | Everything this procedure needs from its execution context.
 type Port m = (AnalyseProject.Port m, FsOps m, Warns m)
 
+-- | Input to the index management procedure.
 data Params = Params
   { projectFile :: ProjectFile.ProjectFile,
     allowRedundantIndexes :: Bool,
@@ -23,10 +35,14 @@ data Params = Params
     addMigration :: Bool
   }
 
+-- | Output: the rendered migration SQL, empty when no action is needed.
 data Result = Result
   { migrationText :: Text
   }
 
+-- | Compute index drop/create actions from the observed catalog and query
+-- needs, warn about (or fail on) redundant indexes per
+-- 'allowRedundantIndexes', and render the resulting migration.
 run :: (Port m) => Params -> m Result
 run params =
   stage "" 2 do
@@ -34,7 +50,7 @@ run params =
       AnalyseProject.run AnalyseProject.Params {projectFile = params.projectFile}
     let queryNeeds =
           map (\(_, finding) -> (finding.tableName, finding.suggestedIndexColumns)) analyseResult.seqScanFindings
-        allActions = IndexOptimizer.optimizeIndexes analyseResult.indexes queryNeeds
+        allActions = IndexOptimization.optimizeIndexes analyseResult.indexes queryNeeds
         (dropActions, createActions) =
           partition
             ( \case
@@ -52,7 +68,7 @@ run params =
     if null migrationActions
       then pure Result {migrationText = ""}
       else do
-        let migrationContent = IndexOptimizer.generateMigration migrationActions
+        let migrationContent = IndexOptimization.generateMigration migrationActions
         when params.addMigration do
           writeMigrationFile migrationContent
         pure Result {migrationText = migrationContent}

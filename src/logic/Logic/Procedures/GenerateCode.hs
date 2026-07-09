@@ -1,4 +1,16 @@
-module Logic.Procedures.GenerateCode where
+-- |
+-- Runs each configured artifact's generator against the resolved project
+-- model, writing generated files to disk and tracking generator integrity
+-- hashes to detect drift between runs.
+module Logic.Procedures.GenerateCode
+  ( Port,
+    Params (..),
+    Result (..),
+    Artifact (..),
+    run,
+    spec,
+  )
+where
 
 import AlgebraicPath qualified as Path
 import Control.Monad.Parallel qualified as MonadParallel
@@ -18,8 +30,11 @@ import Logic.Domain.Report (Report (..))
 import Test.Hspec
 import Utils.Prelude hiding (readFile, writeFile)
 
+-- | Everything the code generation procedure needs from its execution context.
 type Port m = (MonadParallel m, Stages m, Warns m, FsOps m, MonadError Report m, LoadsGen m)
 
+-- | One project artifact's generation outcome: the files it wrote and any
+-- warnings its generator emitted.
 data Artifact = Artifact
   { name :: Text,
     warnings :: [Gen.Output.Report],
@@ -27,16 +42,20 @@ data Artifact = Artifact
   }
   deriving stock (Eq, Show)
 
+-- | Input to the code generation procedure.
 data Params = Params
   { projectFile :: ProjectFile.ProjectFile,
     project :: Gen.Input.Project
   }
 
+-- | Output of the code generation procedure.
 data Result = Result
   { artifacts :: [Artifact]
   }
   deriving stock (Eq, Show)
 
+-- | Generate code for every configured artifact in parallel, reusing
+-- previously loaded generators when their integrity hash is unchanged.
 run :: (Port m) => Params -> m Result
 run Params {projectFile, project} =
   stage "Generating" (length projectFile.artifacts) do
@@ -185,6 +204,7 @@ instance LoadsGen TestM where
     env <- ask
     pure (env.gen, "hash")
 
+-- | Test suite for the code generation procedure.
 spec :: Spec
 spec = do
   describe "run" do
@@ -238,6 +258,6 @@ spec = do
       (result, state) <- runTestM gen (run params)
       result `shouldBe` Left (Report {path = ["err"], message = "boom", suggestion = Nothing, details = []})
       state.warnings `shouldBe` []
-
-stubGen :: Gen.Output.Output -> Gen.Gen
-stubGen output _config = Right (const output)
+  where
+    stubGen :: Gen.Output.Output -> Gen.Gen
+    stubGen output _config = Right (const output)

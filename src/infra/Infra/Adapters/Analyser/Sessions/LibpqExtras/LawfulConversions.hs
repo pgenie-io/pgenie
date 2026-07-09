@@ -1,5 +1,9 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
+-- |
+-- Lawful Conversion instances between libpq's 'Pq.Oid'\/'Pq.Column' newtypes
+-- and their plain integral representations, so callers can convert between
+-- them with 'to'\/'onfrom' instead of pattern-matching on the constructors.
 module Infra.Adapters.Analyser.Sessions.LibpqExtras.LawfulConversions where
 
 import Database.PostgreSQL.LibPQ qualified as Pq

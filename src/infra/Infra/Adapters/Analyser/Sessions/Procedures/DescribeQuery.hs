@@ -1,3 +1,6 @@
+-- |
+-- 'IsProcedure' member that describes a query's parameter type OIDs and
+-- result-column shape via libpq's @Describe@ message, without executing it.
 module Infra.Adapters.Analyser.Sessions.Procedures.DescribeQuery
   ( DescribeQuery (..),
     DescribeQueryResult (..),
@@ -14,17 +17,20 @@ import SyntacticClass qualified as Syntactic
 import Utils.Prelude
 import Utils.Text qualified
 
+-- | The raw SQL text of the query to describe.
 data DescribeQuery = DescribeQuery
   { query :: Text
   }
   deriving stock (Show, Eq)
 
+-- | The parameter type OIDs and result columns libpq reports for a query.
 data DescribeQueryResult = DescribeQueryResult
   { paramTypeOids :: Vector Word32,
     resultColumns :: Vector DescribeQueryResultColumn
   }
   deriving stock (Show, Eq)
 
+-- | One column of a described query's result, as reported by libpq.
 data DescribeQueryResultColumn = DescribeQueryResultColumn
   { -- | Name if it's present and makes valid UTF-8.
     name :: Maybe Text,
@@ -39,7 +45,7 @@ data DescribeQueryResultColumn = DescribeQueryResultColumn
   }
   deriving stock (Show, Eq)
 
-instance Procedure DescribeQuery where
+instance IsProcedure DescribeQuery where
   type ProcedureResult DescribeQuery = DescribeQueryResult
   runProcedure (DescribeQuery query) = do
     result <- HasqlDev.runSession do

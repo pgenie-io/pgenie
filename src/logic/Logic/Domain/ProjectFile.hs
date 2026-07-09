@@ -1,3 +1,5 @@
+-- |
+-- The @project1.pgn.yaml@ project file: its schema and YAML parsing.
 module Logic.Domain.ProjectFile
   ( ProjectFile (..),
     Artifact (..),
@@ -14,7 +16,7 @@ import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Text qualified as Text
 import Data.Vector qualified as Vector
 import GenBridge qualified as Gen
-import GenBridge.Model.Input qualified as Gen
+import GenBridge.Model.Input qualified as Gen.Input
 import Logic.Domain.Name qualified as Name
 import Logic.Domain.Report qualified as Report
 import Test.Hspec
@@ -24,7 +26,7 @@ import YamlUnscrambler qualified as U
 data ProjectFile = ProjectFile
   { space :: Name.Name,
     name :: Name.Name,
-    version :: Gen.Version,
+    version :: Gen.Input.Version,
     artifacts :: [Artifact],
     postgres :: Maybe Int
   }
@@ -78,7 +80,7 @@ tryFromYaml text = do
               Left err -> Left err
               Right name -> Right name
 
-    versionValue :: U.Value Gen.Version
+    versionValue :: U.Value Gen.Input.Version
     versionValue =
       U.scalarsValue [U.stringScalar versionString]
       where
@@ -89,7 +91,7 @@ tryFromYaml text = do
                 major <- parseNatural "major" majorText
                 minor <- parseNatural "minor" minorText
                 patch <- parseNatural "patch" patchText
-                return Gen.Version {major, minor, patch}
+                return Gen.Input.Version {major, minor, patch}
               _ ->
                 Left "Invalid version format. Use semantic versioning format: major.minor.patch (e.g., 1.0.0)"
         parseNatural fieldName txt =
@@ -191,6 +193,7 @@ tryFromYaml text = do
             (Just configMapping)
             (Just configSequence)
 
+-- | Test suite for project file YAML parsing.
 spec :: Spec
 spec = do
   describe "tryFromYaml" do

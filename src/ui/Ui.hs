@@ -1,3 +1,6 @@
+-- |
+-- Entry point wiring: assembles the CLI commands and the terminal display,
+-- then hands both to the command-line framework.
 module Ui
   ( main,
   )

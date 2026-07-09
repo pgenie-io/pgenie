@@ -1,3 +1,5 @@
+-- |
+-- Port for reading, writing, and listing filesystem paths.
 module Logic.Capabilities.Fs
   ( FsOps (..),
   )

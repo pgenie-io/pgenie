@@ -1,4 +1,14 @@
-module Logic.Procedures.Generate where
+-- |
+-- Analyses a project and generates its code artifacts, for the @generate@
+-- CLI command: the default end-to-end pipeline from project file to
+-- generated files on disk.
+module Logic.Procedures.Generate
+  ( Port,
+    Params (..),
+    Result (..),
+    run,
+  )
+where
 
 import Data.Text qualified as Text
 import Logic.Capabilities.Reporting (Warns (..))
@@ -10,17 +20,22 @@ import Logic.Procedures.AnalyseProject qualified as AnalyseProject
 import Logic.Procedures.GenerateCode qualified as GenerateCode
 import Utils.Prelude
 
+-- | Everything the generate procedure needs from its execution context.
 type Port m = (AnalyseProject.Port m, GenerateCode.Port m)
 
+-- | Input to the generate procedure.
 data Params = Params
   { projectFile :: ProjectFile.ProjectFile,
     failOnSeqScans :: Bool
   }
 
+-- | Output of the generate procedure: the artifacts written to disk.
 data Result = Result
   { generatedArtifacts :: [GenerateCode.Artifact]
   }
 
+-- | Analyse the project (failing or warning on sequential scans per
+-- 'failOnSeqScans'), then generate code for each configured artifact.
 run :: (Port m) => Params -> m Result
 run params =
   stage "" 2 do

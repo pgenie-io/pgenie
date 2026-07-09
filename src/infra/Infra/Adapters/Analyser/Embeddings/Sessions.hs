@@ -1,5 +1,8 @@
 -- | Translation of sessions data structures to logic data structures.
-module Infra.Adapters.Analyser.Embeddings.Sessions where
+module Infra.Adapters.Analyser.Embeddings.Sessions
+  ( adaptQuery,
+  )
+where
 
 import Data.Vector qualified as Vector
 import GenBridge.Model.Input qualified as Gen.Input
@@ -11,6 +14,11 @@ import Utils.Prelude
 
 type Embed = Either Report.Report
 
+-- |
+-- Translate a resolved 'Sessions.Query' into the logic-layer's
+-- 'InferredQueryTypes', converting each mentioned name and collecting the
+-- custom (composite/enum) types the query touches. Fails if a column name
+-- doesn't form a valid identifier.
 adaptQuery :: Sessions.Query -> Embed InferredQueryTypes
 adaptQuery query = do
   params <-

@@ -14,7 +14,7 @@ module Logic.Domain.Name
 where
 
 import Data.Text qualified as Text
-import GenBridge.Model.Input qualified as Gen
+import GenBridge.Model.Input qualified as Gen.Input
 import Logic.Domain.Name.Megaparsec qualified as Megaparsec
 import Test.Hspec
 import Test.QuickCheck qualified as Qc
@@ -136,9 +136,9 @@ toTextBuilderInScreamingKebabCase = TextBuilder.intercalateMap "-" (to . Text.to
 toTextBuilderInCamelSnakeCase :: Name -> TextBuilder
 toTextBuilderInCamelSnakeCase = TextBuilder.intercalateMap "_" (to . Text.toTitle) . toPartsNonEmpty
 
-toGenName :: Name -> Gen.Name
+toGenName :: Name -> Gen.Input.Name
 toGenName name =
-  Gen.Name
+  Gen.Input.Name
     { inCamelCase = to @Text (toTextBuilderInCamelCase name),
       inPascalCase = to @Text (toTextBuilderInPascalCase name),
       inKebabCase = to @Text (toTextBuilderInKebabCase name),
@@ -188,6 +188,7 @@ partsToNameMaybe (firstPart :| tailParts) = do
     isNumberPart part =
       not (Text.null part) && Text.all isDigit part
 
+-- | Test suite for parsing and rendering normalized names.
 spec :: Spec
 spec = do
   describe "tryFromText" do

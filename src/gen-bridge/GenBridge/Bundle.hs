@@ -1,8 +1,13 @@
-module GenBridge.Bundle where
+{-# LANGUAGE TemplateHaskell #-}
+
+module GenBridge.Bundle
+  ( bundle,
+  )
+where
 
 import Dhall qualified
 import Dhall.Core qualified
-import Dhall.JSONToDhall qualified as Dhall.FromJson
+import Dhall.JSONToDhall qualified
 import GenBridge.ContractVersion qualified as ContractVersion
 import GenBridge.Dhall.ExprViews qualified as ExprViews
 import GenBridge.Location qualified as Location
@@ -57,7 +62,7 @@ bundle location hash = TH.Code do
         Nothing ->
           Right (Dhall.Core.App Dhall.Core.None configTypeExpr)
         Just configJson ->
-          case Dhall.FromJson.dhallFromJSON Dhall.FromJson.defaultConversion configTypeExpr configJson of
+          case Dhall.JSONToDhall.dhallFromJSON Dhall.JSONToDhall.defaultConversion configTypeExpr configJson of
             Left err -> do
               Left ("Config does not conform to the expected schema:\n" <> onto (show err))
             Right configValExpr ->

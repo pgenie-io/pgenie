@@ -1,4 +1,11 @@
-module Ui.Framework where
+-- |
+-- Minimal command-line framework: describes a CLI as a list of abstract
+-- 'Command's and defers the execution of their effects to the caller.
+module Ui.Framework
+  ( Command (..),
+    main,
+  )
+where
 
 import Data.Text qualified as Text
 import Logic.Domain.ProjectFile qualified as ProjectFile

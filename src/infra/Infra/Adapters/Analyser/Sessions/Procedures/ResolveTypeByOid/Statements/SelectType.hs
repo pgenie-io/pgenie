@@ -1,17 +1,23 @@
+{-# LANGUAGE QuasiQuotes #-}
+
+-- | Hasql statement fetching a @pg_type@ row (kind, namespace, element type) by OID.
 module Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements.SelectType where
 
 import Hasql.Mapping.IsStatement
 import Hasql.TH
 import Utils.Prelude
 
+-- | The type OID to look up.
 data SelectTypeParams = SelectTypeParams
   { -- | The object identifier of the type.
     oid :: Int32
   }
   deriving stock (Eq, Show)
 
+-- | Absent only if the OID doesn't refer to an existing type.
 type SelectTypeResult = Maybe SelectTypeResultRow
 
+-- | The catalog shape of a Postgres type, as needed to classify it.
 data SelectTypeResultRow = SelectTypeResultRow
   { -- | The name of the type.
     name :: Text,

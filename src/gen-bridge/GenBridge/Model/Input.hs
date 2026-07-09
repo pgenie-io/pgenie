@@ -1,11 +1,47 @@
+{-# LANGUAGE TemplateHaskell #-}
+
+-- |
+-- The @Input@ half of the generator contract: the project description
+-- (custom types, queries, migrations) that pgenie hands to a Dhall
+-- generator's @compile@ function. Mirrors the shape of the Dhall @Contract@
+-- and is decoded from\/encoded to it via the 'Dhall.FromDhall'\/'Dhall.ToDhall'
+-- instances, and to\/from JSON via the pinned kebab-case contract (see
+-- "GenBridge.Aeson.Deriver").
 module GenBridge.Model.Input
-  ( module GenBridge.Model.Input,
+  ( -- * Name
     Name (..),
+
+    -- * Project
+    Project (..),
+    Version (..),
+    Migration (..),
+
+    -- * Custom types
+    CustomType (..),
+    CustomTypeDefinition (..),
+
+    -- * Queries
+    Query (..),
+    QueryFragment (..),
+    Var (..),
+
+    -- * Results
+    Result (..),
+    ResultRows (..),
+    ResultRowsCardinality (..),
+
+    -- * Fields and values
+    Member (..),
+    EnumVariant (..),
+    Value (..),
+    ArraySettings (..),
+    Scalar (..),
+    Primitive (..),
   )
 where
 
 import Dhall qualified
-import GenBridge.Aeson.Deriver qualified as AesonDeriver
+import GenBridge.Aeson.Deriver qualified as Aeson.Deriver
 import GenBridge.Dhall.Deriving qualified as Dhall.Deriving
 import GenBridge.Dhall.Orphans ()
 import GenBridge.Model.Input.Name (Name (..))
@@ -274,6 +310,7 @@ data Query = Query
   deriving stock (Show, Eq, Generic)
   deriving anyclass (Dhall.ToDhall, Dhall.FromDhall)
 
+-- | A single SQL migration file, applied in the order they appear in a project.
 data Migration = Migration
   { name :: Text,
     sql :: Text
@@ -298,9 +335,9 @@ data Project = Project
 --
 -- Kebab-case field names, ObjectWithSingleField sum encoding.
 -- 'Name' is hand-written in "GenBridge.Model.Input.Name", not run through
--- 'AesonDeriver.derive', but it follows the same kebab-case convention.
+-- 'Aeson.Deriver.derive', but it follows the same kebab-case convention.
 
-AesonDeriver.derive
+Aeson.Deriver.derive
   [ ''Version,
     ''Primitive,
     ''Scalar,

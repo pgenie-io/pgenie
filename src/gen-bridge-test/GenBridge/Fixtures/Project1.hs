@@ -1,5 +1,12 @@
--- | Integration with generator adapters.
-module GenBridge.Fixtures.Project1 where
+-- |
+-- A representative 'Input.Project' value — a single-query, single-migration
+-- "demo" project — shared across the gen-bridge specs to exercise Aeson
+-- round-tripping, Dhall round-tripping, and generator compilation against
+-- the same fixed input.
+module GenBridge.Fixtures.Project1
+  ( input,
+  )
+where
 
 import Cases qualified
 import Data.List.NonEmpty qualified as NonEmpty

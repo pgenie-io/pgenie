@@ -1,3 +1,5 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module GenBridge.Model.InputAesonSpec (spec) where
 
 import Data.Aeson qualified as Aeson

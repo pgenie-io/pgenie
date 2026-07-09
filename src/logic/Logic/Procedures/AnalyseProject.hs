@@ -1,4 +1,15 @@
-module Logic.Procedures.AnalyseProject where
+-- |
+-- Loads a project's queries and migrations, runs migrations, infers query
+-- types, checks index coverage, and detects sequential scans — the core
+-- analysis pipeline shared by the @analyse@, @generate@, and
+-- @manage-indexes@ commands.
+module Logic.Procedures.AnalyseProject
+  ( Port,
+    Params (..),
+    Result (..),
+    run,
+  )
+where
 
 import AlgebraicPath qualified as Path
 import Control.Monad.Parallel qualified as MonadParallel
@@ -17,10 +28,10 @@ import Logic.Domain.IndexOptimization (IndexInfo (..))
 import Logic.Domain.Name qualified as Name
 import Logic.Domain.ProjectFile qualified as ProjectFile
 import Logic.Domain.QueryAnalysis (InferredParam (..), InferredQueryTypes (..))
-import Logic.Domain.QuerySignature qualified as SignatureFile
+import Logic.Domain.QuerySignature qualified as QuerySignature
 import Logic.Domain.Report (Report (..))
 import Logic.Domain.SeqScanFinding (SeqScanFinding (..))
-import Logic.Domain.SeqScanFinding qualified as SeqScanDetector
+import Logic.Domain.SeqScanFinding qualified as SeqScanFinding
 import Logic.Domain.SqlTemplate qualified as SqlTemplate
 import Logic.Domain.SyntaxAnalyser qualified as SyntaxAnalyser
 import Logic.Procedures.GenerateQuerySignatures qualified as GenerateQuerySigs
@@ -28,6 +39,7 @@ import Logic.Procedures.GenerateTypeSignatures qualified as GenerateTypeSigs
 import SyntacticClass qualified as Syntactic
 import Utils.Prelude hiding (readFile, writeFile)
 
+-- | Everything the project analysis procedure needs from its execution context.
 type Port m =
   ( MonadParallel m,
     Stages m,
@@ -39,12 +51,15 @@ type Port m =
     LoadsIndexes m
   )
 
+-- | Output of project analysis: the resolved generator model, any detected
+-- sequential scans keyed by query name, and the current index catalog.
 data Result = Result
   { project :: Gen.Input.Project,
     seqScanFindings :: [(Text, SeqScanFinding)],
     indexes :: [IndexInfo]
   }
 
+-- | Input to project analysis.
 data Params = Params
   { projectFile :: ProjectFile.ProjectFile
   }
@@ -59,6 +74,8 @@ data QueryListed = QueryListed
 
 -- * API
 
+-- | Run the migrations, list and infer types for the project's queries,
+-- check index coverage, and resolve the full generator model.
 run :: (Port m) => Params -> m Result
 run Params {projectFile} =
   stage "Analysing" 3 do
@@ -148,7 +165,7 @@ run Params {projectFile} =
                 catchError
                   ( do
                       explainLines <- explainQuery nativeTemplate
-                      let findings = SeqScanDetector.detectSeqScans explainLines
+                      let findings = SeqScanFinding.detectSeqScans explainLines
                       pure (Just (map (Name.inSnakeCase queryListed.name,) findings))
                   )
                   (\_ -> pure Nothing)
@@ -214,8 +231,8 @@ run Params {projectFile} =
                       params
                       (SqlTemplate.toGenParamNames sqlTemplate)
 
-              let sigPath = SignatureFile.signatureFilePath queryListed.filePath
-                  inferredSig = SignatureFile.fromInferred interpretedParams result
+              let sigPath = QuerySignature.signatureFilePath queryListed.filePath
+                  inferredSig = QuerySignature.fromInferred interpretedParams result
 
               genSigResult <-
                 GenerateQuerySigs.run
@@ -297,7 +314,7 @@ run Params {projectFile} =
       case inferTableAndWhere sql of
         Nothing -> []
         Just (tbl, whereClause) ->
-          let cols = SeqScanDetector.extractFilterColumns whereClause
+          let cols = SeqScanFinding.extractFilterColumns whereClause
            in if null cols
                 then []
                 else [SeqScanFinding tbl whereClause cols]

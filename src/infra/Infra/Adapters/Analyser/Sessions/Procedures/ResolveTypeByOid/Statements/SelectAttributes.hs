@@ -1,17 +1,23 @@
+{-# LANGUAGE QuasiQuotes #-}
+
+-- | Hasql statement fetching the attributes of a composite type by its OID.
 module Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements.SelectAttributes where
 
 import Hasql.Mapping.IsStatement
 import Hasql.TH
 import Utils.Prelude
 
+-- | The composite type OID whose attributes to fetch.
 data SelectAttributesParams = SelectAttributesParams
   { -- | The object identifier of the type.
     oid :: Int32
   }
   deriving stock (Eq, Show)
 
+-- | The composite type's fields, in declaration order.
 type SelectAttributesResult = Vector SelectAttributesResultRow
 
+-- | One field of a composite type.
 data SelectAttributesResultRow = SelectAttributesResultRow
   { -- | The name of the attribute.
     name :: Text,

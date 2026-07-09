@@ -1,7 +1,10 @@
+-- |
+-- Behavioural tests for the main display component: breadcrumb rendering and
+-- when the "Done!" completion message is (and isn't) shown.
 module Ui.Display.Components.MainSpec (spec) where
 
 import Data.Text qualified as Text
-import Interpreters.Observing qualified as Emitting
+import Interpreters.Observing qualified as Observing
 import Test.Hspec
 import TextBuilder qualified
 import Ui.Display.Components.Main qualified as Main
@@ -13,7 +16,7 @@ t :: UTCTime
 t = UTCTime (fromGregorian 2024 1 1) 0
 
 -- | Fold a list of events through update, collecting all outputs.
-runEvents :: [Emitting.Observation] -> [TextBuilder]
+runEvents :: [Observing.Observation] -> [TextBuilder]
 runEvents = go (Main.init t)
   where
     go _ [] = []
@@ -25,6 +28,7 @@ runEvents = go (Main.init t)
 containsDone :: TextBuilder -> Bool
 containsDone tb = View.printDone == tb || Text.isInfixOf (TextBuilder.toText View.printDone) (TextBuilder.toText tb)
 
+-- | Test suite for "Ui.Display.Components.Main".
 spec :: Spec
 spec = do
   describe "stage rendering" do
@@ -40,8 +44,8 @@ spec = do
     it "shows stage completion with green Done when a non-root stage exits" do
       let outputs =
             runEvents
-              [ Emitting.StageEntered ["Loading", "haskell", "Generating"],
-                Emitting.StageExited ["Loading", "haskell", "Generating"] 0.0417
+              [ Observing.StageEntered ["Loading", "haskell", "Generating"],
+                Observing.StageExited ["Loading", "haskell", "Generating"] 0.0417
               ]
 
           containsStageDone tb = Text.isInfixOf "Done" (TextBuilder.toText tb)
@@ -51,45 +55,45 @@ spec = do
     it "does not show Done while generators are still in progress" do
       let -- Scope infrastructure events (already halved, as received by Main.update)
           scopeEvents =
-            [ Emitting.StageExited ["Starting Container"] 0.45,
-              Emitting.StageExited ["Connecting"] 0.05
+            [ Observing.StageExited ["Starting Container"] 0.45,
+              Observing.StageExited ["Connecting"] 0.05
             ]
 
           -- Analysis stage events (leaf contributions, already halved)
           analysisEvents =
-            [ Emitting.StageEntered ["Analysing"],
+            [ Observing.StageEntered ["Analysing"],
               -- Migrations (Loading + Executing, 1 migration each)
-              Emitting.StageExited ["migrations/001.sql", "Loading", "Migrations", "Analysing"] 0.0625,
-              Emitting.StageExited ["migrations/001.sql", "Executing", "Migrations", "Analysing"] 0.0625,
-              Emitting.StageExited ["Migrations", "Analysing"] 0,
+              Observing.StageExited ["migrations/001.sql", "Loading", "Migrations", "Analysing"] 0.0625,
+              Observing.StageExited ["migrations/001.sql", "Executing", "Migrations", "Analysing"] 0.0625,
+              Observing.StageExited ["Migrations", "Analysing"] 0,
               -- Checking indexes
-              Emitting.StageExited ["Checking indexes", "Analysing"] 0.125,
+              Observing.StageExited ["Checking indexes", "Analysing"] 0.125,
               -- Queries (1 query)
-              Emitting.StageExited ["Loading", "query1", "Queries", "Analysing"] 0.0625,
-              Emitting.StageExited ["Inferring", "query1", "Queries", "Analysing"] 0.0625,
-              Emitting.StageExited ["Analysing"] 0
+              Observing.StageExited ["Loading", "query1", "Queries", "Analysing"] 0.0625,
+              Observing.StageExited ["Inferring", "query1", "Queries", "Analysing"] 0.0625,
+              Observing.StageExited ["Analysing"] 0
             ]
 
           -- 3 generators (each Loading + Compiling, already halved)
           gen1Events =
-            [ Emitting.StageEntered ["gen1", "Generating"],
-              Emitting.StageExited ["Loading", "gen1", "Generating"] 0.0417,
-              Emitting.StageExited ["Compiling", "gen1", "Generating"] 0.0417,
-              Emitting.StageExited ["gen1", "Generating"] 0
+            [ Observing.StageEntered ["gen1", "Generating"],
+              Observing.StageExited ["Loading", "gen1", "Generating"] 0.0417,
+              Observing.StageExited ["Compiling", "gen1", "Generating"] 0.0417,
+              Observing.StageExited ["gen1", "Generating"] 0
             ]
 
           gen2PartialEvents =
-            [ Emitting.StageEntered ["gen2", "Generating"],
+            [ Observing.StageEntered ["gen2", "Generating"],
               -- gen2 Loading completes while later generators are still compiling.
-              Emitting.StageExited ["Loading", "gen2", "Generating"] 0.0417
+              Observing.StageExited ["Loading", "gen2", "Generating"] 0.0417
             ]
 
           -- All events up to (and including) the moment gen3 is still running
           eventsBeforeAllDone =
-            [Emitting.StageEntered []]
+            [Observing.StageEntered []]
               <> scopeEvents
               <> analysisEvents
-              <> [Emitting.StageEntered ["Generating"]]
+              <> [Observing.StageEntered ["Generating"]]
               <> gen1Events
               <> gen2PartialEvents
           -- gen2 is still compiling; gen3 hasn't started yet
@@ -108,16 +112,16 @@ spec = do
 
     it "shows Done exactly once, after the root stage exits" do
       let events =
-            [ Emitting.StageEntered [],
-              Emitting.StageExited ["Starting Container"] 0.45,
-              Emitting.StageExited ["Connecting"] 0.05,
-              Emitting.StageExited ["Analysing"] 0.375,
-              Emitting.StageEntered ["Generating"],
-              Emitting.StageExited ["gen1", "Generating"] 0.0833,
-              Emitting.StageExited ["gen2", "Generating"] 0.0833,
-              Emitting.StageExited ["gen3", "Generating"] 0.0833,
-              Emitting.StageExited ["Generating"] 0,
-              Emitting.StageExited [] 0
+            [ Observing.StageEntered [],
+              Observing.StageExited ["Starting Container"] 0.45,
+              Observing.StageExited ["Connecting"] 0.05,
+              Observing.StageExited ["Analysing"] 0.375,
+              Observing.StageEntered ["Generating"],
+              Observing.StageExited ["gen1", "Generating"] 0.0833,
+              Observing.StageExited ["gen2", "Generating"] 0.0833,
+              Observing.StageExited ["gen3", "Generating"] 0.0833,
+              Observing.StageExited ["Generating"] 0,
+              Observing.StageExited [] 0
             ]
           outputs = runEvents events
           doneOutputs = filter containsDone outputs

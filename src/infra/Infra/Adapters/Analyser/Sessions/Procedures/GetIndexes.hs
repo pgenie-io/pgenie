@@ -1,19 +1,25 @@
-module Infra.Adapters.Analyser.Sessions.Procedures.GetIndexes where
+-- |
+-- Fetches the catalog of user-defined indexes, used to evaluate whether a
+-- query benefits from an index that isn't already in place.
+module Infra.Adapters.Analyser.Sessions.Procedures.GetIndexes
+  ( getIndexes,
+  )
+where
 
-import Hasql.Decoders qualified as Decoders
-import Hasql.Session qualified as Session
-import Hasql.Statement qualified as Statement
+import Hasql.Decoders qualified
+import Hasql.Session qualified
+import Hasql.Statement qualified
 import Logic.Domain.IndexOptimization (IndexInfo (..))
 import Utils.Prelude
 
 -- | Fetch all user-defined indexes from the database.
-getIndexes :: Session.Session [IndexInfo]
+getIndexes :: Hasql.Session.Session [IndexInfo]
 getIndexes =
-  Session.statement () indexesStatement
+  Hasql.Session.statement () indexesStatement
   where
-    indexesStatement :: Statement.Statement () [IndexInfo]
+    indexesStatement :: Hasql.Statement.Statement () [IndexInfo]
     indexesStatement =
-      Statement.unpreparable sql mempty decoder
+      Hasql.Statement.unpreparable sql mempty decoder
       where
         sql =
           mconcat
@@ -40,20 +46,20 @@ getIndexes =
               "ORDER BY ct.relname, ci.relname"
             ]
 
-        decoder :: Decoders.Result [IndexInfo]
+        decoder :: Hasql.Decoders.Result [IndexInfo]
         decoder =
-          Decoders.rowList rowDecoder
+          Hasql.Decoders.rowList rowDecoder
 
-        rowDecoder :: Decoders.Row IndexInfo
+        rowDecoder :: Hasql.Decoders.Row IndexInfo
         rowDecoder = do
-          indexName <- Decoders.column (Decoders.nonNullable Decoders.text)
-          tableName <- Decoders.column (Decoders.nonNullable Decoders.text)
-          schemaName <- Decoders.column (Decoders.nonNullable Decoders.text)
-          columnsArray <- Decoders.column (Decoders.nonNullable (Decoders.listArray (Decoders.nonNullable Decoders.text)))
-          isUnique <- Decoders.column (Decoders.nonNullable Decoders.bool)
-          isPrimary <- Decoders.column (Decoders.nonNullable Decoders.bool)
-          indexMethod <- Decoders.column (Decoders.nonNullable Decoders.text)
-          predicate <- Decoders.column (Decoders.nullable Decoders.text)
+          indexName <- Hasql.Decoders.column (Hasql.Decoders.nonNullable Hasql.Decoders.text)
+          tableName <- Hasql.Decoders.column (Hasql.Decoders.nonNullable Hasql.Decoders.text)
+          schemaName <- Hasql.Decoders.column (Hasql.Decoders.nonNullable Hasql.Decoders.text)
+          columnsArray <- Hasql.Decoders.column (Hasql.Decoders.nonNullable (Hasql.Decoders.listArray (Hasql.Decoders.nonNullable Hasql.Decoders.text)))
+          isUnique <- Hasql.Decoders.column (Hasql.Decoders.nonNullable Hasql.Decoders.bool)
+          isPrimary <- Hasql.Decoders.column (Hasql.Decoders.nonNullable Hasql.Decoders.bool)
+          indexMethod <- Hasql.Decoders.column (Hasql.Decoders.nonNullable Hasql.Decoders.text)
+          predicate <- Hasql.Decoders.column (Hasql.Decoders.nullable Hasql.Decoders.text)
           pure
             IndexInfo
               { indexName,

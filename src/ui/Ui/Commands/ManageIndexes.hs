@@ -8,7 +8,7 @@ import Options.Applicative qualified as Opt
 import Ui.Framework
 import Utils.Prelude
 
-manageIndexes :: (ManageIndexes.Port m) => Command m
+manageIndexes :: forall m. (ManageIndexes.Port m) => Command m
 manageIndexes =
   Command
     { name = "manage-indexes",
@@ -16,30 +16,31 @@ manageIndexes =
       parser,
       execute
     }
+  where
+    parser :: Opt.Parser Params
+    parser =
+      Params
+        <$> Opt.switch
+          ( Opt.long "allow-redundant-indexes"
+              <> Opt.help "Emit warnings about redundant indexes instead of removing them"
+          )
+        <*> Opt.switch
+          ( Opt.long "add-migration"
+              <> Opt.help "Also write the migration to a numbered file in migrations/ (fails if existing files do not follow the N.sql naming convention)"
+          )
 
+    execute :: ProjectFile.ProjectFile -> Params -> m Text
+    execute projectFile params =
+      ManageIndexes.run
+        ManageIndexes.Params
+          { projectFile,
+            allowRedundantIndexes = params.allowRedundantIndexes,
+            addMigration = params.addMigration
+          }
+        <&> (.migrationText)
+
+-- | Parsed command-line options for the @manage-indexes@ command.
 data Params = Params
   { allowRedundantIndexes :: Bool,
     addMigration :: Bool
   }
-
-parser :: Opt.Parser Params
-parser =
-  Params
-    <$> Opt.switch
-      ( Opt.long "allow-redundant-indexes"
-          <> Opt.help "Emit warnings about redundant indexes instead of removing them"
-      )
-    <*> Opt.switch
-      ( Opt.long "add-migration"
-          <> Opt.help "Also write the migration to a numbered file in migrations/ (fails if existing files do not follow the N.sql naming convention)"
-      )
-
-execute :: (ManageIndexes.Port m) => ProjectFile.ProjectFile -> Params -> m Text
-execute projectFile params =
-  ManageIndexes.run
-    ManageIndexes.Params
-      { projectFile,
-        allowRedundantIndexes = params.allowRedundantIndexes,
-        addMigration = params.addMigration
-      }
-    <&> (.migrationText)

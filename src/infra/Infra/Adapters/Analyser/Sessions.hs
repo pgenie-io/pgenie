@@ -1,3 +1,6 @@
+-- |
+-- Runs the full chain of 'Procedure's needed to resolve a query's parameter
+-- and result-column types, as a single Hasql session.
 module Infra.Adapters.Analyser.Sessions
   ( Procedure.Error (..),
 
@@ -17,6 +20,10 @@ import Infra.Adapters.Analyser.Sessions.Procedures qualified as Procedures
 import SyntacticClass qualified as Syntactic
 import Utils.Prelude hiding (Enum)
 
+-- |
+-- Describe the query via libpq, then resolve each parameter and result
+-- column's Postgres type, returning either the first fatal error encountered
+-- or the resolved 'Query' together with any non-fatal warnings.
 inferTypes ::
   Text ->
   HasqlDev.Session (Either Procedure.Error (Query, [Procedure.Error]))

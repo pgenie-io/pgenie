@@ -1,3 +1,8 @@
+-- |
+-- 'IsProcedure' member that resolves the catalog attribute (name, type,
+-- dimensionality, nullability) a query's result column was derived from, so
+-- its nullability can reflect the source table's constraint rather than
+-- libpq's (always-nullable) type description.
 module Infra.Adapters.Analyser.Sessions.Procedures.ResolveColumn
   ( ResolveColumn (..),
     ResolveColumnResultRow (..),
@@ -9,12 +14,14 @@ import Infra.Adapters.Analyser.Sessions.Procedures.ResolveColumn.Statements qual
 import SyntacticClass qualified as Syntactic
 import Utils.Prelude
 
+-- | The table relation and attribute offset identifying a result column's source.
 data ResolveColumn = ResolveColumn
   { relationOid :: Int32,
     attributeNum :: Int32
   }
   deriving stock (Show, Eq)
 
+-- | The resolved source-column attribute, when the relation and offset refer to one.
 data ResolveColumnResultRow = ResolveColumnResultRow
   { -- | The name of the attribute.
     name :: Text,
@@ -26,7 +33,7 @@ data ResolveColumnResultRow = ResolveColumnResultRow
     notNull :: Bool
   }
 
-instance Procedure ResolveColumn where
+instance IsProcedure ResolveColumn where
   type ProcedureResult ResolveColumn = Maybe ResolveColumnResultRow
   runProcedure (ResolveColumn relationOid attributeNum) =
     inContext ["relation:", Syntactic.toTextBuilder relationOid] do

@@ -1,3 +1,4 @@
+-- | Aggregator root re-exporting the Hasql statements 'ResolveColumn' runs against.
 module Infra.Adapters.Analyser.Sessions.Procedures.ResolveColumn.Statements
   ( module X,
   )

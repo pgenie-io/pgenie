@@ -1,3 +1,6 @@
+-- |
+-- Custom-type signature files (@.sig1.pgn.yaml@): serialization, parsing,
+-- and validation-and-merge against an inferred custom type.
 module Logic.Domain.CustomTypeSignature
   ( CustomTypeSig (..),
     CompositeFieldSig (..),
@@ -10,6 +13,8 @@ module Logic.Domain.CustomTypeSignature
   )
 where
 
+import Test.Hspec
+import Utils.Prelude
 import AlgebraicPath qualified as Path
 import Control.Foldl qualified as Fold
 import Data.Map.Strict qualified as Map
@@ -18,8 +23,6 @@ import Data.Text qualified as Text
 import GenBridge.Model.Input qualified as Gen.Input
 import Logic.Domain.Name qualified as Name
 import Logic.Domain.Report qualified as Report
-import Test.Hspec
-import Utils.Prelude
 import YamlUnscrambler qualified as U
 
 -- * Types
@@ -27,14 +30,13 @@ import YamlUnscrambler qualified as U
 -- | A custom-type signature as stored in a @.sig1.pgn.yaml@ file.
 data CustomTypeSig
   = -- | Exact ordered list of enum variant @pgName@ values.
-    EnumSig [Text]
+    EnumCustomTypeSig [Text]
   | -- | Ordered list of composite field entries.
-    CompositeSig [(Text, CompositeFieldSig)]
+    CompositeCustomTypeSig [(Text, CompositeFieldSig)]
   deriving stock (Eq, Show)
 
--- | Field encoding for composite members.  Mirrors @FieldSig@ in
--- @Logic.SignatureFile@ so array types, nullability, and element
--- nullability all remain expressible.
+-- | Field encoding for composite members.  Mirrors 'Logic.Domain.QuerySignature.FieldSig'
+-- so array types, nullability, and element nullability all remain expressible.
 data CompositeFieldSig
   = ScalarCompositeFieldSig
       { typeName :: Text,
@@ -68,9 +70,9 @@ fromInferred :: Gen.Input.CustomType -> Maybe CustomTypeSig
 fromInferred ct =
   case ct.definition of
     Gen.Input.EnumCustomTypeDefinition variants ->
-      Just (EnumSig (map (.pgName) variants))
+      Just (EnumCustomTypeSig (map (.pgName) variants))
     Gen.Input.CompositeCustomTypeDefinition fields ->
-      Just (CompositeSig (map memberToFieldEntry fields))
+      Just (CompositeCustomTypeSig (map memberToFieldEntry fields))
     Gen.Input.DomainCustomTypeDefinition _ ->
       Nothing
   where
@@ -178,12 +180,12 @@ genNameToText name = name.inSnakeCase
 -- | Serialize a custom-type signature to YAML text.
 serialize :: CustomTypeSig -> Text
 serialize = \case
-  EnumSig variants ->
+  EnumCustomTypeSig variants ->
     "enum:"
       <> if null variants
         then " []\n"
         else "\n" <> foldMap renderVariant variants
-  CompositeSig fields ->
+  CompositeCustomTypeSig fields ->
     "composite:"
       <> if null fields
         then " {}\n"
@@ -240,8 +242,8 @@ tryParse text =
       U.mappingValue
         $ U.byKeyMapping (U.CaseSensitive True)
         $ asum
-          [ EnumSig <$> U.atByKey "enum" variantsValue,
-            CompositeSig <$> U.atByKey "composite" fieldsValue
+          [ EnumCustomTypeSig <$> U.atByKey "enum" variantsValue,
+            CompositeCustomTypeSig <$> U.atByKey "composite" fieldsValue
           ]
 
     variantsValue :: U.Value [Text]
@@ -335,15 +337,15 @@ validateAndMerge ::
   Either Report.Report Gen.Input.CustomType
 validateAndMerge inferred fileSig =
   case (inferred.definition, fileSig) of
-    (Gen.Input.EnumCustomTypeDefinition variants, EnumSig fileVariants) ->
+    (Gen.Input.EnumCustomTypeDefinition variants, EnumCustomTypeSig fileVariants) ->
       validateEnum inferred variants fileVariants
-    (Gen.Input.CompositeCustomTypeDefinition fields, CompositeSig fileFields) ->
+    (Gen.Input.CompositeCustomTypeDefinition fields, CompositeCustomTypeSig fileFields) ->
       validateComposite inferred fields fileFields
     (Gen.Input.DomainCustomTypeDefinition _, _) ->
       Right inferred
-    (Gen.Input.EnumCustomTypeDefinition {}, CompositeSig {}) ->
+    (Gen.Input.EnumCustomTypeDefinition {}, CompositeCustomTypeSig {}) ->
       Left (mismatchError "kind" "Inferred kind is 'enum' but file signature has kind 'composite'")
-    (Gen.Input.CompositeCustomTypeDefinition {}, EnumSig {}) ->
+    (Gen.Input.CompositeCustomTypeDefinition {}, EnumCustomTypeSig {}) ->
       Left (mismatchError "kind" "Inferred kind is 'composite' but file signature has kind 'enum'")
 
 validateEnum ::
@@ -503,15 +505,15 @@ spec = do
         `shouldBe` "./types/audit/event_kind.sig1.pgn.yaml"
 
   describe "fromInferred" do
-    it "produces EnumSig from an enum custom type" do
+    it "produces EnumCustomTypeSig from an enum custom type" do
       let ct = enumCustomType "public" "color" ["red", "green", "blue"]
-      fromInferred ct `shouldBe` Just (EnumSig ["red", "green", "blue"])
+      fromInferred ct `shouldBe` Just (EnumCustomTypeSig ["red", "green", "blue"])
 
-    it "produces CompositeSig from a composite custom type" do
+    it "produces CompositeCustomTypeSig from a composite custom type" do
       let ct = compositeCustomType "public" "point" [("x", "float8", True), ("y", "float8", True)]
       fromInferred ct
         `shouldBe` Just
-          ( CompositeSig
+          ( CompositeCustomTypeSig
               [ ("x", ScalarCompositeFieldSig {typeName = "float8", notNull = False}),
                 ("y", ScalarCompositeFieldSig {typeName = "float8", notNull = False})
               ]
@@ -534,16 +536,16 @@ spec = do
 
   describe "serialize and tryParse roundtrip" do
     it "roundtrips an enum signature" do
-      let sig = EnumSig ["pending", "active", "archived"]
+      let sig = EnumCustomTypeSig ["pending", "active", "archived"]
       tryParse (serialize sig) `shouldBe` Right sig
 
     it "roundtrips an empty enum signature" do
-      let sig = EnumSig []
+      let sig = EnumCustomTypeSig []
       tryParse (serialize sig) `shouldBe` Right sig
 
     it "roundtrips a composite signature" do
       let sig =
-            CompositeSig
+            CompositeCustomTypeSig
               [ ("id", ScalarCompositeFieldSig {typeName = "uuid", notNull = True}),
                 ("label", ScalarCompositeFieldSig {typeName = "text", notNull = False})
               ]
@@ -551,7 +553,7 @@ spec = do
 
     it "roundtrips a composite signature with array fields" do
       let sig =
-            CompositeSig
+            CompositeCustomTypeSig
               [ ( "tags",
                   ArrayCompositeFieldSig
                     { typeName = "text[]",
@@ -563,12 +565,12 @@ spec = do
       tryParse (serialize sig) `shouldBe` Right sig
 
     it "roundtrips an empty composite signature" do
-      let sig = CompositeSig []
+      let sig = CompositeCustomTypeSig []
       tryParse (serialize sig) `shouldBe` Right sig
 
   describe "serialize" do
     it "produces expected YAML for an enum" do
-      let sig = EnumSig ["foo", "bar"]
+      let sig = EnumCustomTypeSig ["foo", "bar"]
           expected =
             "enum:\n\
             \  - foo\n\
@@ -576,14 +578,14 @@ spec = do
       serialize sig `shouldBe` expected
 
     it "produces expected YAML for an empty enum" do
-      let sig = EnumSig []
+      let sig = EnumCustomTypeSig []
           expected =
             "enum: []\n"
       serialize sig `shouldBe` expected
 
     it "produces expected YAML for a composite" do
       let sig =
-            CompositeSig
+            CompositeCustomTypeSig
               [ ("id", ScalarCompositeFieldSig {typeName = "uuid", notNull = True}),
                 ("notes", ScalarCompositeFieldSig {typeName = "text", notNull = False})
               ]
@@ -599,7 +601,7 @@ spec = do
 
     it "serializes array composite fields using dims syntax" do
       let sig =
-            CompositeSig
+            CompositeCustomTypeSig
               [ ( "items",
                   ArrayCompositeFieldSig
                     { typeName = "int4[]",
@@ -621,34 +623,34 @@ spec = do
     describe "enum" do
       it "succeeds when variants match exactly" do
         let ct = enumCustomType "public" "color" ["red", "green", "blue"]
-            fileSig = EnumSig ["red", "green", "blue"]
+            fileSig = EnumCustomTypeSig ["red", "green", "blue"]
         validateAndMerge ct fileSig `shouldBe` Right ct
 
       it "rejects when a variant is added" do
         let ct = enumCustomType "public" "color" ["red", "green"]
-            fileSig = EnumSig ["red", "green", "blue"]
+            fileSig = EnumCustomTypeSig ["red", "green", "blue"]
         validateAndMerge ct fileSig `shouldSatisfy` isLeft
 
       it "rejects when a variant is removed" do
         let ct = enumCustomType "public" "color" ["red", "green", "blue"]
-            fileSig = EnumSig ["red", "green"]
+            fileSig = EnumCustomTypeSig ["red", "green"]
         validateAndMerge ct fileSig `shouldSatisfy` isLeft
 
       it "rejects when variants are reordered" do
         let ct = enumCustomType "public" "color" ["red", "green", "blue"]
-            fileSig = EnumSig ["green", "red", "blue"]
+            fileSig = EnumCustomTypeSig ["green", "red", "blue"]
         validateAndMerge ct fileSig `shouldSatisfy` isLeft
 
       it "rejects when a variant is renamed" do
         let ct = enumCustomType "public" "color" ["red", "green", "blue"]
-            fileSig = EnumSig ["red", "green", "yellow"]
+            fileSig = EnumCustomTypeSig ["red", "green", "yellow"]
         validateAndMerge ct fileSig `shouldSatisfy` isLeft
 
     describe "composite" do
       it "succeeds when fields match exactly" do
         let ct = compositeCustomType "public" "point" [("x", "float8", True), ("y", "float8", True)]
             fileSig =
-              CompositeSig
+              CompositeCustomTypeSig
                 [ ("x", ScalarCompositeFieldSig {typeName = "float8", notNull = False}),
                   ("y", ScalarCompositeFieldSig {typeName = "float8", notNull = False})
                 ]
@@ -657,7 +659,7 @@ spec = do
       it "allows nullability tightening (false -> true)" do
         let ct = compositeCustomType "public" "point" [("x", "float8", True)]
             fileSig =
-              CompositeSig [("x", ScalarCompositeFieldSig {typeName = "float8", notNull = True})]
+              CompositeCustomTypeSig [("x", ScalarCompositeFieldSig {typeName = "float8", notNull = True})]
         validateAndMerge ct fileSig `shouldSatisfy` isRight
 
       it "rejects nullability relaxation (true -> false) when inferred is not-null" do
@@ -677,19 +679,19 @@ spec = do
                       ]
                 }
             fileSig =
-              CompositeSig [("val", ScalarCompositeFieldSig {typeName = "text", notNull = False})]
+              CompositeCustomTypeSig [("val", ScalarCompositeFieldSig {typeName = "text", notNull = False})]
         validateAndMerge ct fileSig `shouldSatisfy` isLeft
 
       it "rejects type mismatch on a field" do
         let ct = compositeCustomType "public" "point" [("x", "float8", True)]
             fileSig =
-              CompositeSig [("x", ScalarCompositeFieldSig {typeName = "int4", notNull = False})]
+              CompositeCustomTypeSig [("x", ScalarCompositeFieldSig {typeName = "int4", notNull = False})]
         validateAndMerge ct fileSig `shouldSatisfy` isLeft
 
       it "rejects mismatched field-name sets" do
         let ct = compositeCustomType "public" "point" [("x", "float8", True), ("y", "float8", True)]
             fileSig =
-              CompositeSig
+              CompositeCustomTypeSig
                 [ ("x", ScalarCompositeFieldSig {typeName = "float8", notNull = False}),
                   ("z", ScalarCompositeFieldSig {typeName = "float8", notNull = False})
                 ]
@@ -698,7 +700,7 @@ spec = do
       it "rejects a kind mismatch (enum inferred vs composite file)" do
         let ct = enumCustomType "public" "color" ["red", "green"]
             fileSig =
-              CompositeSig
+              CompositeCustomTypeSig
                 [ ("red", ScalarCompositeFieldSig {typeName = "text", notNull = False})
                 ]
         validateAndMerge ct fileSig `shouldSatisfy` isLeft
@@ -706,7 +708,7 @@ spec = do
       it "returns refined composite with file nullability applied" do
         let ct = compositeCustomType "public" "point" [("x", "float8", True), ("y", "float8", True)]
             fileSig =
-              CompositeSig
+              CompositeCustomTypeSig
                 [ ("x", ScalarCompositeFieldSig {typeName = "float8", notNull = True}),
                   ("y", ScalarCompositeFieldSig {typeName = "float8", notNull = False})
                 ]

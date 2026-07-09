@@ -1,3 +1,9 @@
+-- |
+-- The project's custom Prelude. Re-exports 'Prelude' together with a
+-- curated set of commonly needed modules from @base@ and a handful of
+-- dependencies, so that every other module can import this one
+-- unqualified as its topic import instead of assembling the same set of
+-- imports repeatedly.
 module Utils.Prelude
   ( module Exports,
   )

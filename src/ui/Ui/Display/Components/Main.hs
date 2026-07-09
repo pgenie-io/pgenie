@@ -1,3 +1,6 @@
+-- |
+-- Top-level display component: folds runtime observations (stage transitions,
+-- warnings, failures) into render state and the terminal output for each step.
 module Ui.Display.Components.Main
   ( Memory,
     init,
@@ -6,7 +9,7 @@ module Ui.Display.Components.Main
 where
 
 import Interpreters.Observing qualified as Observing
-import Logic.Domain.Report (Report (..))
+import Logic.Domain.Report qualified as Report
 import Ui.Display.Components.Main.View qualified as View
 import Ui.Display.Components.ProgressBar qualified as ProgressBar
 import Utils.Prelude hiding (init)
@@ -19,6 +22,8 @@ data Memory = Memory
   }
   deriving stock (Eq, Show)
 
+-- | Initial state for a run starting at the given time: no progress bar yet
+-- and not yet completed.
 init :: UTCTime -> Memory
 init startTime =
   Memory

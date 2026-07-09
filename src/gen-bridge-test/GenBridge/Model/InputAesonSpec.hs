@@ -19,19 +19,12 @@ spec = do
         Aeson.Success decoded -> decoded `shouldBe` Fixtures.Project1.input
 
     it "encodes Name fields as literal camelCase keys, not kebab-case" do
-      Aeson.toJSON exampleName
-        `shouldBe` [aesonQQ|
-          {
-            "inCamelCase": "c",
-            "inPascalCase": "p",
-            "inKebabCase": "k",
-            "inTrainCase": "t",
-            "inScreamingKebabCase": "sk",
-            "inSnakeCase": "s",
-            "inCamelSnakeCase": "cs",
-            "inScreamingSnakeCase": "ss"
-          }
-        |]
+      Aeson.toJSON exampleName `shouldBe` exampleNameJson
+
+    it "decodes a Name from the pinned camelCase-keyed JSON" do
+      case Aeson.fromJSON exampleNameJson of
+        Aeson.Error err -> expectationFailure err
+        Aeson.Success decoded -> decoded `shouldBe` exampleName
 
     it "encodes an all-nullary sum (Primitive) as a bare kebab-case string, splitting before digits" do
       Aeson.toJSON Input.Int4Primitive `shouldBe` Aeson.String "int-4"
@@ -41,20 +34,7 @@ spec = do
         `shouldBe` [aesonQQ| { "primitive": "int-4" } |]
 
       Aeson.toJSON (Input.CustomScalar exampleName)
-        `shouldBe` [aesonQQ|
-          {
-            "custom": {
-              "inCamelCase": "c",
-              "inPascalCase": "p",
-              "inKebabCase": "k",
-              "inTrainCase": "t",
-              "inScreamingKebabCase": "sk",
-              "inSnakeCase": "s",
-              "inCamelSnakeCase": "cs",
-              "inScreamingSnakeCase": "ss"
-            }
-          }
-        |]
+        `shouldBe` Aeson.object [("custom", exampleNameJson)]
 
     it "encodes nullary alternatives of a mixed sum (Result) as a single-field object with empty-array contents" do
       Aeson.toJSON Input.VoidResult `shouldBe` [aesonQQ| { "void": [] } |]
@@ -67,22 +47,11 @@ spec = do
             rawName = "raw",
             paramIndex = 1
           }
-        `shouldBe` [aesonQQ|
-          {
-            "name": {
-              "inCamelCase": "c",
-              "inPascalCase": "p",
-              "inKebabCase": "k",
-              "inTrainCase": "t",
-              "inScreamingKebabCase": "sk",
-              "inSnakeCase": "s",
-              "inCamelSnakeCase": "cs",
-              "inScreamingSnakeCase": "ss"
-            },
-            "raw-name": "raw",
-            "param-index": 1
-          }
-        |]
+        `shouldBe` Aeson.object
+          [ ("name", exampleNameJson),
+            ("raw-name", Aeson.toJSON @Text "raw"),
+            ("param-index", Aeson.toJSON @Natural 1)
+          ]
 
     it "encodes a composite custom type definition tagged by stripping the type name" do
       Aeson.toJSON (Input.CompositeCustomTypeDefinition [])
@@ -90,19 +59,16 @@ spec = do
 
     it "encodes an enum custom type definition tagged by stripping the type name, kebab-casing enum variant fields" do
       Aeson.toJSON (Input.EnumCustomTypeDefinition [Input.EnumVariant {name = exampleName, pgName = "raw_enum"}])
-        `shouldBe` [aesonQQ|
-          {
-            "enum": [
-              {
-                "name": {
-                  "inCamelCase": "c", "inPascalCase": "p", "inKebabCase": "k", "inTrainCase": "t",
-                  "inScreamingKebabCase": "sk", "inSnakeCase": "s", "inCamelSnakeCase": "cs", "inScreamingSnakeCase": "ss"
-                },
-                "pg-name": "raw_enum"
-              }
-            ]
-          }
-        |]
+        `shouldBe` Aeson.object
+          [ ( "enum",
+              Aeson.toJSON
+                [ Aeson.object
+                    [ ("name", exampleNameJson),
+                      ("pg-name", Aeson.toJSON @Text "raw_enum")
+                    ]
+                ]
+            )
+          ]
 
     it "encodes a domain custom type definition tagged by stripping the type name" do
       Aeson.toJSON
@@ -119,17 +85,12 @@ spec = do
             pgName = "status",
             definition = Input.EnumCustomTypeDefinition []
           }
-        `shouldBe` [aesonQQ|
-          {
-            "name": {
-              "inCamelCase": "c", "inPascalCase": "p", "inKebabCase": "k", "inTrainCase": "t",
-              "inScreamingKebabCase": "sk", "inSnakeCase": "s", "inCamelSnakeCase": "cs", "inScreamingSnakeCase": "ss"
-            },
-            "pg-schema": "public",
-            "pg-name": "status",
-            "definition": { "enum": [] }
-          }
-        |]
+        `shouldBe` Aeson.object
+          [ ("name", exampleNameJson),
+            ("pg-schema", Aeson.toJSON @Text "public"),
+            ("pg-name", Aeson.toJSON @Text "status"),
+            ("definition", Aeson.object [("enum", Aeson.Array mempty)])
+          ]
 
     it "encodes non-null ArraySettings with kebab-cased dimensionality/element-is-nullable fields" do
       Aeson.toJSON
@@ -147,15 +108,30 @@ spec = do
 exampleName :: Input.Name
 exampleName =
   Input.Name
-    { inCamelCase = "c",
-      inPascalCase = "p",
-      inKebabCase = "k",
-      inTrainCase = "t",
-      inScreamingKebabCase = "sk",
-      inSnakeCase = "s",
-      inCamelSnakeCase = "cs",
-      inScreamingSnakeCase = "ss"
+    { inCamelCase = "userId",
+      inPascalCase = "UserId",
+      inKebabCase = "user-id",
+      inTrainCase = "User-Id",
+      inScreamingKebabCase = "USER-ID",
+      inSnakeCase = "user_id",
+      inCamelSnakeCase = "User_Id",
+      inScreamingSnakeCase = "USER_ID"
     }
+
+exampleNameJson :: Aeson.Value
+exampleNameJson =
+  [aesonQQ|
+    {
+      "inCamelCase": "userId",
+      "inPascalCase": "UserId",
+      "inKebabCase": "user-id",
+      "inTrainCase": "User-Id",
+      "inScreamingKebabCase": "USER-ID",
+      "inSnakeCase": "user_id",
+      "inCamelSnakeCase": "User_Id",
+      "inScreamingSnakeCase": "USER_ID"
+    }
+  |]
 
 -- | Captured by actually running gen-sdk's pre-drop AesonDeriver-based
 -- encoder (commit da426a3^) against this exact fixture value, then

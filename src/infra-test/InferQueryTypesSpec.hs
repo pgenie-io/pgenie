@@ -94,6 +94,36 @@ spec = describe "inferQueryTypes" do
       Right _ ->
         expectationFailure "Expected inference to fail because disc is NOT NULL and omitted from the INSERT, but it succeeded"
 
+  it "succeeds inserting into a table with foreign-key columns referencing different tables" do
+    -- Regression test for issue #71: probing a FK parameter's nullability
+    -- with a placeholder value (e.g. "0") can trigger a foreign-key
+    -- violation rather than a not-null violation, since the placeholder
+    -- does not exist in the referenced table. That must not be mistaken
+    -- for a genuine analysis failure.
+    queryTypes <-
+      expectRight =<< runWithAnalyser do
+        executeMigration
+          "create table album (\
+          \  id int4 not null generated always as identity primary key,\
+          \  name text not null\
+          \);\
+          \create table genre (\
+          \  id int4 not null generated always as identity primary key,\
+          \  name text not null unique\
+          \);\
+          \create table album_genre (\
+          \  album int4 not null references album,\
+          \  genre int4 not null references genre\
+          \);"
+        fst
+          <$> inferQueryTypes
+            "insert into album_genre (album, genre)\
+            \ values ($1, $2)\
+            \ returning album, genre"
+    map (\param -> param.isNullable) queryTypes.params `shouldBe` [False, False]
+    map (\column -> (column.pgName, column.isNullable)) queryTypes.resultColumns
+      `shouldBe` [("album", False), ("genre", False)]
+
   it "infers implicit composite type from table row cast" do
     queryTypes <-
       expectRight =<< runWithAnalyser do

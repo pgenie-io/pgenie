@@ -4,6 +4,7 @@ module Infra.Adapters.Analyser.Sessions.Procedures.ResolveParamNullabilities
 where
 
 import Data.Attoparsec.ByteString.Char8 qualified as AttoparsecBs
+import Data.Text qualified as Text
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.LibPQ qualified as Pq
 import Hasql.Errors qualified
@@ -53,17 +54,23 @@ instance IsProcedure ResolveParamNullabilities where
           _remainingParameterBytesHead : remainingParameterBytesTail ->
             tryError attempt >>= \case
               Right () -> goWithNullable
-              Left (Hasql.Errors.StatementSessionError _ _ _ _ _ (Hasql.Errors.ServerStatementError (Hasql.Errors.ServerError "23502" _ _ _ _))) ->
-                -- When a not-null violation occurs with the current parameter
-                -- set to null, verify it is indeed caused by *this* parameter
-                -- being null by retrying with a non-null value. If that also
-                -- triggers a 23502, the violation originates elsewhere - most
-                -- likely an INSERT that omits a NOT NULL column that has no
-                -- DEFAULT.
-                tryError nonNullAttempt >>= \case
-                  Right () -> goWithNonNullable
-                  Left confirmedErr -> throwError confirmedErr
-              Left err -> throwError err
+              Left err
+                | isNotNullViolation err ->
+                    -- When a not-null violation occurs with the current
+                    -- parameter set to null, verify it is indeed caused by
+                    -- *this* parameter being null by retrying with a
+                    -- non-null value. If that also triggers a 23502, the
+                    -- violation originates elsewhere - most likely an
+                    -- INSERT that omits a NOT NULL column that has no
+                    -- DEFAULT.
+                    tryError nonNullAttempt >>= \case
+                      Right () -> goWithNonNullable
+                      Left confirmedErr
+                        | isNotNullViolation confirmedErr -> throwError confirmedErr
+                        | isOtherConstraintViolation confirmedErr -> goWithNonNullable
+                        | otherwise -> throwError confirmedErr
+                | isOtherConstraintViolation err -> goWithNullable
+                | otherwise -> throwError err
             where
               goWithNullable =
                 go
@@ -84,6 +91,26 @@ instance IsProcedure ResolveParamNullabilities where
                 executeAttempt
                   (toLibpqParameters (reverse determinedNullabilities ++ [False] ++ replicate (length remainingParameterBytesTail) False) allParameterBytes)
           [] -> return $ reverse nullabilities
+
+      -- | The SQLSTATE code of a session error that originates from the server, if any.
+      sqlStateCode :: Hasql.Errors.SessionError -> Maybe Text
+      sqlStateCode = \case
+        Hasql.Errors.StatementSessionError _ _ _ _ _ (Hasql.Errors.ServerStatementError (Hasql.Errors.ServerError code _ _ _ _)) -> Just code
+        _ -> Nothing
+
+      -- | 23502: not_null_violation.
+      isNotNullViolation :: Hasql.Errors.SessionError -> Bool
+      isNotNullViolation err = sqlStateCode err == Just "23502"
+
+      -- | Any integrity-constraint violation (SQLSTATE class 23) other than
+      -- not-null. E.g., a foreign-key column probed with a placeholder value
+      -- absent from the referenced table (23503) - this is an artifact of
+      -- the probe, not a signal about whether the tested parameter accepts
+      -- @NULL@, so it is treated the same as a successful probe.
+      isOtherConstraintViolation :: Hasql.Errors.SessionError -> Bool
+      isOtherConstraintViolation err = case sqlStateCode err of
+        Just code -> code /= "23502" && Text.isPrefixOf "23" code
+        Nothing -> False
 
       executeAttempt :: [Maybe (Pq.Oid, ByteString, Pq.Format)] -> Hasql.Session.Session ()
       executeAttempt parameterValues =

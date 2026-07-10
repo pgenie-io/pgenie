@@ -1,3 +1,9 @@
+# Upcoming
+
+## Fixes
+
+- Fix analysis crashing with a foreign-key constraint violation error when resolving parameter nullability for an INSERT/UPDATE that targets a foreign-key column (e.g. a join table like `album_genre` referencing two other tables) (#71)
+
 # v0.9.0
 
 ## Breaking

@@ -106,10 +106,15 @@ runs:
       id: install
       shell: bash
       run: |
-        cabal install pgenie:pgn --installdir=bin --install-method=copy
+        # `cabal install` re-resolves and reinstalls every local sublibrary
+        # from scratch even though `cabal build` just built them. `list-bin`
+        # locates the executable `cabal build` already produced instead.
+        built="$(cabal list-bin pgenie:exe:pgn)"
+        mkdir -p bin
         if [ "$RUNNER_OS" = "Windows" ]; then
           path="$(pwd)/bin/pgn.exe"
         else
           path="$(pwd)/bin/pgn"
         fi
+        cp "$built" "$path"
         echo "binary-path=$path" >> $GITHUB_OUTPUT

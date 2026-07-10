@@ -13,16 +13,16 @@ module Logic.Domain.SqlTemplate
   )
 where
 
-import Test.Hspec
-import Test.Hspec.QuickCheck
-import Utils.Prelude
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
 import GenBridge.Model.Input qualified as Gen
 import Logic.Domain.Name qualified as Name
+import Test.Hspec
+import Test.Hspec.QuickCheck
 import Test.QuickCheck qualified as Qc
 import Text.Megaparsec qualified as Megaparsec
 import Text.Megaparsec.Char qualified as Megaparsec
+import Utils.Prelude
 
 -- | Structured representation of a SQL template.
 --

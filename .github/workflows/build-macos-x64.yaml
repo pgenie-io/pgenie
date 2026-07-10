@@ -38,8 +38,10 @@ jobs:
           ref: ${{ inputs.ref || github.sha }}
 
       # testcontainers-postgresql (used by infra-test) needs a Docker daemon.
-      # macOS runners need explicit setup.
+      # macOS runners need explicit setup. Only needed when integration tests
+      # run, i.e. when `fast` is not set (fast skips e2e-docker-mode too).
       - name: Set up Docker
+        if: inputs.fast != true
         uses: docker/setup-docker-action@v5
 
       - name: Install libpq

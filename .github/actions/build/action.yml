@@ -28,9 +28,36 @@ runs:
       uses: kenchan0130/actions-system-info@v1.4.0
       id: system-info
 
+    # ghcup's own download+install of GHC is fast; unpacking the archive into
+    # ~/.ghcup (its final install location) is what's slow, especially on the
+    # macOS x64 runner. Restoring a previous install lets ghcup detect the
+    # version is already present and skip straight past that.
+    - name: Restore cached GHC/cabal toolchain
+      uses: actions/cache/restore@v5
+      id: ghcup-cache
+      env:
+        key: ${{ runner.os }}-${{ runner.arch }}-${{ steps.system-info.outputs.release }}-ghcup
+      with:
+        path: ~/.ghcup
+        key: ${{ env.key }}-none
+        restore-keys: ${{ env.key }}-
+
     - name: Set up build tools
       id: setup
       uses: haskell-actions/setup@v2
+
+    - name: Compute GHC/cabal toolchain cache key
+      id: toolchain-key
+      shell: bash
+      run: |
+        echo "key=${{ runner.os }}-${{ runner.arch }}-${{ steps.system-info.outputs.release }}-ghcup-${{ steps.setup.outputs.ghc-version }}-${{ steps.setup.outputs.cabal-version }}" >> "$GITHUB_OUTPUT"
+
+    - name: Save GHC/cabal toolchain cache
+      uses: actions/cache/save@v5
+      if: ${{ steps.ghcup-cache.outputs.cache-matched-key != steps.toolchain-key.outputs.key }}
+      with:
+        path: ~/.ghcup
+        key: ${{ steps.toolchain-key.outputs.key }}
 
     - name: Update version in cabal file
       if: inputs.version != ''

@@ -207,14 +207,29 @@ data ParamStyle
 
 megaparsecOf :: Megaparsec.Parsec Void Text SqlTemplate
 megaparsecOf = do
-  segmentsAndStyles <- Megaparsec.many segmentParser
-  case nub (mapMaybe snd segmentsAndStyles) of
-    _ : _ : _ ->
-      fail "SQL template mixes `$name` and `:name` parameter styles. Use only one style per template."
-    _ ->
-      pure ()
-  pure (normalizeParsed (SqlTemplate (fmap fst segmentsAndStyles)))
+  segments <- collectSegments Nothing
+  pure (normalizeParsed (SqlTemplate segments))
   where
+    -- Fails as soon as a second parameter style is seen, at the offset of
+    -- the segment that introduced it, rather than collecting every segment
+    -- first and checking afterwards. Checking afterwards would always point
+    -- the error at the end of the input, since the offset is wherever
+    -- parsing happened to stop, regardless of which segment mismatched.
+    collectSegments :: Maybe ParamStyle -> Megaparsec.Parsec Void Text [Segment]
+    collectSegments styleSoFar = do
+      startOffset <- Megaparsec.getOffset
+      next <- Megaparsec.optional segmentParser
+      case next of
+        Nothing -> pure []
+        Just (segment, style) ->
+          case (styleSoFar, style) of
+            (Just previousStyle, Just newStyle) | previousStyle /= newStyle -> do
+              Megaparsec.setOffset startOffset
+              fail "SQL template mixes `$name` and `:name` parameter styles. Use only one style per template."
+            _ -> do
+              rest <- collectSegments (styleSoFar <|> style)
+              pure (segment : rest)
+
     segmentParser :: Megaparsec.Parsec Void Text (Segment, Maybe ParamStyle)
     segmentParser =
       Megaparsec.choice
@@ -679,6 +694,16 @@ spec = do
       case result of
         Left _ -> pure ()
         Right _ -> expectationFailure "Expected parsing to fail for mixed parameter styles"
+
+    it "reports the mixed-style error at the conflicting parameter, not at end of input" do
+      let input = "SELECT $name, :other"
+      let result = Megaparsec.parse megaparsecOf "" input
+      case result of
+        Right _ -> expectationFailure "Expected parsing to fail for mixed parameter styles"
+        Left err -> do
+          let firstError :| _ = Megaparsec.bundleErrors err
+          let expectedOffset = Text.length "SELECT $name, "
+          Megaparsec.errorOffset firstError `shouldBe` expectedOffset
 
   describe "normalize" do
     it "removes leading whitespace" do

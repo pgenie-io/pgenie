@@ -1,3 +1,9 @@
+# Upcoming
+
+## Fixes
+
+- Fix the mixed-parameter-style error pointing at EOF instead of the conflicting token.
+
 # v0.9.1
 
 ## Fixes

@@ -1,3 +1,7 @@
+-- |
+-- Megaparsec parser combinators for splitting an identifier into its
+-- constituent lowercase word parts, shared by 'Logic.Domain.Name''s
+-- case-insensitive part-based equality and case conversions.
 module Logic.Domain.Name.Megaparsec
   ( Parser,
     toTextParser,

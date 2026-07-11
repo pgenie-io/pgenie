@@ -54,8 +54,8 @@ run params =
         (dropActions, createActions) =
           partition
             ( \case
-                DropIndex {} -> True
-                CreateIndex {} -> False
+                DropIndexAction {} -> True
+                CreateIndexAction {} -> False
             )
             allActions
         migrationActions =
@@ -74,22 +74,22 @@ run params =
         pure Result {migrationText = migrationContent}
   where
     indexActionMessage :: IndexAction -> Text
-    indexActionMessage (DropIndex idx reason) = case reason of
-      ExactDuplicate other ->
+    indexActionMessage (DropIndexAction idx reason) = case reason of
+      ExactDuplicateDropReason other ->
         "Redundant index: "
           <> idx.indexName
           <> " on "
           <> idx.tableName
           <> " is an exact duplicate of "
           <> other.indexName
-      PrefixRedundancy other ->
+      PrefixRedundancyDropReason other ->
         "Redundant index: "
           <> idx.indexName
           <> " on "
           <> idx.tableName
           <> " is a prefix of "
           <> other.indexName
-      ExcessiveComposite replacement ->
+      ExcessiveCompositeDropReason replacement ->
         "Excessive composite index: "
           <> idx.indexName
           <> " on "
@@ -97,13 +97,13 @@ run params =
           <> " can be narrowed to ("
           <> Text.intercalate ", " replacement
           <> ")"
-      UnusedByQueries ->
+      UnusedByQueriesDropReason ->
         "Redundant index: "
           <> idx.indexName
           <> " on "
           <> idx.tableName
           <> " is not used by observed query needs"
-    indexActionMessage (CreateIndex tbl cols) =
+    indexActionMessage (CreateIndexAction tbl cols) =
       "Missing index: "
         <> tbl
         <> " needs an index on ("
@@ -111,8 +111,8 @@ run params =
         <> ")"
 
     indexActionDetails :: IndexAction -> [(Text, Text)]
-    indexActionDetails (DropIndex idx _) = [("index", idx.indexName), ("table", idx.tableName)]
-    indexActionDetails (CreateIndex tbl cols) = [("table", tbl), ("columns", Text.intercalate ", " cols)]
+    indexActionDetails (DropIndexAction idx _) = [("index", idx.indexName), ("table", idx.tableName)]
+    indexActionDetails (CreateIndexAction tbl cols) = [("table", tbl), ("columns", Text.intercalate ", " cols)]
 
     writeMigrationFile :: (Port m) => Text -> m ()
     writeMigrationFile content = do

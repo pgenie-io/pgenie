@@ -1,3 +1,7 @@
+-- |
+-- Analyzes existing indexes against observed query needs to recommend
+-- redundant/excessive indexes to drop and missing ones to create, and
+-- renders the recommendations as a migration.
 module Logic.Domain.IndexOptimization
   ( IndexInfo (..),
     IndexAction (..),
@@ -31,9 +35,9 @@ data IndexInfo = IndexInfo
 -- | An action recommended by the index optimizer.
 data IndexAction
   = -- | Drop an index that is unnecessary.
-    DropIndex IndexInfo DropReason
+    DropIndexAction IndexInfo DropReason
   | -- | Create a new index to cover a missing access pattern.
-    CreateIndex
+    CreateIndexAction
       { tableName :: Text,
         columns :: [Text]
       }
@@ -42,14 +46,14 @@ data IndexAction
 -- | Reason why an index should be dropped.
 data DropReason
   = -- | This index's columns are a leading prefix of the superseding index's columns.
-    PrefixRedundancy IndexInfo
+    PrefixRedundancyDropReason IndexInfo
   | -- | This index is an exact duplicate of another index.
-    ExactDuplicate IndexInfo
+    ExactDuplicateDropReason IndexInfo
   | -- | This composite index has trailing columns that are not needed by any query.
     --   The replacement columns are provided.
-    ExcessiveComposite [Text]
+    ExcessiveCompositeDropReason [Text]
   | -- | This index is not used by any observed query need on the same table.
-    UnusedByQueries
+    UnusedByQueriesDropReason
   deriving stock (Eq, Show)
 
 -- | Analyze existing indexes against query needs and produce a list of
@@ -80,8 +84,8 @@ optimizeIndexes indexes queryNeeds =
    in redundant <> filteredExcessive <> filteredUnused <> missing
 
 dropIndexName :: IndexAction -> Text
-dropIndexName (DropIndex idx _) = idx.indexName
-dropIndexName (CreateIndex {}) = ""
+dropIndexName (DropIndexAction idx _) = idx.indexName
+dropIndexName (CreateIndexAction {}) = ""
 
 -- * Redundant index detection
 
@@ -108,7 +112,7 @@ findRedundancies allIndexes candidate =
           allIndexes
    in case findSuperseding candidate others of
         Nothing -> []
-        Just reason -> [DropIndex candidate reason]
+        Just reason -> [DropIndexAction candidate reason]
 
 findSuperseding :: IndexInfo -> [IndexInfo] -> Maybe DropReason
 findSuperseding candidate = go
@@ -118,9 +122,9 @@ findSuperseding candidate = go
       | candidate.columns
           == other.columns
           && (other.isPrimary || candidate.indexName > other.indexName) =
-          Just (ExactDuplicate other)
+          Just (ExactDuplicateDropReason other)
       | isStrictPrefix candidate.columns other.columns =
-          Just (PrefixRedundancy other)
+          Just (PrefixRedundancyDropReason other)
       | otherwise = go rest
 
 -- | Check if the first list is a strict prefix of the second.
@@ -158,7 +162,7 @@ checkExcessive needsByTable idx
            in if neededLen > 0 && neededLen < length idx.columns
                 then
                   let replacement = take neededLen idx.columns
-                   in [DropIndex idx (ExcessiveComposite replacement)]
+                   in [DropIndexAction idx (ExcessiveCompositeDropReason replacement)]
                 else []
 
 -- | Given the columns of an index and a set of column lists from queries,
@@ -194,7 +198,7 @@ prefixNeeded indexCols queryCols =
 detectUnused :: [IndexInfo] -> [(Text, [Text])] -> [IndexAction]
 detectUnused indexes queryNeeds =
   let needsByTable = buildNeedsByTable queryNeeds
-   in [ DropIndex idx UnusedByQueries
+   in [ DropIndexAction idx UnusedByQueriesDropReason
       | idx <- indexes,
         not idx.isPrimary,
         not idx.isUnique,
@@ -213,10 +217,10 @@ detectUnused indexes queryNeeds =
 detectMissing :: [IndexInfo] -> [IndexAction] -> [(Text, [Text])] -> [IndexAction]
 detectMissing indexes actions queryNeeds =
   let -- Effective indexes after applying drop/create from redundant & excessive.
-      droppedNames = Set.fromList [idx.indexName | DropIndex idx _ <- actions]
+      droppedNames = Set.fromList [idx.indexName | DropIndexAction idx _ <- actions]
       survivingIndexes = filter (\idx -> idx.indexName `Set.notMember` droppedNames) indexes
       -- Replacement indexes from excessive-composite actions.
-      replacements = [(idx.tableName, cols) | DropIndex idx (ExcessiveComposite cols) <- actions]
+      replacements = [(idx.tableName, cols) | DropIndexAction idx (ExcessiveCompositeDropReason cols) <- actions]
       -- Build effective coverage: for each table, set of column-lists covered.
       coverageMap = buildCoverageMap survivingIndexes replacements
       -- Deduplicate query needs per table.
@@ -248,7 +252,7 @@ buildCoverageMap indexes replacements =
 findUncovered :: Map Text [[Text]] -> Text -> Set [Text] -> [IndexAction]
 findUncovered coverageMap tbl columnSets =
   let covered = fromMaybe [] (Map.lookup tbl coverageMap)
-   in [ CreateIndex tbl cols
+   in [ CreateIndexAction tbl cols
       | cols <- Set.toList columnSets,
         not (null cols),
         not (anyCoversCols covered cols)
@@ -266,13 +270,13 @@ anyCoversCols indexColLists queryCols =
 -- | Generate a SQL migration combining all index actions.
 generateMigration :: [IndexAction] -> Text
 generateMigration actions =
-  let drops = [a | a@(DropIndex _ _) <- actions]
-      creates = [a | a@(CreateIndex {}) <- actions]
+  let drops = [a | a@(DropIndexAction _ _) <- actions]
+      creates = [a | a@(CreateIndexAction {}) <- actions]
       dropStmts = concatMap dropStatement drops
       createStmts = concatMap createStatement creates
       replacementCreates =
-        [ createStatement (CreateIndex idx.tableName cols)
-        | DropIndex idx (ExcessiveComposite cols) <- actions
+        [ createStatement (CreateIndexAction idx.tableName cols)
+        | DropIndexAction idx (ExcessiveCompositeDropReason cols) <- actions
         ]
       allLines =
         ["-- Auto-generated migration to optimize indexes", ""]
@@ -282,7 +286,7 @@ generateMigration actions =
    in Text.unlines allLines
   where
     dropStatement :: IndexAction -> [Text]
-    dropStatement (DropIndex idx reason) =
+    dropStatement (DropIndexAction idx reason) =
       [ "-- " <> reasonComment idx reason,
         "DROP INDEX " <> quoteIdent idx.schemaName <> "." <> quoteIdent idx.indexName <> ";",
         ""
@@ -290,7 +294,7 @@ generateMigration actions =
     dropStatement _ = []
 
     createStatement :: IndexAction -> [Text]
-    createStatement (CreateIndex tbl cols) =
+    createStatement (CreateIndexAction tbl cols) =
       [ "CREATE INDEX ON " <> tbl <> " (" <> Text.intercalate ", " cols <> ");",
         ""
       ]
@@ -298,18 +302,18 @@ generateMigration actions =
 
     reasonComment :: IndexInfo -> DropReason -> Text
     reasonComment idx reason = case reason of
-      ExactDuplicate other ->
+      ExactDuplicateDropReason other ->
         idx.indexName <> " is an exact duplicate of " <> other.indexName
-      PrefixRedundancy other ->
+      PrefixRedundancyDropReason other ->
         idx.indexName <> " is a prefix of " <> other.indexName
-      ExcessiveComposite replacement ->
+      ExcessiveCompositeDropReason replacement ->
         idx.indexName
           <> " on ("
           <> Text.intercalate ", " idx.columns
           <> ") is excessive; replacing with ("
           <> Text.intercalate ", " replacement
           <> ")"
-      UnusedByQueries ->
+      UnusedByQueriesDropReason ->
         idx.indexName
           <> " on ("
           <> Text.intercalate ", " idx.columns
@@ -335,10 +339,10 @@ spec = do
             result = optimizeIndexes [idx1, idx2] []
         length result `shouldBe` 1
         case result of
-          [DropIndex idx (ExactDuplicate other)] -> do
+          [DropIndexAction idx (ExactDuplicateDropReason other)] -> do
             idx.indexName `shouldBe` "idx2"
             other.indexName `shouldBe` "idx1"
-          _ -> expectationFailure "Expected single DropIndex with ExactDuplicate"
+          _ -> expectationFailure "Expected single DropIndexAction with ExactDuplicateDropReason"
 
       it "detects prefix redundancy" do
         let idx1 = mkIndex "idx_a" "users" ["email"] False False
@@ -346,10 +350,10 @@ spec = do
             result = optimizeIndexes [idx1, idx2] []
         length result `shouldBe` 1
         case result of
-          [DropIndex idx (PrefixRedundancy other)] -> do
+          [DropIndexAction idx (PrefixRedundancyDropReason other)] -> do
             idx.indexName `shouldBe` "idx_a"
             other.indexName `shouldBe` "idx_ab"
-          _ -> expectationFailure "Expected single DropIndex with PrefixRedundancy"
+          _ -> expectationFailure "Expected single DropIndexAction with PrefixRedundancyDropReason"
 
       it "does not flag indexes on different tables" do
         let idx1 = mkIndex "idx1" "users" ["email"] False False
@@ -367,8 +371,8 @@ spec = do
             result = optimizeIndexes [idx1, idx2] []
         length result `shouldBe` 1
         case result of
-          [DropIndex idx _] -> idx.indexName `shouldBe` "idx_users_id"
-          _ -> expectationFailure "Expected single DropIndex"
+          [DropIndexAction idx _] -> idx.indexName `shouldBe` "idx_users_id"
+          _ -> expectationFailure "Expected single DropIndexAction"
 
       it "does not flag indexes with different predicates" do
         let idx1 = mkIndexWithPredicate "idx1" "users" ["email"] Nothing
@@ -381,8 +385,8 @@ spec = do
             result = optimizeIndexes [idx1, idx2] []
         length result `shouldBe` 1
         case result of
-          [DropIndex idx _] -> idx.indexName `shouldBe` "idx1"
-          _ -> expectationFailure "Expected single DropIndex"
+          [DropIndexAction idx _] -> idx.indexName `shouldBe` "idx1"
+          _ -> expectationFailure "Expected single DropIndexAction"
 
       it "does not flag non-prefix column overlap" do
         let idx1 = mkIndex "idx1" "users" ["name"] False False
@@ -394,7 +398,7 @@ spec = do
             idxAB = mkIndex "idx_ab" "users" ["email", "name"] False False
             idxABC = mkIndex "idx_abc" "users" ["email", "name", "age"] False False
             result = optimizeIndexes [idxA, idxAB, idxABC] []
-            drops = [a | a@(DropIndex _ _) <- result]
+            drops = [a | a@(DropIndexAction _ _) <- result]
         length drops `shouldBe` 2
 
     describe "excessive composite index detection" do
@@ -402,12 +406,12 @@ spec = do
         let idx = mkIndex "idx_name_format" "album" ["name", "format"] False False
             queryNeeds = [("album", ["name"])]
             result = optimizeIndexes [idx] queryNeeds
-            drops = [a | a@(DropIndex _ (ExcessiveComposite _)) <- result]
+            drops = [a | a@(DropIndexAction _ (ExcessiveCompositeDropReason _)) <- result]
         length drops `shouldBe` 1
         case drops of
-          [DropIndex _ (ExcessiveComposite replacement)] ->
+          [DropIndexAction _ (ExcessiveCompositeDropReason replacement)] ->
             replacement `shouldBe` ["name"]
-          _ -> expectationFailure "Expected ExcessiveComposite"
+          _ -> expectationFailure "Expected ExcessiveCompositeDropReason"
 
       it "does not narrow unique indexes" do
         let idx = mkIndex "idx_name_format" "album" ["name", "format"] True False
@@ -431,12 +435,12 @@ spec = do
                 ("users", ["email", "name"])
               ]
             result = optimizeIndexes [idx] queryNeeds
-            drops = [a | a@(DropIndex _ (ExcessiveComposite _)) <- result]
+            drops = [a | a@(DropIndexAction _ (ExcessiveCompositeDropReason _)) <- result]
         length drops `shouldBe` 1
         case drops of
-          [DropIndex _ (ExcessiveComposite replacement)] ->
+          [DropIndexAction _ (ExcessiveCompositeDropReason replacement)] ->
             replacement `shouldBe` ["email", "name"]
-          _ -> expectationFailure "Expected ExcessiveComposite"
+          _ -> expectationFailure "Expected ExcessiveCompositeDropReason"
 
       it "does not narrow single-column indexes" do
         let idx = mkIndex "idx_email" "users" ["email"] False False
@@ -452,13 +456,13 @@ spec = do
       it "suggests a missing index" do
         let queryNeeds = [("album", ["format"])]
             result = optimizeIndexes [] queryNeeds
-        result `shouldBe` [CreateIndex "album" ["format"]]
+        result `shouldBe` [CreateIndexAction "album" ["format"]]
 
       it "drops an index unused by observed query needs" do
         let idx = mkIndex "idx_recording" "album" ["recording"] False False
             queryNeeds = [("album", ["format"])]
             result = optimizeIndexes [idx] queryNeeds
-            drops = [a | a@(DropIndex _ UnusedByQueries) <- result]
+            drops = [a | a@(DropIndexAction _ UnusedByQueriesDropReason) <- result]
         drops `shouldSatisfy` (not . null)
 
       it "does not suggest an index that already exists" do
@@ -470,22 +474,22 @@ spec = do
         let idx = mkIndex "idx_format_name" "album" ["format", "name"] False False
             queryNeeds = [("album", ["format"])]
             result = optimizeIndexes [idx] queryNeeds
-            creates = [a | a@(CreateIndex {}) <- result]
+            creates = [a | a@(CreateIndexAction {}) <- result]
         creates `shouldBe` []
 
       it "suggests index when no existing index covers the columns" do
         let idx = mkIndex "idx_name" "album" ["name"] False False
             queryNeeds = [("album", ["format"])]
             result = optimizeIndexes [idx] queryNeeds
-            creates = [a | a@(CreateIndex {}) <- result]
-            drops = [a | a@(DropIndex _ UnusedByQueries) <- result]
-        creates `shouldBe` [CreateIndex "album" ["format"]]
+            creates = [a | a@(CreateIndexAction {}) <- result]
+            drops = [a | a@(DropIndexAction _ UnusedByQueriesDropReason) <- result]
+        creates `shouldBe` [CreateIndexAction "album" ["format"]]
         drops `shouldSatisfy` (not . null)
 
       it "does not suggest duplicate creates for the same columns" do
         let queryNeeds = [("album", ["format"]), ("album", ["format"])]
             result = optimizeIndexes [] queryNeeds
-        result `shouldBe` [CreateIndex "album" ["format"]]
+        result `shouldBe` [CreateIndexAction "album" ["format"]]
 
       it "skips empty column lists from query needs" do
         let queryNeeds = [("album", [])]
@@ -497,21 +501,21 @@ spec = do
             idx2 = mkIndex "idx2" "album" ["name", "format"] False False
             queryNeeds = [("album", ["released"])]
             result = optimizeIndexes [idx1, idx2] queryNeeds
-            drops = [a | a@(DropIndex _ _) <- result]
-            creates = [a | a@(CreateIndex {}) <- result]
+            drops = [a | a@(DropIndexAction _ _) <- result]
+            creates = [a | a@(CreateIndexAction {}) <- result]
         length drops `shouldSatisfy` (>= 1)
         length creates `shouldBe` 1
         case creates of
-          [CreateIndex tbl cols] -> do
+          [CreateIndexAction tbl cols] -> do
             tbl `shouldBe` "album"
             cols `shouldBe` ["released"]
-          _ -> expectationFailure "Expected single CreateIndex"
+          _ -> expectationFailure "Expected single CreateIndexAction"
 
       it "accounts for excessive-composite replacement when checking missing" do
         let idx = mkIndex "idx_nf" "album" ["name", "format"] False False
             queryNeeds = [("album", ["name"])]
             result = optimizeIndexes [idx] queryNeeds
-            creates = [a | a@(CreateIndex {}) <- result]
+            creates = [a | a@(CreateIndexAction {}) <- result]
         creates `shouldBe` []
 
       it "handles multiple tables independently" do
@@ -520,35 +524,35 @@ spec = do
             idx3 = mkIndex "idx_b1" "orders" ["status", "date"] False False
             queryNeeds = [("orders", ["status"]), ("users", ["name"])]
             result = optimizeIndexes [idx1, idx2, idx3] queryNeeds
-            drops = [a | a@(DropIndex _ _) <- result]
-            creates = [a | a@(CreateIndex {}) <- result]
+            drops = [a | a@(DropIndexAction _ _) <- result]
+            creates = [a | a@(CreateIndexAction {}) <- result]
         length drops `shouldSatisfy` (>= 2)
-        creates `shouldSatisfy` any (\case CreateIndex t c -> t == "users" && c == ["name"]; _ -> False)
+        creates `shouldSatisfy` any (\case CreateIndexAction t c -> t == "users" && c == ["name"]; _ -> False)
 
     describe "composite narrowing edge cases" do
       it "only considers contiguous leading prefix for narrowing" do
         let idx = mkIndex "idx_abc" "t" ["a", "b", "c"] False False
             queryNeeds = [("t", ["a", "c"])]
             result = optimizeIndexes [idx] queryNeeds
-            drops = [a | a@(DropIndex _ (ExcessiveComposite _)) <- result]
+            drops = [a | a@(DropIndexAction _ (ExcessiveCompositeDropReason _)) <- result]
         case drops of
-          [DropIndex _ (ExcessiveComposite replacement)] ->
+          [DropIndexAction _ (ExcessiveCompositeDropReason replacement)] ->
             replacement `shouldBe` ["a"]
-          _ -> expectationFailure "Expected ExcessiveComposite with [a]"
+          _ -> expectationFailure "Expected ExcessiveCompositeDropReason with [a]"
 
       it "does not narrow if query uses no leading columns" do
         let idx = mkIndex "idx_ab" "t" ["a", "b"] False False
             queryNeeds = [("t", ["b"])]
             result = optimizeIndexes [idx] queryNeeds
-            excessiveDrops = [a | a@(DropIndex _ (ExcessiveComposite _)) <- result]
+            excessiveDrops = [a | a@(DropIndexAction _ (ExcessiveCompositeDropReason _)) <- result]
         excessiveDrops `shouldBe` []
 
       it "handles disjoint query sets requiring separate indexes" do
         let idx = mkIndex "idx_en" "users" ["email", "name"] False False
             queryNeeds = [("users", ["email"]), ("users", ["name"])]
             result = optimizeIndexes [idx] queryNeeds
-            creates = [a | a@(CreateIndex {}) <- result]
-        creates `shouldSatisfy` any (\case CreateIndex _ c -> c == ["name"]; _ -> False)
+            creates = [a | a@(CreateIndexAction {}) <- result]
+        creates `shouldSatisfy` any (\case CreateIndexAction _ c -> c == ["name"]; _ -> False)
 
       it "does not narrow when all columns are needed across queries" do
         let idx = mkIndex "idx_abc" "t" ["a", "b", "c"] False False
@@ -559,17 +563,17 @@ spec = do
         let idx = mkIndex "idx_abc" "t" ["a", "b", "c"] False False
             queryNeeds = [("t", ["a"]), ("t", ["a", "b"])]
             result = optimizeIndexes [idx] queryNeeds
-            drops = [a | a@(DropIndex _ (ExcessiveComposite _)) <- result]
+            drops = [a | a@(DropIndexAction _ (ExcessiveCompositeDropReason _)) <- result]
         case drops of
-          [DropIndex _ (ExcessiveComposite replacement)] ->
+          [DropIndexAction _ (ExcessiveCompositeDropReason replacement)] ->
             replacement `shouldBe` ["a", "b"]
-          _ -> expectationFailure "Expected ExcessiveComposite with [a, b]"
+          _ -> expectationFailure "Expected ExcessiveCompositeDropReason with [a, b]"
 
   describe "generateMigration" do
     it "generates DROP and CREATE statements in a single migration" do
       let actions =
-            [ DropIndex (mkIndex "idx_dup" "users" ["email"] False False) (ExactDuplicate (mkIndex "idx_orig" "users" ["email"] False False)),
-              CreateIndex "album" ["format"]
+            [ DropIndexAction (mkIndex "idx_dup" "users" ["email"] False False) (ExactDuplicateDropReason (mkIndex "idx_orig" "users" ["email"] False False)),
+              CreateIndexAction "album" ["format"]
             ]
           migration = generateMigration actions
       migration `shouldSatisfy` \t -> "DROP INDEX" `Text.isInfixOf` t
@@ -577,7 +581,7 @@ spec = do
 
     it "includes replacement indexes for excessive composites" do
       let idx = mkIndex "idx_nf" "album" ["name", "format"] False False
-          actions = [DropIndex idx (ExcessiveComposite ["name"])]
+          actions = [DropIndexAction idx (ExcessiveCompositeDropReason ["name"])]
           migration = generateMigration actions
       migration `shouldSatisfy` \t -> "DROP INDEX" `Text.isInfixOf` t
       migration `shouldSatisfy` \t -> "CREATE INDEX ON album (name)" `Text.isInfixOf` t
@@ -589,21 +593,21 @@ spec = do
     it "handles prefix-redundancy drop with comment" do
       let idx = mkIndex "idx_a" "users" ["email"] False False
           superseder = mkIndex "idx_ab" "users" ["email", "name"] False False
-          actions = [DropIndex idx (PrefixRedundancy superseder)]
+          actions = [DropIndexAction idx (PrefixRedundancyDropReason superseder)]
           migration = generateMigration actions
       migration `shouldSatisfy` \t -> "DROP INDEX" `Text.isInfixOf` t
       migration `shouldSatisfy` \t -> "is a prefix of" `Text.isInfixOf` t
 
     it "handles unused-by-queries drop with comment" do
       let idx = mkIndex "idx_stale" "album" ["format"] False False
-          actions = [DropIndex idx UnusedByQueries]
+          actions = [DropIndexAction idx UnusedByQueriesDropReason]
           migration = generateMigration actions
       migration `shouldSatisfy` \t -> "DROP INDEX" `Text.isInfixOf` t
       migration `shouldSatisfy` \t -> "not used by observed query needs" `Text.isInfixOf` t
 
     it "quotes schema and index names in DROP statements" do
       let idx = mkIndex "my-index" "album" ["name"] False False
-          actions = [DropIndex idx (ExactDuplicate idx)]
+          actions = [DropIndexAction idx (ExactDuplicateDropReason idx)]
           migration = generateMigration actions
       migration `shouldSatisfy` \t -> "\"public\".\"my-index\"" `Text.isInfixOf` t
 
@@ -611,9 +615,9 @@ spec = do
       let redIdx = mkIndex "idx_red" "users" ["email"] False False
           compIdx = mkIndex "idx_comp" "users" ["name", "age"] False False
           actions =
-            [ DropIndex redIdx (ExactDuplicate (mkIndex "idx_orig" "users" ["email"] False False)),
-              DropIndex compIdx (ExcessiveComposite ["name"]),
-              CreateIndex "orders" ["status"]
+            [ DropIndexAction redIdx (ExactDuplicateDropReason (mkIndex "idx_orig" "users" ["email"] False False)),
+              DropIndexAction compIdx (ExcessiveCompositeDropReason ["name"]),
+              CreateIndexAction "orders" ["status"]
             ]
           migration = generateMigration actions
           findPos needle haystack = Text.length (fst (Text.breakOn needle haystack))

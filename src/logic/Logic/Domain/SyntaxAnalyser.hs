@@ -1,3 +1,6 @@
+-- |
+-- Resolves a SQL query's syntax tree into a 'QuerySyntaxAnalysis' by parsing
+-- it with @postgresql-syntax@ and interpreting the resulting AST.
 module Logic.Domain.SyntaxAnalyser
   ( resolveText,
     module Data,

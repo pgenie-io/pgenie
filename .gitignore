@@ -12,11 +12,14 @@
 !/README.md
 !/CHANGELOG.md
 !/AGENTS.md
+!/CODING_STANDARDS.md
+!/CONTEXT.md
 !/*.cabal
 !/cabal.project
 !/cabal.project.freeze
 !/.ormolu
 !/stack.yaml
+!/.haskell-coding-standards.lock
 
 # Unignore subtrees:
 !/.github/

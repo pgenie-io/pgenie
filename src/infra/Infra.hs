@@ -19,14 +19,14 @@ import Utils.Prelude
 -- |
 -- Scope the infrastructure device, run the given program against it, and
 -- print its result or report and exit with failure on error.
-run :: (Observing.Observation -> IO ()) -> Maybe Text -> (ProjectFile.ProjectFile -> Observing.Observing (Fx MainAdapter.Device Report.Report) Text) -> IO ()
-run observe maybeDatabaseUrl makeFx = do
+run :: (Observing.Observation -> IO ()) -> Maybe Text -> Bool -> (ProjectFile.ProjectFile -> Observing.Observing (Fx MainAdapter.Device Report.Report) Text) -> IO ()
+run observe maybeDatabaseUrl reuse makeFx = do
   result <-
     ( do
         projectFile <- MainAdapter.getProjectFile
         Observing.interpretObserving (makeFx projectFile)
     )
-      & scoping (MainAdapter.scope observe maybeDatabaseUrl)
+      & scoping (MainAdapter.scope observe maybeDatabaseUrl reuse)
       & exposeErr
       & Fx.runFx
   case result of

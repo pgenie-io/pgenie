@@ -21,9 +21,10 @@ main ::
   (AnalyseProject.Port m, GenerateCode.Port m) =>
   -- | Version string for @--version@ (SemVer, without the PVP @0.@ prefix).
   Text ->
-  -- | Execute an effect with an observation sink and an optional database URL.
+  -- | Execute an effect with an observation sink, an optional database URL,
+  -- and whether to reuse a Docker container across runs.
   -- The effect receives the parsed project file.
-  ((Observing.Observation -> IO ()) -> Maybe Text -> (ProjectFile.ProjectFile -> m Text) -> IO ()) ->
+  ((Observing.Observation -> IO ()) -> Maybe Text -> Bool -> (ProjectFile.ProjectFile -> m Text) -> IO ()) ->
   -- | Application.
   IO ()
 main version runEffect = do
@@ -37,4 +38,4 @@ main version runEffect = do
       Commands.generate,
       Commands.manageIndexes
     ]
-    (\dbUrl -> runEffect (Display.handleObservation display) dbUrl)
+    (\dbUrl reuse -> runEffect (Display.handleObservation display) dbUrl reuse)

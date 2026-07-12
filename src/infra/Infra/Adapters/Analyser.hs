@@ -36,8 +36,10 @@ newtype Device = Device Hasql.Pool.Pool
 
 -- | Selects the PostgreSQL backend for analysis.
 data Source
-  = -- | Start a fresh Docker container using the given image tag.
-    DockerSource {postgresTag :: Text}
+  = -- | Start a fresh Docker container using the given image tag. With
+    -- @reuse@, the container is left running across invocations instead of
+    -- being torn down on scope exit.
+    DockerSource {postgresTag :: Text, reuse :: Bool}
   | -- | Connect to a running PostgreSQL server.
     -- A temporary database is created for analysis and dropped on cleanup.
     RunningServerSource {connectionUrl :: Text, targetMajorVersion :: Int}
@@ -47,12 +49,20 @@ data Source
 -- when the enclosing scope exits.
 scope :: Source -> (Observing.Observation -> IO ()) -> Fx.Scope Report.Report Device
 scope source observe = case source of
-  DockerSource {postgresTag} -> scopeViaDocker postgresTag observe
+  DockerSource {postgresTag, reuse} -> scopeViaDocker postgresTag reuse observe
   RunningServerSource {connectionUrl, targetMajorVersion} ->
     scopeViaRunningServer connectionUrl targetMajorVersion observe
 
-scopeViaDocker :: Text -> (Observing.Observation -> IO ()) -> Fx.Scope Report.Report Device
-scopeViaDocker postgresTag observe = do
+-- | Start (or, with @reuse@, adopt) a Docker container and connect to it.
+-- Without @reuse@, connects directly to the container's default @postgres@
+-- database, and the whole container is torn down on scope exit. With
+-- @reuse@, the container can outlive this run, so a fresh randomly-named
+-- temporary database is created per run instead -- the same isolation
+-- pattern 'scopeViaRunningServer' uses -- to avoid colliding with schema
+-- objects a previous run left behind. The container itself is left running
+-- either way once @reuse@ is on.
+scopeViaDocker :: Text -> Bool -> (Observing.Observation -> IO ()) -> Fx.Scope Report.Report Device
+scopeViaDocker postgresTag reuse observe = do
   acquire $ runTotalIO \() -> observe (Observing.StageEntered ["Starting Container"])
   (host, port) <-
     first
@@ -62,26 +72,41 @@ scopeViaDocker postgresTag observe = do
               TestcontainersPostgresql.Config
                 { tagName = postgresTag,
                   auth = TestcontainersPostgresql.TrustAuth,
-                  forwardLogs = False
+                  forwardLogs = False,
+                  reuse
                 }
           )
       )
   acquire $ runTotalIO \() -> observe (Observing.StageExited ["Starting Container"] 0.9)
   acquire $ runTotalIO \() -> observe (Observing.StageEntered ["Connecting"])
-  pool <-
-    scopePool
-      ( Hasql.Pool.Config.settings
-          [ Hasql.Pool.Config.size 100,
-            Hasql.Pool.Config.staticConnectionSettings
-              ( mconcat
-                  [ Hasql.Connection.Settings.hostAndPort host port,
-                    Hasql.Connection.Settings.user "postgres",
-                    Hasql.Connection.Settings.password "",
-                    Hasql.Connection.Settings.dbname "postgres"
-                  ]
-              )
+
+  let serverSettings =
+        mconcat
+          [ Hasql.Connection.Settings.hostAndPort host port,
+            Hasql.Connection.Settings.user "postgres",
+            Hasql.Connection.Settings.password ""
           ]
-      )
+      defaultDbSettings = serverSettings <> Hasql.Connection.Settings.dbname "postgres"
+
+  pool <-
+    if reuse
+      then do
+        adminPool <-
+          scopePool
+            ( Hasql.Pool.Config.settings
+                [ Hasql.Pool.Config.size 1,
+                  Hasql.Pool.Config.staticConnectionSettings defaultDbSettings
+                ]
+            )
+        scopeTempDatabase serverSettings adminPool
+      else
+        scopePool
+          ( Hasql.Pool.Config.settings
+              [ Hasql.Pool.Config.size 100,
+                Hasql.Pool.Config.staticConnectionSettings defaultDbSettings
+              ]
+          )
+
   acquire $ runTotalIO \() -> observe (Observing.StageExited ["Connecting"] 0.1)
   pure (Device pool)
   where
@@ -163,6 +188,42 @@ scopeViaRunningServer connectionUrl targetMajorVersion observe = do
             ]
         }
 
+  analysisPool <- scopeTempDatabase serverSettings adminPool
+
+  acquire $ runTotalIO \() -> observe (Observing.StageExited ["Connecting"] 1)
+
+  pure (Device analysisPool)
+  where
+    -- Session that reads the server major version via the existing connection,
+    -- avoiding the need to open a separate libpq connection.
+    queryVersionSession :: Hasql.Session.Session (Either Text Int)
+    queryVersionSession =
+      Hasql.Session.onLibpqConnection \conn -> do
+        mResult <- Pq.exec conn "SELECT current_setting('server_version_num')::int / 10000"
+        result <- case mResult of
+          Nothing -> fmap (Left . msgOf) (Pq.errorMessage conn)
+          Just res -> do
+            rst <- Pq.resultStatus res
+            if rst == Pq.TuplesOk
+              then do
+                mVal <- Pq.getvalue res (Pq.Row 0) (Pq.Col 0)
+                pure $ case mVal >>= readMaybe . Text.unpack . TextEncoding.decodeUtf8Lenient of
+                  Just n -> Right n
+                  Nothing -> Left "Could not parse server_version_num"
+              else fmap (Left . msgOf) (Pq.resultErrorMessage res)
+        pure (Right result, conn)
+      where
+        msgOf :: Maybe ByteString -> Text
+        msgOf = maybe "Unknown error" TextEncoding.decodeUtf8Lenient
+
+-- | Creates a randomly-named temporary database against the given admin
+-- pool, registers its drop on scope exit, and returns a pool connected to
+-- it. @serverSettings@ must not already specify a @dbname@. Shared by
+-- 'scopeViaDocker' (in @reuse@ mode) and 'scopeViaRunningServer' so that
+-- each run gets a database isolated from others sharing the same
+-- long-lived server or container.
+scopeTempDatabase :: Hasql.Connection.Settings.Settings -> Hasql.Pool.Pool -> Fx.Scope Report.Report Hasql.Pool.Pool
+scopeTempDatabase serverSettings adminPool = do
   -- Generate a UUID-based name for the temporary analysis database.
   tempDbName <- acquire $ runTotalIO \() -> do
     uuid <- UUID.V4.nextRandom
@@ -192,40 +253,13 @@ scopeViaRunningServer connectionUrl targetMajorVersion observe = do
   -- Analysis pool on the temporary database.
   -- Its release is registered last so it runs first in LIFO cleanup.
   let analysisSettings = serverSettings <> Hasql.Connection.Settings.dbname tempDbName
-  analysisPool <-
-    scopePool
-      ( Hasql.Pool.Config.settings
-          [ Hasql.Pool.Config.size 100,
-            Hasql.Pool.Config.staticConnectionSettings analysisSettings
-          ]
-      )
-
-  acquire $ runTotalIO \() -> observe (Observing.StageExited ["Connecting"] 1)
-
-  pure (Device analysisPool)
+  scopePool
+    ( Hasql.Pool.Config.settings
+        [ Hasql.Pool.Config.size 100,
+          Hasql.Pool.Config.staticConnectionSettings analysisSettings
+        ]
+    )
   where
-    -- Session that reads the server major version via the existing connection,
-    -- avoiding the need to open a separate libpq connection.
-    queryVersionSession :: Hasql.Session.Session (Either Text Int)
-    queryVersionSession =
-      Hasql.Session.onLibpqConnection \conn -> do
-        mResult <- Pq.exec conn "SELECT current_setting('server_version_num')::int / 10000"
-        result <- case mResult of
-          Nothing -> fmap (Left . msgOf) (Pq.errorMessage conn)
-          Just res -> do
-            rst <- Pq.resultStatus res
-            if rst == Pq.TuplesOk
-              then do
-                mVal <- Pq.getvalue res (Pq.Row 0) (Pq.Col 0)
-                pure $ case mVal >>= readMaybe . Text.unpack . TextEncoding.decodeUtf8Lenient of
-                  Just n -> Right n
-                  Nothing -> Left "Could not parse server_version_num"
-              else fmap (Left . msgOf) (Pq.resultErrorMessage res)
-        pure (Right result, conn)
-      where
-        msgOf :: Maybe ByteString -> Text
-        msgOf = maybe "Unknown error" TextEncoding.decodeUtf8Lenient
-
     -- Double-quote a PostgreSQL identifier for safe embedding in DDL.
     quoteIdent :: Text -> Text
     quoteIdent ident = "\"" <> Text.replace "\"" "\"\"" ident <> "\""

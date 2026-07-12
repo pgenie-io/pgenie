@@ -315,7 +315,7 @@ runWithAnalyserOn ::
   IO (Either Report a)
 runWithAnalyserOn postgresImage action =
   action
-    & scoping (Analyser.scope (Analyser.DockerSource {postgresTag = postgresImage}) (const (pure ())))
+    & scoping (Analyser.scope (Analyser.DockerSource {postgresTag = postgresImage, reuse = False}) (const (pure ())))
     & exposeErr
     & Fx.runFx
 
@@ -345,7 +345,8 @@ withRunningServer tag callback =
       TestcontainersPostgresql.Config
         { tagName = tag,
           auth = TestcontainersPostgresql.TrustAuth,
-          forwardLogs = False
+          forwardLogs = False,
+          reuse = False
         }
 
     acquire :: IO ((Text, Word16), ResourceT.InternalState)

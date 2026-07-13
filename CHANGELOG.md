@@ -1,3 +1,9 @@
+# Upcoming
+
+## Non-breaking
+
+- Add `--reuse-container` flag to reuse a Docker container across runs instead of starting a fresh one each time, cutting cold-start time out of the loop (#73)
+
 # v0.9.2
 
 ## Fixes

@@ -1,3 +1,9 @@
+# Upcoming
+
+## Breaking
+
+- Update to Dhall that lacks `Text/equal` to stay in line with the official Dhall spec.
+
 # v0.10.0
 
 ## Non-breaking

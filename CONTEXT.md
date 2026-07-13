@@ -49,6 +49,10 @@ _Avoid_: IndexOptimization, IndexCatalog, ManageIndexes (for the algebra; Manage
 The throwaway Postgres instance that migrations are executed against and queries are described, explained, and index-inspected on during analysis.
 _Avoid_: target database, analyser device
 
+**Container**:
+The Docker-hosted Postgres server process a Simulation Database runs inside. Normally torn down with its Simulation Database at scope exit; with `--reuse-container` it outlives the run and is left for manual cleanup.
+_Avoid_: conflating with Simulation Database — the container may persist across runs, the database inside it never does.
+
 **Generator Runtime**:
 Loads generators (by URL or path, integrity-checked via the freeze file) and runs them over the analysed project to produce Artifacts.
 _Avoid_: Gen loading, GeneratorHashes (the freeze file is an implementation detail)

@@ -315,7 +315,7 @@ runWithAnalyserOn ::
   IO (Either Report a)
 runWithAnalyserOn postgresImage action =
   action
-    & scoping (Analyser.scope (Analyser.DockerSource {postgresTag = postgresImage, reuse = False}) (const (pure ())))
+    & scoping (Analyser.scope (Analyser.DockerSource {postgresTag = postgresImage, reuseContainer = False}) (const (pure ())))
     & exposeErr
     & Fx.runFx
 

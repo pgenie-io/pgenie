@@ -9,6 +9,8 @@ extra-deps:
   - {github: nikita-volkov/relations, commit: fac9e0445677a6493f1954f491921c5a7442cd58}
   - {github: nikita-volkov/syntactic-class, commit: b74373863e8bb0ef9877e0cd8dad5a3128d31818}
   - {github: pgenie-io/gen-sdk, commit: v0.11.0, subdirs: [haskell]}
+  - {github: nikita-volkov/testcontainers-hs, commit: 99f6a7e2049546e1115afd60cc5615556d4f16ac}
+  - {github: nikita-volkov/testcontainers-postgresql, commit: 9687b5593821c6c9b0b49165fde4a662569ae074}
   - aeson-optics-1.2.1
   - algebraic-path-0.1.0.1
   - dhall-json-1.7.12
@@ -20,7 +22,5 @@ extra-deps:
   - hasql-transaction-1.2.2
   - lawful-conversions-0.4.0
   - postgresql-binary-0.15.0.1
-  - testcontainers-0.5.2.0
-  - testcontainers-postgresql-0.2.0.1
   - text-builder-lawful-conversions-0.1.4.1
   - text-builder-time-0.1

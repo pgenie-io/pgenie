@@ -44,10 +44,10 @@ getProjectFile =
 -- Load the project file, scope the analyser (halving its reported progress
 -- to leave room for the rest of the run), and assemble the 'Device'. Fails
 -- fast on Windows when no database URL is given, since Docker-based analysis
--- isn't supported there yet. @reuse@ is only meaningful in Docker mode
--- (i.e. when no database URL is given) and is ignored otherwise.
+-- isn't supported there yet. @reuseContainer@ is only meaningful in Docker
+-- mode (i.e. when no database URL is given) and is ignored otherwise.
 scope :: (Observing.Observation -> IO ()) -> Maybe Text -> Bool -> Fx.Scope Report.Report Device
-scope observe maybeDatabaseUrl reuse = do
+scope observe maybeDatabaseUrl reuseContainer = do
   -- Terminate early on Windows in Docker mode since it's not supported yet.
   when (isNothing maybeDatabaseUrl && Info.os == "mingw32") do
     throwError
@@ -70,7 +70,7 @@ scope observe maybeDatabaseUrl reuse = do
       source = case maybeDatabaseUrl of
         Nothing ->
           let postgresTag = "postgres:" <> Text.pack (show targetMajorVersion)
-           in Analyser.DockerSource {postgresTag, reuse}
+           in Analyser.DockerSource {postgresTag, reuseContainer}
         Just url ->
           Analyser.RunningServerSource {connectionUrl = url, targetMajorVersion}
 

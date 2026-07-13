@@ -38,4 +38,4 @@ main version runEffect = do
       Commands.generate,
       Commands.manageIndexes
     ]
-    (\dbUrl reuse -> runEffect (Display.handleObservation display) dbUrl reuse)
+    (\dbUrl reuseContainer -> runEffect (Display.handleObservation display) dbUrl reuseContainer)

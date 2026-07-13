@@ -37,9 +37,9 @@ newtype Device = Device Hasql.Pool.Pool
 -- | Selects the PostgreSQL backend for analysis.
 data Source
   = -- | Start a fresh Docker container using the given image tag. With
-    -- @reuse@, the container is left running across invocations instead of
-    -- being torn down on scope exit.
-    DockerSource {postgresTag :: Text, reuse :: Bool}
+    -- @reuseContainer@, the container is left running across invocations
+    -- instead of being torn down on scope exit.
+    DockerSource {postgresTag :: Text, reuseContainer :: Bool}
   | -- | Connect to a running PostgreSQL server.
     -- A temporary database is created for analysis and dropped on cleanup.
     RunningServerSource {connectionUrl :: Text, targetMajorVersion :: Int}
@@ -49,20 +49,20 @@ data Source
 -- when the enclosing scope exits.
 scope :: Source -> (Observing.Observation -> IO ()) -> Fx.Scope Report.Report Device
 scope source observe = case source of
-  DockerSource {postgresTag, reuse} -> scopeViaDocker postgresTag reuse observe
+  DockerSource {postgresTag, reuseContainer} -> scopeViaDocker postgresTag reuseContainer observe
   RunningServerSource {connectionUrl, targetMajorVersion} ->
     scopeViaRunningServer connectionUrl targetMajorVersion observe
 
--- | Start (or, with @reuse@, adopt) a Docker container and connect to it.
--- Without @reuse@, connects directly to the container's default @postgres@
--- database, and the whole container is torn down on scope exit. With
--- @reuse@, the container can outlive this run, so a fresh randomly-named
--- temporary database is created per run instead -- the same isolation
--- pattern 'scopeViaRunningServer' uses -- to avoid colliding with schema
--- objects a previous run left behind. The container itself is left running
--- either way once @reuse@ is on.
+-- | Start (or, with @reuseContainer@, adopt) a Docker container and connect
+-- to it. Without @reuseContainer@, connects directly to the container's
+-- default @postgres@ database, and the whole container is torn down on
+-- scope exit. With @reuseContainer@, the container can outlive this run, so
+-- a fresh randomly-named temporary database is created per run instead --
+-- the same isolation pattern 'scopeViaRunningServer' uses -- to avoid
+-- colliding with schema objects a previous run left behind. The container
+-- itself is left running either way once @reuseContainer@ is on.
 scopeViaDocker :: Text -> Bool -> (Observing.Observation -> IO ()) -> Fx.Scope Report.Report Device
-scopeViaDocker postgresTag reuse observe = do
+scopeViaDocker postgresTag reuseContainer observe = do
   acquire $ runTotalIO \() -> observe (Observing.StageEntered ["Starting Container"])
   (host, port) <-
     first
@@ -73,7 +73,7 @@ scopeViaDocker postgresTag reuse observe = do
                 { tagName = postgresTag,
                   auth = TestcontainersPostgresql.TrustAuth,
                   forwardLogs = False,
-                  reuse
+                  reuse = reuseContainer
                 }
           )
       )
@@ -89,7 +89,7 @@ scopeViaDocker postgresTag reuse observe = do
       defaultDbSettings = serverSettings <> Hasql.Connection.Settings.dbname "postgres"
 
   pool <-
-    if reuse
+    if reuseContainer
       then do
         adminPool <-
           scopePool
@@ -219,8 +219,8 @@ scopeViaRunningServer connectionUrl targetMajorVersion observe = do
 -- | Creates a randomly-named temporary database against the given admin
 -- pool, registers its drop on scope exit, and returns a pool connected to
 -- it. @serverSettings@ must not already specify a @dbname@. Shared by
--- 'scopeViaDocker' (in @reuse@ mode) and 'scopeViaRunningServer' so that
--- each run gets a database isolated from others sharing the same
+-- 'scopeViaDocker' (in @reuseContainer@ mode) and 'scopeViaRunningServer'
+-- so that each run gets a database isolated from others sharing the same
 -- long-lived server or container.
 scopeTempDatabase :: Hasql.Connection.Settings.Settings -> Hasql.Pool.Pool -> Fx.Scope Report.Report Hasql.Pool.Pool
 scopeTempDatabase serverSettings adminPool = do

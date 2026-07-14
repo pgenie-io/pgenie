@@ -35,8 +35,38 @@ spec = do
       Aeson.toJSON (Input.PrimitiveScalar Input.Int4Primitive)
         `shouldBe` [aesonQQ| { "primitive": "int-4" } |]
 
-      Aeson.toJSON (Input.CustomScalar exampleName)
-        `shouldBe` Aeson.object [("custom", exampleNameJson)]
+      Aeson.toJSON
+        (Input.CustomScalar
+          Input.CustomTypeRef
+            { name = exampleName,
+              pgSchema = "public",
+              pgName = "user_id",
+              index = 0
+            }
+        )
+        `shouldBe` Aeson.object
+          [ ("custom", Aeson.object
+            [ ("name", exampleNameJson),
+              ("pg-schema", Aeson.toJSON @Text "public"),
+              ("pg-name", Aeson.toJSON @Text "user_id"),
+              ("index", Aeson.toJSON @Natural 0)
+            ])
+          ]
+
+    it "encodes CustomTypeRef with kebab-case keys" do
+      Aeson.toJSON
+        Input.CustomTypeRef
+          { name = exampleName,
+            pgSchema = "public",
+            pgName = "user_id",
+            index = 0
+          }
+        `shouldBe` Aeson.object
+          [ ("name", exampleNameJson),
+            ("pg-schema", Aeson.toJSON @Text "public"),
+            ("pg-name", Aeson.toJSON @Text "user_id"),
+            ("index", Aeson.toJSON @Natural 0)
+          ]
 
     it "encodes nullary alternatives of a mixed sum (Result) as a single-field object with empty-array contents" do
       Aeson.toJSON Input.VoidResult `shouldBe` [aesonQQ| { "void": [] } |]
@@ -155,7 +185,18 @@ project1Json =
         "in-snake-case": "demo_project", "in-train-case": "Demo-Project"
       },
       "version": { "major": 1, "minor": 0, "patch": 0 },
-      "custom-types": [],
+      "custom-types": [
+        {
+          "name": {
+            "in-camel-case": "status", "in-camel-snake-case": "Status", "in-kebab-case": "status",
+            "in-pascal-case": "Status", "in-screaming-kebab-case": "STATUS", "in-screaming-snake-case": "STATUS",
+            "in-snake-case": "status", "in-train-case": "Status"
+          },
+          "pg-schema": "public",
+          "pg-name": "status",
+          "definition": { "enum": [] }
+        }
+      ],
       "queries": [
         {
           "name": {

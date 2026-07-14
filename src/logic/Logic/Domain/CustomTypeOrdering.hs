@@ -6,10 +6,11 @@
 -- sorted list's final positions. No transitive-closure computation here —
 -- generators derive that themselves from the sorted order (gen-sdk's
 -- CustomTypes helpers).
-module Logic.Domain.CustomTypeOrdering (orderAndResolve) where
+module Logic.Domain.CustomTypeOrdering (orderAndResolve, spec) where
 
 import Data.Map.Strict qualified as Map
 import GenBridge.Model.Input qualified as Gen.Input
+import Test.Hspec
 import Utils.Prelude
 
 type Key = (Text, Text)
@@ -104,3 +105,168 @@ orderAndResolve customTypes queries =
       Gen.Input.RowsResult rows ->
         Gen.Input.RowsResult
           rows {Gen.Input.columns = fmap resolveMember rows.columns}
+
+-- * Tests
+
+spec :: Spec
+spec = do
+  describe "orderAndResolve" do
+    it "sorts domain-before-composite when supplied in reverse dependency order" do
+      let domainType =
+            Gen.Input.CustomType
+              { name = textName "temp_celsius",
+                pgSchema = "public",
+                pgName = "temp_celsius",
+                definition = Gen.Input.DomainCustomTypeDefinition $
+                  Gen.Input.Value
+                    { arraySettings = Nothing,
+                      scalar = Gen.Input.PrimitiveScalar Gen.Input.Float8Primitive
+                    }
+              }
+          compositeType =
+            Gen.Input.CustomType
+              { name = textName "weather_reading",
+                pgSchema = "public",
+                pgName = "weather_reading",
+                definition = Gen.Input.CompositeCustomTypeDefinition
+                  [ Gen.Input.Member
+                      { name = textName "temperature",
+                        pgName = "temperature",
+                        isNullable = False,
+                        value = Gen.Input.Value
+                          { arraySettings = Nothing,
+                            scalar = Gen.Input.CustomScalar $
+                              Gen.Input.CustomTypeRef
+                                { name = textName "temp_celsius",
+                                  pgSchema = "public",
+                                  pgName = "temp_celsius",
+                                  index = 0
+                                }
+                          }
+                      }
+                  ]
+              }
+          (sorted, _) = orderAndResolve [compositeType, domainType] []
+      sorted `shouldBe` [domainType, compositeType]
+
+    it "rewrites indices to match sorted positions" do
+      let domainType =
+            Gen.Input.CustomType
+              { name = textName "temp_celsius",
+                pgSchema = "public",
+                pgName = "temp_celsius",
+                definition = Gen.Input.DomainCustomTypeDefinition $
+                  Gen.Input.Value
+                    { arraySettings = Nothing,
+                      scalar = Gen.Input.PrimitiveScalar Gen.Input.Float8Primitive
+                    }
+              }
+          compositeType =
+            Gen.Input.CustomType
+              { name = textName "weather_reading",
+                pgSchema = "public",
+                pgName = "weather_reading",
+                definition = Gen.Input.CompositeCustomTypeDefinition
+                  [ Gen.Input.Member
+                      { name = textName "temperature",
+                        pgName = "temperature",
+                        isNullable = False,
+                        value = Gen.Input.Value
+                          { arraySettings = Nothing,
+                            scalar = Gen.Input.CustomScalar $
+                              Gen.Input.CustomTypeRef
+                                { name = textName "temp_celsius",
+                                  pgSchema = "public",
+                                  pgName = "temp_celsius",
+                                  index = 0
+                                }
+                          }
+                      }
+                  ]
+              }
+          (sorted, _) = orderAndResolve [compositeType, domainType] []
+          resolvedRef = case sorted !! 1 of
+            Gen.Input.CustomType
+              { definition = Gen.Input.CompositeCustomTypeDefinition [Gen.Input.Member {value = Gen.Input.Value {scalar = Gen.Input.CustomScalar ref}}]
+              } -> ref
+            _ -> error "Unexpected shape"
+      resolvedRef.index `shouldBe` 0
+
+    it "resolves indices in queries" do
+      let domainType =
+            Gen.Input.CustomType
+              { name = textName "temp_celsius",
+                pgSchema = "public",
+                pgName = "temp_celsius",
+                definition = Gen.Input.DomainCustomTypeDefinition $
+                  Gen.Input.Value
+                    { arraySettings = Nothing,
+                      scalar = Gen.Input.PrimitiveScalar Gen.Input.Float8Primitive
+                    }
+              }
+          query =
+            Gen.Input.Query
+              { name = textName "get_temp",
+                srcPath = "queries/get_temp.sql",
+                identity = False,
+                idempotent = True,
+                params = [],
+                result = Gen.Input.RowsResult $
+                  Gen.Input.ResultRows
+                    { cardinality = Gen.Input.OptionalResultRowsCardinality,
+                      columns = Gen.Input.Member
+                        { name = textName "temp",
+                          pgName = "temp",
+                          isNullable = False,
+                          value = Gen.Input.Value
+                            { arraySettings = Nothing,
+                              scalar = Gen.Input.CustomScalar $
+                                Gen.Input.CustomTypeRef
+                                  { name = textName "temp_celsius",
+                                    pgSchema = "public",
+                                    pgName = "temp_celsius",
+                                    index = 0
+                                  }
+                            }
+                        } :| []
+                    },
+                fragments = []
+              }
+          (_, resolvedQueries) = orderAndResolve [domainType] [query]
+          resolvedRef = case resolvedQueries !! 0 of
+            Gen.Input.Query
+              { result = Gen.Input.RowsResult Gen.Input.ResultRows {columns = Gen.Input.Member {value = Gen.Input.Value {scalar = Gen.Input.CustomScalar ref}} :| _}
+              } -> ref
+            _ -> error "Unexpected shape"
+      resolvedRef.index `shouldBe` 0
+
+    it "sorts alphabetically when no dependencies exist" do
+      let typeA =
+            Gen.Input.CustomType
+              { name = textName "beta",
+                pgSchema = "public",
+                pgName = "beta",
+                definition = Gen.Input.EnumCustomTypeDefinition []
+              }
+          typeB =
+            Gen.Input.CustomType
+              { name = textName "alpha",
+                pgSchema = "public",
+                pgName = "alpha",
+                definition = Gen.Input.EnumCustomTypeDefinition []
+              }
+          (sorted, _) = orderAndResolve [typeB, typeA] []
+      map (.pgName) sorted `shouldBe` ["alpha", "beta"]
+
+textName :: Text -> Gen.Input.Name
+textName source =
+  Gen.Input.Name
+    { inCamelCase = source,
+      inPascalCase = source,
+      inKebabCase = source,
+      inTrainCase = source,
+      inScreamingKebabCase = source,
+      inSnakeCase = source,
+      inCamelSnakeCase = source,
+      inScreamingSnakeCase = source
+    }

@@ -19,7 +19,7 @@ input =
     { space = textName "demo",
       name = textName "demo_project",
       version = Input.Version {major = 1, minor = 0, patch = 0},
-      customTypes = [],
+      customTypes = [statusType],
       queries = [exampleQuery],
       migrations =
         [ Input.Migration
@@ -119,3 +119,23 @@ input =
                     }
                 ]
           }
+
+    -- Custom type: status enum
+    statusType :: Input.CustomType
+    statusType =
+      Input.CustomType
+        { name = textName "status",
+          pgSchema = "public",
+          pgName = "status",
+          definition = Input.EnumCustomTypeDefinition []
+        }
+
+    -- Reference to the status type
+    statusRef :: Input.CustomTypeRef
+    statusRef =
+      Input.CustomTypeRef
+        { name = textName "status",
+          pgSchema = "public",
+          pgName = "status",
+          index = 0
+        }

@@ -42,6 +42,10 @@ spec = do
       checkRecordFields @Input.CustomType
         (contract <> ".CustomType")
 
+    it "CustomTypeRef record fields match" do
+      checkRecordFields @Input.CustomTypeRef
+        (contract <> ".CustomTypeRef")
+
     it "ResultRows record fields match" do
       checkRecordFields @Input.ResultRows
         (contract <> ".ResultRows")
@@ -101,6 +105,42 @@ spec = do
       checkSerialization
         exampleName
         "{ inCamelCase = \"userId\", inPascalCase = \"UserId\", inKebabCase = \"user-id\", inTrainCase = \"User-Id\", inScreamingKebabCase = \"USER-ID\", inSnakeCase = \"user_id\", inCamelSnakeCase = \"User_Id\", inScreamingSnakeCase = \"USER_ID\" }"
+
+    it "CustomTypeRef serializes/deserializes" do
+      checkSerialization
+        (Input.CustomTypeRef
+          { name = exampleName,
+            pgSchema = "public",
+            pgName = "user_id",
+            index = 0
+          }
+        )
+        ( "{ name = "
+            <> "{ inCamelCase = \"userId\", inPascalCase = \"UserId\", inKebabCase = \"user-id\", inTrainCase = \"User-Id\", inScreamingKebabCase = \"USER-ID\", inSnakeCase = \"user_id\", inCamelSnakeCase = \"User_Id\", inScreamingSnakeCase = \"USER_ID\" }"
+            <> ", pgSchema = \"public\""
+            <> ", pgName = \"user_id\""
+            <> ", index = 0"
+            <> " }"
+        )
+
+    it "CustomScalar serializes/deserializes" do
+      checkSerialization
+        (Input.CustomScalar
+          Input.CustomTypeRef
+            { name = exampleName,
+              pgSchema = "public",
+              pgName = "user_id",
+              index = 0
+            }
+        )
+        ( contract <> ".Scalar.Custom "
+            <> "{ name = "
+            <> "{ inCamelCase = \"userId\", inPascalCase = \"UserId\", inKebabCase = \"user-id\", inTrainCase = \"User-Id\", inScreamingKebabCase = \"USER-ID\", inSnakeCase = \"user_id\", inCamelSnakeCase = \"User_Id\", inScreamingSnakeCase = \"USER_ID\" }"
+            <> ", pgSchema = \"public\""
+            <> ", pgName = \"user_id\""
+            <> ", index = 0"
+            <> " }"
+        )
 
 exampleName :: Input.Name
 exampleName =

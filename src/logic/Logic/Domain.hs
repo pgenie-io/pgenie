@@ -4,6 +4,7 @@
 -- SQL templates, and SQL syntax analysis.
 module Logic.Domain (spec) where
 
+import Logic.Domain.CustomTypeOrdering qualified as CustomTypeOrdering
 import Logic.Domain.CustomTypeSignature qualified as CustomTypeSignature
 import Logic.Domain.IndexOptimization qualified as IndexOptimization
 import Logic.Domain.Name qualified as Name
@@ -17,6 +18,7 @@ import Test.Hspec
 -- | Test suite aggregating the specs of all domain modules.
 spec :: Spec
 spec = do
+  describe "CustomTypeOrdering" CustomTypeOrdering.spec
   describe "CustomTypeSignature" CustomTypeSignature.spec
   describe "IndexOptimization" IndexOptimization.spec
   describe "Name" Name.spec

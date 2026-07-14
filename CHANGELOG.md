@@ -1,3 +1,9 @@
+# Upcoming
+
+## Non-breaking
+
+- Add backward compatibility with contract v4, allowing generators targeting the v4 contract to be loaded alongside v5 generators.
+
 # v0.12.0
 
 ## Breaking

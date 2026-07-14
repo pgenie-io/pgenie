@@ -3,14 +3,17 @@ module GenBridge.Load
   )
 where
 
+import Data.Text qualified as Text
 import Dhall qualified
 import Dhall.Core qualified
 import Dhall.Import qualified
 import Dhall.JSONToDhall qualified
 import GenBridge.ContractVersion qualified as ContractVersion
 import GenBridge.Dhall.ExprViews qualified as ExprViews
+import GenBridge.Dispatch qualified as Dispatch
 import GenBridge.Location qualified as Location
 import GenBridge.Model
+import GenBridge.Model.Output qualified as Output
 import Lens.Micro qualified
 import Utils.Prelude
 
@@ -51,12 +54,6 @@ load location hash echo warn = do
 
     Dhall.rawInput decoder contractVersionExpr
 
-  when (major /= ContractVersion.current.major) do
-    fail ("Incompatible contract major version: " <> onto (show major) <> ". Expected " <> onto (show ContractVersion.current.major) <> ".")
-
-  when (minor > ContractVersion.current.minor) do
-    fail ("Incompatible contract minor version: " <> onto (show minor) <> ". Expected " <> onto (show ContractVersion.current.minor) <> " or lower.")
-
   configTypeExpr <- case ExprViews.recordField "Config" genExpr of
     Nothing -> do
       fail "Could not find 'Config' field in the loaded generator code"
@@ -72,13 +69,14 @@ load location hash echo warn = do
   let normalizedExpr = Dhall.Core.alphaNormalize (Dhall.Core.normalize genExpr)
       hash = Dhall.Import.hashExpressionToCode normalizedExpr
 
-  let gen = \config -> do
+      buildGen :: forall input output. (Dhall.ToDhall input, Dhall.FromDhall output) => Dispatch.Adapters input output -> Either Text Gen
+      buildGen Dispatch.Adapters {projectInput, liftOutput} = Right \config -> do
         configValExpr <- case config of
           Nothing ->
             Right (Dhall.Core.App Dhall.Core.None configTypeExpr)
           Just configJson ->
             case Dhall.JSONToDhall.dhallFromJSON Dhall.JSONToDhall.defaultConversion configTypeExpr configJson of
-              Left err -> do
+              Left err ->
                 Left ("Config does not conform to the expected schema:\n" <> onto (show err))
               Right configValExpr ->
                 Right (Dhall.Core.Some configValExpr)
@@ -98,6 +96,14 @@ load location hash echo warn = do
 
         case Dhall.rawInput decoder compileExpr of
           Nothing -> Left "Failed to decode the 'compile' function from the generator code."
-          Just compileFunc -> Right compileFunc
+          Just (compileFunc :: input -> output) ->
+            Right \project ->
+              case projectInput project of
+                Left err -> Output.ErrOutput Output.Report {path = [], message = err}
+                Right input -> liftOutput (compileFunc input)
+
+  gen <- case Dispatch.dispatch major minor buildGen of
+    Left err -> fail (Text.unpack err)
+    Right gen -> pure gen
 
   pure (gen, hash)

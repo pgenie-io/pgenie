@@ -24,6 +24,7 @@ import Logic.Capabilities.QueryAnalysis (InfersQueryTypes (..))
 import Logic.Capabilities.Reporting (Warns (..))
 import Logic.Capabilities.SeqScanExplain (ExplainsQuery (..))
 import Logic.Capabilities.Staging (Stages (..))
+import Logic.Domain.CustomTypeOrdering qualified as CustomTypeOrdering
 import Logic.Domain.IndexOptimization (IndexInfo (..))
 import Logic.Domain.Name qualified as Name
 import Logic.Domain.ProjectFile qualified as ProjectFile
@@ -34,7 +35,6 @@ import Logic.Domain.SeqScanFinding (SeqScanFinding (..))
 import Logic.Domain.SeqScanFinding qualified as SeqScanFinding
 import Logic.Domain.SqlTemplate qualified as SqlTemplate
 import Logic.Domain.SyntaxAnalyser qualified as SyntaxAnalyser
-import Logic.Domain.CustomTypeOrdering qualified as CustomTypeOrdering
 import Logic.Procedures.GenerateQuerySignatures qualified as GenerateQuerySigs
 import Logic.Procedures.GenerateTypeSignatures qualified as GenerateTypeSigs
 import SyntacticClass qualified as Syntactic

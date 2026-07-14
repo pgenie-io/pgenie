@@ -6,9 +6,9 @@ import Data.Aeson qualified as Aeson
 import Data.Aeson.QQ.Simple (aesonQQ)
 import Data.Text.IO qualified as Text
 import GenBridge qualified as GenBridge
-import GenBridge.Fixtures.Project1 qualified as Fixtures.Project1
 import GenBridge.Model.Output qualified as Output
 import GenBridge.Model.Output.Report qualified as Output.Report
+import GenContractV5.Fixtures.Project1 qualified as Fixtures.Project1
 import System.Exit qualified as Exit
 import Test.Hspec
 import Prelude

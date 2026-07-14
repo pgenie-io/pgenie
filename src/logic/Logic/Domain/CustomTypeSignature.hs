@@ -106,7 +106,7 @@ valueToTypeName value =
 scalarToTypeName :: Gen.Input.Scalar -> Text
 scalarToTypeName = \case
   Gen.Input.PrimitiveScalar prim -> primitiveToTypeName prim
-  Gen.Input.CustomScalar name -> genNameToText name
+  Gen.Input.CustomScalar ref -> genNameToText ref.name
 
 primitiveToTypeName :: Gen.Input.Primitive -> Text
 primitiveToTypeName = \case

@@ -192,6 +192,7 @@ library logic
     Logic.Capabilities.SeqScanExplain
     Logic.Capabilities.Staging
     Logic.Domain
+    Logic.Domain.CustomTypeOrdering
     Logic.Domain.CustomTypeSignature
     Logic.Domain.GeneratorHashes
     Logic.Domain.IndexOptimization

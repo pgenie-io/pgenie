@@ -84,10 +84,26 @@ adaptScalar :: Sessions.Scalar -> Embed Gen.Input.Scalar
 adaptScalar = \case
   Sessions.PrimitiveScalar prim ->
     pure $ Gen.Input.PrimitiveScalar (adaptPrimitive prim)
-  Sessions.CompositeScalar comp ->
-    Gen.Input.CustomScalar <$> textToName comp.name
-  Sessions.EnumScalar enum ->
-    Gen.Input.CustomScalar <$> textToName enum.name
+  Sessions.CompositeScalar comp -> do
+    name <- textToName comp.name
+    pure $
+      Gen.Input.CustomScalar
+        Gen.Input.CustomTypeRef
+          { name,
+            pgSchema = comp.schemaName,
+            pgName = comp.name,
+            index = 0
+          }
+  Sessions.EnumScalar enum -> do
+    name <- textToName enum.name
+    pure $
+      Gen.Input.CustomScalar
+        Gen.Input.CustomTypeRef
+          { name,
+            pgSchema = enum.schemaName,
+            pgName = enum.name,
+            index = 0
+          }
 
 adaptPrimitive :: Sessions.Primitive -> Gen.Input.Primitive
 adaptPrimitive = \case

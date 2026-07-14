@@ -34,6 +34,7 @@ import Logic.Domain.SeqScanFinding (SeqScanFinding (..))
 import Logic.Domain.SeqScanFinding qualified as SeqScanFinding
 import Logic.Domain.SqlTemplate qualified as SqlTemplate
 import Logic.Domain.SyntaxAnalyser qualified as SyntaxAnalyser
+import Logic.Domain.CustomTypeOrdering qualified as CustomTypeOrdering
 import Logic.Procedures.GenerateQuerySignatures qualified as GenerateQuerySigs
 import Logic.Procedures.GenerateTypeSignatures qualified as GenerateTypeSigs
 import SyntacticClass qualified as Syntactic
@@ -257,13 +258,14 @@ run Params {projectFile} =
                   effectiveSeqScanFindings
                 )
 
-        let (queries, customTypesDump, seqScanFindingsDump) = unzip3 mixedList
-            customTypes =
+        let (queries0, customTypesDump, seqScanFindingsDump) = unzip3 mixedList
+            dedupedCustomTypes =
               customTypesDump
                 & concat
                 & fmap (\x -> ((x.pgSchema, x.pgName), x))
                 & Map.fromList
                 & Map.elems
+            (customTypes, queries) = CustomTypeOrdering.orderAndResolve dedupedCustomTypes queries0
             seqScanFindings = concat seqScanFindingsDump
 
         pure (queries, customTypes, seqScanFindings)

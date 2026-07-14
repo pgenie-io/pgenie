@@ -402,18 +402,15 @@ expectRight = \case
 primitiveValue :: Gen.Input.Primitive -> Gen.Input.Value
 primitiveValue primitive =
   Gen.Input.Value
-    { arraySettings = Nothing,
+    { dimensionality = 0,
+      elementIsNullable = False,
       scalar = Gen.Input.PrimitiveScalar primitive
     }
 
 arrayValue :: Natural -> Gen.Input.Primitive -> Gen.Input.Value
 arrayValue dimensionality primitive =
   Gen.Input.Value
-    { arraySettings =
-        Just
-          Gen.Input.ArraySettings
-            { dimensionality,
-              elementIsNullable = True
-            },
+    { dimensionality,
+      elementIsNullable = True,
       scalar = Gen.Input.PrimitiveScalar primitive
     }

@@ -68,15 +68,8 @@ adaptType type_ = do
   scalar <- adaptScalar type_.scalar
   pure
     Gen.Input.Value
-      { arraySettings =
-          if type_.dimensionality > 0
-            then
-              Just
-                Gen.Input.ArraySettings
-                  { dimensionality = fromIntegral type_.dimensionality,
-                    elementIsNullable = True
-                  }
-            else Nothing,
+      { dimensionality = fromIntegral type_.dimensionality,
+        elementIsNullable = type_.dimensionality > 0,
         scalar
       }
 

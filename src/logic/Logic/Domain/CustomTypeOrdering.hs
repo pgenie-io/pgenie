@@ -48,16 +48,14 @@ orderAndResolve customTypes queries =
           | otherwise =
               let ready =
                     sortBy
-                      (comparing fst <> comparing snd)
-                      [ k
-                        | (k, ct) <- Map.toList remaining,
-                          all (`Map.notMember` remaining) (dependencies ct)
+                      (comparing fst)
+                      [ (k, ct)
+                      | (k, ct) <- Map.toList remaining,
+                        all (`Map.notMember` remaining) (dependencies ct)
                       ]
                in case ready of
                     [] -> Map.elems remaining -- cycle guard: shouldn't happen for valid custom-type graphs; emit remainder as-is rather than loop forever
-                    (k : _) ->
-                      let Just ct = Map.lookup k remaining
-                       in ct : go (Map.delete k remaining)
+                    ((k, ct) : _) -> ct : go (Map.delete k remaining)
 
     indexOf :: Map Key Natural
     indexOf = Map.fromList (zip (map key sorted) [0 ..])
@@ -91,8 +89,9 @@ orderAndResolve customTypes queries =
     sortedResolved = map resolveCustomType sorted
 
     resolveQuery :: Gen.Input.Query -> Gen.Input.Query
-    resolveQuery q = q {Gen.Input.params = map resolveMember q.params}
-      & resolveQueryResult
+    resolveQuery q =
+      q {Gen.Input.params = map resolveMember q.params}
+        & resolveQueryResult
 
     resolveQueryResult :: Gen.Input.Query -> Gen.Input.Query
     resolveQueryResult q =
@@ -117,34 +116,40 @@ spec = do
               { name = textName "temp_celsius",
                 pgSchema = "public",
                 pgName = "temp_celsius",
-                definition = Gen.Input.DomainCustomTypeDefinition $
-                  Gen.Input.Value
-                    { arraySettings = Nothing,
-                      scalar = Gen.Input.PrimitiveScalar Gen.Input.Float8Primitive
-                    }
+                definition =
+                  Gen.Input.DomainCustomTypeDefinition
+                    $ Gen.Input.Value
+                      { dimensionality = 0,
+                        elementIsNullable = False,
+                        scalar = Gen.Input.PrimitiveScalar Gen.Input.Float8Primitive
+                      }
               }
           compositeType =
             Gen.Input.CustomType
               { name = textName "weather_reading",
                 pgSchema = "public",
                 pgName = "weather_reading",
-                definition = Gen.Input.CompositeCustomTypeDefinition
-                  [ Gen.Input.Member
-                      { name = textName "temperature",
-                        pgName = "temperature",
-                        isNullable = False,
-                        value = Gen.Input.Value
-                          { arraySettings = Nothing,
-                            scalar = Gen.Input.CustomScalar $
-                              Gen.Input.CustomTypeRef
-                                { name = textName "temp_celsius",
-                                  pgSchema = "public",
-                                  pgName = "temp_celsius",
-                                  index = 0
-                                }
-                          }
-                      }
-                  ]
+                definition =
+                  Gen.Input.CompositeCustomTypeDefinition
+                    [ Gen.Input.Member
+                        { name = textName "temperature",
+                          pgName = "temperature",
+                          isNullable = False,
+                          value =
+                            Gen.Input.Value
+                              { dimensionality = 0,
+                                elementIsNullable = False,
+                                scalar =
+                                  Gen.Input.CustomScalar
+                                    $ Gen.Input.CustomTypeRef
+                                      { name = textName "temp_celsius",
+                                        pgSchema = "public",
+                                        pgName = "temp_celsius",
+                                        index = 0
+                                      }
+                              }
+                        }
+                    ]
               }
           (sorted, _) = orderAndResolve [compositeType, domainType] []
       sorted `shouldBe` [domainType, compositeType]
@@ -155,34 +160,40 @@ spec = do
               { name = textName "temp_celsius",
                 pgSchema = "public",
                 pgName = "temp_celsius",
-                definition = Gen.Input.DomainCustomTypeDefinition $
-                  Gen.Input.Value
-                    { arraySettings = Nothing,
-                      scalar = Gen.Input.PrimitiveScalar Gen.Input.Float8Primitive
-                    }
+                definition =
+                  Gen.Input.DomainCustomTypeDefinition
+                    $ Gen.Input.Value
+                      { dimensionality = 0,
+                        elementIsNullable = False,
+                        scalar = Gen.Input.PrimitiveScalar Gen.Input.Float8Primitive
+                      }
               }
           compositeType =
             Gen.Input.CustomType
               { name = textName "weather_reading",
                 pgSchema = "public",
                 pgName = "weather_reading",
-                definition = Gen.Input.CompositeCustomTypeDefinition
-                  [ Gen.Input.Member
-                      { name = textName "temperature",
-                        pgName = "temperature",
-                        isNullable = False,
-                        value = Gen.Input.Value
-                          { arraySettings = Nothing,
-                            scalar = Gen.Input.CustomScalar $
-                              Gen.Input.CustomTypeRef
-                                { name = textName "temp_celsius",
-                                  pgSchema = "public",
-                                  pgName = "temp_celsius",
-                                  index = 0
-                                }
-                          }
-                      }
-                  ]
+                definition =
+                  Gen.Input.CompositeCustomTypeDefinition
+                    [ Gen.Input.Member
+                        { name = textName "temperature",
+                          pgName = "temperature",
+                          isNullable = False,
+                          value =
+                            Gen.Input.Value
+                              { dimensionality = 0,
+                                elementIsNullable = False,
+                                scalar =
+                                  Gen.Input.CustomScalar
+                                    $ Gen.Input.CustomTypeRef
+                                      { name = textName "temp_celsius",
+                                        pgSchema = "public",
+                                        pgName = "temp_celsius",
+                                        index = 0
+                                      }
+                              }
+                        }
+                    ]
               }
           (sorted, _) = orderAndResolve [compositeType, domainType] []
           resolvedRef = case sorted !! 1 of
@@ -198,11 +209,13 @@ spec = do
               { name = textName "temp_celsius",
                 pgSchema = "public",
                 pgName = "temp_celsius",
-                definition = Gen.Input.DomainCustomTypeDefinition $
-                  Gen.Input.Value
-                    { arraySettings = Nothing,
-                      scalar = Gen.Input.PrimitiveScalar Gen.Input.Float8Primitive
-                    }
+                definition =
+                  Gen.Input.DomainCustomTypeDefinition
+                    $ Gen.Input.Value
+                      { dimensionality = 0,
+                        elementIsNullable = False,
+                        scalar = Gen.Input.PrimitiveScalar Gen.Input.Float8Primitive
+                      }
               }
           query =
             Gen.Input.Query
@@ -211,25 +224,31 @@ spec = do
                 identity = False,
                 idempotent = True,
                 params = [],
-                result = Gen.Input.RowsResult $
-                  Gen.Input.ResultRows
-                    { cardinality = Gen.Input.OptionalResultRowsCardinality,
-                      columns = Gen.Input.Member
-                        { name = textName "temp",
-                          pgName = "temp",
-                          isNullable = False,
-                          value = Gen.Input.Value
-                            { arraySettings = Nothing,
-                              scalar = Gen.Input.CustomScalar $
-                                Gen.Input.CustomTypeRef
-                                  { name = textName "temp_celsius",
-                                    pgSchema = "public",
-                                    pgName = "temp_celsius",
-                                    index = 0
+                result =
+                  Gen.Input.RowsResult
+                    $ Gen.Input.ResultRows
+                      { cardinality = Gen.Input.OptionalResultRowsCardinality,
+                        columns =
+                          Gen.Input.Member
+                            { name = textName "temp",
+                              pgName = "temp",
+                              isNullable = False,
+                              value =
+                                Gen.Input.Value
+                                  { dimensionality = 0,
+                                    elementIsNullable = False,
+                                    scalar =
+                                      Gen.Input.CustomScalar
+                                        $ Gen.Input.CustomTypeRef
+                                          { name = textName "temp_celsius",
+                                            pgSchema = "public",
+                                            pgName = "temp_celsius",
+                                            index = 0
+                                          }
                                   }
                             }
-                        } :| []
-                    },
+                            :| []
+                      },
                 fragments = []
               }
           (_, resolvedQueries) = orderAndResolve [domainType] [query]

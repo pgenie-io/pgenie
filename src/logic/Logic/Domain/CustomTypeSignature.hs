@@ -81,15 +81,14 @@ fromInferred ct =
       (m.pgName, compositeFieldSigFromValue m.value (not m.isNullable))
 
 compositeFieldSigFromValue :: Gen.Input.Value -> Bool -> CompositeFieldSig
-compositeFieldSigFromValue value fieldNotNull =
-  case value.arraySettings of
-    Just settings ->
+compositeFieldSigFromValue value fieldNotNull
+  | value.dimensionality > 0 =
       ArrayCompositeFieldSig
         { typeName = valueToTypeName value,
           notNull = fieldNotNull,
-          elementNotNull = not settings.elementIsNullable
+          elementNotNull = not value.elementIsNullable
         }
-    Nothing ->
+  | otherwise =
       ScalarCompositeFieldSig
         { typeName = valueToTypeName value,
           notNull = fieldNotNull
@@ -97,11 +96,7 @@ compositeFieldSigFromValue value fieldNotNull =
 
 valueToTypeName :: Gen.Input.Value -> Text
 valueToTypeName value =
-  let baseName = scalarToTypeName value.scalar
-      arraySuffix = case value.arraySettings of
-        Nothing -> ""
-        Just settings -> Text.replicate (fromIntegral settings.dimensionality) "[]"
-   in baseName <> arraySuffix
+  scalarToTypeName value.scalar <> Text.replicate (fromIntegral value.dimensionality) "[]"
 
 scalarToTypeName :: Gen.Input.Scalar -> Text
 scalarToTypeName = \case
@@ -461,15 +456,9 @@ applyCompositeFieldSigToMember field member =
 
 applyArrayElementNullability :: CompositeFieldSig -> Gen.Input.Value -> Gen.Input.Value
 applyArrayElementNullability field value =
-  case (compositeFieldElementNotNull field, value.arraySettings) of
-    (Just elementNotNull, Just settings) ->
-      value
-        { Gen.Input.arraySettings =
-            Just
-              settings
-                { Gen.Input.elementIsNullable = not elementNotNull
-                }
-        }
+  case (compositeFieldElementNotNull field, value.dimensionality > 0) of
+    (Just elementNotNull, True) ->
+      value {Gen.Input.elementIsNullable = not elementNotNull}
     _ -> value
 
 -- * Helpers
@@ -522,7 +511,8 @@ spec = do
     it "returns Nothing for domain custom types" do
       let domainValue =
             Gen.Input.Value
-              { arraySettings = Nothing,
+              { dimensionality = 0,
+                elementIsNullable = False,
                 scalar = Gen.Input.PrimitiveScalar Gen.Input.TextPrimitive
               }
           ct =
@@ -674,7 +664,7 @@ spec = do
                           { name = genName "val",
                             pgName = "val",
                             isNullable = False,
-                            value = Gen.Input.Value {arraySettings = Nothing, scalar = Gen.Input.PrimitiveScalar Gen.Input.TextPrimitive}
+                            value = Gen.Input.Value {dimensionality = 0, elementIsNullable = False, scalar = Gen.Input.PrimitiveScalar Gen.Input.TextPrimitive}
                           }
                       ]
                 }
@@ -768,7 +758,8 @@ compositeCustomType schema pgName fieldSpecs =
                       isNullable = True,
                       value =
                         Gen.Input.Value
-                          { arraySettings = Nothing,
+                          { dimensionality = 0,
+                            elementIsNullable = False,
                             scalar = Gen.Input.PrimitiveScalar (textToPrimitive typeName)
                           }
                     }

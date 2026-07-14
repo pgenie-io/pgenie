@@ -36,21 +36,23 @@ spec = do
         `shouldBe` [aesonQQ| { "primitive": "int-4" } |]
 
       Aeson.toJSON
-        (Input.CustomScalar
-          Input.CustomTypeRef
-            { name = exampleName,
-              pgSchema = "public",
-              pgName = "user_id",
-              index = 0
-            }
+        ( Input.CustomScalar
+            Input.CustomTypeRef
+              { name = exampleName,
+                pgSchema = "public",
+                pgName = "user_id",
+                index = 0
+              }
         )
         `shouldBe` Aeson.object
-          [ ("custom", Aeson.object
-            [ ("name", exampleNameJson),
-              ("pg-schema", Aeson.toJSON @Text "public"),
-              ("pg-name", Aeson.toJSON @Text "user_id"),
-              ("index", Aeson.toJSON @Natural 0)
-            ])
+          [ ( "custom",
+              Aeson.object
+                [ ("name", exampleNameJson),
+                  ("pg-schema", Aeson.toJSON @Text "public"),
+                  ("pg-name", Aeson.toJSON @Text "user_id"),
+                  ("index", Aeson.toJSON @Natural 0)
+                ]
+            )
           ]
 
     it "encodes CustomTypeRef with kebab-case keys" do
@@ -105,9 +107,9 @@ spec = do
     it "encodes a domain custom type definition tagged by stripping the type name" do
       Aeson.toJSON
         ( Input.DomainCustomTypeDefinition
-            Input.Value {arraySettings = Nothing, scalar = Input.PrimitiveScalar Input.Int4Primitive}
+            Input.Value {dimensionality = 0, elementIsNullable = False, scalar = Input.PrimitiveScalar Input.Int4Primitive}
         )
-        `shouldBe` [aesonQQ| { "domain": { "array-settings": null, "scalar": { "primitive": "int-4" } } } |]
+        `shouldBe` [aesonQQ| { "domain": { "dimensionality": 0, "element-is-nullable": false, "scalar": { "primitive": "int-4" } } } |]
 
     it "encodes a CustomType record with kebab-cased pg-schema/pg-name fields" do
       Aeson.toJSON
@@ -124,15 +126,17 @@ spec = do
             ("definition", Aeson.object [("enum", Aeson.Array mempty)])
           ]
 
-    it "encodes non-null ArraySettings with kebab-cased dimensionality/element-is-nullable fields" do
+    it "encodes a Value with kebab-cased dimensionality/element-is-nullable fields" do
       Aeson.toJSON
         Input.Value
-          { arraySettings = Just Input.ArraySettings {dimensionality = 2, elementIsNullable = True},
+          { dimensionality = 2,
+            elementIsNullable = True,
             scalar = Input.PrimitiveScalar Input.Int4Primitive
           }
         `shouldBe` [aesonQQ|
           {
-            "array-settings": {"dimensionality": 2, "element-is-nullable": true},
+            "dimensionality": 2,
+            "element-is-nullable": true,
             "scalar": {"primitive": "int-4"}
           }
         |]
@@ -216,7 +220,7 @@ project1Json =
               },
               "pg-name": "user_id",
               "is-nullable": false,
-              "value": { "array-settings": null, "scalar": { "primitive": "int-4" } }
+              "value": { "dimensionality": 0, "element-is-nullable": false, "scalar": { "primitive": "int-4" } }
             }
           ],
           "result": {
@@ -231,7 +235,7 @@ project1Json =
                   },
                   "pg-name": "id",
                   "is-nullable": false,
-                  "value": { "array-settings": null, "scalar": { "primitive": "int-4" } }
+                  "value": { "dimensionality": 0, "element-is-nullable": false, "scalar": { "primitive": "int-4" } }
                 },
                 {
                   "name": {
@@ -241,7 +245,7 @@ project1Json =
                   },
                   "pg-name": "name",
                   "is-nullable": false,
-                  "value": { "array-settings": null, "scalar": { "primitive": "text" } }
+                  "value": { "dimensionality": 0, "element-is-nullable": false, "scalar": { "primitive": "text" } }
                 },
                 {
                   "name": {
@@ -251,7 +255,7 @@ project1Json =
                   },
                   "pg-name": "email",
                   "is-nullable": true,
-                  "value": { "array-settings": null, "scalar": { "primitive": "text" } }
+                  "value": { "dimensionality": 0, "element-is-nullable": false, "scalar": { "primitive": "text" } }
                 }
               ]
             }

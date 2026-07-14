@@ -74,7 +74,8 @@ input =
           isNullable = False,
           value =
             Input.Value
-              { arraySettings = Nothing,
+              { dimensionality = 0,
+                elementIsNullable = False,
                 scalar = Input.PrimitiveScalar Input.Int4Primitive
               }
         }
@@ -93,7 +94,8 @@ input =
                       isNullable = False,
                       value =
                         Input.Value
-                          { arraySettings = Nothing,
+                          { dimensionality = 0,
+                            elementIsNullable = False,
                             scalar = Input.PrimitiveScalar Input.Int4Primitive
                           }
                     },
@@ -103,7 +105,8 @@ input =
                       isNullable = False,
                       value =
                         Input.Value
-                          { arraySettings = Nothing,
+                          { dimensionality = 0,
+                            elementIsNullable = False,
                             scalar = Input.PrimitiveScalar Input.TextPrimitive
                           }
                     },
@@ -113,7 +116,8 @@ input =
                       isNullable = True,
                       value =
                         Input.Value
-                          { arraySettings = Nothing,
+                          { dimensionality = 0,
+                            elementIsNullable = False,
                             scalar = Input.PrimitiveScalar Input.TextPrimitive
                           }
                     }

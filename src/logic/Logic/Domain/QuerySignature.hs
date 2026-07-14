@@ -99,15 +99,14 @@ fromInferred params result =
       Gen.Input.VoidResult -> Nothing
 
 fieldSigFromValue :: Gen.Input.Value -> Bool -> FieldSig
-fieldSigFromValue value fieldNotNull =
-  case value.arraySettings of
-    Just settings ->
+fieldSigFromValue value fieldNotNull
+  | value.dimensionality > 0 =
       ArrayFieldSig
         { typeName = valueToTypeName value,
           notNull = fieldNotNull,
-          elementNotNull = not settings.elementIsNullable
+          elementNotNull = not value.elementIsNullable
         }
-    Nothing ->
+  | otherwise =
       ScalarFieldSig
         { typeName = valueToTypeName value,
           notNull = fieldNotNull
@@ -131,11 +130,7 @@ cardinalityToGenInput = \case
 
 valueToTypeName :: Gen.Input.Value -> Text
 valueToTypeName value =
-  let baseName = scalarToTypeName value.scalar
-      arraySuffix = case value.arraySettings of
-        Nothing -> ""
-        Just settings -> Text.replicate (fromIntegral settings.dimensionality) "[]"
-   in baseName <> arraySuffix
+  scalarToTypeName value.scalar <> Text.replicate (fromIntegral value.dimensionality) "[]"
 
 scalarToTypeName :: Gen.Input.Scalar -> Text
 scalarToTypeName = \case
@@ -602,15 +597,9 @@ applyToQuery sig params result =
 
     applyArrayElementNullability :: FieldSig -> Gen.Input.Value -> Gen.Input.Value
     applyArrayElementNullability field value =
-      case (fieldElementNotNull field, value.arraySettings) of
-        (Just elementNotNull, Just settings) ->
-          value
-            { Gen.Input.arraySettings =
-                Just
-                  settings
-                    { Gen.Input.elementIsNullable = not elementNotNull
-                    }
-            }
+      case (fieldElementNotNull field, value.dimensionality > 0) of
+        (Just elementNotNull, True) ->
+          value {Gen.Input.elementIsNullable = not elementNotNull}
         _ -> value
 
 spec :: Spec
@@ -753,19 +742,16 @@ spec = do
           primitiveValue :: Gen.Input.Primitive -> Gen.Input.Value
           primitiveValue primitive =
             Gen.Input.Value
-              { arraySettings = Nothing,
+              { dimensionality = 0,
+                elementIsNullable = False,
                 scalar = Gen.Input.PrimitiveScalar primitive
               }
 
           arrayValue :: Natural -> Gen.Input.Primitive -> Gen.Input.Value
           arrayValue dimensionality primitive =
             Gen.Input.Value
-              { arraySettings =
-                  Just
-                    Gen.Input.ArraySettings
-                      { dimensionality,
-                        elementIsNullable = True
-                      },
+              { dimensionality,
+                elementIsNullable = True,
                 scalar = Gen.Input.PrimitiveScalar primitive
               }
 

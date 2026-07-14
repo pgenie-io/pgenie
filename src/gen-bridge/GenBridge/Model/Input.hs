@@ -35,7 +35,6 @@ module GenBridge.Model.Input
     Member (..),
     EnumVariant (..),
     Value (..),
-    ArraySettings (..),
     Scalar (..),
     Primitive (..),
   )
@@ -209,17 +208,12 @@ data Scalar
     (Dhall.FromDhall, Dhall.ToDhall)
     via (Dhall.Deriving.Codec (Dhall.Deriving.SumModifier "Scalar") Scalar)
 
--- | Array settings with dimensionality and element nullability
-data ArraySettings = ArraySettings
-  { dimensionality :: Natural,
-    elementIsNullable :: Bool
-  }
-  deriving stock (Show, Eq, Generic)
-  deriving anyclass (Dhall.ToDhall, Dhall.FromDhall)
-
--- | A value with optional array settings and scalar type
+-- | A column/parameter type: a scalar, optionally array-wrapped.
+-- `dimensionality = 0` means a bare scalar; `elementIsNullable` is
+-- meaningless in that case.
 data Value = Value
-  { arraySettings :: Maybe ArraySettings,
+  { dimensionality :: Natural,
+    elementIsNullable :: Bool,
     scalar :: Scalar
   }
   deriving stock (Show, Eq, Generic)
@@ -353,7 +347,6 @@ Aeson.Deriver.derive
   [ ''Version,
     ''Primitive,
     ''Scalar,
-    ''ArraySettings,
     ''Value,
     ''Member,
     ''EnumVariant,

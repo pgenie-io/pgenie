@@ -2,6 +2,13 @@
 
 Study the contents of the `cabal.project` file. In the `source-repository-package` sections you'll see references to repositories of dependencies that are not on Hackage. Load them into memory.
 
+Never reference a sibling `pgenie-io` repository (`gen-contract`, `gen-sdk`, etc.) via a local filesystem path, in Dhall imports, `cabal.project`, or anywhere else. Such paths only resolve on a machine that happens to check out both repos side by side and break for everyone else, including CI. Always depend on a pinned remote import instead, e.g. for Dhall:
+
+```
+https://raw.githubusercontent.com/pgenie-io/gen-contract/v5.0.0/src/package.dhall
+  sha256:a1b48fe025c5536b13907bcd2db307cd438f3ae0f67a59222b3aa39e4bdac9ef
+```
+
 # Instructions
 
 - Avoid polluting the top namespace with definitions that could be placed in `where` blocks. Alternatively introduce helper modules if the definitions are more general. Place the helper modules in a deeper namespace of the current module, e.g. `A.B.Helper` for `A.B`.

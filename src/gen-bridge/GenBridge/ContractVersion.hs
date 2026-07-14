@@ -9,7 +9,7 @@ module GenBridge.ContractVersion
 where
 
 import Dhall qualified
-import GenBridge.Dhall.Orphans ()
+import GenContractBase.Dhall.Orphans ()
 import Utils.Prelude
 
 -- | Semantic version of the generator contract (the shape a Dhall generator

@@ -1,3 +1,11 @@
+# Upcoming
+
+## Breaking
+
+- Bump the `gen-contract` dependency to v5.0.0, raising the generator contract version to 5.0. Generators targeting contract major version 4 are no longer compatible.
+  - Add `CustomTypeRef` to the model projection, resolving custom-type references by index within a topologically-sorted `customTypes` list.
+  - Flatten `Value`'s `arraySettings :: Maybe ArraySettings` into plain `dimensionality`/`elementIsNullable` fields directly on `Value`.
+
 # v0.11.0
 
 ## Breaking

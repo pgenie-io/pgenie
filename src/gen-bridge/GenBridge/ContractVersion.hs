@@ -25,4 +25,4 @@ data ContractVersion = ContractVersion
 -- generator is rejected if its major version differs, or its minor version
 -- is newer than this one (see "GenBridge.Load" and "GenBridge.Bundle").
 current :: ContractVersion
-current = ContractVersion {major = 4, minor = 0}
+current = ContractVersion {major = 5, minor = 0}

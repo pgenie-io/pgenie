@@ -19,6 +19,7 @@ module GenBridge.Model.Input
     -- * Custom types
     CustomType (..),
     CustomTypeDefinition (..),
+    CustomTypeRef (..),
 
     -- * Queries
     Query (..),
@@ -188,10 +189,21 @@ data Primitive
     (Dhall.FromDhall, Dhall.ToDhall)
     via (Dhall.Deriving.Codec (Dhall.Deriving.SumModifier "Primitive") Primitive)
 
+-- | A resolvable reference to a custom type: its identifier plus its
+-- authentic Postgres identity and its position in Project.customTypes.
+data CustomTypeRef = CustomTypeRef
+  { name :: Name,
+    pgSchema :: Text,
+    pgName :: Text,
+    index :: Natural
+  }
+  deriving stock (Show, Eq, Generic)
+  deriving anyclass (Dhall.ToDhall, Dhall.FromDhall)
+
 -- | Either a primitive type or a custom type
 data Scalar
   = PrimitiveScalar Primitive
-  | CustomScalar Name
+  | CustomScalar CustomTypeRef
   deriving stock (Show, Eq, Generic)
   deriving
     (Dhall.FromDhall, Dhall.ToDhall)
@@ -347,6 +359,7 @@ Aeson.Deriver.derive
     ''EnumVariant,
     ''CustomTypeDefinition,
     ''CustomType,
+    ''CustomTypeRef,
     ''ResultRowsCardinality,
     ''ResultRows,
     ''Result,

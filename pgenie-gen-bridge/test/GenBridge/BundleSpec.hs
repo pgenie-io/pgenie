@@ -1,6 +1,7 @@
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
 
-module GenBridge.LoadSpec (spec) where
+module GenBridge.BundleSpec (spec) where
 
 import Data.Aeson qualified as Aeson
 import Data.Aeson.QQ.Simple (aesonQQ)
@@ -15,14 +16,8 @@ import Prelude
 
 spec :: Spec
 spec = do
-  describe "load" do
-    it "loads a Dhall generator at runtime, computes its integrity hash, and compiles the Project1 fixture into config-driven output files" do
-      (gen, hash) <-
-        GenBridge.load location Nothing Text.putStrLn Text.putStrLn
-
-      -- Print the computed hash for verification
-      putStrLn $ "Computed hash: " ++ show hash
-
+  describe "bundle" do
+    it "imports a Dhall generator at compile time and compiles the Project1 fixture into config-driven output files" do
       compile <-
         case gen (Just configJson) of
           Left err -> do
@@ -58,9 +53,12 @@ spec = do
             }
         ]
 
-location :: GenBridge.Location
-location =
-  GenBridge.LocationPath "./src/gen-bridge-test/Gen.dhall"
+gen :: Maybe Aeson.Value -> Either Text (Gen.Project -> Gen.Output)
+gen =
+  $$( GenBridge.bundle
+        (GenBridge.LocationPath "./test/Gen.dhall")
+        Nothing
+    )
 
 configJson :: Aeson.Value
 configJson =

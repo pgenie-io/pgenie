@@ -1,0 +1,108 @@
+cabal-version: 3.4
+name: pgenie-logic
+version: 0
+category: Database
+synopsis: Type-safe PostgreSQL client code generator - logic
+license: GPL-3.0-or-later
+license-file: ../LICENSE
+
+common base
+  default-language: GHC2024
+  default-extensions:
+    ApplicativeDo
+    BlockArguments
+    DefaultSignatures
+    DeriveAnyClass
+    DerivingVia
+    DuplicateRecordFields
+    FunctionalDependencies
+    LiberalTypeSynonyms
+    MagicHash
+    MultiWayIf
+    NoFieldSelectors
+    NoImplicitPrelude
+    NoMonomorphismRestriction
+    OverloadedLabels
+    OverloadedRecordDot
+    OverloadedStrings
+    ParallelListComp
+    PatternSynonyms
+    RecordWildCards
+    StrictData
+    TypeFamilies
+    ViewPatterns
+
+common test
+  import: base
+  ghc-options:
+    -threaded
+    "-with-rtsopts=-N -I0 -qg"
+
+library
+  import: base
+  hs-source-dirs: src
+  exposed-modules:
+    Logic
+    Logic.Capabilities
+    Logic.Capabilities.Fs
+    Logic.Capabilities.GeneratorRuntime
+    Logic.Capabilities.IndexCatalog
+    Logic.Capabilities.Migrations
+    Logic.Capabilities.QueryAnalysis
+    Logic.Capabilities.Reporting
+    Logic.Capabilities.SeqScanExplain
+    Logic.Capabilities.Staging
+    Logic.Domain
+    Logic.Domain.CustomTypeOrdering
+    Logic.Domain.CustomTypeSignature
+    Logic.Domain.GeneratorHashes
+    Logic.Domain.IndexOptimization
+    Logic.Domain.Name
+    Logic.Domain.ProjectFile
+    Logic.Domain.QueryAnalysis
+    Logic.Domain.QuerySignature
+    Logic.Domain.Report
+    Logic.Domain.SeqScanFinding
+    Logic.Domain.SqlTemplate
+    Logic.Domain.SyntaxAnalyser
+    Logic.Procedures.Analyse
+    Logic.Procedures.AnalyseProject
+    Logic.Procedures.Generate
+    Logic.Procedures.GenerateCode
+    Logic.Procedures.GenerateQuerySignatures
+    Logic.Procedures.GenerateTypeSignatures
+    Logic.Procedures.ManageIndexes
+
+  other-modules:
+    Logic.Domain.Name.Megaparsec
+    Logic.Domain.SyntaxAnalyser.AstInterpreter
+    Logic.Domain.SyntaxAnalyser.Data
+
+  build-depends:
+    aeson,
+    algebraic-path,
+    containers,
+    dhall,
+    foldl,
+    hspec,
+    megaparsec,
+    monad-parallel,
+    pgenie-gen-bridge,
+    pgenie-utils,
+    postgresql-syntax,
+    QuickCheck,
+    syntactic-class,
+    text,
+    text-builder,
+    vector,
+    yaml-unscrambler,
+
+test-suite logic-test
+  import: test
+  type: exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is: Main.hs
+  build-depends:
+    hspec,
+    pgenie-logic,
+    pgenie-utils,

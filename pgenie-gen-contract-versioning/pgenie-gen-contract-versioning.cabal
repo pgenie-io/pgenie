@@ -1,0 +1,43 @@
+cabal-version: 3.4
+name: pgenie-gen-contract-versioning
+version: 0
+category: Database
+synopsis: Type-safe PostgreSQL client code generator - gen-contract-versioning
+license: GPL-3.0-or-later
+license-file: ../LICENSE
+
+common base
+  default-language: GHC2024
+  default-extensions:
+    ApplicativeDo
+    BlockArguments
+    DefaultSignatures
+    DeriveAnyClass
+    DerivingVia
+    DuplicateRecordFields
+    FunctionalDependencies
+    LiberalTypeSynonyms
+    MagicHash
+    MultiWayIf
+    NoFieldSelectors
+    NoImplicitPrelude
+    NoMonomorphismRestriction
+    OverloadedLabels
+    OverloadedRecordDot
+    OverloadedStrings
+    ParallelListComp
+    PatternSynonyms
+    RecordWildCards
+    StrictData
+    TypeFamilies
+    ViewPatterns
+
+library
+  import: base
+  hs-source-dirs: src
+  exposed-modules:
+    GenContractVersioning
+
+  build-depends:
+    base,
+    text,

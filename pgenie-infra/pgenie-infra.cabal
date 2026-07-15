@@ -1,0 +1,124 @@
+cabal-version: 3.4
+name: pgenie-infra
+version: 0
+category: Database
+synopsis: Type-safe PostgreSQL client code generator - infra
+license: GPL-3.0-or-later
+license-file: ../LICENSE
+
+common base
+  default-language: GHC2024
+  default-extensions:
+    ApplicativeDo
+    BlockArguments
+    DefaultSignatures
+    DeriveAnyClass
+    DerivingVia
+    DuplicateRecordFields
+    FunctionalDependencies
+    LiberalTypeSynonyms
+    MagicHash
+    MultiWayIf
+    NoFieldSelectors
+    NoImplicitPrelude
+    NoMonomorphismRestriction
+    OverloadedLabels
+    OverloadedRecordDot
+    OverloadedStrings
+    ParallelListComp
+    PatternSynonyms
+    RecordWildCards
+    StrictData
+    TypeFamilies
+    ViewPatterns
+
+common test
+  import: base
+  ghc-options:
+    -threaded
+    "-with-rtsopts=-N -I0 -qg"
+
+library
+  import: base
+  hs-source-dirs: src
+  exposed-modules:
+    Infra
+    Infra.Adapters.Analyser
+
+  other-modules:
+    Infra.Adapters.Analyser.Embeddings.Sessions
+    Infra.Adapters.Analyser.Scopes.Testcontainers
+    Infra.Adapters.Analyser.Scopes.Testcontainers.IO
+    Infra.Adapters.Analyser.Sessions
+    Infra.Adapters.Analyser.Sessions.Algebras.Procedure
+    Infra.Adapters.Analyser.Sessions.Domain
+    Infra.Adapters.Analyser.Sessions.LibpqExtras.LawfulConversions
+    Infra.Adapters.Analyser.Sessions.LibpqExtras.Procedures.DescribeQuery
+    Infra.Adapters.Analyser.Sessions.Procedures
+    Infra.Adapters.Analyser.Sessions.Procedures.DescribeQuery
+    Infra.Adapters.Analyser.Sessions.Procedures.GetIndexes
+    Infra.Adapters.Analyser.Sessions.Procedures.ResolveColumn
+    Infra.Adapters.Analyser.Sessions.Procedures.ResolveColumn.Statements
+    Infra.Adapters.Analyser.Sessions.Procedures.ResolveColumn.Statements.GetAttributeByRelationAndOffset
+    Infra.Adapters.Analyser.Sessions.Procedures.ResolveParamNullabilities
+    Infra.Adapters.Analyser.Sessions.Procedures.ResolveParamNullabilities.DefaultTextualValue
+    Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid
+    Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements
+    Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements.SelectAttributes
+    Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements.SelectEnumLabels
+    Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements.SelectRelationColumns
+    Infra.Adapters.Analyser.Sessions.Procedures.ResolveTypeByOid.Statements.SelectType
+    Infra.Adapters.Main
+
+  build-tool-depends:
+    autoexporter:autoexporter
+
+  build-depends:
+    algebraic-path,
+    attoparsec,
+    base,
+    directory,
+    fx,
+    hasql,
+    hasql-dev,
+    hasql-mapping,
+    hasql-pool,
+    hasql-th,
+    pgenie-gen-bridge,
+    pgenie-interpreters,
+    pgenie-logic,
+    pgenie-utils,
+    postgresql-libpq,
+    resourcet,
+    syntactic-class,
+    testcontainers,
+    testcontainers-postgresql,
+    text,
+    text-builder,
+    uuid,
+    vector,
+
+test-suite infra-test
+  import: test
+  type: exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is: Main.hs
+  other-modules:
+    InferQueryTypesSpec
+
+  build-tool-depends:
+    hspec-discover:hspec-discover
+
+  build-depends:
+    base,
+    fx,
+    hspec,
+    pgenie-gen-bridge,
+    pgenie-infra,
+    pgenie-logic,
+    pgenie-utils,
+    postgresql-libpq,
+    resourcet,
+    testcontainers,
+    testcontainers-postgresql,
+    text,

@@ -27,6 +27,16 @@
 !/docs/
 !/src/
 !/.github/**
+!/pgenie-utils/
+!/pgenie-gen-contract-base/
+!/pgenie-gen-contract-versioning/
+!/pgenie-gen-contract-v4/
+!/pgenie-gen-contract-v5/
+!/pgenie-gen-bridge/
+!/pgenie-logic/
+!/pgenie-interpreters/
+!/pgenie-infra/
+!/pgenie-ui/
 
 # Ignore noise:
 .DS_Store

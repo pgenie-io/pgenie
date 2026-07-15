@@ -1,0 +1,101 @@
+cabal-version: 3.4
+name: pgenie-gen-contract-v5
+version: 0
+category: Database
+synopsis: Type-safe PostgreSQL client code generator - gen-contract-v5
+license: GPL-3.0-or-later
+license-file: ../LICENSE
+
+common base
+  default-language: GHC2024
+  default-extensions:
+    ApplicativeDo
+    BlockArguments
+    DefaultSignatures
+    DeriveAnyClass
+    DerivingVia
+    DuplicateRecordFields
+    FunctionalDependencies
+    LiberalTypeSynonyms
+    MagicHash
+    MultiWayIf
+    NoFieldSelectors
+    NoImplicitPrelude
+    NoMonomorphismRestriction
+    OverloadedLabels
+    OverloadedRecordDot
+    OverloadedStrings
+    ParallelListComp
+    PatternSynonyms
+    RecordWildCards
+    StrictData
+    TypeFamilies
+    ViewPatterns
+
+common test
+  import: base
+  ghc-options:
+    -threaded
+    "-with-rtsopts=-N -I0 -qg"
+
+library
+  import: base
+  hs-source-dirs: src
+  exposed-modules:
+    GenContractV5
+    GenContractV5.Fixtures
+    GenContractV5.Input
+    GenContractV5.Input.CustomType
+    GenContractV5.Input.CustomTypeDefinition
+    GenContractV5.Input.CustomTypeRef
+    GenContractV5.Input.Member
+    GenContractV5.Input.Project
+    GenContractV5.Input.Query
+    GenContractV5.Input.Result
+    GenContractV5.Input.ResultRows
+    GenContractV5.Input.Scalar
+    GenContractV5.Input.Value
+    GenContractV5.Output
+    GenContractV5.Output.File
+    GenContractV5.Output.Output
+    GenContractV5.Output.OutputOk
+
+  other-modules:
+    GenContractV5.Fixtures.Fixture1
+
+  build-depends:
+    cases,
+    dhall,
+    pgenie-gen-contract-base,
+    pgenie-gen-contract-v4,
+    pgenie-gen-contract-versioning,
+    pgenie-utils,
+    QuickCheck,
+    rerebase,
+
+test-suite gen-contract-v5-test
+  import: test
+  type: exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is: GenContractV5TestMain.hs
+  other-modules:
+    GenContractV5.Input.AesonSpec
+    GenContractV5.Input.DhallSpec
+    GenContractV5.Input.ScalarSpec
+    GenContractV5.Input.ValueSpec
+    GenContractV5Spec
+
+  build-tool-depends:
+    hspec-discover:hspec-discover
+
+  build-depends:
+    aeson,
+    containers,
+    dhall,
+    either,
+    hspec >=2.11 && <3,
+    pgenie-gen-contract-v4,
+    pgenie-gen-contract-v5,
+    pgenie-gen-contract-versioning,
+    QuickCheck,
+    rerebase,

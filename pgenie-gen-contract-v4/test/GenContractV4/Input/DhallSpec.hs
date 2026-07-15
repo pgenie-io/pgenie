@@ -168,4 +168,4 @@ checkSerialization value dhallExpr = do
 
 -- | Pinned reference to the pGenie generator contract, v4.
 contract :: Text
-contract = "(./src/gen-contract-v4-test/Contract.dhall)"
+contract = "(./test/Contract.dhall)"

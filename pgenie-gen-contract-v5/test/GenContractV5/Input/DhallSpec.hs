@@ -173,4 +173,4 @@ checkSerialization value dhallExpr = do
   Dhall.Core.judgmentallyEqual encoded expected `shouldBe` True
 
 contract :: Text
-contract = "(./src/gen-contract-v5-test/Contract.dhall)"
+contract = "(./test/Contract.dhall)"

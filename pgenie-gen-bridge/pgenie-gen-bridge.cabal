@@ -1,0 +1,88 @@
+cabal-version: 3.4
+name: pgenie-gen-bridge
+version: 0
+category: Database
+synopsis: Type-safe PostgreSQL client code generator - gen-bridge
+license: GPL-3.0-or-later
+license-file: ../LICENSE
+
+common base
+  default-language: GHC2024
+  default-extensions:
+    ApplicativeDo
+    BlockArguments
+    DefaultSignatures
+    DeriveAnyClass
+    DerivingVia
+    DuplicateRecordFields
+    FunctionalDependencies
+    LiberalTypeSynonyms
+    MagicHash
+    MultiWayIf
+    NoFieldSelectors
+    NoImplicitPrelude
+    NoMonomorphismRestriction
+    OverloadedLabels
+    OverloadedRecordDot
+    OverloadedStrings
+    ParallelListComp
+    PatternSynonyms
+    RecordWildCards
+    StrictData
+    TypeFamilies
+    ViewPatterns
+
+common test
+  import: base
+  ghc-options:
+    -threaded
+    "-with-rtsopts=-N -I0 -qg"
+
+library
+  import: base
+  hs-source-dirs: src
+  exposed-modules:
+    GenBridge
+    GenBridge.Contract
+
+  other-modules:
+    GenBridge.Bundle
+    GenBridge.ContractVersion
+    GenBridge.Dhall.ExprViews
+    GenBridge.Dispatch
+    GenBridge.Load
+    GenBridge.Location
+
+  build-depends:
+    aeson,
+    algebraic-path,
+    dhall,
+    dhall-json,
+    microlens,
+    pgenie-gen-contract-v5,
+    pgenie-gen-contract-versioning,
+    pgenie-utils,
+    template-haskell,
+    text,
+
+test-suite gen-bridge-test
+  import: test
+  type: exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is: Main.hs
+  other-modules:
+    GenBridge.BundleSpec
+    GenBridge.LoadSpec
+    GenBridge.LoadV4Spec
+    Test.Report
+
+  build-tool-depends:
+    hspec-discover:hspec-discover
+
+  build-depends:
+    aeson,
+    hspec >=2.11 && <3,
+    pgenie-gen-bridge,
+    pgenie-gen-contract-v5,
+    rerebase,
+    text-builder,

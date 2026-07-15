@@ -18,7 +18,7 @@ spec = do
   describe "load" do
     it "loads a v4-contract-declared Dhall generator and compiles the (v5-shaped) Project1 fixture through the downgrade path" do
       (gen, _hash) <-
-        GenBridge.load (GenBridge.LocationPath "./src/gen-bridge-test/GenV4.dhall") Nothing Text.putStrLn Text.putStrLn
+        GenBridge.load (GenBridge.LocationPath "./test/GenV4.dhall") Nothing Text.putStrLn Text.putStrLn
 
       compile <-
         case gen (Just configJson) of

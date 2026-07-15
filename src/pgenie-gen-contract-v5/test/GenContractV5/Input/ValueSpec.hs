@@ -2,7 +2,6 @@ module GenContractV5.Input.ValueSpec (spec) where
 
 import GenContractV4.Input qualified as V4
 import GenContractV5.Input qualified as V5
-import GenContractV5.Input.Scalar qualified as V5.Scalar
 import GenContractV5.Input.Value qualified as V5.Value
 import Test.Hspec
 import Test.QuickCheck

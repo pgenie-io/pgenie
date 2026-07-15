@@ -145,10 +145,12 @@ library gen-contract-v4
   hs-source-dirs: src/gen-contract-v4/
   exposed-modules:
     GenContractV4
+    GenContractV4.Fixtures
     GenContractV4.Input
     GenContractV4.Output
 
   other-modules:
+    GenContractV4.Fixtures.Fixture1
     GenContractV4.Input.ArraySettings
     GenContractV4.Input.CustomType
     GenContractV4.Input.CustomTypeDefinition
@@ -174,11 +176,13 @@ library gen-contract-v4
 
   build-depends:
     aeson,
+    cases,
     dhall,
     pgenie:gen-contract-base,
     pgenie:gen-contract-versioning,
     pgenie:utils,
     QuickCheck,
+    rerebase,
 
 library gen-bridge
   import: base
@@ -508,7 +512,6 @@ test-suite gen-contract-v4-test
   hs-source-dirs: src/gen-contract-v4-test
   main-is: GenContractV4TestMain.hs
   other-modules:
-    GenContractV4.Fixtures.Project1
     GenContractV4.Input.AesonSpec
     GenContractV4.Input.DhallSpec
 
@@ -517,11 +520,9 @@ test-suite gen-contract-v4-test
 
   build-depends:
     aeson,
-    cases,
     containers,
     dhall,
     either,
     hspec >=2.11 && <3,
     pgenie:gen-contract-v4,
-    pgenie:utils,
     rerebase,

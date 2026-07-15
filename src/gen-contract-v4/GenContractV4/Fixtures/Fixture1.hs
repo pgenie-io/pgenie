@@ -2,7 +2,7 @@
 -- A representative 'Input.Project' value — a single-query, single-migration
 -- "demo" project — shared across the gen-contract-v4 specs to exercise Aeson
 -- round-tripping and Dhall round-tripping against the pinned v4 contract.
-module GenContractV4.Fixtures.Project1
+module GenContractV4.Fixtures.Fixture1
   ( input,
   )
 where

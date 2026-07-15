@@ -560,19 +560,3 @@ test-suite gen-contract-v4-test
     pgenie:gen-contract-v4,
     pgenie:utils,
     rerebase,
-
-test-suite gen-contract-versioning-test
-  import: test
-  type: exitcode-stdio-1.0
-  hs-source-dirs: src/gen-contract-versioning-test
-  main-is: Main.hs
-  other-modules:
-    GenContractVersioningSpec
-
-  build-tool-depends:
-    hspec-discover:hspec-discover
-
-  build-depends:
-    base,
-    hspec >=2.11 && <3,
-    pgenie:gen-contract-versioning,

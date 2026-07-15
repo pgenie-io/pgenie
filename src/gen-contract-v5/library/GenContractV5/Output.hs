@@ -11,7 +11,7 @@ module GenContractV5.Output
   )
 where
 
+import GenContractV4.Output (Report (..))
 import GenContractV5.Output.File (File (..))
 import GenContractV5.Output.Output (Output (..))
 import GenContractV5.Output.OutputOk (OutputOk (..))
-import GenContractV4.Output (Report (..))

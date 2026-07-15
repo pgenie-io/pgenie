@@ -30,7 +30,7 @@ common base
 
 library
   import: base
-  hs-source-dirs: src
+  hs-source-dirs: library
   exposed-modules:
     GenContractBase.Aeson.Deriver
     GenContractBase.Dhall.Decode

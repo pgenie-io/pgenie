@@ -41,7 +41,7 @@ common executable
 
 executable pgn
   import: executable
-  hs-source-dirs: src/pgn/
+  hs-source-dirs: library/pgn/
   main-is: Main.hs
   autogen-modules: Paths_pgenie_pgn
   other-modules: Paths_pgenie_pgn

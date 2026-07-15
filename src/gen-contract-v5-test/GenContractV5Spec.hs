@@ -1,4 +1,4 @@
-module GenContractV5.Input.ProjectSpec (spec) where
+module GenContractV5Spec (spec) where
 
 import GenContractV4.Input qualified as V4
 import GenContractV5 qualified as V5

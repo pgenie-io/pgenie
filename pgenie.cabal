@@ -485,9 +485,9 @@ test-suite gen-contract-v5-test
     GenContractV5.Fixtures.Project1
     GenContractV5.Input.AesonSpec
     GenContractV5.Input.DhallSpec
-    GenContractV5.Input.ProjectSpec
     GenContractV5.Input.ScalarSpec
     GenContractV5.Input.ValueSpec
+    GenContractV5Spec
 
   build-tool-depends:
     hspec-discover:hspec-discover

@@ -14,7 +14,6 @@
 !/AGENTS.md
 !/CODING_STANDARDS.md
 !/CONTEXT.md
-!/*.cabal
 !/cabal.project
 !/cabal.project.freeze
 !/.ormolu
@@ -25,7 +24,6 @@
 !/.github/
 !/design/
 !/docs/
-!/src/
 !/.github/**
 !/pgenie-utils/
 !/pgenie-gen-contract-base/
@@ -37,6 +35,7 @@
 !/pgenie-interpreters/
 !/pgenie-infra/
 !/pgenie-ui/
+!/pgenie-pgn/
 
 # Ignore noise:
 .DS_Store

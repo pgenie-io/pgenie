@@ -1,21 +1,10 @@
 cabal-version: 3.4
-name: pgenie
+name: pgenie-pgn
 version: 0
 category: Database
-synopsis: Type-safe PostgreSQL client code generator
-description:
-  Analyzes SQL migrations and queries to generate type-safe client libraries.
-
-homepage: https://github.com/nikita-volkov/pgenie
-bug-reports: https://github.com/nikita-volkov/pgenie/issues
-author: Nikita Volkov <nikita.y.volkov@mail.ru>
-maintainer: Nikita Volkov <nikita.y.volkov@mail.ru>
-copyright: (c) 2025, Nikita Volkov
+synopsis: Type-safe PostgreSQL client code generator - pgn executable
 license: GPL-3.0-or-later
-license-file: LICENSE
-extra-source-files:
-  cabal.project
-  README.md
+license-file: ../LICENSE
 
 source-repository head
   type: git
@@ -58,8 +47,8 @@ executable pgn
   import: executable
   hs-source-dirs: src/pgn/
   main-is: Main.hs
-  autogen-modules: Paths_pgenie
-  other-modules: Paths_pgenie
+  autogen-modules: Paths_pgenie_pgn
+  other-modules: Paths_pgenie_pgn
   build-depends:
     base,
     pgenie-infra,

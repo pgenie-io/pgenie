@@ -1,5 +1,5 @@
 packages:
-  .
+  pgenie-pgn
   pgenie-utils
   pgenie-gen-contract-base
   pgenie-gen-contract-versioning

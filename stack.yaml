@@ -1,4 +1,16 @@
 resolver: nightly-2026-05-19
+packages:
+  - pgenie-pgn
+  - pgenie-utils
+  - pgenie-gen-contract-base
+  - pgenie-gen-contract-versioning
+  - pgenie-gen-contract-v4
+  - pgenie-gen-contract-v5
+  - pgenie-gen-bridge
+  - pgenie-logic
+  - pgenie-interpreters
+  - pgenie-infra
+  - pgenie-ui
 allow-newer: true
 allow-newer-deps:
   - aeson-optics

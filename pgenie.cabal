@@ -212,6 +212,7 @@ library gen-contract-v5
   hs-source-dirs: src/gen-contract-v5/
   exposed-modules:
     GenContractV5
+    GenContractV5.Fixtures
     GenContractV5.Input
     GenContractV5.Input.CustomType
     GenContractV5.Input.CustomTypeDefinition
@@ -228,13 +229,18 @@ library gen-contract-v5
     GenContractV5.Output.Output
     GenContractV5.Output.OutputOk
 
+  other-modules:
+    GenContractV5.Fixtures.Fixture1
+
   build-depends:
+    cases,
     dhall,
     pgenie:gen-contract-base,
     pgenie:gen-contract-v4,
     pgenie:gen-contract-versioning,
     pgenie:utils,
     QuickCheck,
+    rerebase,
 
 library logic
   import: base
@@ -450,16 +456,12 @@ test-suite ui-test
 test-suite gen-bridge-test
   import: test
   type: exitcode-stdio-1.0
-  hs-source-dirs:
-    src/gen-bridge-test
-    src/gen-contract-v5-test
-
+  hs-source-dirs: src/gen-bridge-test
   main-is: Main.hs
   other-modules:
     GenBridge.BundleSpec
     GenBridge.LoadSpec
     GenBridge.LoadV4Spec
-    GenContractV5.Fixtures.Project1
     Test.Report
 
   build-tool-depends:
@@ -467,11 +469,9 @@ test-suite gen-bridge-test
 
   build-depends:
     aeson,
-    cases,
     hspec >=2.11 && <3,
     pgenie:gen-bridge,
     pgenie:gen-contract-v5,
-    pgenie:utils,
     rerebase,
     text-builder,
 
@@ -481,7 +481,6 @@ test-suite gen-contract-v5-test
   hs-source-dirs: src/gen-contract-v5-test
   main-is: GenContractV5TestMain.hs
   other-modules:
-    GenContractV5.Fixtures.Project1
     GenContractV5.Input.AesonSpec
     GenContractV5.Input.DhallSpec
     GenContractV5.Input.ScalarSpec
@@ -493,7 +492,6 @@ test-suite gen-contract-v5-test
 
   build-depends:
     aeson,
-    cases,
     containers,
     dhall,
     either,
@@ -501,7 +499,6 @@ test-suite gen-contract-v5-test
     pgenie:gen-contract-v4,
     pgenie:gen-contract-v5,
     pgenie:gen-contract-versioning,
-    pgenie:utils,
     QuickCheck,
     rerebase,
 

@@ -7,7 +7,7 @@ import Data.Aeson.QQ.Simple (aesonQQ)
 import Data.Text.IO qualified as Text
 import GenBridge qualified as GenBridge
 import GenBridge.Contract qualified as Gen
-import GenContractV5.Fixtures.Project1 qualified as Fixtures.Project1
+import GenContractV5.Fixtures qualified as Fixtures
 import System.Exit qualified as Exit
 import Test.Hspec
 import Test.Report qualified as Report
@@ -32,7 +32,7 @@ spec = do
           Right compile -> pure compile
 
       let output =
-            compile Fixtures.Project1.input
+            compile Fixtures.input1
 
       files <-
         case output of

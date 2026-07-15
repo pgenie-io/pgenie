@@ -2,7 +2,7 @@ module GenContractV5Spec (spec) where
 
 import GenContractV4.Input qualified as V4
 import GenContractV5 qualified as V5
-import GenContractV5.Fixtures.Project1 qualified as Fixtures.Project1
+import GenContractV5.Fixtures qualified as Fixtures
 import GenContractVersioning
 import Test.Hspec
 import Prelude
@@ -11,7 +11,7 @@ spec :: Spec
 spec = do
   describe "downgradeInput on the Project1 fixture" do
     it "downgrades the status column's CustomScalar reference down to a bare Name, dropping pgSchema/pgName/index" do
-      case downgradeInput @V5.V5 Fixtures.Project1.input of
+      case downgradeInput @V5.V5 Fixtures.input1 of
         Right v4Project ->
           case v4Project of
             V4.Project {queries = [v4Query]} ->

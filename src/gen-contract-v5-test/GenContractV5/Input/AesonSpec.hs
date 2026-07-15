@@ -4,7 +4,7 @@ module GenContractV5.Input.AesonSpec (spec) where
 
 import Data.Aeson qualified as Aeson
 import Data.Aeson.QQ.Simple (aesonQQ)
-import GenContractV5.Fixtures.Project1 qualified as Fixtures.Project1
+import GenContractV5.Fixtures qualified as Fixtures
 import GenContractV5.Input qualified as Input
 import Test.Hspec
 import Prelude
@@ -13,12 +13,12 @@ spec :: Spec
 spec = do
   describe "Input model JSON contract" do
     it "encodes the Project1 fixture using the pinned kebab-case, single-field-object contract" do
-      Aeson.toJSON Fixtures.Project1.input `shouldBe` project1Json
+      Aeson.toJSON Fixtures.input1 `shouldBe` project1Json
 
     it "decodes the pinned JSON back into the Project1 fixture value" do
       case Aeson.fromJSON project1Json of
         Aeson.Error err -> expectationFailure err
-        Aeson.Success decoded -> decoded `shouldBe` Fixtures.Project1.input
+        Aeson.Success decoded -> decoded `shouldBe` Fixtures.input1
 
     it "encodes Name fields as kebab-case keys" do
       Aeson.toJSON exampleName `shouldBe` exampleNameJson

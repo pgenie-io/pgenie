@@ -1,10 +1,10 @@
 cabal-version: 3.4
-name: pgenie-utils
+name: pgenie-interpreters
 version: 0
 category: Database
-synopsis: Type-safe PostgreSQL client code generator - utils
+synopsis: Type-safe PostgreSQL client code generator - interpreters
 license: GPL-3.0-or-later
-license-file: ../LICENSE
+license-file: ../../LICENSE
 
 common base
   default-language: GHC2024
@@ -36,31 +36,10 @@ library
   import: base
   hs-source-dirs: src
   exposed-modules:
-    Utils.Prelude
-    Utils.Text
+    Interpreters.Observing
 
   build-depends:
-    algebraic-path,
-    base,
-    bytestring,
-    containers,
-    data-has,
-    hashable,
-    lawful-conversions,
     monad-parallel,
-    mtl,
-    profunctors,
-    QuickCheck,
-    quickcheck-instances,
-    relations,
-    syntactic-class,
+    pgenie-logic,
+    pgenie-utils,
     text,
-    text-builder,
-    text-builder-lawful-conversions,
-    time,
-    transformers,
-    tuple,
-    uuid,
-    vector,
-    vector-instances,
-    witherable,

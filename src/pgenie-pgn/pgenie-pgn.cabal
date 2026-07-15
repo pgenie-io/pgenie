@@ -1,10 +1,14 @@
 cabal-version: 3.4
-name: pgenie-gen-contract-versioning
+name: pgenie-pgn
 version: 0
 category: Database
-synopsis: Type-safe PostgreSQL client code generator - gen-contract-versioning
+synopsis: Type-safe PostgreSQL client code generator - pgn executable
 license: GPL-3.0-or-later
-license-file: ../LICENSE
+license-file: ../../LICENSE
+
+source-repository head
+  type: git
+  location: https://github.com/nikita-volkov/pgenie
 
 common base
   default-language: GHC2024
@@ -32,12 +36,22 @@ common base
     TypeFamilies
     ViewPatterns
 
-library
+common executable
   import: base
-  hs-source-dirs: src
-  exposed-modules:
-    GenContractVersioning
+  ghc-options:
+    -O2
+    -threaded
+    "-with-rtsopts=-N -I0 -qg"
 
+executable pgn
+  import: executable
+  hs-source-dirs: src/pgn/
+  main-is: Main.hs
+  autogen-modules: Paths_pgenie_pgn
+  other-modules: Paths_pgenie_pgn
   build-depends:
     base,
+    pgenie-infra,
+    pgenie-ui,
+    pgenie-utils,
     text,

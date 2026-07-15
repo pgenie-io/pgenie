@@ -4,7 +4,7 @@ version: 0
 category: Database
 synopsis: Type-safe PostgreSQL client code generator - gen-contract-base
 license: GPL-3.0-or-later
-license-file: ../LICENSE
+license-file: ../../LICENSE
 
 common base
   default-language: GHC2024

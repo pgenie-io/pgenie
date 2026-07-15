@@ -1,14 +1,10 @@
 cabal-version: 3.4
-name: pgenie-pgn
+name: pgenie-utils
 version: 0
 category: Database
-synopsis: Type-safe PostgreSQL client code generator - pgn executable
+synopsis: Type-safe PostgreSQL client code generator - utils
 license: GPL-3.0-or-later
-license-file: ../LICENSE
-
-source-repository head
-  type: git
-  location: https://github.com/nikita-volkov/pgenie
+license-file: ../../LICENSE
 
 common base
   default-language: GHC2024
@@ -36,22 +32,35 @@ common base
     TypeFamilies
     ViewPatterns
 
-common executable
+library
   import: base
-  ghc-options:
-    -O2
-    -threaded
-    "-with-rtsopts=-N -I0 -qg"
+  hs-source-dirs: src
+  exposed-modules:
+    Utils.Prelude
+    Utils.Text
 
-executable pgn
-  import: executable
-  hs-source-dirs: src/pgn/
-  main-is: Main.hs
-  autogen-modules: Paths_pgenie_pgn
-  other-modules: Paths_pgenie_pgn
   build-depends:
+    algebraic-path,
     base,
-    pgenie-infra,
-    pgenie-ui,
-    pgenie-utils,
+    bytestring,
+    containers,
+    data-has,
+    hashable,
+    lawful-conversions,
+    monad-parallel,
+    mtl,
+    profunctors,
+    QuickCheck,
+    quickcheck-instances,
+    relations,
+    syntactic-class,
     text,
+    text-builder,
+    text-builder-lawful-conversions,
+    time,
+    transformers,
+    tuple,
+    uuid,
+    vector,
+    vector-instances,
+    witherable,

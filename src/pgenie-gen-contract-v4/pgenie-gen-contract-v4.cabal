@@ -1,10 +1,10 @@
 cabal-version: 3.4
-name: pgenie-gen-contract-v5
+name: pgenie-gen-contract-v4
 version: 0
 category: Database
-synopsis: Type-safe PostgreSQL client code generator - gen-contract-v5
+synopsis: Type-safe PostgreSQL client code generator - gen-contract-v4
 license: GPL-3.0-or-later
-license-file: ../LICENSE
+license-file: ../../LICENSE
 
 common base
   default-language: GHC2024
@@ -42,48 +42,54 @@ library
   import: base
   hs-source-dirs: src
   exposed-modules:
-    GenContractV5
-    GenContractV5.Fixtures
-    GenContractV5.Input
-    GenContractV5.Input.CustomType
-    GenContractV5.Input.CustomTypeDefinition
-    GenContractV5.Input.CustomTypeRef
-    GenContractV5.Input.Member
-    GenContractV5.Input.Project
-    GenContractV5.Input.Query
-    GenContractV5.Input.Result
-    GenContractV5.Input.ResultRows
-    GenContractV5.Input.Scalar
-    GenContractV5.Input.Value
-    GenContractV5.Output
-    GenContractV5.Output.File
-    GenContractV5.Output.Output
-    GenContractV5.Output.OutputOk
+    GenContractV4
+    GenContractV4.Fixtures
+    GenContractV4.Input
+    GenContractV4.Output
 
   other-modules:
-    GenContractV5.Fixtures.Fixture1
+    GenContractV4.Fixtures.Fixture1
+    GenContractV4.Input.ArraySettings
+    GenContractV4.Input.CustomType
+    GenContractV4.Input.CustomTypeDefinition
+    GenContractV4.Input.EnumVariant
+    GenContractV4.Input.Member
+    GenContractV4.Input.Migration
+    GenContractV4.Input.Name
+    GenContractV4.Input.Primitive
+    GenContractV4.Input.Project
+    GenContractV4.Input.Query
+    GenContractV4.Input.QueryFragment
+    GenContractV4.Input.Result
+    GenContractV4.Input.ResultRows
+    GenContractV4.Input.ResultRowsCardinality
+    GenContractV4.Input.Scalar
+    GenContractV4.Input.Value
+    GenContractV4.Input.Var
+    GenContractV4.Input.Version
+    GenContractV4.Output.File
+    GenContractV4.Output.Output
+    GenContractV4.Output.OutputOk
+    GenContractV4.Output.Report
 
   build-depends:
+    aeson,
     cases,
     dhall,
     pgenie-gen-contract-base,
-    pgenie-gen-contract-v4,
     pgenie-gen-contract-versioning,
     pgenie-utils,
     QuickCheck,
     rerebase,
 
-test-suite gen-contract-v5-test
+test-suite gen-contract-v4-test
   import: test
   type: exitcode-stdio-1.0
   hs-source-dirs: test
-  main-is: GenContractV5TestMain.hs
+  main-is: GenContractV4TestMain.hs
   other-modules:
-    GenContractV5.Input.AesonSpec
-    GenContractV5.Input.DhallSpec
-    GenContractV5.Input.ScalarSpec
-    GenContractV5.Input.ValueSpec
-    GenContractV5Spec
+    GenContractV4.Input.AesonSpec
+    GenContractV4.Input.DhallSpec
 
   build-tool-depends:
     hspec-discover:hspec-discover
@@ -95,7 +101,4 @@ test-suite gen-contract-v5-test
     either,
     hspec >=2.11 && <3,
     pgenie-gen-contract-v4,
-    pgenie-gen-contract-v5,
-    pgenie-gen-contract-versioning,
-    QuickCheck,
     rerebase,

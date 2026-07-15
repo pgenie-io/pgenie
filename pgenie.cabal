@@ -147,7 +147,6 @@ library gen-contract-v4
     GenContractV4
     GenContractV4.Input
     GenContractV4.Output
-    GenContractV4.Output.Report
 
   other-modules:
     GenContractV4.Input.ArraySettings
@@ -171,6 +170,7 @@ library gen-contract-v4
     GenContractV4.Output.File
     GenContractV4.Output.Output
     GenContractV4.Output.OutputOk
+    GenContractV4.Output.Report
 
   build-depends:
     aeson,
@@ -179,7 +179,6 @@ library gen-contract-v4
     pgenie:gen-contract-versioning,
     pgenie:utils,
     QuickCheck,
-    text-builder,
 
 library gen-bridge
   import: base
@@ -187,7 +186,6 @@ library gen-bridge
   exposed-modules:
     GenBridge
     GenBridge.Contract
-    GenBridge.Contract.Report
 
   other-modules:
     GenBridge.Bundle
@@ -229,7 +227,6 @@ library gen-contract-v5
     GenContractV5.Output.File
     GenContractV5.Output.Output
     GenContractV5.Output.OutputOk
-    GenContractV5.Output.Report
 
   build-depends:
     dhall,
@@ -463,6 +460,7 @@ test-suite gen-bridge-test
     GenBridge.LoadSpec
     GenBridge.LoadV4Spec
     GenContractV5.Fixtures.Project1
+    Test.Report
 
   build-tool-depends:
     hspec-discover:hspec-discover
@@ -475,6 +473,7 @@ test-suite gen-bridge-test
     pgenie:gen-contract-v5,
     pgenie:utils,
     rerebase,
+    text-builder,
 
 test-suite gen-contract-v5-test
   import: test

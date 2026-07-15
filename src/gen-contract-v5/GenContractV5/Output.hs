@@ -14,4 +14,4 @@ where
 import GenContractV5.Output.File (File (..))
 import GenContractV5.Output.Output (Output (..))
 import GenContractV5.Output.OutputOk (OutputOk (..))
-import GenContractV5.Output.Report (Report (..))
+import GenContractV4.Output (Report (..))

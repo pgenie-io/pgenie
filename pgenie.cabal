@@ -144,7 +144,7 @@ library gen-contract-v4
   import: base
   hs-source-dirs: src/gen-contract-v4/
   exposed-modules:
-    GenContractV4.Contract
+    GenContractV4
     GenContractV4.Input
     GenContractV4.Output
     GenContractV4.Output.Report
@@ -213,7 +213,7 @@ library gen-contract-v5
   import: base
   hs-source-dirs: src/gen-contract-v5/
   exposed-modules:
-    GenContractV5.Contract
+    GenContractV5
     GenContractV5.Input
     GenContractV5.Input.CustomType
     GenContractV5.Input.CustomTypeDefinition

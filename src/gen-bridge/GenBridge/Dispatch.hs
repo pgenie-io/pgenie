@@ -12,7 +12,7 @@ where
 
 import Dhall qualified
 import GenBridge.ContractVersion qualified as ContractVersion
-import GenContractV5.Contract (V5)
+import GenContractV5 (V5)
 import GenContractV5.Input qualified as V5.Input
 import GenContractV5.Output qualified as V5.Output
 import GenContractVersioning (HasParent (..))

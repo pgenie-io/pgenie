@@ -10,12 +10,12 @@
 -- 'Nothing' when @dimensionality == 0@. Both directions are total for
 -- this rung (neither ever needs the 'Left' that 'downgradeInput''s
 -- signature allows for future, genuinely-lossy rungs).
-module GenContractV5.Contract
+module GenContractV5
   ( V5,
   )
 where
 
-import GenContractV4.Contract (V4)
+import GenContractV4 (V4)
 import GenContractV5.Input.Project (Project, toV4Project)
 import GenContractV5.Output.Output (Output, fromV4Output)
 import GenContractVersioning (HasParent (..), IsContract (..))

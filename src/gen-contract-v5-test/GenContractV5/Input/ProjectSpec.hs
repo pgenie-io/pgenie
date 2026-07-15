@@ -1,7 +1,7 @@
 module GenContractV5.Input.ProjectSpec (spec) where
 
 import GenContractV4.Input qualified as V4
-import GenContractV5.Contract qualified as V5
+import GenContractV5 qualified as V5
 import GenContractV5.Fixtures.Project1 qualified as Fixtures.Project1
 import GenContractVersioning
 import Test.Hspec

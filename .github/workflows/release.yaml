@@ -103,18 +103,10 @@ jobs:
     with:
       version: ${{ inputs.version }}
 
-  sdist:
-    name: Build sdist
-    needs: validate
-    uses: ./.github/workflows/sdist.yaml
-    secrets: inherit
-    with:
-      version: ${{ inputs.version }}
-
   # ── Publish ──────────────────────────────────────────────────────────────────
   release:
     name: Create GitHub release
-    needs: [build-linux-x64, build-linux-arm64, build-macos-arm64, build-macos-x64, build-windows-x64, sdist]
+    needs: [build-linux-x64, build-linux-arm64, build-macos-arm64, build-macos-x64, build-windows-x64]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

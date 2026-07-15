@@ -43,11 +43,6 @@ jobs:
     uses: ./.github/workflows/build-windows-x64.yaml
     secrets: inherit
 
-  sdist:
-    name: Build sdist
-    uses: ./.github/workflows/sdist.yaml
-    secrets: inherit
-
   build-stack:
     name: Build and test via Stack
     runs-on: ubuntu-latest

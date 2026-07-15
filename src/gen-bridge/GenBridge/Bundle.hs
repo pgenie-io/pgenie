@@ -9,8 +9,7 @@ import Data.Text qualified as Text
 import Dhall qualified
 import Dhall.Core qualified
 import Dhall.JSONToDhall qualified
-import GenBridge.Contract
-import GenBridge.Contract qualified as Output
+import GenBridge.Contract qualified as Gen
 import GenBridge.ContractVersion qualified as ContractVersion
 import GenBridge.Dhall.ExprViews qualified as ExprViews
 import GenBridge.Dispatch qualified as Dispatch
@@ -19,7 +18,7 @@ import Language.Haskell.TH.Syntax qualified as TH
 import Utils.Prelude
 
 -- | Imports Dhall at compile time and constructs a typed Haskell compiler function from it.
-bundle :: Location.Location -> Maybe Text -> TH.Code TH.Q Gen
+bundle :: Location.Location -> Maybe Text -> TH.Code TH.Q Gen.Gen
 bundle location hash = TH.Code do
   let code = mconcat [Location.toCode location, maybe "" (\h -> " " <> h) hash]
 
@@ -59,7 +58,7 @@ bundle location hash = TH.Code do
   TH.examineCode
     [||
     \config -> do
-      let buildGen :: forall input output. (Dhall.ToDhall input, Dhall.FromDhall output) => Dispatch.Adapters input output -> Either Text Gen
+      let buildGen :: forall input output. (Dhall.ToDhall input, Dhall.FromDhall output) => Dispatch.Adapters input output -> Either Text Gen.Gen
           buildGen Dispatch.Adapters {projectInput, liftOutput} = Right \config -> do
             configValExpr <- case config of
               Nothing ->
@@ -89,7 +88,7 @@ bundle location hash = TH.Code do
               Just (compileFunc :: input -> output) ->
                 Right \project ->
                   case projectInput project of
-                    Left err -> Output.ErrOutput Output.Report {path = [], message = err}
+                    Left err -> Gen.ErrOutput Gen.Report {path = [], message = err}
                     Right input -> liftOutput (compileFunc input)
 
       case Dispatch.dispatch major minor buildGen of

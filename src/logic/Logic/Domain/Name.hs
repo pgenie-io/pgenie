@@ -14,7 +14,7 @@ module Logic.Domain.Name
 where
 
 import Data.Text qualified as Text
-import GenBridge.Contract qualified as Gen.Input
+import GenBridge.Contract qualified as Gen
 import Logic.Domain.Name.Megaparsec qualified as Megaparsec
 import Test.Hspec
 import Test.QuickCheck qualified as Qc
@@ -136,9 +136,9 @@ toTextBuilderInScreamingKebabCase = TextBuilder.intercalateMap "-" (to . Text.to
 toTextBuilderInCamelSnakeCase :: Name -> TextBuilder
 toTextBuilderInCamelSnakeCase = TextBuilder.intercalateMap "_" (to . Text.toTitle) . toPartsNonEmpty
 
-toGenName :: Name -> Gen.Input.Name
+toGenName :: Name -> Gen.Name
 toGenName name =
-  Gen.Input.Name
+  Gen.Name
     { inCamelCase = to @Text (toTextBuilderInCamelCase name),
       inPascalCase = to @Text (toTextBuilderInPascalCase name),
       inKebabCase = to @Text (toTextBuilderInKebabCase name),

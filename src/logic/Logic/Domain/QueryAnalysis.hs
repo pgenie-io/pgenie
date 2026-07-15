@@ -6,20 +6,20 @@ module Logic.Domain.QueryAnalysis
   )
 where
 
-import GenBridge.Contract qualified as Gen.Input
+import GenBridge.Contract qualified as Gen
 import Utils.Prelude
 
 -- | Inferred parameter and result types for a query.
 data InferredQueryTypes = InferredQueryTypes
   { params :: [InferredParam],
-    resultColumns :: [Gen.Input.Member],
-    mentionedCustomTypes :: [Gen.Input.CustomType]
+    resultColumns :: [Gen.Member],
+    mentionedCustomTypes :: [Gen.CustomType]
   }
   deriving stock (Eq, Show)
 
 -- | A single inferred query parameter.
 data InferredParam = InferredParam
   { isNullable :: Bool,
-    type_ :: Gen.Input.Value
+    type_ :: Gen.Value
   }
   deriving stock (Eq, Show)

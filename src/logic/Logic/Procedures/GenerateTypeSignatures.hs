@@ -11,7 +11,7 @@ module Logic.Procedures.GenerateTypeSignatures
 where
 
 import AlgebraicPath qualified as Path
-import GenBridge.Contract qualified as Gen.Input
+import GenBridge.Contract qualified as Gen
 import Logic.Capabilities.Fs (FsOps (..))
 import Logic.Capabilities.Staging (Stages (..))
 import Logic.Domain.CustomTypeSignature qualified as CustomTypeSignature
@@ -23,13 +23,13 @@ type Port m = (Stages m, FsOps m, MonadError Report m)
 
 -- | Input to the custom-type signature reconciliation procedure.
 data Params = Params
-  { customTypes :: [Gen.Input.CustomType]
+  { customTypes :: [Gen.CustomType]
   }
 
 -- | Output: the custom types to use, each merged with any existing
 -- signature file.
 data Result = Result
-  { refinedCustomTypes :: [Gen.Input.CustomType]
+  { refinedCustomTypes :: [Gen.CustomType]
   }
 
 -- | For each custom type: write a new signature file if none exists yet;

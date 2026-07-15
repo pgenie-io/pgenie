@@ -11,7 +11,7 @@ module Logic.Procedures.GenerateQuerySignatures
 where
 
 import AlgebraicPath qualified as Path
-import GenBridge.Contract qualified as Gen.Input
+import GenBridge.Contract qualified as Gen
 import Logic.Capabilities.Fs (FsOps (..))
 import Logic.Capabilities.Reporting (Warns (..))
 import Logic.Domain.QuerySignature qualified as QuerySignature
@@ -25,15 +25,15 @@ type Port m = (MonadError Report m, Warns m, FsOps m)
 data Params = Params
   { sigPath :: Path,
     inferredSig :: QuerySignature.Signature,
-    inferredParams :: [Gen.Input.Member],
-    inferredResult :: Gen.Input.Result
+    inferredParams :: [Gen.Member],
+    inferredResult :: Gen.Result
   }
 
 -- | Output: the parameters and result to use (merged with any existing
 -- signature file), and whether the query is idempotent.
 data Result = Result
-  { params :: [Gen.Input.Member],
-    result :: Gen.Input.Result,
+  { params :: [Gen.Member],
+    result :: Gen.Result,
     idempotent :: Bool
   }
 

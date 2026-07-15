@@ -7,7 +7,7 @@ import Data.Text qualified as Text
 import Data.Text.Encoding qualified as TextEncoding
 import Database.PostgreSQL.LibPQ qualified as Pq
 import Fx
-import GenBridge.Contract qualified as Gen.Input
+import GenBridge.Contract qualified as Gen
 import Infra.Adapters.Analyser qualified as Analyser
 import Logic.Capabilities.Migrations
 import Logic.Capabilities.QueryAnalysis
@@ -155,27 +155,27 @@ spec = describe "inferQueryTypes" do
         pure (ltreeQueryTypes, existingExtensionQueryTypes, ltreeTableQueryTypes)
 
     map (\param -> (param.isNullable, param.type_)) ltreeQueryTypes.params
-      `shouldBe` [ (True, primitiveValue Gen.Input.LtreePrimitive),
-                   (True, arrayValue 1 Gen.Input.LtreePrimitive)
+      `shouldBe` [ (True, primitiveValue Gen.LtreePrimitive),
+                   (True, arrayValue 1 Gen.LtreePrimitive)
                  ]
     map (\column -> (column.pgName, column.isNullable, column.value)) ltreeQueryTypes.resultColumns
-      `shouldBe` [ ("path", True, primitiveValue Gen.Input.LtreePrimitive),
-                   ("path_array", True, arrayValue 1 Gen.Input.LtreePrimitive)
+      `shouldBe` [ ("path", True, primitiveValue Gen.LtreePrimitive),
+                   ("path_array", True, arrayValue 1 Gen.LtreePrimitive)
                  ]
     ltreeQueryTypes.mentionedCustomTypes `shouldBe` []
 
     map (\param -> (param.isNullable, param.type_)) existingExtensionQueryTypes.params
-      `shouldBe` [(True, primitiveValue Gen.Input.CitextPrimitive)]
+      `shouldBe` [(True, primitiveValue Gen.CitextPrimitive)]
     map (\column -> (column.pgName, column.isNullable, column.value)) existingExtensionQueryTypes.resultColumns
-      `shouldBe` [ ("ci", True, primitiveValue Gen.Input.CitextPrimitive),
-                   ("attrs", True, primitiveValue Gen.Input.HstorePrimitive)
+      `shouldBe` [ ("ci", True, primitiveValue Gen.CitextPrimitive),
+                   ("attrs", True, primitiveValue Gen.HstorePrimitive)
                  ]
     existingExtensionQueryTypes.mentionedCustomTypes `shouldBe` []
 
     ltreeTableQueryTypes.params `shouldBe` []
     map (\column -> (column.pgName, column.isNullable, column.value)) ltreeTableQueryTypes.resultColumns
-      `shouldBe` [ ("path", False, primitiveValue Gen.Input.LtreePrimitive),
-                   ("ancestors", True, arrayValue 1 Gen.Input.LtreePrimitive)
+      `shouldBe` [ ("path", False, primitiveValue Gen.LtreePrimitive),
+                   ("ancestors", True, arrayValue 1 Gen.LtreePrimitive)
                  ]
     ltreeTableQueryTypes.mentionedCustomTypes `shouldBe` []
 
@@ -215,27 +215,27 @@ spec = describe "inferQueryTypes" do
               pure (postgisQueryTypes, postgisTableQueryTypes)
 
         map (\param -> (param.isNullable, param.type_)) postgisQueryTypes.params
-          `shouldBe` [ (True, primitiveValue Gen.Input.GeometryPrimitive),
-                       (True, primitiveValue Gen.Input.GeographyPrimitive),
-                       (True, primitiveValue Gen.Input.Box2DPrimitive),
-                       (True, primitiveValue Gen.Input.Box3DPrimitive),
-                       (True, arrayValue 1 Gen.Input.GeometryPrimitive)
+          `shouldBe` [ (True, primitiveValue Gen.GeometryPrimitive),
+                       (True, primitiveValue Gen.GeographyPrimitive),
+                       (True, primitiveValue Gen.Box2DPrimitive),
+                       (True, primitiveValue Gen.Box3DPrimitive),
+                       (True, arrayValue 1 Gen.GeometryPrimitive)
                      ]
         map (\column -> (column.pgName, column.isNullable, column.value)) postgisQueryTypes.resultColumns
-          `shouldBe` [ ("geom", True, primitiveValue Gen.Input.GeometryPrimitive),
-                       ("geog", True, primitiveValue Gen.Input.GeographyPrimitive),
-                       ("bbox2d", True, primitiveValue Gen.Input.Box2DPrimitive),
-                       ("bbox3d", True, primitiveValue Gen.Input.Box3DPrimitive),
-                       ("geom_array", True, arrayValue 1 Gen.Input.GeometryPrimitive)
+          `shouldBe` [ ("geom", True, primitiveValue Gen.GeometryPrimitive),
+                       ("geog", True, primitiveValue Gen.GeographyPrimitive),
+                       ("bbox2d", True, primitiveValue Gen.Box2DPrimitive),
+                       ("bbox3d", True, primitiveValue Gen.Box3DPrimitive),
+                       ("geom_array", True, arrayValue 1 Gen.GeometryPrimitive)
                      ]
         postgisQueryTypes.mentionedCustomTypes `shouldBe` []
 
         postgisTableQueryTypes.params `shouldBe` []
         map (\column -> (column.pgName, column.isNullable, column.value)) postgisTableQueryTypes.resultColumns
-          `shouldBe` [ ("geom", False, primitiveValue Gen.Input.GeometryPrimitive),
-                       ("geog", True, primitiveValue Gen.Input.GeographyPrimitive),
-                       ("bbox2d", True, primitiveValue Gen.Input.Box2DPrimitive),
-                       ("bbox3d", True, primitiveValue Gen.Input.Box3DPrimitive)
+          `shouldBe` [ ("geom", False, primitiveValue Gen.GeometryPrimitive),
+                       ("geog", True, primitiveValue Gen.GeographyPrimitive),
+                       ("bbox2d", True, primitiveValue Gen.Box2DPrimitive),
+                       ("bbox3d", True, primitiveValue Gen.Box3DPrimitive)
                      ]
         postgisTableQueryTypes.mentionedCustomTypes `shouldBe` []
 
@@ -399,18 +399,18 @@ expectRight = \case
     expectationFailure ("Expected inference to succeed, but failed: " <> show err)
     fail "Expected successful inference"
 
-primitiveValue :: Gen.Input.Primitive -> Gen.Input.Value
+primitiveValue :: Gen.Primitive -> Gen.Value
 primitiveValue primitive =
-  Gen.Input.Value
+  Gen.Value
     { dimensionality = 0,
       elementIsNullable = False,
-      scalar = Gen.Input.PrimitiveScalar primitive
+      scalar = Gen.PrimitiveScalar primitive
     }
 
-arrayValue :: Natural -> Gen.Input.Primitive -> Gen.Input.Value
+arrayValue :: Natural -> Gen.Primitive -> Gen.Value
 arrayValue dimensionality primitive =
-  Gen.Input.Value
+  Gen.Value
     { dimensionality,
       elementIsNullable = True,
-      scalar = Gen.Input.PrimitiveScalar primitive
+      scalar = Gen.PrimitiveScalar primitive
     }

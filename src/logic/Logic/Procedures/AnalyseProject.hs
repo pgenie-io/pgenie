@@ -16,7 +16,7 @@ import Control.Monad.Parallel qualified as MonadParallel
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as Text
-import GenBridge.Contract qualified as Gen.Input
+import GenBridge.Contract qualified as Gen
 import Logic.Capabilities.Fs (FsOps (..))
 import Logic.Capabilities.IndexCatalog (LoadsIndexes (..))
 import Logic.Capabilities.Migrations (ExecutesMigrations (..))
@@ -55,7 +55,7 @@ type Port m =
 -- | Output of project analysis: the resolved generator model, any detected
 -- sequential scans keyed by query name, and the current index catalog.
 data Result = Result
-  { project :: Gen.Input.Project,
+  { project :: Gen.Project,
     seqScanFindings :: [(Text, SeqScanFinding)],
     indexes :: [IndexInfo]
   }
@@ -178,20 +178,20 @@ run Params {projectFile} =
                         inferSeqScanFindingsFromSql nativeTemplate
                           & map (Name.inSnakeCase queryListed.name,)
 
-              result :: Gen.Input.Result <-
+              result :: Gen.Result <-
                 let rowsByCardinality cardinality =
                       case nonEmpty resultColumns of
                         Nothing ->
                           Nothing
                         Just columns ->
-                          Just (Gen.Input.ResultRows cardinality columns)
+                          Just (Gen.ResultRows cardinality columns)
                     classifyResult affectsRows = \case
                       Just rows ->
-                        Gen.Input.RowsResult rows
+                        Gen.RowsResult rows
                       Nothing ->
                         if affectsRows
-                          then Gen.Input.RowsAffectedResult
-                          else Gen.Input.VoidResult
+                          then Gen.RowsAffectedResult
+                          else Gen.VoidResult
                  in case SyntaxAnalyser.resolveText nativeTemplate of
                       Left err -> do
                         warn
@@ -201,28 +201,28 @@ run Params {projectFile} =
                               Nothing
                               [("error", err)]
                           )
-                        pure $ classifyResult True (rowsByCardinality Gen.Input.MultipleResultRowsCardinality)
+                        pure $ classifyResult True (rowsByCardinality Gen.MultipleResultRowsCardinality)
                       Right SyntaxAnalyser.QuerySyntaxAnalysis {affectsRows, resultRowAmount} ->
                         case resultRowAmount of
                           SyntaxAnalyser.SpecificRowAmount 0 ->
                             pure $ classifyResult affectsRows Nothing
                           SyntaxAnalyser.SpecificRowAmount 1 ->
-                            pure $ classifyResult affectsRows (rowsByCardinality Gen.Input.SingleResultRowsCardinality)
+                            pure $ classifyResult affectsRows (rowsByCardinality Gen.SingleResultRowsCardinality)
                           SyntaxAnalyser.SpecificRowAmount _ ->
-                            pure $ classifyResult affectsRows (rowsByCardinality Gen.Input.MultipleResultRowsCardinality)
+                            pure $ classifyResult affectsRows (rowsByCardinality Gen.MultipleResultRowsCardinality)
                           SyntaxAnalyser.UpToRowAmount 0 ->
                             pure $ classifyResult affectsRows Nothing
                           SyntaxAnalyser.UpToRowAmount 1 ->
-                            pure $ classifyResult affectsRows (rowsByCardinality Gen.Input.OptionalResultRowsCardinality)
+                            pure $ classifyResult affectsRows (rowsByCardinality Gen.OptionalResultRowsCardinality)
                           SyntaxAnalyser.UpToRowAmount _ ->
-                            pure $ classifyResult affectsRows (rowsByCardinality Gen.Input.MultipleResultRowsCardinality)
+                            pure $ classifyResult affectsRows (rowsByCardinality Gen.MultipleResultRowsCardinality)
                           SyntaxAnalyser.AnyRowAmount ->
-                            pure $ classifyResult affectsRows (rowsByCardinality Gen.Input.MultipleResultRowsCardinality)
+                            pure $ classifyResult affectsRows (rowsByCardinality Gen.MultipleResultRowsCardinality)
 
               let interpretedParams =
                     zipWith
                       ( \param name ->
-                          Gen.Input.Member
+                          Gen.Member
                             { name = Name.toGenName name,
                               pgName = Name.inSnakeCase name,
                               isNullable = param.isNullable,
@@ -245,7 +245,7 @@ run Params {projectFile} =
                     }
 
               pure
-                ( Gen.Input.Query
+                ( Gen.Query
                     { name = Name.toGenName queryListed.name,
                       srcPath = Path.toText queryListed.filePath,
                       identity = False,
@@ -277,7 +277,7 @@ run Params {projectFile} =
     pure
       Result
         { project =
-            Gen.Input.Project
+            Gen.Project
               { space = Name.toGenName projectFile.space,
                 name = Name.toGenName projectFile.name,
                 version = projectFile.version,
@@ -287,7 +287,7 @@ run Params {projectFile} =
                   migrationsLoaded
                     & fmap
                       ( \(migrationPath, migrationSql) ->
-                          Gen.Input.Migration
+                          Gen.Migration
                             { name = Path.toBasename migrationPath,
                               sql = migrationSql
                             }

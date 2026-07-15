@@ -7,9 +7,8 @@ import Data.Aeson qualified as Aeson
 import Data.Aeson.QQ.Simple (aesonQQ)
 import Data.Text.IO qualified as Text
 import GenBridge qualified as GenBridge
-import GenBridge.Contract qualified as Input
-import GenBridge.Contract qualified as Output
-import GenBridge.Contract.Report qualified as Output.Report
+import GenBridge.Contract qualified as Gen
+import GenBridge.Contract.Report qualified as Gen.Report
 import GenContractV5.Fixtures.Project1 qualified as Fixtures.Project1
 import System.Exit qualified as Exit
 import Test.Hspec
@@ -32,20 +31,20 @@ spec = do
 
       files <-
         case output of
-          Output.ErrOutput report -> do
+          Gen.ErrOutput report -> do
             putStrLn "Generation failed!"
-            Text.putStrLn (Output.Report.toErrorYamlText report)
+            Text.putStrLn (Gen.Report.toErrorYamlText report)
             Exit.exitFailure
-          Output.OkOutput (Output.OutputOk {warnings, value}) -> do
+          Gen.OkOutput (Gen.OutputOk {warnings, value}) -> do
             putStrLn "Generation succeeded!"
             forM_ warnings \warning -> do
-              Text.putStrLn (Output.Report.toWarningYamlText warning)
+              Text.putStrLn (Gen.Report.toWarningYamlText warning)
 
             pure value
 
       shouldBe
         files
-        [ Output.File
+        [ Gen.File
             { path = "output.yaml",
               content =
                 "config:\n\
@@ -54,7 +53,7 @@ spec = do
             }
         ]
 
-gen :: Maybe Aeson.Value -> Either Text (Input.Project -> Output.Output)
+gen :: Maybe Aeson.Value -> Either Text (Gen.Project -> Gen.Output)
 gen =
   $$( GenBridge.bundle
         (GenBridge.LocationPath "./src/gen-bridge-test/Gen.dhall")

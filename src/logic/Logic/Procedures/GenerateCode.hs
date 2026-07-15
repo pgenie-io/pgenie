@@ -16,9 +16,8 @@ import AlgebraicPath qualified as Path
 import Control.Monad.Parallel qualified as MonadParallel
 import Data.Aeson.Text qualified as Aeson.Text
 import Data.Map.Strict qualified as Map
-import GenBridge qualified as Gen
-import GenBridge.Contract qualified as Gen.Input
-import GenBridge.Contract qualified as Gen.Output
+import GenBridge qualified as GenBridge
+import GenBridge.Contract qualified as Gen
 import Logic.Capabilities.Fs (FsOps (..))
 import Logic.Capabilities.GeneratorRuntime (LoadsGen (..))
 import Logic.Capabilities.Reporting (Warns (..))
@@ -37,7 +36,7 @@ type Port m = (MonadParallel m, Stages m, Warns m, FsOps m, MonadError Report m,
 -- warnings its generator emitted.
 data Artifact = Artifact
   { name :: Text,
-    warnings :: [Gen.Output.Report],
+    warnings :: [Gen.Report],
     paths :: [Path]
   }
   deriving stock (Eq, Show)
@@ -45,7 +44,7 @@ data Artifact = Artifact
 -- | Input to the code generation procedure.
 data Params = Params
   { projectFile :: ProjectFile.ProjectFile,
-    project :: Gen.Input.Project
+    project :: Gen.Project
   }
 
 -- | Output of the code generation procedure.
@@ -68,8 +67,8 @@ run Params {projectFile, project} =
       MonadParallel.forM projectFile.artifacts \artifact -> do
         let name = Name.inSnakeCase artifact.name
             genUrl = case artifact.gen of
-              Gen.LocationUrl url -> url
-              Gen.LocationPath path -> Path.toText path
+              GenBridge.LocationUrl url -> url
+              GenBridge.LocationPath path -> Path.toText path
             maybeHash = Map.lookup genUrl existingHashes
         stage name 2 do
           compileFnWithHash <-
@@ -92,7 +91,7 @@ run Params {projectFile, project} =
             let (compileFn, genUrl, newHash) = compileFnWithHash
                 output = compileFn project
             case output of
-              Gen.Output.ErrOutput report ->
+              Gen.ErrOutput report ->
                 throwError
                   ( Report
                       report.path
@@ -100,7 +99,7 @@ run Params {projectFile, project} =
                       Nothing
                       []
                   )
-              Gen.Output.OkOutput Gen.Output.OutputOk {warnings, value = generatedFiles} -> do
+              Gen.OkOutput Gen.OutputOk {warnings, value = generatedFiles} -> do
                 for_ warnings \genReport ->
                   warn
                     ( Report
@@ -209,22 +208,22 @@ spec :: Spec
 spec = do
   describe "run" do
     it "emits generator warnings on success" do
-      let warning = Gen.Output.Report {path = ["unit", "foo"], message = "Unsupported unit skipped"}
+      let warning = Gen.Report {path = ["unit", "foo"], message = "Unsupported unit skipped"}
           genReport = Report {path = ["unit", "foo"], message = "Unsupported unit skipped", suggestion = Nothing, details = []}
-          gen = stubGen (Gen.Output.OkOutput Gen.Output.OutputOk {warnings = [warning], value = []})
+          gen = stubGen (Gen.OkOutput Gen.OutputOk {warnings = [warning], value = []})
           projectFile =
             ProjectFile.ProjectFile
               { space = "space",
                 name = "project",
-                version = Gen.Input.Version 0 0 0,
-                artifacts = [ProjectFile.Artifact {name = "my_artifact", gen = Gen.LocationUrl "http://example.com/gen", config = Nothing}],
+                version = Gen.Version 0 0 0,
+                artifacts = [ProjectFile.Artifact {name = "my_artifact", gen = GenBridge.LocationUrl "http://example.com/gen", config = Nothing}],
                 postgres = Nothing
               }
           project =
-            Gen.Input.Project
+            Gen.Project
               { space = Name.toGenName "space",
                 name = Name.toGenName "project",
-                version = Gen.Input.Version 0 0 0,
+                version = Gen.Version 0 0 0,
                 customTypes = [],
                 queries = [],
                 migrations = []
@@ -235,21 +234,21 @@ spec = do
       state.warnings `shouldBe` [genReport]
 
     it "fails without emitting warnings when the generator errors" do
-      let errorReport = Gen.Output.Report {path = ["err"], message = "boom"}
-          gen = stubGen (Gen.Output.ErrOutput errorReport)
+      let errorReport = Gen.Report {path = ["err"], message = "boom"}
+          gen = stubGen (Gen.ErrOutput errorReport)
           projectFile =
             ProjectFile.ProjectFile
               { space = "space",
                 name = "project",
-                version = Gen.Input.Version 0 0 0,
-                artifacts = [ProjectFile.Artifact {name = "my_artifact", gen = Gen.LocationUrl "http://example.com/gen", config = Nothing}],
+                version = Gen.Version 0 0 0,
+                artifacts = [ProjectFile.Artifact {name = "my_artifact", gen = GenBridge.LocationUrl "http://example.com/gen", config = Nothing}],
                 postgres = Nothing
               }
           project =
-            Gen.Input.Project
+            Gen.Project
               { space = Name.toGenName "space",
                 name = Name.toGenName "project",
-                version = Gen.Input.Version 0 0 0,
+                version = Gen.Version 0 0 0,
                 customTypes = [],
                 queries = [],
                 migrations = []
@@ -259,5 +258,5 @@ spec = do
       result `shouldBe` Left (Report {path = ["err"], message = "boom", suggestion = Nothing, details = []})
       state.warnings `shouldBe` []
   where
-    stubGen :: Gen.Output.Output -> Gen.Gen
+    stubGen :: Gen.Output -> Gen.Gen
     stubGen output _config = Right (const output)

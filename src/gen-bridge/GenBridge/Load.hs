@@ -8,8 +8,7 @@ import Dhall qualified
 import Dhall.Core qualified
 import Dhall.Import qualified
 import Dhall.JSONToDhall qualified
-import GenBridge.Contract
-import GenBridge.Contract qualified as Output
+import GenBridge.Contract qualified as Gen
 import GenBridge.ContractVersion qualified as ContractVersion
 import GenBridge.Dhall.ExprViews qualified as ExprViews
 import GenBridge.Dispatch qualified as Dispatch
@@ -31,7 +30,7 @@ load ::
   (Text -> IO ()) ->
   -- | Warning logging callback to report non-fatal issues during loading.
   (Text -> IO ()) ->
-  IO (Gen, Text)
+  IO (Gen.Gen, Text)
 load location hash echo warn = do
   let code =
         mconcat [Location.toCode location, maybe "" (\h -> " " <> h) hash]
@@ -69,7 +68,7 @@ load location hash echo warn = do
   let normalizedExpr = Dhall.Core.alphaNormalize (Dhall.Core.normalize genExpr)
       hash = Dhall.Import.hashExpressionToCode normalizedExpr
 
-      buildGen :: forall input output. (Dhall.ToDhall input, Dhall.FromDhall output) => Dispatch.Adapters input output -> Either Text Gen
+      buildGen :: forall input output. (Dhall.ToDhall input, Dhall.FromDhall output) => Dispatch.Adapters input output -> Either Text Gen.Gen
       buildGen Dispatch.Adapters {projectInput, liftOutput} = Right \config -> do
         configValExpr <- case config of
           Nothing ->
@@ -99,7 +98,7 @@ load location hash echo warn = do
           Just (compileFunc :: input -> output) ->
             Right \project ->
               case projectInput project of
-                Left err -> Output.ErrOutput Output.Report {path = [], message = err}
+                Left err -> Gen.ErrOutput Gen.Report {path = [], message = err}
                 Right input -> liftOutput (compileFunc input)
 
   gen <- case Dispatch.dispatch major minor buildGen of

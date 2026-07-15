@@ -18,7 +18,7 @@ import Control.Foldl qualified as Fold
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as Text
-import GenBridge.Contract qualified as Gen.Input
+import GenBridge.Contract qualified as Gen
 import Logic.Domain.Name qualified as Name
 import Logic.Domain.Report qualified as Report
 import Test.Hspec
@@ -71,7 +71,7 @@ signatureFilePath queryPath =
 -- * Conversion from inferred types
 
 -- | Create a signature from inferred query types.
-fromInferred :: [Gen.Input.Member] -> Gen.Input.Result -> Signature
+fromInferred :: [Gen.Member] -> Gen.Result -> Signature
 fromInferred params result =
   Signature
     { idempotent = False,
@@ -79,26 +79,26 @@ fromInferred params result =
       result = resultToSigResult result
     }
   where
-    memberToFieldEntry :: Gen.Input.Member -> (Text, FieldSig)
+    memberToFieldEntry :: Gen.Member -> (Text, FieldSig)
     memberToFieldEntry member =
       ( member.pgName,
         fieldSigFromValue member.value (not member.isNullable)
       )
 
-    resultRowsToResultSig :: Gen.Input.ResultRows -> ResultSig
+    resultRowsToResultSig :: Gen.ResultRows -> ResultSig
     resultRowsToResultSig rr =
       ResultSig
         { cardinality = cardinalityFromGenInput rr.cardinality,
           columns = map memberToFieldEntry (toList rr.columns)
         }
 
-    resultToSigResult :: Gen.Input.Result -> Maybe ResultSig
+    resultToSigResult :: Gen.Result -> Maybe ResultSig
     resultToSigResult = \case
-      Gen.Input.RowsResult rows -> Just (resultRowsToResultSig rows)
-      Gen.Input.RowsAffectedResult -> Nothing
-      Gen.Input.VoidResult -> Nothing
+      Gen.RowsResult rows -> Just (resultRowsToResultSig rows)
+      Gen.RowsAffectedResult -> Nothing
+      Gen.VoidResult -> Nothing
 
-fieldSigFromValue :: Gen.Input.Value -> Bool -> FieldSig
+fieldSigFromValue :: Gen.Value -> Bool -> FieldSig
 fieldSigFromValue value fieldNotNull
   | value.dimensionality > 0 =
       ArrayFieldSig
@@ -114,94 +114,94 @@ fieldSigFromValue value fieldNotNull
 
 -- * Cardinality conversion
 
-cardinalityFromGenInput :: Gen.Input.ResultRowsCardinality -> Cardinality
+cardinalityFromGenInput :: Gen.ResultRowsCardinality -> Cardinality
 cardinalityFromGenInput = \case
-  Gen.Input.OptionalResultRowsCardinality -> CardinalityZeroOrOne
-  Gen.Input.SingleResultRowsCardinality -> CardinalityOne
-  Gen.Input.MultipleResultRowsCardinality -> CardinalityMany
+  Gen.OptionalResultRowsCardinality -> CardinalityZeroOrOne
+  Gen.SingleResultRowsCardinality -> CardinalityOne
+  Gen.MultipleResultRowsCardinality -> CardinalityMany
 
-cardinalityToGenInput :: Cardinality -> Gen.Input.ResultRowsCardinality
+cardinalityToGenInput :: Cardinality -> Gen.ResultRowsCardinality
 cardinalityToGenInput = \case
-  CardinalityZeroOrOne -> Gen.Input.OptionalResultRowsCardinality
-  CardinalityOne -> Gen.Input.SingleResultRowsCardinality
-  CardinalityMany -> Gen.Input.MultipleResultRowsCardinality
+  CardinalityZeroOrOne -> Gen.OptionalResultRowsCardinality
+  CardinalityOne -> Gen.SingleResultRowsCardinality
+  CardinalityMany -> Gen.MultipleResultRowsCardinality
 
 -- * Value to type name
 
-valueToTypeName :: Gen.Input.Value -> Text
+valueToTypeName :: Gen.Value -> Text
 valueToTypeName value =
   scalarToTypeName value.scalar <> Text.replicate (fromIntegral value.dimensionality) "[]"
 
-scalarToTypeName :: Gen.Input.Scalar -> Text
+scalarToTypeName :: Gen.Scalar -> Text
 scalarToTypeName = \case
-  Gen.Input.PrimitiveScalar prim -> primitiveToTypeName prim
-  Gen.Input.CustomScalar ref -> genNameToText ref.name
+  Gen.PrimitiveScalar prim -> primitiveToTypeName prim
+  Gen.CustomScalar ref -> genNameToText ref.name
 
-primitiveToTypeName :: Gen.Input.Primitive -> Text
+primitiveToTypeName :: Gen.Primitive -> Text
 primitiveToTypeName = \case
-  Gen.Input.BoolPrimitive -> "bool"
-  Gen.Input.ByteaPrimitive -> "bytea"
-  Gen.Input.CharPrimitive -> "char"
-  Gen.Input.CidrPrimitive -> "cidr"
-  Gen.Input.DatePrimitive -> "date"
-  Gen.Input.DatemultirangePrimitive -> "datemultirange"
-  Gen.Input.DaterangePrimitive -> "daterange"
-  Gen.Input.Float4Primitive -> "float4"
-  Gen.Input.Float8Primitive -> "float8"
-  Gen.Input.InetPrimitive -> "inet"
-  Gen.Input.Int2Primitive -> "int2"
-  Gen.Input.Int4Primitive -> "int4"
-  Gen.Input.Int4multirangePrimitive -> "int4multirange"
-  Gen.Input.Int4rangePrimitive -> "int4range"
-  Gen.Input.Int8Primitive -> "int8"
-  Gen.Input.Int8multirangePrimitive -> "int8multirange"
-  Gen.Input.Int8rangePrimitive -> "int8range"
-  Gen.Input.IntervalPrimitive -> "interval"
-  Gen.Input.JsonPrimitive -> "json"
-  Gen.Input.JsonbPrimitive -> "jsonb"
-  Gen.Input.MacaddrPrimitive -> "macaddr"
-  Gen.Input.Macaddr8Primitive -> "macaddr8"
-  Gen.Input.MoneyPrimitive -> "money"
-  Gen.Input.NumericPrimitive -> "numeric"
-  Gen.Input.NummultirangePrimitive -> "nummultirange"
-  Gen.Input.NumrangePrimitive -> "numrange"
-  Gen.Input.TextPrimitive -> "text"
-  Gen.Input.TimePrimitive -> "time"
-  Gen.Input.TimestampPrimitive -> "timestamp"
-  Gen.Input.TimestamptzPrimitive -> "timestamptz"
-  Gen.Input.TimetzPrimitive -> "timetz"
-  Gen.Input.TsmultirangePrimitive -> "tsmultirange"
-  Gen.Input.TsrangePrimitive -> "tsrange"
-  Gen.Input.TstzmultirangePrimitive -> "tstzmultirange"
-  Gen.Input.TstzrangePrimitive -> "tstzrange"
-  Gen.Input.UuidPrimitive -> "uuid"
-  Gen.Input.XmlPrimitive -> "xml"
-  Gen.Input.VarcharPrimitive -> "varchar"
-  Gen.Input.BpcharPrimitive -> "bpchar"
-  Gen.Input.BitPrimitive -> "bit"
-  Gen.Input.VarbitPrimitive -> "varbit"
-  Gen.Input.TsvectorPrimitive -> "tsvector"
-  Gen.Input.TsqueryPrimitive -> "tsquery"
-  Gen.Input.PointPrimitive -> "point"
-  Gen.Input.LinePrimitive -> "line"
-  Gen.Input.LsegPrimitive -> "lseg"
-  Gen.Input.BoxPrimitive -> "box"
-  Gen.Input.Box2DPrimitive -> "box2d"
-  Gen.Input.Box3DPrimitive -> "box3d"
-  Gen.Input.PathPrimitive -> "path"
-  Gen.Input.LtreePrimitive -> "ltree"
-  Gen.Input.PolygonPrimitive -> "polygon"
-  Gen.Input.CirclePrimitive -> "circle"
-  Gen.Input.PgSnapshotPrimitive -> "pg_snapshot"
-  Gen.Input.PgLsnPrimitive -> "pg_lsn"
-  Gen.Input.NamePrimitive -> "name"
-  Gen.Input.HstorePrimitive -> "hstore"
-  Gen.Input.CitextPrimitive -> "citext"
-  Gen.Input.GeometryPrimitive -> "geometry"
-  Gen.Input.GeographyPrimitive -> "geography"
-  Gen.Input.OidPrimitive -> "oid"
+  Gen.BoolPrimitive -> "bool"
+  Gen.ByteaPrimitive -> "bytea"
+  Gen.CharPrimitive -> "char"
+  Gen.CidrPrimitive -> "cidr"
+  Gen.DatePrimitive -> "date"
+  Gen.DatemultirangePrimitive -> "datemultirange"
+  Gen.DaterangePrimitive -> "daterange"
+  Gen.Float4Primitive -> "float4"
+  Gen.Float8Primitive -> "float8"
+  Gen.InetPrimitive -> "inet"
+  Gen.Int2Primitive -> "int2"
+  Gen.Int4Primitive -> "int4"
+  Gen.Int4multirangePrimitive -> "int4multirange"
+  Gen.Int4rangePrimitive -> "int4range"
+  Gen.Int8Primitive -> "int8"
+  Gen.Int8multirangePrimitive -> "int8multirange"
+  Gen.Int8rangePrimitive -> "int8range"
+  Gen.IntervalPrimitive -> "interval"
+  Gen.JsonPrimitive -> "json"
+  Gen.JsonbPrimitive -> "jsonb"
+  Gen.MacaddrPrimitive -> "macaddr"
+  Gen.Macaddr8Primitive -> "macaddr8"
+  Gen.MoneyPrimitive -> "money"
+  Gen.NumericPrimitive -> "numeric"
+  Gen.NummultirangePrimitive -> "nummultirange"
+  Gen.NumrangePrimitive -> "numrange"
+  Gen.TextPrimitive -> "text"
+  Gen.TimePrimitive -> "time"
+  Gen.TimestampPrimitive -> "timestamp"
+  Gen.TimestamptzPrimitive -> "timestamptz"
+  Gen.TimetzPrimitive -> "timetz"
+  Gen.TsmultirangePrimitive -> "tsmultirange"
+  Gen.TsrangePrimitive -> "tsrange"
+  Gen.TstzmultirangePrimitive -> "tstzmultirange"
+  Gen.TstzrangePrimitive -> "tstzrange"
+  Gen.UuidPrimitive -> "uuid"
+  Gen.XmlPrimitive -> "xml"
+  Gen.VarcharPrimitive -> "varchar"
+  Gen.BpcharPrimitive -> "bpchar"
+  Gen.BitPrimitive -> "bit"
+  Gen.VarbitPrimitive -> "varbit"
+  Gen.TsvectorPrimitive -> "tsvector"
+  Gen.TsqueryPrimitive -> "tsquery"
+  Gen.PointPrimitive -> "point"
+  Gen.LinePrimitive -> "line"
+  Gen.LsegPrimitive -> "lseg"
+  Gen.BoxPrimitive -> "box"
+  Gen.Box2DPrimitive -> "box2d"
+  Gen.Box3DPrimitive -> "box3d"
+  Gen.PathPrimitive -> "path"
+  Gen.LtreePrimitive -> "ltree"
+  Gen.PolygonPrimitive -> "polygon"
+  Gen.CirclePrimitive -> "circle"
+  Gen.PgSnapshotPrimitive -> "pg_snapshot"
+  Gen.PgLsnPrimitive -> "pg_lsn"
+  Gen.NamePrimitive -> "name"
+  Gen.HstorePrimitive -> "hstore"
+  Gen.CitextPrimitive -> "citext"
+  Gen.GeometryPrimitive -> "geometry"
+  Gen.GeographyPrimitive -> "geography"
+  Gen.OidPrimitive -> "oid"
 
-genNameToText :: Gen.Input.Name -> Text
+genNameToText :: Gen.Name -> Text
 genNameToText name = name.inSnakeCase
 
 -- * Serialization
@@ -566,40 +566,40 @@ mismatchError fieldPath message =
 -- returning the refined parameters and result.
 applyToQuery ::
   Signature ->
-  [Gen.Input.Member] ->
-  Gen.Input.Result ->
-  ([Gen.Input.Member], Gen.Input.Result)
+  [Gen.Member] ->
+  Gen.Result ->
+  ([Gen.Member], Gen.Result)
 applyToQuery sig params result =
   let refinedParams = zipWith applyFieldToMember (map snd sig.parameters) params
       refinedResult =
         case (sig.result, result) of
-          (Just sigResult, Gen.Input.RowsResult genResult) ->
+          (Just sigResult, Gen.RowsResult genResult) ->
             let updatedColumns =
                   case nonEmpty (zipWith applyFieldToMember (map snd sigResult.columns) (toList genResult.columns)) of
                     Nothing -> genResult.columns
                     Just cols -> cols
-             in Gen.Input.RowsResult
-                  Gen.Input.ResultRows
+             in Gen.RowsResult
+                  Gen.ResultRows
                     { cardinality = cardinalityToGenInput sigResult.cardinality,
                       columns = updatedColumns
                     }
           _ -> result
    in (refinedParams, refinedResult)
   where
-    applyFieldToMember :: FieldSig -> Gen.Input.Member -> Gen.Input.Member
+    applyFieldToMember :: FieldSig -> Gen.Member -> Gen.Member
     applyFieldToMember field member =
-      Gen.Input.Member
+      Gen.Member
         { name = member.name,
           pgName = member.pgName,
           isNullable = not field.notNull,
           value = applyArrayElementNullability field member.value
         }
 
-    applyArrayElementNullability :: FieldSig -> Gen.Input.Value -> Gen.Input.Value
+    applyArrayElementNullability :: FieldSig -> Gen.Value -> Gen.Value
     applyArrayElementNullability field value =
       case (fieldElementNotNull field, value.dimensionality > 0) of
         (Just elementNotNull, True) ->
-          value {Gen.Input.elementIsNullable = not elementNotNull}
+          value {Gen.elementIsNullable = not elementNotNull}
         _ -> value
 
 spec :: Spec
@@ -728,9 +728,9 @@ spec = do
 
   describe "fromInferred" do
     it "maps extension primitives to signature type names" do
-      let member :: Text -> Bool -> Gen.Input.Value -> Gen.Input.Member
+      let member :: Text -> Bool -> Gen.Value -> Gen.Member
           member pgName isNullable value =
-            Gen.Input.Member
+            Gen.Member
               { name = case Name.tryFromText pgName of
                   Right name -> Name.toGenName name
                   Left err -> error ("genName: " <> show err),
@@ -739,33 +739,33 @@ spec = do
                 value
               }
 
-          primitiveValue :: Gen.Input.Primitive -> Gen.Input.Value
+          primitiveValue :: Gen.Primitive -> Gen.Value
           primitiveValue primitive =
-            Gen.Input.Value
+            Gen.Value
               { dimensionality = 0,
                 elementIsNullable = False,
-                scalar = Gen.Input.PrimitiveScalar primitive
+                scalar = Gen.PrimitiveScalar primitive
               }
 
-          arrayValue :: Natural -> Gen.Input.Primitive -> Gen.Input.Value
+          arrayValue :: Natural -> Gen.Primitive -> Gen.Value
           arrayValue dimensionality primitive =
-            Gen.Input.Value
+            Gen.Value
               { dimensionality,
                 elementIsNullable = True,
-                scalar = Gen.Input.PrimitiveScalar primitive
+                scalar = Gen.PrimitiveScalar primitive
               }
 
           sig =
             fromInferred
-              [ member "ltree_path" False (primitiveValue Gen.Input.LtreePrimitive),
-                member "citext_name" True (primitiveValue Gen.Input.CitextPrimitive),
-                member "tags" True (primitiveValue Gen.Input.HstorePrimitive),
-                member "box2d" True (primitiveValue Gen.Input.Box2DPrimitive),
-                member "box3d" True (primitiveValue Gen.Input.Box3DPrimitive),
-                member "geom" False (primitiveValue Gen.Input.GeometryPrimitive),
-                member "geog_array" True (arrayValue 1 Gen.Input.GeographyPrimitive)
+              [ member "ltree_path" False (primitiveValue Gen.LtreePrimitive),
+                member "citext_name" True (primitiveValue Gen.CitextPrimitive),
+                member "tags" True (primitiveValue Gen.HstorePrimitive),
+                member "box2d" True (primitiveValue Gen.Box2DPrimitive),
+                member "box3d" True (primitiveValue Gen.Box3DPrimitive),
+                member "geom" False (primitiveValue Gen.GeometryPrimitive),
+                member "geog_array" True (arrayValue 1 Gen.GeographyPrimitive)
               ]
-              Gen.Input.VoidResult
+              Gen.VoidResult
       sig
         `shouldBe` Signature
           { idempotent = False,

@@ -15,8 +15,8 @@ import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Text qualified as Text
 import Data.Vector qualified as Vector
-import GenBridge qualified as Gen
-import GenBridge.Contract qualified as Gen.Input
+import GenBridge qualified as GenBridge
+import GenBridge.Contract qualified as Gen
 import Logic.Domain.Name qualified as Name
 import Logic.Domain.Report qualified as Report
 import Test.Hspec
@@ -26,14 +26,14 @@ import YamlUnscrambler qualified as U
 data ProjectFile = ProjectFile
   { space :: Name.Name,
     name :: Name.Name,
-    version :: Gen.Input.Version,
+    version :: Gen.Version,
     artifacts :: [Artifact],
     postgres :: Maybe Int
   }
 
 data Artifact = Artifact
   { name :: Name.Name,
-    gen :: Gen.Location,
+    gen :: GenBridge.Location,
     config :: Maybe Aeson.Value
   }
 
@@ -80,7 +80,7 @@ tryFromYaml text = do
               Left err -> Left err
               Right name -> Right name
 
-    versionValue :: U.Value Gen.Input.Version
+    versionValue :: U.Value Gen.Version
     versionValue =
       U.scalarsValue [U.stringScalar versionString]
       where
@@ -91,7 +91,7 @@ tryFromYaml text = do
                 major <- parseNatural "major" majorText
                 minor <- parseNatural "minor" minorText
                 patch <- parseNatural "patch" patchText
-                return Gen.Input.Version {major, minor, patch}
+                return Gen.Version {major, minor, patch}
               _ ->
                 Left "Invalid version format. Use semantic versioning format: major.minor.patch (e.g., 1.0.0)"
         parseNatural fieldName txt =
@@ -151,14 +151,14 @@ tryFromYaml text = do
             genLocationString =
               U.formattedString "location" parseLocation
 
-            parseLocation :: Text -> Either Text Gen.Location
+            parseLocation :: Text -> Either Text GenBridge.Location
             parseLocation txt
               | "http://" `Text.isPrefixOf` txt || "https://" `Text.isPrefixOf` txt =
-                  Right (Gen.LocationUrl txt)
+                  Right (GenBridge.LocationUrl txt)
               | otherwise =
                   case Path.maybeFromText txt of
                     Nothing -> Left ("Invalid path: " <> txt)
-                    Just path -> Right (Gen.LocationPath path)
+                    Just path -> Right (GenBridge.LocationPath path)
 
     configValue :: U.Value (Maybe Aeson.Value)
     configValue =

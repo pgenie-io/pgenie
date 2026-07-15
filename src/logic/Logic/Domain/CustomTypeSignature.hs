@@ -18,7 +18,7 @@ import Control.Foldl qualified as Fold
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as Text
-import GenBridge.Contract qualified as Gen.Input
+import GenBridge.Contract qualified as Gen
 import Logic.Domain.Name qualified as Name
 import Logic.Domain.Report qualified as Report
 import Test.Hspec
@@ -64,23 +64,23 @@ customTypeSignatureFilePath schema name =
 
 -- * Conversion from inferred types
 
--- | Create a custom-type signature from an inferred @Gen.Input.CustomType@.
+-- | Create a custom-type signature from an inferred @Gen.CustomType@.
 -- Returns @Nothing@ for domain types, which have no signature file.
-fromInferred :: Gen.Input.CustomType -> Maybe CustomTypeSig
+fromInferred :: Gen.CustomType -> Maybe CustomTypeSig
 fromInferred ct =
   case ct.definition of
-    Gen.Input.EnumCustomTypeDefinition variants ->
+    Gen.EnumCustomTypeDefinition variants ->
       Just (EnumCustomTypeSig (map (.pgName) variants))
-    Gen.Input.CompositeCustomTypeDefinition fields ->
+    Gen.CompositeCustomTypeDefinition fields ->
       Just (CompositeCustomTypeSig (map memberToFieldEntry fields))
-    Gen.Input.DomainCustomTypeDefinition _ ->
+    Gen.DomainCustomTypeDefinition _ ->
       Nothing
   where
-    memberToFieldEntry :: Gen.Input.Member -> (Text, CompositeFieldSig)
+    memberToFieldEntry :: Gen.Member -> (Text, CompositeFieldSig)
     memberToFieldEntry m =
       (m.pgName, compositeFieldSigFromValue m.value (not m.isNullable))
 
-compositeFieldSigFromValue :: Gen.Input.Value -> Bool -> CompositeFieldSig
+compositeFieldSigFromValue :: Gen.Value -> Bool -> CompositeFieldSig
 compositeFieldSigFromValue value fieldNotNull
   | value.dimensionality > 0 =
       ArrayCompositeFieldSig
@@ -94,80 +94,80 @@ compositeFieldSigFromValue value fieldNotNull
           notNull = fieldNotNull
         }
 
-valueToTypeName :: Gen.Input.Value -> Text
+valueToTypeName :: Gen.Value -> Text
 valueToTypeName value =
   scalarToTypeName value.scalar <> Text.replicate (fromIntegral value.dimensionality) "[]"
 
-scalarToTypeName :: Gen.Input.Scalar -> Text
+scalarToTypeName :: Gen.Scalar -> Text
 scalarToTypeName = \case
-  Gen.Input.PrimitiveScalar prim -> primitiveToTypeName prim
-  Gen.Input.CustomScalar ref -> genNameToText ref.name
+  Gen.PrimitiveScalar prim -> primitiveToTypeName prim
+  Gen.CustomScalar ref -> genNameToText ref.name
 
-primitiveToTypeName :: Gen.Input.Primitive -> Text
+primitiveToTypeName :: Gen.Primitive -> Text
 primitiveToTypeName = \case
-  Gen.Input.BoolPrimitive -> "bool"
-  Gen.Input.ByteaPrimitive -> "bytea"
-  Gen.Input.CharPrimitive -> "char"
-  Gen.Input.CidrPrimitive -> "cidr"
-  Gen.Input.DatePrimitive -> "date"
-  Gen.Input.DatemultirangePrimitive -> "datemultirange"
-  Gen.Input.DaterangePrimitive -> "daterange"
-  Gen.Input.Float4Primitive -> "float4"
-  Gen.Input.Float8Primitive -> "float8"
-  Gen.Input.InetPrimitive -> "inet"
-  Gen.Input.Int2Primitive -> "int2"
-  Gen.Input.Int4Primitive -> "int4"
-  Gen.Input.Int4multirangePrimitive -> "int4multirange"
-  Gen.Input.Int4rangePrimitive -> "int4range"
-  Gen.Input.Int8Primitive -> "int8"
-  Gen.Input.Int8multirangePrimitive -> "int8multirange"
-  Gen.Input.Int8rangePrimitive -> "int8range"
-  Gen.Input.IntervalPrimitive -> "interval"
-  Gen.Input.JsonPrimitive -> "json"
-  Gen.Input.JsonbPrimitive -> "jsonb"
-  Gen.Input.MacaddrPrimitive -> "macaddr"
-  Gen.Input.Macaddr8Primitive -> "macaddr8"
-  Gen.Input.MoneyPrimitive -> "money"
-  Gen.Input.NumericPrimitive -> "numeric"
-  Gen.Input.NummultirangePrimitive -> "nummultirange"
-  Gen.Input.NumrangePrimitive -> "numrange"
-  Gen.Input.TextPrimitive -> "text"
-  Gen.Input.TimePrimitive -> "time"
-  Gen.Input.TimestampPrimitive -> "timestamp"
-  Gen.Input.TimestamptzPrimitive -> "timestamptz"
-  Gen.Input.TimetzPrimitive -> "timetz"
-  Gen.Input.TsmultirangePrimitive -> "tsmultirange"
-  Gen.Input.TsrangePrimitive -> "tsrange"
-  Gen.Input.TstzmultirangePrimitive -> "tstzmultirange"
-  Gen.Input.TstzrangePrimitive -> "tstzrange"
-  Gen.Input.UuidPrimitive -> "uuid"
-  Gen.Input.XmlPrimitive -> "xml"
-  Gen.Input.VarcharPrimitive -> "varchar"
-  Gen.Input.BpcharPrimitive -> "bpchar"
-  Gen.Input.BitPrimitive -> "bit"
-  Gen.Input.VarbitPrimitive -> "varbit"
-  Gen.Input.TsvectorPrimitive -> "tsvector"
-  Gen.Input.TsqueryPrimitive -> "tsquery"
-  Gen.Input.PointPrimitive -> "point"
-  Gen.Input.LinePrimitive -> "line"
-  Gen.Input.LsegPrimitive -> "lseg"
-  Gen.Input.BoxPrimitive -> "box"
-  Gen.Input.Box2DPrimitive -> "box2d"
-  Gen.Input.Box3DPrimitive -> "box3d"
-  Gen.Input.PathPrimitive -> "path"
-  Gen.Input.LtreePrimitive -> "ltree"
-  Gen.Input.PolygonPrimitive -> "polygon"
-  Gen.Input.CirclePrimitive -> "circle"
-  Gen.Input.PgSnapshotPrimitive -> "pg_snapshot"
-  Gen.Input.PgLsnPrimitive -> "pg_lsn"
-  Gen.Input.NamePrimitive -> "name"
-  Gen.Input.HstorePrimitive -> "hstore"
-  Gen.Input.CitextPrimitive -> "citext"
-  Gen.Input.GeometryPrimitive -> "geometry"
-  Gen.Input.GeographyPrimitive -> "geography"
-  Gen.Input.OidPrimitive -> "oid"
+  Gen.BoolPrimitive -> "bool"
+  Gen.ByteaPrimitive -> "bytea"
+  Gen.CharPrimitive -> "char"
+  Gen.CidrPrimitive -> "cidr"
+  Gen.DatePrimitive -> "date"
+  Gen.DatemultirangePrimitive -> "datemultirange"
+  Gen.DaterangePrimitive -> "daterange"
+  Gen.Float4Primitive -> "float4"
+  Gen.Float8Primitive -> "float8"
+  Gen.InetPrimitive -> "inet"
+  Gen.Int2Primitive -> "int2"
+  Gen.Int4Primitive -> "int4"
+  Gen.Int4multirangePrimitive -> "int4multirange"
+  Gen.Int4rangePrimitive -> "int4range"
+  Gen.Int8Primitive -> "int8"
+  Gen.Int8multirangePrimitive -> "int8multirange"
+  Gen.Int8rangePrimitive -> "int8range"
+  Gen.IntervalPrimitive -> "interval"
+  Gen.JsonPrimitive -> "json"
+  Gen.JsonbPrimitive -> "jsonb"
+  Gen.MacaddrPrimitive -> "macaddr"
+  Gen.Macaddr8Primitive -> "macaddr8"
+  Gen.MoneyPrimitive -> "money"
+  Gen.NumericPrimitive -> "numeric"
+  Gen.NummultirangePrimitive -> "nummultirange"
+  Gen.NumrangePrimitive -> "numrange"
+  Gen.TextPrimitive -> "text"
+  Gen.TimePrimitive -> "time"
+  Gen.TimestampPrimitive -> "timestamp"
+  Gen.TimestamptzPrimitive -> "timestamptz"
+  Gen.TimetzPrimitive -> "timetz"
+  Gen.TsmultirangePrimitive -> "tsmultirange"
+  Gen.TsrangePrimitive -> "tsrange"
+  Gen.TstzmultirangePrimitive -> "tstzmultirange"
+  Gen.TstzrangePrimitive -> "tstzrange"
+  Gen.UuidPrimitive -> "uuid"
+  Gen.XmlPrimitive -> "xml"
+  Gen.VarcharPrimitive -> "varchar"
+  Gen.BpcharPrimitive -> "bpchar"
+  Gen.BitPrimitive -> "bit"
+  Gen.VarbitPrimitive -> "varbit"
+  Gen.TsvectorPrimitive -> "tsvector"
+  Gen.TsqueryPrimitive -> "tsquery"
+  Gen.PointPrimitive -> "point"
+  Gen.LinePrimitive -> "line"
+  Gen.LsegPrimitive -> "lseg"
+  Gen.BoxPrimitive -> "box"
+  Gen.Box2DPrimitive -> "box2d"
+  Gen.Box3DPrimitive -> "box3d"
+  Gen.PathPrimitive -> "path"
+  Gen.LtreePrimitive -> "ltree"
+  Gen.PolygonPrimitive -> "polygon"
+  Gen.CirclePrimitive -> "circle"
+  Gen.PgSnapshotPrimitive -> "pg_snapshot"
+  Gen.PgLsnPrimitive -> "pg_lsn"
+  Gen.NamePrimitive -> "name"
+  Gen.HstorePrimitive -> "hstore"
+  Gen.CitextPrimitive -> "citext"
+  Gen.GeometryPrimitive -> "geometry"
+  Gen.GeographyPrimitive -> "geography"
+  Gen.OidPrimitive -> "oid"
 
-genNameToText :: Gen.Input.Name -> Text
+genNameToText :: Gen.Name -> Text
 genNameToText name = name.inSnakeCase
 
 -- * Serialization
@@ -323,31 +323,31 @@ tryParse text =
 -- * Validation and merging
 
 -- | Validate a file custom-type signature against the inferred type and return
--- the refined @Gen.Input.CustomType@, or an error describing the mismatch.
+-- the refined @Gen.CustomType@, or an error describing the mismatch.
 validateAndMerge ::
   -- | Inferred custom type.
-  Gen.Input.CustomType ->
+  Gen.CustomType ->
   -- | Signature from file.
   CustomTypeSig ->
-  Either Report.Report Gen.Input.CustomType
+  Either Report.Report Gen.CustomType
 validateAndMerge inferred fileSig =
   case (inferred.definition, fileSig) of
-    (Gen.Input.EnumCustomTypeDefinition variants, EnumCustomTypeSig fileVariants) ->
+    (Gen.EnumCustomTypeDefinition variants, EnumCustomTypeSig fileVariants) ->
       validateEnum inferred variants fileVariants
-    (Gen.Input.CompositeCustomTypeDefinition fields, CompositeCustomTypeSig fileFields) ->
+    (Gen.CompositeCustomTypeDefinition fields, CompositeCustomTypeSig fileFields) ->
       validateComposite inferred fields fileFields
-    (Gen.Input.DomainCustomTypeDefinition _, _) ->
+    (Gen.DomainCustomTypeDefinition _, _) ->
       Right inferred
-    (Gen.Input.EnumCustomTypeDefinition {}, CompositeCustomTypeSig {}) ->
+    (Gen.EnumCustomTypeDefinition {}, CompositeCustomTypeSig {}) ->
       Left (mismatchError "kind" "Inferred kind is 'enum' but file signature has kind 'composite'")
-    (Gen.Input.CompositeCustomTypeDefinition {}, EnumCustomTypeSig {}) ->
+    (Gen.CompositeCustomTypeDefinition {}, EnumCustomTypeSig {}) ->
       Left (mismatchError "kind" "Inferred kind is 'composite' but file signature has kind 'enum'")
 
 validateEnum ::
-  Gen.Input.CustomType ->
-  [Gen.Input.EnumVariant] ->
+  Gen.CustomType ->
+  [Gen.EnumVariant] ->
   [Text] ->
-  Either Report.Report Gen.Input.CustomType
+  Either Report.Report Gen.CustomType
 validateEnum inferred variants fileVariants = do
   let inferredNames = map (.pgName) variants
   unless (inferredNames == fileVariants) do
@@ -361,10 +361,10 @@ validateEnum inferred variants fileVariants = do
   Right inferred
 
 validateComposite ::
-  Gen.Input.CustomType ->
-  [Gen.Input.Member] ->
+  Gen.CustomType ->
+  [Gen.Member] ->
   [(Text, CompositeFieldSig)] ->
-  Either Report.Report Gen.Input.CustomType
+  Either Report.Report Gen.CustomType
 validateComposite inferred inferredFields fileFields = do
   let inferredNames = Set.fromList (map (.pgName) inferredFields)
       fileNames = Set.fromList (map fst fileFields)
@@ -386,7 +386,7 @@ validateComposite inferred inferredFields fileFields = do
         inferredSigField
         fileSigField
     pure (applyCompositeFieldSigToMember validatedSigField inferredMember)
-  Right inferred {Gen.Input.definition = Gen.Input.CompositeCustomTypeDefinition refinedFields}
+  Right inferred {Gen.definition = Gen.CompositeCustomTypeDefinition refinedFields}
 
 validateCompositeField ::
   -- | Field path for error messages.
@@ -445,20 +445,20 @@ mkCompositeFieldSig typeName notNull = \case
         notNull
       }
 
-applyCompositeFieldSigToMember :: CompositeFieldSig -> Gen.Input.Member -> Gen.Input.Member
+applyCompositeFieldSigToMember :: CompositeFieldSig -> Gen.Member -> Gen.Member
 applyCompositeFieldSigToMember field member =
-  Gen.Input.Member
+  Gen.Member
     { name = member.name,
       pgName = member.pgName,
       isNullable = not field.notNull,
       value = applyArrayElementNullability field member.value
     }
 
-applyArrayElementNullability :: CompositeFieldSig -> Gen.Input.Value -> Gen.Input.Value
+applyArrayElementNullability :: CompositeFieldSig -> Gen.Value -> Gen.Value
 applyArrayElementNullability field value =
   case (compositeFieldElementNotNull field, value.dimensionality > 0) of
     (Just elementNotNull, True) ->
-      value {Gen.Input.elementIsNullable = not elementNotNull}
+      value {Gen.elementIsNullable = not elementNotNull}
     _ -> value
 
 -- * Helpers
@@ -510,17 +510,17 @@ spec = do
 
     it "returns Nothing for domain custom types" do
       let domainValue =
-            Gen.Input.Value
+            Gen.Value
               { dimensionality = 0,
                 elementIsNullable = False,
-                scalar = Gen.Input.PrimitiveScalar Gen.Input.TextPrimitive
+                scalar = Gen.PrimitiveScalar Gen.TextPrimitive
               }
           ct =
-            Gen.Input.CustomType
+            Gen.CustomType
               { name = genName "my_domain",
                 pgSchema = "public",
                 pgName = "my_domain",
-                definition = Gen.Input.DomainCustomTypeDefinition domainValue
+                definition = Gen.DomainCustomTypeDefinition domainValue
               }
       fromInferred ct `shouldBe` Nothing
 
@@ -654,17 +654,17 @@ spec = do
 
       it "rejects nullability relaxation (true -> false) when inferred is not-null" do
         let ct =
-              Gen.Input.CustomType
+              Gen.CustomType
                 { name = genName "strict_type",
                   pgSchema = "public",
                   pgName = "strict_type",
                   definition =
-                    Gen.Input.CompositeCustomTypeDefinition
-                      [ Gen.Input.Member
+                    Gen.CompositeCustomTypeDefinition
+                      [ Gen.Member
                           { name = genName "val",
                             pgName = "val",
                             isNullable = False,
-                            value = Gen.Input.Value {dimensionality = 0, elementIsNullable = False, scalar = Gen.Input.PrimitiveScalar Gen.Input.TextPrimitive}
+                            value = Gen.Value {dimensionality = 0, elementIsNullable = False, scalar = Gen.PrimitiveScalar Gen.TextPrimitive}
                           }
                       ]
                 }
@@ -707,7 +707,7 @@ spec = do
           Left err -> expectationFailure ("Expected Right but got Left: " <> show err)
           Right refined ->
             case refined.definition of
-              Gen.Input.CompositeCustomTypeDefinition fields ->
+              Gen.CompositeCustomTypeDefinition fields ->
                 case fields of
                   [xField, yField] -> do
                     xField.isNullable `shouldBe` False
@@ -717,23 +717,23 @@ spec = do
               _ ->
                 expectationFailure "Expected composite definition"
 
-genName :: Text -> Gen.Input.Name
+genName :: Text -> Gen.Name
 genName text =
   case Name.tryFromText text of
     Right name -> Name.toGenName name
     Left err -> error ("genName: " <> show err)
 
-enumCustomType :: Text -> Text -> [Text] -> Gen.Input.CustomType
+enumCustomType :: Text -> Text -> [Text] -> Gen.CustomType
 enumCustomType schema pgName pgNames =
-  Gen.Input.CustomType
+  Gen.CustomType
     { name = genName pgName,
       pgSchema = schema,
       pgName,
       definition =
-        Gen.Input.EnumCustomTypeDefinition
+        Gen.EnumCustomTypeDefinition
           ( map
               ( \v ->
-                  Gen.Input.EnumVariant
+                  Gen.EnumVariant
                     { name = genName v,
                       pgName = v
                     }
@@ -742,25 +742,25 @@ enumCustomType schema pgName pgNames =
           )
     }
 
-compositeCustomType :: Text -> Text -> [(Text, Text, Bool)] -> Gen.Input.CustomType
+compositeCustomType :: Text -> Text -> [(Text, Text, Bool)] -> Gen.CustomType
 compositeCustomType schema pgName fieldSpecs =
-  Gen.Input.CustomType
+  Gen.CustomType
     { name = genName pgName,
       pgSchema = schema,
       pgName,
       definition =
-        Gen.Input.CompositeCustomTypeDefinition
+        Gen.CompositeCustomTypeDefinition
           ( map
               ( \(fieldPgName, typeName, _notNull) ->
-                  Gen.Input.Member
+                  Gen.Member
                     { name = genName fieldPgName,
                       pgName = fieldPgName,
                       isNullable = True,
                       value =
-                        Gen.Input.Value
+                        Gen.Value
                           { dimensionality = 0,
                             elementIsNullable = False,
-                            scalar = Gen.Input.PrimitiveScalar (textToPrimitive typeName)
+                            scalar = Gen.PrimitiveScalar (textToPrimitive typeName)
                           }
                     }
               )
@@ -768,10 +768,10 @@ compositeCustomType schema pgName fieldSpecs =
           )
     }
 
-textToPrimitive :: Text -> Gen.Input.Primitive
+textToPrimitive :: Text -> Gen.Primitive
 textToPrimitive = \case
-  "float8" -> Gen.Input.Float8Primitive
-  "text" -> Gen.Input.TextPrimitive
-  "uuid" -> Gen.Input.UuidPrimitive
-  "int4" -> Gen.Input.Int4Primitive
+  "float8" -> Gen.Float8Primitive
+  "text" -> Gen.TextPrimitive
+  "uuid" -> Gen.UuidPrimitive
+  "int4" -> Gen.Int4Primitive
   other -> error ("textToPrimitive: unknown primitive " <> show other)

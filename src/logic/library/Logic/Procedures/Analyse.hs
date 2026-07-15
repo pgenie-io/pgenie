@@ -82,7 +82,7 @@ run params =
         pure
           Result
             { outputText =
-                Dhall.pretty (Dhall.cse (Dhall.denote (Dhall.inject.embed analyseResult.project)))
+                Dhall.pretty (Dhall.inject.embed analyseResult.project)
             }
       Just ModelFormatJson ->
         pure

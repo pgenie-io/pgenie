@@ -12,8 +12,8 @@ import Dhall qualified
 import GenContractBase.Aeson.Deriver qualified as Aeson.Deriver
 import GenContractBase.Dhall.Deriving qualified as Dhall.Deriving
 import GenContractBase.Dhall.Orphans ()
+import GenContractV4.Input (EnumVariant)
 import GenContractV4.Input qualified as V4
-import GenContractV4.Input.EnumVariant (EnumVariant)
 import GenContractV5.Input.Member (Member, toV4Member)
 import GenContractV5.Input.Value (Value, toV4Value)
 import Test.QuickCheck qualified as QuickCheck

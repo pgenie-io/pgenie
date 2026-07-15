@@ -177,6 +177,10 @@ library gen-contract-v4
   exposed-modules:
     GenContractV4.Contract
     GenContractV4.Input
+    GenContractV4.Output
+    GenContractV4.Output.Report
+
+  other-modules:
     GenContractV4.Input.ArraySettings
     GenContractV4.Input.CustomType
     GenContractV4.Input.CustomTypeDefinition
@@ -195,11 +199,9 @@ library gen-contract-v4
     GenContractV4.Input.Value
     GenContractV4.Input.Var
     GenContractV4.Input.Version
-    GenContractV4.Output
     GenContractV4.Output.File
     GenContractV4.Output.Output
     GenContractV4.Output.OutputOk
-    GenContractV4.Output.Report
 
   build-depends:
     aeson,
@@ -215,9 +217,8 @@ library gen-bridge
   hs-source-dirs: src/gen-bridge/
   exposed-modules:
     GenBridge
-    GenBridge.Model.Input
-    GenBridge.Model.Output
-    GenBridge.Model.Output.Report
+    GenBridge.Contract
+    GenBridge.Contract.Report
 
   other-modules:
     GenBridge.Bundle
@@ -226,7 +227,6 @@ library gen-bridge
     GenBridge.Dispatch
     GenBridge.Load
     GenBridge.Location
-    GenBridge.Model
 
   build-depends:
     aeson,
@@ -234,8 +234,8 @@ library gen-bridge
     dhall,
     dhall-json,
     microlens,
-    pgenie:gen-contract-base,
     pgenie:gen-contract-v5,
+    pgenie:gen-contract-versioning,
     pgenie:utils,
     template-haskell,
     text,
@@ -260,6 +260,7 @@ library gen-contract-v5
     GenContractV5.Output.File
     GenContractV5.Output.Output
     GenContractV5.Output.OutputOk
+    GenContractV5.Output.Report
 
   build-depends:
     dhall,
@@ -531,6 +532,7 @@ test-suite gen-contract-v5-test
     hspec >=2.11 && <3,
     pgenie:gen-contract-v4,
     pgenie:gen-contract-v5,
+    pgenie:gen-contract-versioning,
     pgenie:utils,
     QuickCheck,
     rerebase,

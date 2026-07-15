@@ -8,12 +8,12 @@ import Dhall qualified
 import Dhall.Core qualified
 import Dhall.Import qualified
 import Dhall.JSONToDhall qualified
+import GenBridge.Contract
+import GenBridge.Contract qualified as Output
 import GenBridge.ContractVersion qualified as ContractVersion
 import GenBridge.Dhall.ExprViews qualified as ExprViews
 import GenBridge.Dispatch qualified as Dispatch
 import GenBridge.Location qualified as Location
-import GenBridge.Model
-import GenBridge.Model.Output qualified as Output
 import Lens.Micro qualified
 import Utils.Prelude
 

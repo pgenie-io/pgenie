@@ -9,12 +9,12 @@ import Data.Text qualified as Text
 import Dhall qualified
 import Dhall.Core qualified
 import Dhall.JSONToDhall qualified
+import GenBridge.Contract
+import GenBridge.Contract qualified as Output
 import GenBridge.ContractVersion qualified as ContractVersion
 import GenBridge.Dhall.ExprViews qualified as ExprViews
 import GenBridge.Dispatch qualified as Dispatch
 import GenBridge.Location qualified as Location
-import GenBridge.Model
-import GenBridge.Model.Output qualified as Output
 import Language.Haskell.TH.Syntax qualified as TH
 import Utils.Prelude
 

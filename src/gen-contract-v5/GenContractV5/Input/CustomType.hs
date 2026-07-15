@@ -11,8 +11,8 @@ where
 import Dhall qualified
 import GenContractBase.Aeson.Deriver qualified as Aeson.Deriver
 import GenContractBase.Dhall.Orphans ()
+import GenContractV4.Input (Name)
 import GenContractV4.Input qualified as V4
-import GenContractV4.Input.Name (Name)
 import GenContractV5.Input.CustomTypeDefinition (CustomTypeDefinition, toV4CustomTypeDefinition)
 import Utils.Prelude
 

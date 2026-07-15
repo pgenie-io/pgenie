@@ -7,7 +7,7 @@ import Data.Text qualified as Text
 import Data.Text.Encoding qualified as TextEncoding
 import Database.PostgreSQL.LibPQ qualified as Pq
 import Fx
-import GenBridge.Model.Input qualified as Gen.Input
+import GenBridge.Contract qualified as Gen.Input
 import Infra.Adapters.Analyser qualified as Analyser
 import Logic.Capabilities.Migrations
 import Logic.Capabilities.QueryAnalysis

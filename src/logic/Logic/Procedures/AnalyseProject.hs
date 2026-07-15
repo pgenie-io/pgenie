@@ -16,7 +16,7 @@ import Control.Monad.Parallel qualified as MonadParallel
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as Text
-import GenBridge.Model.Input qualified as Gen.Input
+import GenBridge.Contract qualified as Gen.Input
 import Logic.Capabilities.Fs (FsOps (..))
 import Logic.Capabilities.IndexCatalog (LoadsIndexes (..))
 import Logic.Capabilities.Migrations (ExecutesMigrations (..))

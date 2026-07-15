@@ -1,8 +1,6 @@
 module GenContractV5.Input.ScalarSpec (spec) where
 
-import GenContractV4.Input.Name qualified as V5.Name
-import GenContractV4.Input.Primitive qualified as V5.Primitive
-import GenContractV4.Input.Scalar qualified as V4.Scalar
+import GenContractV4.Input qualified as V4
 import GenContractV5.Input.CustomTypeRef qualified as V5.CustomTypeRef
 import GenContractV5.Input.Scalar qualified as V5.Scalar
 import Test.Hspec
@@ -11,8 +9,8 @@ spec :: Spec
 spec = do
   describe "toV4Scalar" do
     it "keeps a primitive scalar unchanged" do
-      V5.Scalar.toV4Scalar (V5.Scalar.PrimitiveScalar V5.Primitive.Int4Primitive)
-        `shouldBe` V4.Scalar.PrimitiveScalar V5.Primitive.Int4Primitive
+      V5.Scalar.toV4Scalar (V5.Scalar.PrimitiveScalar V4.Int4Primitive)
+        `shouldBe` V4.PrimitiveScalar V4.Int4Primitive
 
     it "drops pgSchema/pgName/index, keeping only name" do
       V5.Scalar.toV4Scalar
@@ -24,11 +22,11 @@ spec = do
                 index = 3
               }
         )
-        `shouldBe` V4.Scalar.CustomScalar exampleName
+        `shouldBe` V4.CustomScalar exampleName
 
-exampleName :: V5.Name.Name
+exampleName :: V4.Name
 exampleName =
-  V5.Name.Name
+  V4.Name
     { inCamelCase = "userId",
       inPascalCase = "UserId",
       inKebabCase = "user-id",

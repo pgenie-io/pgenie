@@ -11,7 +11,7 @@ module Logic.Procedures.GenerateTypeSignatures
 where
 
 import AlgebraicPath qualified as Path
-import GenBridge.Model.Input qualified as Gen.Input
+import GenBridge.Contract qualified as Gen.Input
 import Logic.Capabilities.Fs (FsOps (..))
 import Logic.Capabilities.Staging (Stages (..))
 import Logic.Domain.CustomTypeSignature qualified as CustomTypeSignature

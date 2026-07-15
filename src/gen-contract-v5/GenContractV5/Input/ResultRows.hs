@@ -11,8 +11,8 @@ where
 import Dhall qualified
 import GenContractBase.Aeson.Deriver qualified as Aeson.Deriver
 import GenContractBase.Dhall.Orphans ()
+import GenContractV4.Input (ResultRowsCardinality)
 import GenContractV4.Input qualified as V4
-import GenContractV4.Input.ResultRowsCardinality (ResultRowsCardinality)
 import GenContractV5.Input.Member (Member, toV4Member)
 import Utils.Prelude
 

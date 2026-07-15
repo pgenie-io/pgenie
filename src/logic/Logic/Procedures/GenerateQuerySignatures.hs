@@ -11,7 +11,7 @@ module Logic.Procedures.GenerateQuerySignatures
 where
 
 import AlgebraicPath qualified as Path
-import GenBridge.Model.Input qualified as Gen.Input
+import GenBridge.Contract qualified as Gen.Input
 import Logic.Capabilities.Fs (FsOps (..))
 import Logic.Capabilities.Reporting (Warns (..))
 import Logic.Domain.QuerySignature qualified as QuerySignature

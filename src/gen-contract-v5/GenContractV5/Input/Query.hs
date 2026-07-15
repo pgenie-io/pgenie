@@ -11,9 +11,8 @@ where
 import Dhall qualified
 import GenContractBase.Aeson.Deriver qualified as Aeson.Deriver
 import GenContractBase.Dhall.Orphans ()
+import GenContractV4.Input (Name, QueryFragment)
 import GenContractV4.Input qualified as V4
-import GenContractV4.Input.Name (Name)
-import GenContractV4.Input.QueryFragment (QueryFragment)
 import GenContractV5.Input.Member (Member, toV4Member)
 import GenContractV5.Input.Result (Result, toV4Result)
 import Utils.Prelude

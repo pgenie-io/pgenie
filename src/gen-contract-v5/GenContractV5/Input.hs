@@ -40,14 +40,7 @@ module GenContractV5.Input
   )
 where
 
-import GenContractV4.Input.EnumVariant (EnumVariant (..))
-import GenContractV4.Input.Migration (Migration (..))
-import GenContractV4.Input.Name (Name (..))
-import GenContractV4.Input.Primitive (Primitive (..))
-import GenContractV4.Input.QueryFragment (QueryFragment (..))
-import GenContractV4.Input.ResultRowsCardinality (ResultRowsCardinality (..))
-import GenContractV4.Input.Var (Var (..))
-import GenContractV4.Input.Version (Version (..))
+import GenContractV4.Input (EnumVariant (..), Migration (..), Name (..), Primitive (..), QueryFragment (..), ResultRowsCardinality (..), Var (..), Version (..))
 import GenContractV5.Input.CustomType (CustomType (..))
 import GenContractV5.Input.CustomTypeDefinition (CustomTypeDefinition (..))
 import GenContractV5.Input.CustomTypeRef (CustomTypeRef (..))

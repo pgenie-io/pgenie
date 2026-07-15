@@ -18,7 +18,7 @@ import Control.Foldl qualified as Fold
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as Text
-import GenBridge.Model.Input qualified as Gen.Input
+import GenBridge.Contract qualified as Gen.Input
 import Logic.Domain.Name qualified as Name
 import Logic.Domain.Report qualified as Report
 import Test.Hspec

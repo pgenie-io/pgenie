@@ -11,10 +11,8 @@ where
 import Dhall qualified
 import GenContractBase.Aeson.Deriver qualified as Aeson.Deriver
 import GenContractBase.Dhall.Orphans ()
+import GenContractV4.Input (Migration, Name, Version)
 import GenContractV4.Input qualified as V4
-import GenContractV4.Input.Migration (Migration)
-import GenContractV4.Input.Name (Name)
-import GenContractV4.Input.Version (Version)
 import GenContractV5.Input.CustomType (CustomType, toV4CustomType)
 import GenContractV5.Input.Query (Query, toV4Query)
 import Utils.Prelude hiding (Version)

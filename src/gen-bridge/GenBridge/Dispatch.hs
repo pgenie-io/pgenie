@@ -12,10 +12,10 @@ where
 
 import Dhall qualified
 import GenBridge.ContractVersion qualified as ContractVersion
+import GenContractV5.Contract (V5)
 import GenContractV5.Input qualified as V5.Input
-import GenContractV5.Input.Project qualified as V5.Project
 import GenContractV5.Output qualified as V5.Output
-import GenContractV5.Output.Output qualified as V5.Output
+import GenContractVersioning (HasParent (..))
 import Utils.Prelude
 
 -- | Adapters for one concrete contract major.
@@ -45,6 +45,6 @@ dispatch major minor k
   | major == 4 =
       if minor > 0
         then Left ("Incompatible contract minor version: " <> onto (show minor) <> ". Expected 0 or lower.")
-        else k Adapters {projectInput = Right . V5.Project.toV4Project, liftOutput = V5.Output.fromV4Output}
+        else k Adapters {projectInput = downgradeInput @V5, liftOutput = upgradeOutput @V5}
   | otherwise =
       Left ("Unsupported contract major version: " <> onto (show major) <> ". Oldest supported is 4.")

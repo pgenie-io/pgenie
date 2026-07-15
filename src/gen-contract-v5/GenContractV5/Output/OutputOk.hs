@@ -11,8 +11,8 @@ where
 import Dhall qualified
 import GenContractBase.Aeson.Deriver qualified as Aeson.Deriver
 import GenContractBase.Dhall.Orphans ()
+import GenContractV4.Output (Report)
 import GenContractV4.Output qualified as V4
-import GenContractV4.Output.Report (Report)
 import GenContractV5.Output.File (File, fromV4File)
 import Utils.Prelude
 

@@ -1,7 +1,7 @@
 -- |
 -- Topologically sorts a project's custom types (dependencies before
 -- dependents, ties broken alphabetically by pgSchema then pgName — the
--- gen-contract v5 invariant) and resolves every 'Gen.Input.CustomTypeRef'
+-- gen-contract v5 invariant) and resolves every 'Gen.CustomTypeRef'
 -- throughout both the type definitions and the queries to point at the
 -- sorted list's final positions. No transitive-closure computation here —
 -- generators derive that themselves from the sorted order (gen-sdk's
@@ -9,38 +9,38 @@
 module Logic.Domain.CustomTypeOrdering (orderAndResolve, spec) where
 
 import Data.Map.Strict qualified as Map
-import GenBridge.Model.Input qualified as Gen.Input
+import GenBridge.Contract qualified as Gen
 import Test.Hspec
 import Utils.Prelude
 
 type Key = (Text, Text)
 
 orderAndResolve ::
-  [Gen.Input.CustomType] ->
-  [Gen.Input.Query] ->
-  ([Gen.Input.CustomType], [Gen.Input.Query])
+  [Gen.CustomType] ->
+  [Gen.Query] ->
+  ([Gen.CustomType], [Gen.Query])
 orderAndResolve customTypes queries =
   (sortedResolved, map resolveQuery queries)
   where
-    key :: Gen.Input.CustomType -> Key
+    key :: Gen.CustomType -> Key
     key ct = (ct.pgSchema, ct.pgName)
 
-    dependencies :: Gen.Input.CustomType -> [Key]
+    dependencies :: Gen.CustomType -> [Key]
     dependencies ct = case ct.definition of
-      Gen.Input.CompositeCustomTypeDefinition members ->
+      Gen.CompositeCustomTypeDefinition members ->
         [k | m <- members, Just k <- [refKey m.value]]
-      Gen.Input.EnumCustomTypeDefinition _ -> []
-      Gen.Input.DomainCustomTypeDefinition value ->
+      Gen.EnumCustomTypeDefinition _ -> []
+      Gen.DomainCustomTypeDefinition value ->
         [k | Just k <- [refKey value]]
 
-    refKey :: Gen.Input.Value -> Maybe Key
+    refKey :: Gen.Value -> Maybe Key
     refKey value = case value.scalar of
-      Gen.Input.CustomScalar ref -> Just (ref.pgSchema, ref.pgName)
-      Gen.Input.PrimitiveScalar _ -> Nothing
+      Gen.CustomScalar ref -> Just (ref.pgSchema, ref.pgName)
+      Gen.PrimitiveScalar _ -> Nothing
 
     -- Kahn's algorithm: repeatedly peel off the alphabetically-first node
     -- among those whose dependencies have already been emitted.
-    sorted :: [Gen.Input.CustomType]
+    sorted :: [Gen.CustomType]
     sorted = go (Map.fromList [(key ct, ct) | ct <- customTypes])
       where
         go remaining
@@ -60,50 +60,50 @@ orderAndResolve customTypes queries =
     indexOf :: Map Key Natural
     indexOf = Map.fromList (zip (map key sorted) [0 ..])
 
-    resolveRef :: Gen.Input.CustomTypeRef -> Gen.Input.CustomTypeRef
+    resolveRef :: Gen.CustomTypeRef -> Gen.CustomTypeRef
     resolveRef ref =
-      ref {Gen.Input.index = Map.findWithDefault ref.index (ref.pgSchema, ref.pgName) indexOf}
+      ref {Gen.index = Map.findWithDefault ref.index (ref.pgSchema, ref.pgName) indexOf}
 
-    resolveValue :: Gen.Input.Value -> Gen.Input.Value
-    resolveValue value = value {Gen.Input.scalar = resolveScalar value.scalar}
+    resolveValue :: Gen.Value -> Gen.Value
+    resolveValue value = value {Gen.scalar = resolveScalar value.scalar}
 
-    resolveScalar :: Gen.Input.Scalar -> Gen.Input.Scalar
-    resolveScalar (Gen.Input.CustomScalar ref) = Gen.Input.CustomScalar (resolveRef ref)
+    resolveScalar :: Gen.Scalar -> Gen.Scalar
+    resolveScalar (Gen.CustomScalar ref) = Gen.CustomScalar (resolveRef ref)
     resolveScalar prim = prim
 
-    resolveMember :: Gen.Input.Member -> Gen.Input.Member
-    resolveMember m = m {Gen.Input.value = resolveValue m.value}
+    resolveMember :: Gen.Member -> Gen.Member
+    resolveMember Gen.Member {..} = Gen.Member {value = resolveValue value, ..}
 
-    resolveCustomType :: Gen.Input.CustomType -> Gen.Input.CustomType
+    resolveCustomType :: Gen.CustomType -> Gen.CustomType
     resolveCustomType ct =
       ct
-        { Gen.Input.definition = case ct.definition of
-            Gen.Input.CompositeCustomTypeDefinition members ->
-              Gen.Input.CompositeCustomTypeDefinition (map resolveMember members)
-            Gen.Input.EnumCustomTypeDefinition variants ->
-              Gen.Input.EnumCustomTypeDefinition variants
-            Gen.Input.DomainCustomTypeDefinition value ->
-              Gen.Input.DomainCustomTypeDefinition (resolveValue value)
+        { Gen.definition = case ct.definition of
+            Gen.CompositeCustomTypeDefinition members ->
+              Gen.CompositeCustomTypeDefinition (map resolveMember members)
+            Gen.EnumCustomTypeDefinition variants ->
+              Gen.EnumCustomTypeDefinition variants
+            Gen.DomainCustomTypeDefinition value ->
+              Gen.DomainCustomTypeDefinition (resolveValue value)
         }
 
     sortedResolved = map resolveCustomType sorted
 
-    resolveQuery :: Gen.Input.Query -> Gen.Input.Query
+    resolveQuery :: Gen.Query -> Gen.Query
     resolveQuery q =
-      q {Gen.Input.params = map resolveMember q.params}
+      q {Gen.params = map resolveMember q.params}
         & resolveQueryResult
 
-    resolveQueryResult :: Gen.Input.Query -> Gen.Input.Query
+    resolveQueryResult :: Gen.Query -> Gen.Query
     resolveQueryResult q =
-      q {Gen.Input.result = resolveResult q.result}
+      q {Gen.result = resolveResult q.result}
 
-    resolveResult :: Gen.Input.Result -> Gen.Input.Result
+    resolveResult :: Gen.Result -> Gen.Result
     resolveResult = \case
-      Gen.Input.VoidResult -> Gen.Input.VoidResult
-      Gen.Input.RowsAffectedResult -> Gen.Input.RowsAffectedResult
-      Gen.Input.RowsResult rows ->
-        Gen.Input.RowsResult
-          rows {Gen.Input.columns = fmap resolveMember rows.columns}
+      Gen.VoidResult -> Gen.VoidResult
+      Gen.RowsAffectedResult -> Gen.RowsAffectedResult
+      Gen.RowsResult rows ->
+        Gen.RowsResult
+          rows {Gen.columns = fmap resolveMember rows.columns}
 
 -- * Tests
 
@@ -112,36 +112,36 @@ spec = do
   describe "orderAndResolve" do
     it "sorts domain-before-composite when supplied in reverse dependency order" do
       let domainType =
-            Gen.Input.CustomType
+            Gen.CustomType
               { name = textName "temp_celsius",
                 pgSchema = "public",
                 pgName = "temp_celsius",
                 definition =
-                  Gen.Input.DomainCustomTypeDefinition
-                    $ Gen.Input.Value
+                  Gen.DomainCustomTypeDefinition
+                    $ Gen.Value
                       { dimensionality = 0,
                         elementIsNullable = False,
-                        scalar = Gen.Input.PrimitiveScalar Gen.Input.Float8Primitive
+                        scalar = Gen.PrimitiveScalar Gen.Float8Primitive
                       }
               }
           compositeType =
-            Gen.Input.CustomType
+            Gen.CustomType
               { name = textName "weather_reading",
                 pgSchema = "public",
                 pgName = "weather_reading",
                 definition =
-                  Gen.Input.CompositeCustomTypeDefinition
-                    [ Gen.Input.Member
+                  Gen.CompositeCustomTypeDefinition
+                    [ Gen.Member
                         { name = textName "temperature",
                           pgName = "temperature",
                           isNullable = False,
                           value =
-                            Gen.Input.Value
+                            Gen.Value
                               { dimensionality = 0,
                                 elementIsNullable = False,
                                 scalar =
-                                  Gen.Input.CustomScalar
-                                    $ Gen.Input.CustomTypeRef
+                                  Gen.CustomScalar
+                                    $ Gen.CustomTypeRef
                                       { name = textName "temp_celsius",
                                         pgSchema = "public",
                                         pgName = "temp_celsius",
@@ -156,36 +156,36 @@ spec = do
 
     it "rewrites indices to match sorted positions" do
       let domainType =
-            Gen.Input.CustomType
+            Gen.CustomType
               { name = textName "temp_celsius",
                 pgSchema = "public",
                 pgName = "temp_celsius",
                 definition =
-                  Gen.Input.DomainCustomTypeDefinition
-                    $ Gen.Input.Value
+                  Gen.DomainCustomTypeDefinition
+                    $ Gen.Value
                       { dimensionality = 0,
                         elementIsNullable = False,
-                        scalar = Gen.Input.PrimitiveScalar Gen.Input.Float8Primitive
+                        scalar = Gen.PrimitiveScalar Gen.Float8Primitive
                       }
               }
           compositeType =
-            Gen.Input.CustomType
+            Gen.CustomType
               { name = textName "weather_reading",
                 pgSchema = "public",
                 pgName = "weather_reading",
                 definition =
-                  Gen.Input.CompositeCustomTypeDefinition
-                    [ Gen.Input.Member
+                  Gen.CompositeCustomTypeDefinition
+                    [ Gen.Member
                         { name = textName "temperature",
                           pgName = "temperature",
                           isNullable = False,
                           value =
-                            Gen.Input.Value
+                            Gen.Value
                               { dimensionality = 0,
                                 elementIsNullable = False,
                                 scalar =
-                                  Gen.Input.CustomScalar
-                                    $ Gen.Input.CustomTypeRef
+                                  Gen.CustomScalar
+                                    $ Gen.CustomTypeRef
                                       { name = textName "temp_celsius",
                                         pgSchema = "public",
                                         pgName = "temp_celsius",
@@ -197,49 +197,49 @@ spec = do
               }
           (sorted, _) = orderAndResolve [compositeType, domainType] []
           resolvedRef = case sorted !! 1 of
-            Gen.Input.CustomType
-              { definition = Gen.Input.CompositeCustomTypeDefinition [Gen.Input.Member {value = Gen.Input.Value {scalar = Gen.Input.CustomScalar ref}}]
+            Gen.CustomType
+              { definition = Gen.CompositeCustomTypeDefinition [Gen.Member {value = Gen.Value {scalar = Gen.CustomScalar ref}}]
               } -> ref
             _ -> error "Unexpected shape"
       resolvedRef.index `shouldBe` 0
 
     it "resolves indices in queries" do
       let domainType =
-            Gen.Input.CustomType
+            Gen.CustomType
               { name = textName "temp_celsius",
                 pgSchema = "public",
                 pgName = "temp_celsius",
                 definition =
-                  Gen.Input.DomainCustomTypeDefinition
-                    $ Gen.Input.Value
+                  Gen.DomainCustomTypeDefinition
+                    $ Gen.Value
                       { dimensionality = 0,
                         elementIsNullable = False,
-                        scalar = Gen.Input.PrimitiveScalar Gen.Input.Float8Primitive
+                        scalar = Gen.PrimitiveScalar Gen.Float8Primitive
                       }
               }
           query =
-            Gen.Input.Query
+            Gen.Query
               { name = textName "get_temp",
                 srcPath = "queries/get_temp.sql",
                 identity = False,
                 idempotent = True,
                 params = [],
                 result =
-                  Gen.Input.RowsResult
-                    $ Gen.Input.ResultRows
-                      { cardinality = Gen.Input.OptionalResultRowsCardinality,
+                  Gen.RowsResult
+                    $ Gen.ResultRows
+                      { cardinality = Gen.OptionalResultRowsCardinality,
                         columns =
-                          Gen.Input.Member
+                          Gen.Member
                             { name = textName "temp",
                               pgName = "temp",
                               isNullable = False,
                               value =
-                                Gen.Input.Value
+                                Gen.Value
                                   { dimensionality = 0,
                                     elementIsNullable = False,
                                     scalar =
-                                      Gen.Input.CustomScalar
-                                        $ Gen.Input.CustomTypeRef
+                                      Gen.CustomScalar
+                                        $ Gen.CustomTypeRef
                                           { name = textName "temp_celsius",
                                             pgSchema = "public",
                                             pgName = "temp_celsius",
@@ -253,33 +253,33 @@ spec = do
               }
           (_, resolvedQueries) = orderAndResolve [domainType] [query]
           resolvedRef = case resolvedQueries !! 0 of
-            Gen.Input.Query
-              { result = Gen.Input.RowsResult Gen.Input.ResultRows {columns = Gen.Input.Member {value = Gen.Input.Value {scalar = Gen.Input.CustomScalar ref}} :| _}
+            Gen.Query
+              { result = Gen.RowsResult Gen.ResultRows {columns = Gen.Member {value = Gen.Value {scalar = Gen.CustomScalar ref}} :| _}
               } -> ref
             _ -> error "Unexpected shape"
       resolvedRef.index `shouldBe` 0
 
     it "sorts alphabetically when no dependencies exist" do
       let typeA =
-            Gen.Input.CustomType
+            Gen.CustomType
               { name = textName "beta",
                 pgSchema = "public",
                 pgName = "beta",
-                definition = Gen.Input.EnumCustomTypeDefinition []
+                definition = Gen.EnumCustomTypeDefinition []
               }
           typeB =
-            Gen.Input.CustomType
+            Gen.CustomType
               { name = textName "alpha",
                 pgSchema = "public",
                 pgName = "alpha",
-                definition = Gen.Input.EnumCustomTypeDefinition []
+                definition = Gen.EnumCustomTypeDefinition []
               }
           (sorted, _) = orderAndResolve [typeB, typeA] []
       map (.pgName) sorted `shouldBe` ["alpha", "beta"]
 
-textName :: Text -> Gen.Input.Name
+textName :: Text -> Gen.Name
 textName source =
-  Gen.Input.Name
+  Gen.Name
     { inCamelCase = source,
       inPascalCase = source,
       inKebabCase = source,

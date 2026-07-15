@@ -7,13 +7,11 @@ module GenContractV5.Output
   ( Output (..),
     OutputOk (..),
     Report (..),
-    toErrorYamlText,
-    toWarningYamlText,
     File (..),
   )
 where
 
-import GenContractV4.Output.Report (Report (..), toErrorYamlText, toWarningYamlText)
 import GenContractV5.Output.File (File (..))
 import GenContractV5.Output.Output (Output (..))
 import GenContractV5.Output.OutputOk (OutputOk (..))
+import GenContractV5.Output.Report (Report (..))

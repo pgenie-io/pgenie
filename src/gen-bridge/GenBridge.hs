@@ -1,8 +1,6 @@
 -- | Integration with generator adapters.
 module GenBridge
-  ( Input,
-    Output,
-    Gen,
+  ( module GenBridge.Contract,
     Location (..),
     load,
     bundle,
@@ -10,6 +8,6 @@ module GenBridge
 where
 
 import GenBridge.Bundle
+import GenBridge.Contract
 import GenBridge.Load
 import GenBridge.Location
-import GenBridge.Model

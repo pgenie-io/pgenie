@@ -10,7 +10,7 @@ where
 import Dhall qualified
 import GenContractBase.Aeson.Deriver qualified as Aeson.Deriver
 import GenContractBase.Dhall.Orphans ()
-import GenContractV4.Input.Name (Name)
+import GenContractV4.Input (Name)
 import Utils.Prelude
 
 -- | A custom type's identifier plus its PostgreSQL identity and index.

@@ -1,5 +1,5 @@
 cabal-version: 3.4
-name: pgenie-logic
+name: logic
 version: 0
 
 common base
@@ -80,16 +80,16 @@ library
     containers,
     dhall,
     foldl,
+    gen-bridge,
     hspec,
     megaparsec,
     monad-parallel,
-    pgenie-gen-bridge,
-    pgenie-utils,
     postgresql-syntax,
     QuickCheck,
     syntactic-class,
     text,
     text-builder,
+    utils,
     vector,
     yaml-unscrambler,
 
@@ -100,5 +100,5 @@ test-suite logic-test
   main-is: Main.hs
   build-depends:
     hspec,
-    pgenie-logic,
-    pgenie-utils,
+    logic,
+    utils,

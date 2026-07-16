@@ -1,5 +1,5 @@
 cabal-version: 3.4
-name: pgenie-gen-bridge
+name: ui
 version: 0
 
 common base
@@ -38,46 +38,43 @@ library
   import: base
   hs-source-dirs: library
   exposed-modules:
-    GenBridge
-    GenBridge.Contract
+    Ui
+    Ui.Display.Components.Main
+    Ui.Display.Components.Main.View
 
   other-modules:
-    GenBridge.Bundle
-    GenBridge.Dhall.ExprViews
-    GenBridge.Dispatch
-    GenBridge.Load
-    GenBridge.Location
+    Ui.Commands
+    Ui.Commands.Analyse
+    Ui.Commands.Generate
+    Ui.Commands.ManageIndexes
+    Ui.Display
+    Ui.Display.Components.ProgressBar
+    Ui.Display.Components.ProgressBar.View
+    Ui.Framework
 
   build-depends:
-    aeson,
-    algebraic-path,
-    dhall,
-    dhall-json,
-    microlens,
-    pgenie-gen-contract-v5,
-    pgenie-gen-contract-versioning,
-    pgenie-utils,
-    template-haskell,
+    interpreters,
+    logic,
+    optparse-applicative,
     text,
+    text-builder,
+    utils,
 
-test-suite gen-bridge-test
+test-suite ui-test
   import: test
   type: exitcode-stdio-1.0
   hs-source-dirs: test
   main-is: Main.hs
   other-modules:
-    GenBridge.BundleSpec
-    GenBridge.LoadSpec
-    GenBridge.LoadV4Spec
-    Test.Report
+    Ui.Display.Components.MainSpec
 
   build-tool-depends:
     hspec-discover:hspec-discover
 
   build-depends:
-    aeson,
-    hspec >=2.11 && <3,
-    pgenie-gen-bridge,
-    pgenie-gen-contract-v5,
-    rerebase,
+    hspec,
+    interpreters,
+    text,
     text-builder,
+    ui,
+    utils,

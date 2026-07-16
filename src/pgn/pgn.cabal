@@ -1,6 +1,10 @@
 cabal-version: 3.4
-name: pgenie-interpreters
+name: pgn
 version: 0
+
+source-repository head
+  type: git
+  location: https://github.com/nikita-volkov/pgenie
 
 common base
   default-language: GHC2024
@@ -28,14 +32,22 @@ common base
     TypeFamilies
     ViewPatterns
 
-library
+common executable
   import: base
-  hs-source-dirs: library
-  exposed-modules:
-    Interpreters.Observing
+  ghc-options:
+    -O2
+    -threaded
+    "-with-rtsopts=-N -I0 -qg"
 
+executable pgn
+  import: executable
+  hs-source-dirs: library/pgn/
+  main-is: Main.hs
+  autogen-modules: Paths_pgn
+  other-modules: Paths_pgn
   build-depends:
-    monad-parallel,
-    pgenie-logic,
-    pgenie-utils,
+    base,
+    infra,
     text,
+    ui,
+    utils,

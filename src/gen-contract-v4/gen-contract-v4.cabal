@@ -1,5 +1,5 @@
 cabal-version: 3.4
-name: pgenie-gen-contract-v4
+name: gen-contract-v4
 version: 0
 
 common base
@@ -72,11 +72,11 @@ library
     aeson,
     cases,
     dhall,
-    pgenie-gen-contract-base,
-    pgenie-gen-contract-versioning,
-    pgenie-utils,
+    gen-contract-base,
+    gen-contract-versioning,
     QuickCheck,
     rerebase,
+    utils,
 
 test-suite gen-contract-v4-test
   import: test
@@ -95,6 +95,6 @@ test-suite gen-contract-v4-test
     containers,
     dhall,
     either,
+    gen-contract-v4,
     hspec >=2.11 && <3,
-    pgenie-gen-contract-v4,
     rerebase,

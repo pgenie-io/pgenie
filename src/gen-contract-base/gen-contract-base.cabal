@@ -1,11 +1,10 @@
 cabal-version: 3.4
-name: pgenie-gen-contract-versioning
+name: gen-contract-base
 version: 0
 
 common base
   default-language: GHC2024
   default-extensions:
-    AllowAmbiguousTypes
     ApplicativeDo
     BlockArguments
     DefaultSignatures
@@ -33,12 +32,22 @@ library
   import: base
   hs-source-dirs: library
   exposed-modules:
-    GenContractVersioning
-
-  other-modules:
-    GenContractVersioning.ContractVersion
+    GenContractBase.Aeson.Deriver
+    GenContractBase.Dhall.Decode
+    GenContractBase.Dhall.Deriving
+    GenContractBase.Dhall.Orphans
+    GenContractBase.Dhall.Orphans.NonEmpty
+    GenContractBase.Dhall.Orphans.Path
+    GenContractBase.Prelude
+    GenContractBase.Prelude.Path
 
   build-depends:
+    aeson,
+    algebraic-path,
     base,
+    cases,
     dhall,
+    prettyprinter,
+    template-haskell,
     text,
+    utils,

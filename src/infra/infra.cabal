@@ -1,5 +1,5 @@
 cabal-version: 3.4
-name: pgenie-infra
+name: infra
 version: 0
 
 common base
@@ -75,15 +75,14 @@ library
     base,
     directory,
     fx,
+    gen-bridge,
     hasql,
     hasql-dev,
     hasql-mapping,
     hasql-pool,
     hasql-th,
-    pgenie-gen-bridge,
-    pgenie-interpreters,
-    pgenie-logic,
-    pgenie-utils,
+    interpreters,
+    logic,
     postgresql-libpq,
     resourcet,
     syntactic-class,
@@ -91,6 +90,7 @@ library
     testcontainers-postgresql,
     text,
     text-builder,
+    utils,
     uuid,
     vector,
 
@@ -108,13 +108,13 @@ test-suite infra-test
   build-depends:
     base,
     fx,
+    gen-bridge,
     hspec,
-    pgenie-gen-bridge,
-    pgenie-infra,
-    pgenie-logic,
-    pgenie-utils,
+    infra,
+    logic,
     postgresql-libpq,
     resourcet,
     testcontainers,
     testcontainers-postgresql,
     text,
+    utils,

@@ -1,10 +1,11 @@
 cabal-version: 3.4
-name: pgenie-utils
+name: gen-contract-versioning
 version: 0
 
 common base
   default-language: GHC2024
   default-extensions:
+    AllowAmbiguousTypes
     ApplicativeDo
     BlockArguments
     DefaultSignatures
@@ -32,31 +33,12 @@ library
   import: base
   hs-source-dirs: library
   exposed-modules:
-    Utils.Prelude
-    Utils.Text
+    GenContractVersioning
+
+  other-modules:
+    GenContractVersioning.ContractVersion
 
   build-depends:
-    algebraic-path,
     base,
-    bytestring,
-    containers,
-    data-has,
-    hashable,
-    lawful-conversions,
-    monad-parallel,
-    mtl,
-    profunctors,
-    QuickCheck,
-    quickcheck-instances,
-    relations,
-    syntactic-class,
+    dhall,
     text,
-    text-builder,
-    text-builder-lawful-conversions,
-    time,
-    transformers,
-    tuple,
-    uuid,
-    vector,
-    vector-instances,
-    witherable,

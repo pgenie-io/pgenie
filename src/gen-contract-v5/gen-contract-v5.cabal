@@ -1,5 +1,5 @@
 cabal-version: 3.4
-name: pgenie-gen-contract-v5
+name: gen-contract-v5
 version: 0
 
 common base
@@ -62,12 +62,12 @@ library
   build-depends:
     cases,
     dhall,
-    pgenie-gen-contract-base,
-    pgenie-gen-contract-v4,
-    pgenie-gen-contract-versioning,
-    pgenie-utils,
+    gen-contract-base,
+    gen-contract-v4,
+    gen-contract-versioning,
     QuickCheck,
     rerebase,
+    utils,
 
 test-suite gen-contract-v5-test
   import: test
@@ -89,9 +89,9 @@ test-suite gen-contract-v5-test
     containers,
     dhall,
     either,
+    gen-contract-v4,
+    gen-contract-v5,
+    gen-contract-versioning,
     hspec >=2.11 && <3,
-    pgenie-gen-contract-v4,
-    pgenie-gen-contract-v5,
-    pgenie-gen-contract-versioning,
     QuickCheck,
     rerebase,

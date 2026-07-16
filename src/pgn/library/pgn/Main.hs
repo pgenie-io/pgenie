@@ -2,7 +2,7 @@ module Main (main) where
 
 import Data.Text qualified as Text
 import Infra qualified
-import Paths_pgenie_pgn qualified as Paths
+import Paths_pgn qualified as Paths
 import Ui qualified
 import Utils.Prelude
 

@@ -43,7 +43,6 @@ library
 
   other-modules:
     GenBridge.Bundle
-    GenBridge.ContractVersion
     GenBridge.Dhall.ExprViews
     GenBridge.Dispatch
     GenBridge.Load

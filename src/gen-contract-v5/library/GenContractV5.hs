@@ -18,18 +18,20 @@ where
 import GenContractV4 (V4)
 import GenContractV5.Input.Project (Project, toV4Project)
 import GenContractV5.Output.Output (Output, fromV4Output)
-import GenContractVersioning (HasParent (..), IsContract (..))
+import GenContractVersioning (ContractVersion (..), HasPreviousVersion (..), IsContractVersion (..))
 import Utils.Prelude
 
 -- | gen-contract v5 (the current latest rung).
 data V5
 
-instance IsContract V5 where
+instance IsContractVersion V5 where
   type InputOf V5 = Project
   type OutputOf V5 = Output
 
-instance HasParent V5 where
-  type ParentOf V5 = V4
+  versionOf = ContractVersion {major = 5, minor = 0}
+
+instance HasPreviousVersion V5 where
+  type PreviousVersionOf V5 = V4
 
   downgradeInput = Right . toV4Project
 

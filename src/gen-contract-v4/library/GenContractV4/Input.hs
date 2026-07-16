@@ -4,7 +4,7 @@
 -- The @Input@ half of gen-contract v4 -- frozen forever at the v4.0.1
 -- shape (reconstructed from @git diff v4.0.1 v5.0.0@ in the gen-contract
 -- repo; v4.0.1 only exported more top-level names than v4.0.0, no field
--- changes). This is the oldest supported rung -- it has no 'GenContractVersioning.HasParent'
+-- changes). This is the oldest supported rung -- it has no 'GenContractVersioning.HasPreviousVersion'
 -- instance. See "GenContractV5.Input" for what changed going into v5.
 module GenContractV4.Input
   ( -- * Re-exports (identical across every gen-contract major version so far)

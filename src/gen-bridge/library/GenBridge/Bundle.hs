@@ -10,10 +10,10 @@ import Dhall qualified
 import Dhall.Core qualified
 import Dhall.JSONToDhall qualified
 import GenBridge.Contract qualified as Gen
-import GenBridge.ContractVersion qualified as ContractVersion
 import GenBridge.Dhall.ExprViews qualified as ExprViews
 import GenBridge.Dispatch qualified as Dispatch
 import GenBridge.Location qualified as Location
+import GenContractVersioning qualified
 import Language.Haskell.TH.Syntax qualified as TH
 import Utils.Prelude
 
@@ -32,8 +32,8 @@ bundle location hash = TH.Code do
         fail "Could not find 'contractVersion' field in the loaded generator code"
       Just expr -> pure expr
 
-    ContractVersion.ContractVersion major minor <- do
-      let decoder = Dhall.auto @ContractVersion.ContractVersion
+    GenContractVersioning.ContractVersion major minor <- do
+      let decoder = Dhall.auto @GenContractVersioning.ContractVersion
 
       Dhall.expectWithSettings Dhall.defaultInputSettings decoder contractVersionExpr
 

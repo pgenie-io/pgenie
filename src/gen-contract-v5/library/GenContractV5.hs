@@ -19,7 +19,7 @@ where
 import GenContractV4 (V4)
 import GenContractV5.Contract (Output)
 import GenContractV5.Contract.Project (Project, toV4Project)
-import GenContractVersioning (ContractVersion (..), HasPreviousVersion (..), IsContractVersion (..), chainedCodecByVersion)
+import GenContractVersioning (ContractVersion (..), IsContractVersion (..), codecByVersionDefault)
 import Utils.Prelude
 
 -- | gen-contract v5 (the current latest rung).
@@ -28,14 +28,12 @@ data V5
 instance IsContractVersion V5 where
   type InputOf V5 = Project
   type OutputOf V5 = Output
+  type PreviousVersionOf V5 = V4
 
   versionOf = ContractVersion {major = 5, minor = 0}
-
-  codecByVersion = chainedCodecByVersion @V5
-
-instance HasPreviousVersion V5 where
-  type PreviousVersionOf V5 = V4
 
   downgradeInput = Right . toV4Project
 
   upgradeOutput = id
+
+  codecByVersion = codecByVersionDefault @V5

@@ -10,7 +10,7 @@
 -- Frozen forever at the v4.0.1 shape (reconstructed from @git diff v4.0.1
 -- v5.0.0@ in the gen-contract repo; v4.0.1 only exported more top-level
 -- names than v4.0.0, no field changes). This is the oldest supported rung --
--- it has no 'GenContractVersioning.HasPreviousVersion' instance. See
+-- it is its own 'GenContractVersioning.PreviousVersionOf' fixed point. See
 -- "GenContractV5.Contract" for what changed going into v5.
 --
 -- ** Output

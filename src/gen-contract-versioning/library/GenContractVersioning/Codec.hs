@@ -1,6 +1,6 @@
 -- |
 -- The 'Codec' the chain-walking dispatcher composes across
--- 'GenContractVersioning.HasPreviousVersion' hops.
+-- 'GenContractVersioning.PreviousVersionOf' hops.
 module GenContractVersioning.Codec
   ( Codec (..),
     identityCodec,

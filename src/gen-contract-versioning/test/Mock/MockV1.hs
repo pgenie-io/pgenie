@@ -4,16 +4,20 @@
 -- real gen-contract package.
 module Mock.MockV1 (MockV1) where
 
-import GenContractVersioning (ContractVersion (..), IsContractVersion (..), terminalCodecByVersion)
+import GenContractVersioning (ContractVersion (..), IsContractVersion (..), codecByVersionDefault)
 import Prelude
 
--- | The oldest fake rung -- no 'GenContractVersioning.HasPreviousVersion' instance.
+-- | The oldest fake rung -- its own 'GenContractVersioning.PreviousVersionOf' fixed point.
 data MockV1
 
 instance IsContractVersion MockV1 where
   type InputOf MockV1 = Int
   type OutputOf MockV1 = Int
+  type PreviousVersionOf MockV1 = MockV1
 
   versionOf = ContractVersion {major = 1, minor = 0}
 
-  codecByVersion = terminalCodecByVersion @MockV1
+  downgradeInput = Right
+  upgradeOutput = id
+
+  codecByVersion = codecByVersionDefault @MockV1

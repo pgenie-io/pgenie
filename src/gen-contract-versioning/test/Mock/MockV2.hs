@@ -4,7 +4,7 @@
 -- each direction.
 module Mock.MockV2 (MockV2) where
 
-import GenContractVersioning (ContractVersion (..), HasPreviousVersion (..), IsContractVersion (..), chainedCodecByVersion)
+import GenContractVersioning (ContractVersion (..), IsContractVersion (..), codecByVersionDefault)
 import Mock.MockV1 (MockV1)
 import Prelude
 
@@ -13,13 +13,9 @@ data MockV2
 instance IsContractVersion MockV2 where
   type InputOf MockV2 = Int
   type OutputOf MockV2 = Int
+  type PreviousVersionOf MockV2 = MockV1
 
   versionOf = ContractVersion {major = 2, minor = 0}
-
-  codecByVersion = chainedCodecByVersion @MockV2
-
-instance HasPreviousVersion MockV2 where
-  type PreviousVersionOf MockV2 = MockV1
 
   -- \| Marks the hop by subtracting a distinct offset, so a test can tell
   -- how many hops an input crossed by how far it moved from its original
@@ -27,3 +23,5 @@ instance HasPreviousVersion MockV2 where
   downgradeInput input = Right (input - 10)
 
   upgradeOutput output = output + 100
+
+  codecByVersion = codecByVersionDefault @MockV2

@@ -52,7 +52,6 @@ library
     Gen.Contract
     Gen.Bundle
     Gen.Dhall.ExprViews
-    Gen.Dispatch
     Gen.Load
     Gen.Location
 

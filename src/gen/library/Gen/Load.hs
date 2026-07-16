@@ -8,10 +8,11 @@ import Dhall qualified
 import Dhall.Core qualified
 import Dhall.Import qualified
 import Dhall.JSONToDhall qualified
+import Dhall.TypeCheck qualified
 import Gen.Contract qualified as Gen
 import Gen.Dhall.ExprViews qualified as ExprViews
-import Gen.Dispatch qualified as Dispatch
 import Gen.Location qualified as Location
+import GenContractV5 (V5)
 import GenContractVersioning qualified
 import Lens.Micro qualified
 import Utils.Prelude
@@ -46,12 +47,16 @@ load location hash echo warn = do
       fail "Could not find 'contractVersion' field in the loaded generator code"
     Just expr -> pure expr
 
-  GenContractVersioning.ContractVersion major minor <- do
+  contractVersion@(GenContractVersioning.ContractVersion major minor) <- do
     let decoder = Dhall.auto @GenContractVersioning.ContractVersion
 
     Dhall.expectWithSettings Dhall.defaultInputSettings decoder contractVersionExpr
 
     Dhall.rawInput decoder contractVersionExpr
+
+  codec <- case GenContractVersioning.codecByVersion @V5 contractVersion of
+    Left err -> fail (Text.unpack (GenContractVersioning.dispatchErrorToText err))
+    Right codec -> pure codec
 
   configTypeExpr <- case ExprViews.recordField "Config" genExpr of
     Nothing -> do
@@ -68,8 +73,8 @@ load location hash echo warn = do
   let normalizedExpr = Dhall.Core.alphaNormalize (Dhall.Core.normalize genExpr)
       hash = Dhall.Import.hashExpressionToCode normalizedExpr
 
-      buildGen :: forall input output. (Dhall.ToDhall input, Dhall.FromDhall output) => Dispatch.Adapters input output -> Either Text Gen.Gen
-      buildGen Dispatch.Adapters {projectInput, liftOutput} = Right \config -> do
+      gen :: Gen.Gen
+      gen config = do
         configValExpr <- case config of
           Nothing ->
             Right (Dhall.Core.App Dhall.Core.None configTypeExpr)
@@ -80,29 +85,23 @@ load location hash echo warn = do
               Right configValExpr ->
                 Right (Dhall.Core.Some configValExpr)
 
-        let configEncoder =
-              Dhall.Encoder
-                { embed = const configValExpr,
-                  declared = Dhall.Core.App Dhall.Core.Optional configTypeExpr
-                }
-            decoder =
-              fmap
-                ($ ())
-                ( Dhall.function
-                    configEncoder
-                    Dhall.auto
-                )
+        let compileWithConfigExpr = Dhall.Core.App compileExpr configValExpr
 
-        case Dhall.rawInput decoder compileExpr of
-          Nothing -> Left "Failed to decode the 'compile' function from the generator code."
-          Just (compileFunc :: input -> output) ->
+        case Dhall.TypeCheck.typeOf compileWithConfigExpr of
+          Left typeError ->
+            Left ("The generator's 'compile' does not accept the given config:\n" <> onto (show typeError))
+          Right _ ->
             Right \project ->
-              case projectInput project of
+              case codec.encode project of
                 Left err -> Gen.ErrOutput Gen.Report {path = [], message = err}
-                Right input -> liftOutput (compileFunc input)
-
-  gen <- case Dispatch.dispatch major minor buildGen of
-    Left err -> fail (Text.unpack err)
-    Right gen -> pure gen
+                Right inputExpr ->
+                  let resultExpr = Dhall.Core.App compileWithConfigExpr inputExpr
+                   in case Dhall.TypeCheck.typeOf resultExpr of
+                        Left typeError ->
+                          Gen.ErrOutput Gen.Report {path = [], message = "The generator's 'compile' rejected the project:\n" <> onto (show typeError)}
+                        Right _ ->
+                          case codec.decode (Dhall.Core.normalize resultExpr) of
+                            Left err -> Gen.ErrOutput Gen.Report {path = [], message = err}
+                            Right output -> output
 
   pure (gen, hash)

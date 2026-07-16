@@ -4,7 +4,7 @@
 module GenContractV4 (V4) where
 
 import GenContractV4.Contract (Output, Project)
-import GenContractVersioning (ContractVersion (..), IsContractVersion (..))
+import GenContractVersioning (ContractVersion (..), IsContractVersion (..), terminalCodecByVersion)
 
 -- | gen-contract v4 (the oldest currently-supported rung - no 'HasPreviousVersion' instance exists for it).
 data V4
@@ -14,3 +14,5 @@ instance IsContractVersion V4 where
   type OutputOf V4 = Output
 
   versionOf = ContractVersion {major = 4, minor = 0}
+
+  codecByVersion = terminalCodecByVersion @V4

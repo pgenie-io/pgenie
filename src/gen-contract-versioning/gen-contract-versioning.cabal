@@ -49,9 +49,31 @@ library
     GenContractVersioning
 
   other-modules:
+    GenContractVersioning.Codec
     GenContractVersioning.ContractVersion
+    GenContractVersioning.DispatchError
 
   build-depends:
     base,
     dhall,
     text,
+
+test-suite gen-contract-versioning-test
+  import: test
+  type: exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is: Main.hs
+  other-modules:
+    GenContractVersioningSpec
+    Mock.MockV1
+    Mock.MockV2
+    Mock.MockV3
+
+  build-tool-depends:
+    hspec-discover:hspec-discover
+
+  build-depends:
+    dhall,
+    gen-contract-versioning,
+    hspec >=2.11 && <3,
+    rerebase,

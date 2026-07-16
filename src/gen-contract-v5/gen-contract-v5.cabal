@@ -63,9 +63,6 @@ library
     GenContractV5.Input.Query
     GenContractV5.Input.Result
     GenContractV5.Input.ResultRows
-    GenContractV5.Output.File
-    GenContractV5.Output.Output
-    GenContractV5.Output.OutputOk
 
   build-depends:
     cases,

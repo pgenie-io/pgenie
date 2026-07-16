@@ -3,6 +3,10 @@
 -- function returns after being handed a "GenContractV5.Input" project —
 -- either the generated 'File's (with any non-fatal 'Report' warnings), or
 -- a fatal 'Report' explaining why generation failed.
+--
+-- Shape-identical to "GenContractV4.Output" -- the v5 bump didn't touch
+-- Output/OutputOk/File/Report -- so re-exported wholesale rather than
+-- redefined as a nominally distinct rung.
 module GenContractV5.Output
   ( Output (..),
     OutputOk (..),
@@ -11,7 +15,4 @@ module GenContractV5.Output
   )
 where
 
-import GenContractV4.Output (Report (..))
-import GenContractV5.Output.File (File (..))
-import GenContractV5.Output.Output (Output (..))
-import GenContractV5.Output.OutputOk (OutputOk (..))
+import GenContractV4.Output (File (..), Output (..), OutputOk (..), Report (..))

@@ -7,8 +7,9 @@
 -- @index@, keeping only @name@; (2) 'GenContractV5.Input.Value' inlines
 -- @dimensionality@/@elementIsNullable@ directly instead of wrapping them
 -- in an @Optional ArraySettings@ -- downgrading re-wraps them, using
--- 'Nothing' when @dimensionality == 0@. Both directions are total for
--- this rung (neither ever needs the 'Left' that 'downgradeInput''s
+-- 'Nothing' when @dimensionality == 0@. Output is untouched between the
+-- two rungs, so 'upgradeOutput' is 'id'. Both input directions are total
+-- for this rung (neither ever needs the 'Left' that 'downgradeInput''s
 -- signature allows for future, genuinely-lossy rungs).
 module GenContractV5
   ( V5,
@@ -17,7 +18,7 @@ where
 
 import GenContractV4 (V4)
 import GenContractV5.Input.Project (Project, toV4Project)
-import GenContractV5.Output.Output (Output, fromV4Output)
+import GenContractV5.Output (Output)
 import GenContractVersioning (ContractVersion (..), HasPreviousVersion (..), IsContractVersion (..))
 import Utils.Prelude
 
@@ -35,4 +36,4 @@ instance HasPreviousVersion V5 where
 
   downgradeInput = Right . toV4Project
 
-  upgradeOutput = fromV4Output
+  upgradeOutput = id

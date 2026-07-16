@@ -5,6 +5,7 @@ version: 0
 common base
   default-language: GHC2024
   default-extensions:
+    AllowAmbiguousTypes
     ApplicativeDo
     BlockArguments
     DefaultSignatures
@@ -28,14 +29,29 @@ common base
     TypeFamilies
     ViewPatterns
 
+common test
+  import: base
+  ghc-options:
+    -threaded
+    "-with-rtsopts=-N -I0 -qg"
+
+common executable
+  import: base
+  ghc-options:
+    -O2
+    -threaded
+    "-with-rtsopts=-N -I0 -qg"
+
 library
   import: base
   hs-source-dirs: library
   exposed-modules:
     GenContractBase.Aeson.Deriver
-    GenContractBase.Dhall.Decode
     GenContractBase.Dhall.Deriving
     GenContractBase.Dhall.Orphans
+
+  other-modules:
+    GenContractBase.Dhall.Decode
     GenContractBase.Dhall.Orphans.NonEmpty
     GenContractBase.Dhall.Orphans.Path
     GenContractBase.Prelude

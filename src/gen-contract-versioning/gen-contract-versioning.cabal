@@ -29,6 +29,19 @@ common base
     TypeFamilies
     ViewPatterns
 
+common test
+  import: base
+  ghc-options:
+    -threaded
+    "-with-rtsopts=-N -I0 -qg"
+
+common executable
+  import: base
+  ghc-options:
+    -O2
+    -threaded
+    "-with-rtsopts=-N -I0 -qg"
+
 library
   import: base
   hs-source-dirs: library

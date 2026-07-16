@@ -5,6 +5,7 @@ version: 0
 common base
   default-language: GHC2024
   default-extensions:
+    AllowAmbiguousTypes
     ApplicativeDo
     BlockArguments
     DefaultSignatures
@@ -34,6 +35,13 @@ common test
     -threaded
     "-with-rtsopts=-N -I0 -qg"
 
+common executable
+  import: base
+  ghc-options:
+    -O2
+    -threaded
+    "-with-rtsopts=-N -I0 -qg"
+
 library
   import: base
   hs-source-dirs: library
@@ -41,23 +49,23 @@ library
     GenContractV5
     GenContractV5.Fixtures
     GenContractV5.Input
+    GenContractV5.Input.CustomTypeRef
+    GenContractV5.Input.Scalar
+    GenContractV5.Input.Value
+    GenContractV5.Output
+
+  other-modules:
+    GenContractV5.Fixtures.Fixture1
     GenContractV5.Input.CustomType
     GenContractV5.Input.CustomTypeDefinition
-    GenContractV5.Input.CustomTypeRef
     GenContractV5.Input.Member
     GenContractV5.Input.Project
     GenContractV5.Input.Query
     GenContractV5.Input.Result
     GenContractV5.Input.ResultRows
-    GenContractV5.Input.Scalar
-    GenContractV5.Input.Value
-    GenContractV5.Output
     GenContractV5.Output.File
     GenContractV5.Output.Output
     GenContractV5.Output.OutputOk
-
-  other-modules:
-    GenContractV5.Fixtures.Fixture1
 
   build-depends:
     cases,

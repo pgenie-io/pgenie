@@ -5,6 +5,7 @@ version: 0
 common base
   default-language: GHC2024
   default-extensions:
+    AllowAmbiguousTypes
     ApplicativeDo
     BlockArguments
     DefaultSignatures
@@ -34,12 +35,18 @@ common test
     -threaded
     "-with-rtsopts=-N -I0 -qg"
 
+common executable
+  import: base
+  ghc-options:
+    -O2
+    -threaded
+    "-with-rtsopts=-N -I0 -qg"
+
 library
   import: base
   hs-source-dirs: library
   exposed-modules:
     Logic
-    Logic.Capabilities
     Logic.Capabilities.Fs
     Logic.Capabilities.GeneratorRuntime
     Logic.Capabilities.IndexCatalog
@@ -48,31 +55,32 @@ library
     Logic.Capabilities.Reporting
     Logic.Capabilities.SeqScanExplain
     Logic.Capabilities.Staging
-    Logic.Domain
-    Logic.Domain.CustomTypeOrdering
-    Logic.Domain.CustomTypeSignature
-    Logic.Domain.GeneratorHashes
     Logic.Domain.IndexOptimization
     Logic.Domain.Name
     Logic.Domain.ProjectFile
     Logic.Domain.QueryAnalysis
-    Logic.Domain.QuerySignature
     Logic.Domain.Report
-    Logic.Domain.SeqScanFinding
-    Logic.Domain.SqlTemplate
-    Logic.Domain.SyntaxAnalyser
     Logic.Procedures.Analyse
     Logic.Procedures.AnalyseProject
     Logic.Procedures.Generate
     Logic.Procedures.GenerateCode
-    Logic.Procedures.GenerateQuerySignatures
-    Logic.Procedures.GenerateTypeSignatures
     Logic.Procedures.ManageIndexes
 
   other-modules:
+    Logic.Capabilities
+    Logic.Domain
+    Logic.Domain.CustomTypeOrdering
+    Logic.Domain.CustomTypeSignature
+    Logic.Domain.GeneratorHashes
     Logic.Domain.Name.Megaparsec
+    Logic.Domain.QuerySignature
+    Logic.Domain.SeqScanFinding
+    Logic.Domain.SqlTemplate
+    Logic.Domain.SyntaxAnalyser
     Logic.Domain.SyntaxAnalyser.AstInterpreter
     Logic.Domain.SyntaxAnalyser.Data
+    Logic.Procedures.GenerateQuerySignatures
+    Logic.Procedures.GenerateTypeSignatures
 
   build-depends:
     aeson,

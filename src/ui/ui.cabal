@@ -5,6 +5,7 @@ version: 0
 common base
   default-language: GHC2024
   default-extensions:
+    AllowAmbiguousTypes
     ApplicativeDo
     BlockArguments
     DefaultSignatures
@@ -31,6 +32,13 @@ common base
 common test
   import: base
   ghc-options:
+    -threaded
+    "-with-rtsopts=-N -I0 -qg"
+
+common executable
+  import: base
+  ghc-options:
+    -O2
     -threaded
     "-with-rtsopts=-N -I0 -qg"
 

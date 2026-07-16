@@ -1,7 +1,7 @@
 module GenContractV5.Contract.ScalarSpec (spec) where
 
 import GenContractV4.Contract qualified as V4
-import GenContractV5.Contract.CustomTypeRef qualified as V5.CustomTypeRef
+import GenContractV5.Contract qualified as V5
 import GenContractV5.Contract.Scalar qualified as V5.Scalar
 import Test.Hspec
 
@@ -15,7 +15,7 @@ spec = do
     it "drops pgSchema/pgName/index, keeping only name" do
       V5.Scalar.toV4Scalar
         ( V5.Scalar.CustomScalar
-            V5.CustomTypeRef.CustomTypeRef
+            V5.CustomTypeRef
               { name = exampleName,
                 pgSchema = "public",
                 pgName = "status",

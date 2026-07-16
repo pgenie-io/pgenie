@@ -48,7 +48,6 @@ library
   exposed-modules:
     GenContractV5
     GenContractV5.Contract
-    GenContractV5.Contract.CustomTypeRef
     GenContractV5.Contract.Scalar
     GenContractV5.Contract.Value
     GenContractV5.Fixtures
@@ -56,6 +55,7 @@ library
   other-modules:
     GenContractV5.Contract.CustomType
     GenContractV5.Contract.CustomTypeDefinition
+    GenContractV5.Contract.CustomTypeRef
     GenContractV5.Contract.Member
     GenContractV5.Contract.Project
     GenContractV5.Contract.Query

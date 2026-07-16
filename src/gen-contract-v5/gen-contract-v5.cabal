@@ -48,11 +48,24 @@ library
   exposed-modules:
     GenContractV5
     GenContractV5.Contract
-    GenContractV5.Contract.Scalar
-    GenContractV5.Contract.Value
     GenContractV5.Fixtures
 
   other-modules:
+    GenContractV5.Fixtures.Fixture1
+
+  build-depends:
+    cases,
+    gen-contract-v4,
+    gen-contract-v5:gen-contract-v5-internal,
+    gen-contract-versioning,
+    rerebase,
+    utils,
+
+library gen-contract-v5-internal
+  import: base
+  visibility: private
+  hs-source-dirs: internal
+  exposed-modules:
     GenContractV5.Contract.CustomType
     GenContractV5.Contract.CustomTypeDefinition
     GenContractV5.Contract.CustomTypeRef
@@ -61,16 +74,14 @@ library
     GenContractV5.Contract.Query
     GenContractV5.Contract.Result
     GenContractV5.Contract.ResultRows
-    GenContractV5.Fixtures.Fixture1
+    GenContractV5.Contract.Scalar
+    GenContractV5.Contract.Value
 
   build-depends:
-    cases,
     dhall,
     gen-contract-base,
     gen-contract-v4,
-    gen-contract-versioning,
     QuickCheck,
-    rerebase,
     utils,
 
 test-suite gen-contract-v5-test
@@ -95,6 +106,7 @@ test-suite gen-contract-v5-test
     either,
     gen-contract-v4,
     gen-contract-v5,
+    gen-contract-v5:gen-contract-v5-internal,
     gen-contract-versioning,
     hspec >=2.11 && <3,
     QuickCheck,

@@ -95,12 +95,12 @@ runs:
 
     - name: Build
       shell: bash
-      run: cabal build --enable-tests
+      run: cabal build all --enable-tests
 
     - name: Test
       if: inputs.test-integration == 'true'
       shell: bash
-      run: cabal test --enable-tests --test-show-details=direct -j1
+      run: cabal test all --enable-tests --test-show-details=direct -j1
 
     - name: Install binary
       id: install

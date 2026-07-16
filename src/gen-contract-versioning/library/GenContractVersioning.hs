@@ -7,7 +7,7 @@
 -- 'HasPreviousVersion' says it has an immediately-older rung and how to
 -- project to/from it. The dispatcher that matches a generator's declared
 -- version against a tag and walks multiple 'HasPreviousVersion' hops when
--- needed is hand-written in @GenBridge.Dispatch@, not derived generically
+-- needed is hand-written in @Gen.Dispatch@, not derived generically
 -- here.
 module GenContractVersioning
   ( ContractVersion (..),

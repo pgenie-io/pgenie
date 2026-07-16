@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module GenBridge.Bundle
+module Gen.Bundle
   ( bundle,
   )
 where
@@ -9,10 +9,10 @@ import Data.Text qualified as Text
 import Dhall qualified
 import Dhall.Core qualified
 import Dhall.JSONToDhall qualified
-import GenBridge.Contract qualified as Gen
-import GenBridge.Dhall.ExprViews qualified as ExprViews
-import GenBridge.Dispatch qualified as Dispatch
-import GenBridge.Location qualified as Location
+import Gen.Contract qualified as Gen
+import Gen.Dhall.ExprViews qualified as ExprViews
+import Gen.Dispatch qualified as Dispatch
+import Gen.Location qualified as Location
 import GenContractVersioning qualified
 import Language.Haskell.TH.Syntax qualified as TH
 import Utils.Prelude

@@ -1,5 +1,5 @@
 cabal-version: 3.4
-name: gen-bridge
+name: gen
 version: 0
 
 common base
@@ -46,15 +46,15 @@ library
   import: base
   hs-source-dirs: library
   exposed-modules:
-    GenBridge
-    GenBridge.Contract
+    Gen
 
   other-modules:
-    GenBridge.Bundle
-    GenBridge.Dhall.ExprViews
-    GenBridge.Dispatch
-    GenBridge.Load
-    GenBridge.Location
+    Gen.Contract
+    Gen.Bundle
+    Gen.Dhall.ExprViews
+    Gen.Dispatch
+    Gen.Load
+    Gen.Location
 
   build-depends:
     aeson,
@@ -68,15 +68,15 @@ library
     text,
     utils,
 
-test-suite gen-bridge-test
+test-suite gen-test
   import: test
   type: exitcode-stdio-1.0
   hs-source-dirs: test
   main-is: Main.hs
   other-modules:
-    GenBridge.BundleSpec
-    GenBridge.LoadSpec
-    GenBridge.LoadV4Spec
+    Gen.BundleSpec
+    Gen.LoadSpec
+    Gen.LoadV4Spec
     Test.Report
 
   build-tool-depends:
@@ -84,7 +84,7 @@ test-suite gen-bridge-test
 
   build-depends:
     aeson,
-    gen-bridge,
+    gen,
     gen-contract-v5,
     hspec >=2.11 && <3,
     rerebase,

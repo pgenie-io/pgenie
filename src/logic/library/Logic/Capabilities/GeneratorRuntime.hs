@@ -5,7 +5,7 @@ module Logic.Capabilities.GeneratorRuntime
   )
 where
 
-import GenBridge qualified as Gen
+import Gen qualified
 import Utils.Prelude
 
 -- | Capability to load a generator's code and integrity hash from a location.

@@ -5,7 +5,7 @@
 --
 -- This module re-exports "GenContractV5.Contract" so that consumers can
 -- import every model type from a single location.
-module GenBridge.Contract
+module Gen.Contract
   ( module GenContractV5.Contract,
     Input,
     Gen,

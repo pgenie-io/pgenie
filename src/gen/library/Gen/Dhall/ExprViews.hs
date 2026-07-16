@@ -1,7 +1,7 @@
 -- |
 -- Narrow views into parsed Dhall expressions, used to pull specific fields
 -- out of a generator's top-level record without fully decoding it.
-module GenBridge.Dhall.ExprViews
+module Gen.Dhall.ExprViews
   ( recordField,
   )
 where

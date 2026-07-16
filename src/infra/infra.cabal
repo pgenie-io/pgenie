@@ -83,7 +83,7 @@ library
     base,
     directory,
     fx,
-    gen-bridge,
+    gen,
     hasql,
     hasql-dev,
     hasql-mapping,
@@ -116,7 +116,7 @@ test-suite infra-test
   build-depends:
     base,
     fx,
-    gen-bridge,
+    gen,
     hspec,
     infra,
     logic,

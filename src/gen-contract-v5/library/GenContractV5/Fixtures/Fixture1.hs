@@ -1,6 +1,6 @@
 -- |
 -- A representative 'Contract.Project' value — a single-query, single-migration
--- "demo" project — shared across the gen-contract-v5 and gen-bridge specs to
+-- "demo" project — shared across the gen-contract-v5 and gen specs to
 -- exercise Aeson round-tripping, Dhall round-tripping, and generator
 -- compilation against the same fixed input.
 module GenContractV5.Fixtures.Fixture1

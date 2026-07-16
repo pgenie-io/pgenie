@@ -13,7 +13,7 @@ import AlgebraicPath qualified as Path
 import Data.Text qualified as Text
 import Data.Text.IO qualified as Text.IO
 import Fx
-import GenBridge qualified as Gen
+import Gen qualified
 import Infra.Adapters.Analyser qualified as Analyser
 import Interpreters.Observing qualified as Observing
 import Logic.Capabilities.Fs (FsOps (..))

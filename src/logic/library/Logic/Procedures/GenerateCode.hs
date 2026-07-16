@@ -16,8 +16,7 @@ import AlgebraicPath qualified as Path
 import Control.Monad.Parallel qualified as MonadParallel
 import Data.Aeson.Text qualified as Aeson.Text
 import Data.Map.Strict qualified as Map
-import GenBridge qualified as GenBridge
-import GenBridge.Contract qualified as Gen
+import Gen qualified
 import Logic.Capabilities.Fs (FsOps (..))
 import Logic.Capabilities.GeneratorRuntime (LoadsGen (..))
 import Logic.Capabilities.Reporting (Warns (..))
@@ -67,8 +66,8 @@ run Params {projectFile, project} =
       MonadParallel.forM projectFile.artifacts \artifact -> do
         let name = Name.inSnakeCase artifact.name
             genUrl = case artifact.gen of
-              GenBridge.LocationUrl url -> url
-              GenBridge.LocationPath path -> Path.toText path
+              Gen.LocationUrl url -> url
+              Gen.LocationPath path -> Path.toText path
             maybeHash = Map.lookup genUrl existingHashes
         stage name 2 do
           compileFnWithHash <-
@@ -216,7 +215,7 @@ spec = do
               { space = "space",
                 name = "project",
                 version = Gen.Version 0 0 0,
-                artifacts = [ProjectFile.Artifact {name = "my_artifact", gen = GenBridge.LocationUrl "http://example.com/gen", config = Nothing}],
+                artifacts = [ProjectFile.Artifact {name = "my_artifact", gen = Gen.LocationUrl "http://example.com/gen", config = Nothing}],
                 postgres = Nothing
               }
           project =
@@ -241,7 +240,7 @@ spec = do
               { space = "space",
                 name = "project",
                 version = Gen.Version 0 0 0,
-                artifacts = [ProjectFile.Artifact {name = "my_artifact", gen = GenBridge.LocationUrl "http://example.com/gen", config = Nothing}],
+                artifacts = [ProjectFile.Artifact {name = "my_artifact", gen = Gen.LocationUrl "http://example.com/gen", config = Nothing}],
                 postgres = Nothing
               }
           project =

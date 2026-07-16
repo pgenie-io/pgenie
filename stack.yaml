@@ -6,7 +6,7 @@ packages:
   - src/gen-contract-versioning
   - src/gen-contract-v4
   - src/gen-contract-v5
-  - src/gen-bridge
+  - src/gen
   - src/logic
   - src/interpreters
   - src/infra

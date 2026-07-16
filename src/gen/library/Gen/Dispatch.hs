@@ -2,10 +2,10 @@
 -- The hand-written major-contract-version dispatcher: given a loaded
 -- generator's declared @(major, minor)@, decides which gen-contract rung it
 -- targets, checks that rung's minor ceiling, and hands back adapters that
--- let the rest of GenBridge treat every supported rung as the latest v5
+-- let the rest of Gen treat every supported rung as the latest v5
 -- 'Input'/'Output'. Carries no version literals of its own: every number
 -- comes from the rungs' 'GenContractVersioning.versionOf' declarations.
-module GenBridge.Dispatch
+module Gen.Dispatch
   ( Adapters (..),
     dispatch,
   )

@@ -1,4 +1,4 @@
-module GenBridge.Load
+module Gen.Load
   ( load,
   )
 where
@@ -8,10 +8,10 @@ import Dhall qualified
 import Dhall.Core qualified
 import Dhall.Import qualified
 import Dhall.JSONToDhall qualified
-import GenBridge.Contract qualified as Gen
-import GenBridge.Dhall.ExprViews qualified as ExprViews
-import GenBridge.Dispatch qualified as Dispatch
-import GenBridge.Location qualified as Location
+import Gen.Contract qualified as Gen
+import Gen.Dhall.ExprViews qualified as ExprViews
+import Gen.Dispatch qualified as Dispatch
+import Gen.Location qualified as Location
 import GenContractVersioning qualified
 import Lens.Micro qualified
 import Utils.Prelude

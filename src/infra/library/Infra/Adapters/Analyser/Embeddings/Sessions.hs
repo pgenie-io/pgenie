@@ -5,7 +5,7 @@ module Infra.Adapters.Analyser.Embeddings.Sessions
 where
 
 import Data.Vector qualified as Vector
-import GenBridge.Contract qualified as Gen
+import Gen qualified
 import Infra.Adapters.Analyser.Sessions qualified as Sessions
 import Logic.Domain.Name qualified as Name
 import Logic.Domain.QueryAnalysis (InferredParam (..), InferredQueryTypes (..))

@@ -15,7 +15,7 @@ where
 
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
-import GenBridge.Contract qualified as Gen
+import Gen qualified
 import Logic.Domain.Name qualified as Name
 import Test.Hspec
 import Test.Hspec.QuickCheck

@@ -1,6 +1,6 @@
 module Test.Report (toYamlText) where
 
-import GenBridge.Contract qualified as Gen
+import Gen qualified
 import TextBuilder qualified
 import Prelude
 

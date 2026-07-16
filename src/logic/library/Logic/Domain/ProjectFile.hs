@@ -15,8 +15,7 @@ import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Text qualified as Text
 import Data.Vector qualified as Vector
-import GenBridge qualified as GenBridge
-import GenBridge.Contract qualified as Gen
+import Gen qualified
 import Logic.Domain.Name qualified as Name
 import Logic.Domain.Report qualified as Report
 import Test.Hspec
@@ -33,7 +32,7 @@ data ProjectFile = ProjectFile
 
 data Artifact = Artifact
   { name :: Name.Name,
-    gen :: GenBridge.Location,
+    gen :: Gen.Location,
     config :: Maybe Aeson.Value
   }
 
@@ -151,14 +150,14 @@ tryFromYaml text = do
             genLocationString =
               U.formattedString "location" parseLocation
 
-            parseLocation :: Text -> Either Text GenBridge.Location
+            parseLocation :: Text -> Either Text Gen.Location
             parseLocation txt
               | "http://" `Text.isPrefixOf` txt || "https://" `Text.isPrefixOf` txt =
-                  Right (GenBridge.LocationUrl txt)
+                  Right (Gen.LocationUrl txt)
               | otherwise =
                   case Path.maybeFromText txt of
                     Nothing -> Left ("Invalid path: " <> txt)
-                    Just path -> Right (GenBridge.LocationPath path)
+                    Just path -> Right (Gen.LocationPath path)
 
     configValue :: U.Value (Maybe Aeson.Value)
     configValue =

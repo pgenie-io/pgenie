@@ -1,7 +1,7 @@
 -- |
 -- Location of a Dhall generator, either fetched over the network or read
 -- from the local filesystem.
-module GenBridge.Location
+module Gen.Location
   ( Location (..),
     toCode,
   )

@@ -6,7 +6,7 @@ module Logic.Domain.QueryAnalysis
   )
 where
 
-import GenBridge.Contract qualified as Gen
+import Gen qualified
 import Utils.Prelude
 
 -- | Inferred parameter and result types for a query.

@@ -1,12 +1,11 @@
 {-# LANGUAGE QuasiQuotes #-}
 
-module GenBridge.LoadV4Spec (spec) where
+module Gen.LoadV4Spec (spec) where
 
 import Data.Aeson qualified as Aeson
 import Data.Aeson.QQ.Simple (aesonQQ)
 import Data.Text.IO qualified as Text
-import GenBridge qualified as GenBridge
-import GenBridge.Contract qualified as Gen
+import Gen qualified
 import GenContractV5.Fixtures qualified as Fixtures
 import System.Exit qualified as Exit
 import Test.Hspec
@@ -18,7 +17,7 @@ spec = do
   describe "load" do
     it "loads a v4-contract-declared Dhall generator and compiles the (v5-shaped) Project1 fixture through the downgrade path" do
       (gen, _hash) <-
-        GenBridge.load (GenBridge.LocationPath "./test/GenV4.dhall") Nothing Text.putStrLn Text.putStrLn
+        Gen.load (Gen.LocationPath "./test/GenV4.dhall") Nothing Text.putStrLn Text.putStrLn
 
       compile <-
         case gen (Just configJson) of

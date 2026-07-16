@@ -9,7 +9,7 @@
 module Logic.Domain.CustomTypeOrdering (orderAndResolve, spec) where
 
 import Data.Map.Strict qualified as Map
-import GenBridge.Contract qualified as Gen
+import Gen qualified
 import Test.Hspec
 import Utils.Prelude
 

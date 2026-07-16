@@ -14,7 +14,7 @@ module Logic.Domain.Name
 where
 
 import Data.Text qualified as Text
-import GenBridge.Contract qualified as Gen
+import Gen qualified
 import Logic.Domain.Name.Megaparsec qualified as Megaparsec
 import Test.Hspec
 import Test.QuickCheck qualified as Qc

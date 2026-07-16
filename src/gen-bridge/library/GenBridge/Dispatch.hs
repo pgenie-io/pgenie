@@ -13,15 +13,14 @@ where
 
 import Dhall qualified
 import GenContractV5 (V5)
-import GenContractV5.Input qualified as V5.Input
-import GenContractV5.Output qualified as V5.Output
+import GenContractV5.Contract qualified as V5
 import GenContractVersioning (ContractVersion (..), HasPreviousVersion (..), IsContractVersion (..))
 import Utils.Prelude
 
 -- | Adapters for one concrete contract major.
 data Adapters input output = Adapters
-  { projectInput :: V5.Input.Project -> Either Text input,
-    liftOutput :: output -> V5.Output.Output
+  { projectInput :: V5.Project -> Either Text input,
+    liftOutput :: output -> V5.Output
   }
 
 -- | Dispatch on a generator's declared @(major, minor)@.

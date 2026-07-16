@@ -3,8 +3,7 @@
 -- v4 is the oldest supported rung.
 module GenContractV4 (V4) where
 
-import GenContractV4.Input (Project)
-import GenContractV4.Output (Output)
+import GenContractV4.Contract (Output, Project)
 import GenContractVersioning (ContractVersion (..), IsContractVersion (..))
 
 -- | gen-contract v4 (the oldest currently-supported rung - no 'HasPreviousVersion' instance exists for it).

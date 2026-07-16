@@ -47,22 +47,21 @@ library
   hs-source-dirs: library
   exposed-modules:
     GenContractV5
+    GenContractV5.Contract
+    GenContractV5.Contract.CustomTypeRef
+    GenContractV5.Contract.Scalar
+    GenContractV5.Contract.Value
     GenContractV5.Fixtures
-    GenContractV5.Input
-    GenContractV5.Input.CustomTypeRef
-    GenContractV5.Input.Scalar
-    GenContractV5.Input.Value
-    GenContractV5.Output
 
   other-modules:
+    GenContractV5.Contract.CustomType
+    GenContractV5.Contract.CustomTypeDefinition
+    GenContractV5.Contract.Member
+    GenContractV5.Contract.Project
+    GenContractV5.Contract.Query
+    GenContractV5.Contract.Result
+    GenContractV5.Contract.ResultRows
     GenContractV5.Fixtures.Fixture1
-    GenContractV5.Input.CustomType
-    GenContractV5.Input.CustomTypeDefinition
-    GenContractV5.Input.Member
-    GenContractV5.Input.Project
-    GenContractV5.Input.Query
-    GenContractV5.Input.Result
-    GenContractV5.Input.ResultRows
 
   build-depends:
     cases,
@@ -80,10 +79,10 @@ test-suite gen-contract-v5-test
   hs-source-dirs: test
   main-is: GenContractV5TestMain.hs
   other-modules:
-    GenContractV5.Input.AesonSpec
-    GenContractV5.Input.DhallSpec
-    GenContractV5.Input.ScalarSpec
-    GenContractV5.Input.ValueSpec
+    GenContractV5.Contract.AesonSpec
+    GenContractV5.Contract.DhallSpec
+    GenContractV5.Contract.ScalarSpec
+    GenContractV5.Contract.ValueSpec
     GenContractV5Spec
 
   build-tool-depends:

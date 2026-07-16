@@ -7,10 +7,10 @@ module GenContractV5.Fixtures
   )
 where
 
+import GenContractV5.Contract qualified as Contract
 import GenContractV5.Fixtures.Fixture1 qualified as Fixture1
-import GenContractV5.Input qualified as Input
 
--- | The first representative 'Input.Project' value — a single-query,
+-- | The first representative 'Contract.Project' value — a single-query,
 -- single-migration "demo" project.
-input1 :: Input.Project
+input1 :: Contract.Project
 input1 = Fixture1.input

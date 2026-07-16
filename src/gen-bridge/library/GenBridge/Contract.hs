@@ -3,12 +3,10 @@
 -- and the 'Output' it produces, joined by the 'Gen' function shape every
 -- Dhall generator must expose as its @compile@ field.
 --
--- This module re-exports the full union of "GenContractV5.Input" and
--- "GenContractV5.Output" so that consumers can import every model type from
--- a single location.
+-- This module re-exports "GenContractV5.Contract" so that consumers can
+-- import every model type from a single location.
 module GenBridge.Contract
-  ( module GenContractV5.Input,
-    module GenContractV5.Output,
+  ( module GenContractV5.Contract,
     Input,
     Gen,
     Compile,
@@ -16,8 +14,7 @@ module GenBridge.Contract
 where
 
 import Data.Aeson qualified as Aeson
-import GenContractV5.Input
-import GenContractV5.Output
+import GenContractV5.Contract
 import Utils.Prelude
 
 -- | The project description a generator compiles.

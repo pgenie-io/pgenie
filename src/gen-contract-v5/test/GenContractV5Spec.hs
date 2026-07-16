@@ -1,6 +1,6 @@
 module GenContractV5Spec (spec) where
 
-import GenContractV4.Input qualified as V4
+import GenContractV4.Contract qualified as V4
 import GenContractV5 qualified as V5
 import GenContractV5.Fixtures qualified as Fixtures
 import GenContractVersioning

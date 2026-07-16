@@ -1,5 +1,5 @@
 -- |
--- A representative 'Input.Project' value — a single-query, single-migration
+-- A representative 'Contract.Project' value — a single-query, single-migration
 -- "demo" project — shared across the gen-contract-v5 and gen-bridge specs to
 -- exercise Aeson round-tripping, Dhall round-tripping, and generator
 -- compilation against the same fixed input.
@@ -10,19 +10,19 @@ where
 
 import Cases qualified
 import Data.List.NonEmpty qualified as NonEmpty
-import GenContractV5.Input qualified as Input
+import GenContractV5.Contract qualified as Contract
 import Utils.Prelude
 
-input :: Input.Project
+input :: Contract.Project
 input =
-  Input.Project
+  Contract.Project
     { space = textName "demo",
       name = textName "demo_project",
-      version = Input.Version {major = 1, minor = 0, patch = 0},
+      version = Contract.Version {major = 1, minor = 0, patch = 0},
       customTypes = [statusType],
       queries = [exampleQuery],
       migrations =
-        [ Input.Migration
+        [ Contract.Migration
             { name = "001_create_users",
               sql = "CREATE TABLE users (id SERIAL PRIMARY KEY, name TEXT NOT NULL, email TEXT);"
             }
@@ -30,9 +30,9 @@ input =
     }
   where
     -- Helper function to create a name from text with all case renderings
-    textName :: Text -> Input.Name
+    textName :: Text -> Contract.Name
     textName source =
-      Input.Name
+      Contract.Name
         { inCamelCase = Cases.camelize source,
           inPascalCase = Cases.process Cases.title Cases.camel source,
           inKebabCase = Cases.spinalize source,
@@ -44,9 +44,9 @@ input =
         }
 
     -- Example query
-    exampleQuery :: Input.Query
+    exampleQuery :: Contract.Query
     exampleQuery =
-      Input.Query
+      Contract.Query
         { name = textName "get_user",
           srcPath = "queries/get_user.sql",
           identity = False,
@@ -54,9 +54,9 @@ input =
           params = [userIdParam],
           result = userResult,
           fragments =
-            [ Input.SqlQueryFragment "SELECT id, name, email, status FROM users WHERE id = ",
-              Input.VarQueryFragment
-                ( Input.Var
+            [ Contract.SqlQueryFragment "SELECT id, name, email, status FROM users WHERE id = ",
+              Contract.VarQueryFragment
+                ( Contract.Var
                     { name = textName "user_id",
                       rawName = "user_id",
                       paramIndex = 1
@@ -66,89 +66,89 @@ input =
         }
 
     -- Parameter for user ID
-    userIdParam :: Input.Member
+    userIdParam :: Contract.Member
     userIdParam =
-      Input.Member
+      Contract.Member
         { name = textName "user_id",
           pgName = "user_id",
           isNullable = False,
           value =
-            Input.Value
+            Contract.Value
               { dimensionality = 0,
                 elementIsNullable = False,
-                scalar = Input.PrimitiveScalar Input.Int4Primitive
+                scalar = Contract.PrimitiveScalar Contract.Int4Primitive
               }
         }
 
     -- Result structure for user query
-    userResult :: Input.Result
+    userResult :: Contract.Result
     userResult =
-      Input.RowsResult
-        Input.ResultRows
-          { cardinality = Input.OptionalResultRowsCardinality,
+      Contract.RowsResult
+        Contract.ResultRows
+          { cardinality = Contract.OptionalResultRowsCardinality,
             columns =
               NonEmpty.fromList
-                [ Input.Member
+                [ Contract.Member
                     { name = textName "id",
                       pgName = "id",
                       isNullable = False,
                       value =
-                        Input.Value
+                        Contract.Value
                           { dimensionality = 0,
                             elementIsNullable = False,
-                            scalar = Input.PrimitiveScalar Input.Int4Primitive
+                            scalar = Contract.PrimitiveScalar Contract.Int4Primitive
                           }
                     },
-                  Input.Member
+                  Contract.Member
                     { name = textName "name",
                       pgName = "name",
                       isNullable = False,
                       value =
-                        Input.Value
+                        Contract.Value
                           { dimensionality = 0,
                             elementIsNullable = False,
-                            scalar = Input.PrimitiveScalar Input.TextPrimitive
+                            scalar = Contract.PrimitiveScalar Contract.TextPrimitive
                           }
                     },
-                  Input.Member
+                  Contract.Member
                     { name = textName "email",
                       pgName = "email",
                       isNullable = True,
                       value =
-                        Input.Value
+                        Contract.Value
                           { dimensionality = 0,
                             elementIsNullable = False,
-                            scalar = Input.PrimitiveScalar Input.TextPrimitive
+                            scalar = Contract.PrimitiveScalar Contract.TextPrimitive
                           }
                     },
-                  Input.Member
+                  Contract.Member
                     { name = textName "status",
                       pgName = "status",
                       isNullable = False,
                       value =
-                        Input.Value
+                        Contract.Value
                           { dimensionality = 0,
                             elementIsNullable = False,
-                            scalar = Input.CustomScalar statusRef
+                            scalar = Contract.CustomScalar statusRef
                           }
                     }
                 ]
           }
 
     -- Custom type: status enum
-    statusType :: Input.CustomType
+    statusType :: Contract.CustomType
     statusType =
-      Input.CustomType
+      Contract.CustomType
         { name = textName "status",
           pgSchema = "public",
           pgName = "status",
-          definition = Input.EnumCustomTypeDefinition []
+          definition = Contract.EnumCustomTypeDefinition []
         }
 
     -- Reference to the status type
-    statusRef :: Input.CustomTypeRef
+    statusRef :: Contract.CustomTypeRef
     statusRef =
-      Input.CustomTypeRef
+      Contract.CustomTypeRef
         { name = textName "status",
           pgSchema = "public",
           pgName = "status",

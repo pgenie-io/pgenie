@@ -1,6 +1,8 @@
 # Upcoming
 
-Refactor.
+## Breaking
+
+- Reject query `.sql` files whose name isn't already in normalized snake_case form, and reject custom Postgres type names that collide once normalized, at `pgn analyse` time instead of leaving disambiguation to generators (#75)
 
 # v0.13.0
 

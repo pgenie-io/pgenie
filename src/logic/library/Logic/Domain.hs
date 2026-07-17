@@ -6,6 +6,7 @@ module Logic.Domain (spec) where
 
 import Logic.Domain.CustomTypeOrdering qualified as CustomTypeOrdering
 import Logic.Domain.CustomTypeSignature qualified as CustomTypeSignature
+import Logic.Domain.CustomTypeUniqueness qualified as CustomTypeUniqueness
 import Logic.Domain.IndexOptimization qualified as IndexOptimization
 import Logic.Domain.Name qualified as Name
 import Logic.Domain.ProjectFile qualified as ProjectFile
@@ -20,6 +21,7 @@ spec :: Spec
 spec = do
   describe "CustomTypeOrdering" CustomTypeOrdering.spec
   describe "CustomTypeSignature" CustomTypeSignature.spec
+  describe "CustomTypeUniqueness" CustomTypeUniqueness.spec
   describe "IndexOptimization" IndexOptimization.spec
   describe "Name" Name.spec
   describe "ProjectFile" ProjectFile.spec

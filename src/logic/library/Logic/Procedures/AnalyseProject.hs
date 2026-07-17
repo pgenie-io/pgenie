@@ -25,6 +25,7 @@ import Logic.Capabilities.Reporting (Warns (..))
 import Logic.Capabilities.SeqScanExplain (ExplainsQuery (..))
 import Logic.Capabilities.Staging (Stages (..))
 import Logic.Domain.CustomTypeOrdering qualified as CustomTypeOrdering
+import Logic.Domain.CustomTypeUniqueness qualified as CustomTypeUniqueness
 import Logic.Domain.IndexOptimization (IndexInfo (..))
 import Logic.Domain.Name qualified as Name
 import Logic.Domain.ProjectFile qualified as ProjectFile
@@ -119,7 +120,8 @@ run Params {projectFile} =
               & filter (\p -> Path.toExtensions p == ["sql"])
 
       for queryPaths \queryPath -> do
-        name <- case Name.tryFromText (Path.toBasename queryPath) of
+        let basename = Path.toBasename queryPath
+        name <- case Name.tryFromText basename of
           Left err ->
             throwError
               ( Report
@@ -132,6 +134,17 @@ run Params {projectFile} =
               )
           Right name ->
             pure name
+
+        unless (Name.toText name == basename) do
+          throwError
+            ( Report
+                []
+                "Query file name is not in normalized snake_case form"
+                (Just ("Rename the file to \"" <> Name.toText name <> ".sql\""))
+                [ ("file", Path.toText queryPath),
+                  ("expected", Name.toText name <> ".sql")
+                ]
+            )
 
         pure
           QueryListed
@@ -265,7 +278,23 @@ run Params {projectFile} =
                 & fmap (\x -> ((x.pgSchema, x.pgName), x))
                 & Map.fromList
                 & Map.elems
-            (customTypes, queries) = CustomTypeOrdering.orderAndResolve dedupedCustomTypes queries0
+
+        case nonEmpty (CustomTypeUniqueness.findDuplicateGroups dedupedCustomTypes) of
+          Nothing -> pure ()
+          Just duplicateGroups ->
+            throwError
+              ( Report
+                  []
+                  "Custom Postgres type names collide after normalization"
+                  (Just "Rename one of the colliding types (or the migration that defines it) so they normalize to distinct identifiers")
+                  [ ( to representative.name.inSnakeCase,
+                      Text.intercalate ", " (toList (fmap (\ct -> ct.pgSchema <> "." <> ct.pgName) group_))
+                    )
+                  | group_@(representative :| _) <- toList duplicateGroups
+                  ]
+              )
+
+        let (customTypes, queries) = CustomTypeOrdering.orderAndResolve dedupedCustomTypes queries0
             seqScanFindings = concat seqScanFindingsDump
 
         pure (queries, customTypes, seqScanFindings)

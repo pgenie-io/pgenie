@@ -71,6 +71,7 @@ library
     Logic.Domain
     Logic.Domain.CustomTypeOrdering
     Logic.Domain.CustomTypeSignature
+    Logic.Domain.CustomTypeUniqueness
     Logic.Domain.GeneratorHashes
     Logic.Domain.Name.Megaparsec
     Logic.Domain.QuerySignature

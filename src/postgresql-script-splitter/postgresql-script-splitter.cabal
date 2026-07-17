@@ -1,0 +1,43 @@
+cabal-version: 3.4
+name: postgresql-script-splitter
+version: 0
+
+common base
+  default-language: GHC2024
+  default-extensions:
+    BlockArguments
+    DerivingStrategies
+    DuplicateRecordFields
+    LambdaCase
+    NoFieldSelectors
+    OverloadedRecordDot
+    OverloadedStrings
+
+common test
+  import: base
+  ghc-options:
+    -threaded
+    "-with-rtsopts=-N -I0 -qg"
+
+library
+  import: base
+  hs-source-dirs: library
+  exposed-modules:
+    PostgresqlScriptSplitter
+
+  build-depends:
+    base,
+    megaparsec,
+    text,
+
+test-suite postgresql-script-splitter-test
+  import: test
+  type: exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is: Main.hs
+
+  build-depends:
+    base,
+    hspec,
+    postgresql-script-splitter,
+    text,

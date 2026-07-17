@@ -10,6 +10,7 @@ packages:
   - src/logic
   - src/interpreters
   - src/infra
+  - src/postgresql-script-splitter
   - src/ui
 allow-newer: true
 allow-newer-deps:

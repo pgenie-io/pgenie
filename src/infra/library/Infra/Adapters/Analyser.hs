@@ -27,6 +27,7 @@ import Logic.Capabilities.Migrations (ExecutesMigrations (..))
 import Logic.Capabilities.QueryAnalysis (InfersQueryTypes (..))
 import Logic.Capabilities.SeqScanExplain (ExplainsQuery (..))
 import Logic.Domain.Report qualified as Report
+import PostgresqlScriptSplitter qualified as ScriptSplitter
 import TestcontainersPostgresql qualified
 import Utils.Prelude
 import Utils.Text qualified
@@ -358,9 +359,31 @@ instance HasqlDev.RunsSession (Fx Device Report.Report) where
           Nothing ->
             "Add all NOT NULL columns to the INSERT statement, or define DEFAULT values for them in the schema"
 
+-- | Splits the migration file into statements and executes each as its own
+-- message in autocommit mode, matching @psql -f@ semantics -- including for
+-- non-transactional commands like @CREATE INDEX CONCURRENTLY@, which fail
+-- with a 25001 error when sent together with other statements as a single
+-- Simple Query message (issue #74). Explicit @BEGIN@/@COMMIT@ written in the
+-- migration file keep working, since those are session-level commands.
 instance ExecutesMigrations (Fx Device Report.Report) where
   executeMigration migrationText =
-    HasqlDev.runSession (Hasql.Session.script migrationText)
+    case ScriptSplitter.splitScript migrationText of
+      Left err ->
+        throwError
+          Report.Report
+            { path = [],
+              message = err.message,
+              suggestion = Nothing,
+              details =
+                [ ("line", Text.pack (show err.location.line)),
+                  ("column", Text.pack (show err.location.column))
+                ]
+            }
+      Right statements ->
+        for_ statements \statement ->
+          Report.nestingAsError
+            ["line " <> Text.pack (show statement.location.line)]
+            (HasqlDev.runSession (Hasql.Session.script statement.sql))
 
 instance InfersQueryTypes (Fx Device Report.Report) where
   inferQueryTypes sql =

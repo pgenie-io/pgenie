@@ -4,6 +4,8 @@
 
 - Reject query `.sql` files whose name isn't already in normalized snake_case form, and reject custom Postgres type names that collide once normalized, at `pgn analyse` time instead of leaving disambiguation to generators (#75)
 
+- Execute migration files statement-by-statement in autocommit mode, matching `psql -f` semantics, so that non-transactional commands like `CREATE INDEX CONCURRENTLY` no longer fail with a 25001 error when combined with other statements in the same file. Explicit `BEGIN`/`COMMIT` written in a migration file keep working. Error reports now show only the failing statement and its location in the file, rather than the entire file's SQL (#74)
+
 # v0.13.0
 
 ## Non-breaking

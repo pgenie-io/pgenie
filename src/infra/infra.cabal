@@ -92,6 +92,7 @@ library
     interpreters,
     logic,
     postgresql-libpq,
+    postgresql-script-splitter,
     resourcet,
     syntactic-class,
     testcontainers,
@@ -109,6 +110,7 @@ test-suite infra-test
   main-is: Main.hs
   other-modules:
     InferQueryTypesSpec
+    MigrationSplittingSpec
 
   build-tool-depends:
     hspec-discover:hspec-discover

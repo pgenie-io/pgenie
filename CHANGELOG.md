@@ -1,3 +1,9 @@
+# Upcoming
+
+## Non-breaking
+
+- Migrate to hasql 2.0 and the pqi-native backend, dropping the `postgresql-libpq` dependency, so the distributed binary and build no longer require libpq to be installed.
+
 # v0.14.0
 
 ## Breaking

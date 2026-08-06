@@ -5,7 +5,6 @@ import Control.Monad.Trans.Resource.Internal qualified as ResourceT
 import Data.Acquire qualified as ResourceT
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as TextEncoding
-import Database.PostgreSQL.LibPQ qualified as Pq
 import Fx
 import Gen qualified
 import Infra.Adapters.Analyser qualified as Analyser
@@ -13,6 +12,8 @@ import Logic.Capabilities.Migrations
 import Logic.Capabilities.QueryAnalysis
 import Logic.Domain.QueryAnalysis
 import Logic.Domain.Report (Report (..))
+import Pqi qualified as Pqi
+import Pqi.Native qualified as PqiNative
 import System.Info (arch)
 import Test.Hspec
 import TestContainers qualified as Tc
@@ -372,24 +373,24 @@ serverConnSettings host port =
 -- Used to verify that temporary databases are cleaned up.
 listPgenieTempDbs :: Text -> IO [Text]
 listPgenieTempDbs connSettings = do
-  conn <- Pq.connectdb (TextEncoding.encodeUtf8 connSettings)
-  st <- Pq.status conn
+  conn <- PqiNative.adapter.connectdb (TextEncoding.encodeUtf8 connSettings)
+  st <- conn.status
   names <-
-    if st /= Pq.ConnectionOk
+    if st /= Pqi.ConnectionOk
       then pure []
       else do
-        mResult <- Pq.exec conn "SELECT datname FROM pg_database WHERE datname LIKE 'pgenie_%'"
+        mResult <- conn.exec "SELECT datname FROM pg_database WHERE datname LIKE 'pgenie_%'"
         case mResult of
           Nothing -> pure []
           Just res -> do
-            rst <- Pq.resultStatus res
-            if rst /= Pq.TuplesOk
+            rst <- res.resultStatus
+            if rst /= Pqi.TuplesOk
               then pure []
               else do
-                n <- Pq.ntuples res
+                n <- res.ntuples
                 forM [0 .. n - 1] \i ->
-                  fmap (foldMap TextEncoding.decodeUtf8Lenient) (Pq.getvalue res i 0)
-  Pq.finish conn
+                  fmap (foldMap TextEncoding.decodeUtf8Lenient) (res.getvalue i 0)
+  conn.finish
   pure names
 
 expectRight :: (Show err) => Either err a -> IO a

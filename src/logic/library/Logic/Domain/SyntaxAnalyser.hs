@@ -11,15 +11,15 @@ where
 import Data.Text qualified as Text
 import Logic.Domain.SyntaxAnalyser.AstInterpreter qualified as AstInterpreter
 import Logic.Domain.SyntaxAnalyser.Data as Data
-import PostgresqlSyntax.Parsing qualified as Parsing
+import PostgresqlSyntax qualified as Ast
 import Test.Hspec
 import Utils.Prelude
 
 resolveText :: Text -> Either Text QuerySyntaxAnalysis
 resolveText sql =
-  case Parsing.run (Parsing.inSpace Parsing.preparableStmt) (stripComments sql) of
-    Left reason -> Left (onto reason)
-    Right ast -> AstInterpreter.preparableStmtQuerySyntaxAnalysis ast
+  case Ast.parse mempty (stripComments sql) of
+    Left reason -> Left reason
+    Right ast -> AstInterpreter.preparableStmtQuerySyntaxAnalysis (ast :: Ast.PreparableStmt)
 
 -- | Strip SQL comments from the query.
 -- Handles both single-line (--) and block (/* */) comments.

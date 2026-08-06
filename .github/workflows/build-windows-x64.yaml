@@ -32,24 +32,6 @@ jobs:
         with:
           ref: ${{ inputs.ref || github.sha }}
 
-      # The pre-installed PostgreSQL on the Windows runner supplies the libpq
-      # headers and import library needed to compile postgresql-libpq.
-      - name: Configure cabal for PostgreSQL (libpq)
-        shell: bash
-        run: |
-          PG_ROOT=$(ls -d "/c/Program Files/PostgreSQL/"* 2>/dev/null | sort -V | tail -1)
-          echo "$PG_ROOT/bin" >> "$GITHUB_PATH"
-          # Create a MinGW-compatible import library; GHC's bundled clang/lld
-          # (in MinGW mode) looks for libpq.dll.a, not the MSVC libpq.lib.
-          cp "${PG_ROOT}/lib/libpq.lib" "${PG_ROOT}/lib/libpq.dll.a"
-          cat >> cabal.project.local << EOF
-          package postgresql-libpq
-            extra-include-dirs: ${PG_ROOT}/include
-            extra-lib-dirs: ${PG_ROOT}/lib
-          package pgenie
-            extra-lib-dirs: ${PG_ROOT}/lib
-          EOF
-
       - name: Build
         id: build
         uses: ./.github/actions/build
@@ -119,7 +101,7 @@ jobs:
           # Start PostgreSQL and wait until the server is ready
           & "$pgBin\pg_ctl.exe" start -D $pgData -l "$pgData\postgresql.log" -w
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          # Expose pg tools (pg_isready, libpq.dll, …) to subsequent steps
+          # Expose pg tools (pg_isready, psql, …) to subsequent steps
           Add-Content $env:GITHUB_PATH $pgBin
 
       - name: Download artifact

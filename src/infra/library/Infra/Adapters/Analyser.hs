@@ -9,7 +9,6 @@ import Data.Text qualified as Text
 import Data.Text.Encoding qualified as TextEncoding
 import Data.UUID qualified as UUID
 import Data.UUID.V4 qualified as UUID.V4
-import Database.PostgreSQL.LibPQ qualified as Pq
 import Fx
 import Hasql.Connection.Settings qualified
 import Hasql.Errors qualified
@@ -28,6 +27,8 @@ import Logic.Capabilities.QueryAnalysis (InfersQueryTypes (..))
 import Logic.Capabilities.SeqScanExplain (ExplainsQuery (..))
 import Logic.Domain.Report qualified as Report
 import PostgresqlScriptSplitter qualified as ScriptSplitter
+import Pqi qualified as Pqi
+import Pqi.Native qualified as PqiNative
 import TestcontainersPostgresql qualified
 import Utils.Prelude
 import Utils.Text qualified
@@ -200,18 +201,18 @@ scopeViaRunningServer connectionUrl targetMajorVersion observe = do
     queryVersionSession :: Hasql.Session.Session (Either Text Int)
     queryVersionSession =
       Hasql.Session.onLibpqConnection \conn -> do
-        mResult <- Pq.exec conn "SELECT current_setting('server_version_num')::int / 10000"
+        mResult <- conn.exec "SELECT current_setting('server_version_num')::int / 10000"
         result <- case mResult of
-          Nothing -> fmap (Left . msgOf) (Pq.errorMessage conn)
+          Nothing -> fmap (Left . msgOf) conn.errorMessage
           Just res -> do
-            rst <- Pq.resultStatus res
-            if rst == Pq.TuplesOk
+            rst <- res.resultStatus
+            if rst == Pqi.TuplesOk
               then do
-                mVal <- Pq.getvalue res (Pq.Row 0) (Pq.Col 0)
+                mVal <- res.getvalue 0 0
                 pure $ case mVal >>= readMaybe . Text.unpack . TextEncoding.decodeUtf8Lenient of
                   Just n -> Right n
                   Nothing -> Left "Could not parse server_version_num"
-              else fmap (Left . msgOf) (Pq.resultErrorMessage res)
+              else fmap (Left . msgOf) res.resultErrorMessage
         pure (Right result, conn)
       where
         msgOf :: Maybe ByteString -> Text
@@ -269,7 +270,7 @@ scopeTempDatabase serverSettings adminPool = do
 -- its release as a cleanup action.  Used by both Docker and running-server paths.
 scopePool :: Hasql.Pool.Config.Config -> Fx.Scope Report.Report Hasql.Pool.Pool
 scopePool config = do
-  pool <- acquire $ runTotalIO \() -> Hasql.Pool.acquire config
+  pool <- acquire $ runTotalIO \() -> Hasql.Pool.acquire PqiNative.adapter config
   registerRelease $ runTotalIO \() -> Hasql.Pool.release pool
   pure pool
 
@@ -414,16 +415,16 @@ instance ExplainsQuery (Fx Device Report.Report) where
     HasqlDev.runSession do
       Hasql.Session.onLibpqConnection \conn -> do
         let explainSql = TextEncoding.encodeUtf8 ("EXPLAIN (GENERIC_PLAN) " <> sql)
-        maybeResult <- Pq.exec conn explainSql
+        maybeResult <- conn.exec explainSql
         rows <- case maybeResult of
           Nothing -> pure []
           Just result -> do
-            status <- Pq.resultStatus result
+            status <- result.resultStatus
             case status of
-              Pq.TuplesOk -> do
-                numRows <- Pq.ntuples result
+              Pqi.TuplesOk -> do
+                numRows <- result.ntuples
                 forM [0 .. numRows - 1] \i ->
-                  fmap (foldMap TextEncoding.decodeUtf8Lenient) (Pq.getvalue result i (Pq.Col 0))
+                  fmap (foldMap TextEncoding.decodeUtf8Lenient) (result.getvalue i 0)
               _ -> pure []
         pure (Right rows, conn)
 

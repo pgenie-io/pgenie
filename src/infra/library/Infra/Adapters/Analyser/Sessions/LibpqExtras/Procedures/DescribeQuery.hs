@@ -1,5 +1,6 @@
 -- |
--- Use LibPQ to extract the information about the query parameters and result.
+-- Use the wire-protocol Describe message to extract the information about
+-- the query parameters and result.
 module Infra.Adapters.Analyser.Sessions.LibpqExtras.Procedures.DescribeQuery
   ( Context,
 
@@ -22,13 +23,12 @@ where
 
 import Data.Attoparsec.ByteString.Char8 qualified as AttoparsecBs
 import Data.Vector qualified as Vector
-import Database.PostgreSQL.LibPQ qualified as Pq
-import Infra.Adapters.Analyser.Sessions.LibpqExtras.LawfulConversions ()
+import Pqi qualified as Pqi
 import Utils.Prelude
 
--- | The libpq connection a description is run against.
+-- | The connection a description is run against.
 type Context =
-  Pq.Connection
+  Pqi.Connection
 
 -- * Domain
 
@@ -71,56 +71,56 @@ data ResultColumn = ResultColumn
 -- * IO
 
 -- | Specific execution.
-io :: Pq.Connection -> Params -> IO (Either Error Result)
+io :: Pqi.Connection -> Params -> IO (Either Error Result)
 io conn params = runExceptT do
-  res <- lift $ Pq.prepare conn "" (encodeUtf8 params.query) Nothing
+  res <- lift $ conn.prepare "" (encodeUtf8 params.query) Nothing
   res <- case res of
     Nothing -> throwError ConnectionError
     Just res -> return res
-  status <- lift $ Pq.resultStatus res
+  status <- lift res.resultStatus
   case status of
-    Pq.CommandOk -> return ()
-    Pq.FatalError -> lift (readResultErrorDetails res) >>= throwError
+    Pqi.CommandOk -> return ()
+    Pqi.FatalError -> lift (readResultErrorDetails res) >>= throwError
     _ -> error ("Bug. Unexpected status: " <> show status)
 
-  res <- lift $ Pq.describePrepared conn ""
+  res <- lift $ conn.describePrepared ""
   res <- case res of
     Nothing -> throwError ConnectionError
     Just res -> return res
-  status <- lift $ Pq.resultStatus res
+  status <- lift res.resultStatus
   case status of
-    Pq.CommandOk -> return ()
+    Pqi.CommandOk -> return ()
     _ -> error ("Bug. Unexpected status: " <> show status)
 
   lift (Result <$> readParamTypeOids res <*> readResultColumns res)
   where
-    readParamTypeOids :: Pq.Result -> IO (Vector Word32)
+    readParamTypeOids :: Pqi.Result -> IO (Vector Word32)
     readParamTypeOids res = do
-      amount <- Pq.nparams res
-      Vector.generateM amount $ \i -> do
-        fmap to $ Pq.paramtype res i
+      amount <- res.nparams
+      Vector.generateM (fromIntegral amount) $ \i ->
+        res.paramtype (fromIntegral i)
 
-    readResultColumns :: Pq.Result -> IO (Vector ResultColumn)
+    readResultColumns :: Pqi.Result -> IO (Vector ResultColumn)
     readResultColumns res = do
-      amount <- fromIntegral . to @Int32 <$> Pq.nfields res
-      Vector.generateM amount $ \i -> do
-        let col = onfrom @Int32 (fromIntegral i)
-        name <- Pq.fname res col
+      amount <- res.nfields
+      Vector.generateM (fromIntegral amount) $ \i -> do
+        let col = fromIntegral i :: Int32
+        name <- res.fname col
         name <- pure case name of
           Nothing -> error "Oops! Trying to access a missing column"
           Just "?column?" -> Nothing
           Just name -> either (const Nothing) Just (decodeUtf8 name)
-        typeOid <- fmap to $ Pq.ftype res col
-        typeMod <- Pq.fmod res col
-        tableOid <- fmap to $ Pq.ftable res col
-        tableCol <- fmap to $ Pq.ftablecol res col
+        typeOid <- res.ftype col
+        typeMod <- res.fmod col
+        tableOid <- res.ftable col
+        tableCol <- res.ftablecol col
         return $ ResultColumn name typeOid typeMod tableOid tableCol
 
-    readResultErrorDetails :: Pq.Result -> IO Error
+    readResultErrorDetails :: Pqi.Result -> IO Error
     readResultErrorDetails res = do
-      code <- foldMap decodeUtf8Lenient <$> Pq.resultErrorField res Pq.DiagSqlstate
-      message <- foldMap decodeUtf8Lenient <$> Pq.resultErrorField res Pq.DiagMessagePrimary
-      position <- mapMaybe parseInt <$> Pq.resultErrorField res Pq.DiagStatementPosition
+      code <- foldMap decodeUtf8Lenient <$> res.resultErrorField Pqi.DiagSqlstate
+      message <- foldMap decodeUtf8Lenient <$> res.resultErrorField Pqi.DiagMessagePrimary
+      position <- mapMaybe parseInt <$> res.resultErrorField Pqi.DiagStatementPosition
       pure (ResultError code message position)
       where
         parseInt :: ByteString -> Maybe Int

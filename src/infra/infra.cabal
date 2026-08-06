@@ -56,7 +56,6 @@ library
     Infra.Adapters.Analyser.Sessions
     Infra.Adapters.Analyser.Sessions.Algebras.Procedure
     Infra.Adapters.Analyser.Sessions.Domain
-    Infra.Adapters.Analyser.Sessions.LibpqExtras.LawfulConversions
     Infra.Adapters.Analyser.Sessions.LibpqExtras.Procedures.DescribeQuery
     Infra.Adapters.Analyser.Sessions.Procedures
     Infra.Adapters.Analyser.Sessions.Procedures.DescribeQuery
@@ -91,8 +90,9 @@ library
     hasql-th,
     interpreters,
     logic,
-    postgresql-libpq,
     postgresql-script-splitter,
+    pqi,
+    pqi-native,
     resourcet,
     syntactic-class,
     testcontainers,
@@ -122,7 +122,8 @@ test-suite infra-test
     hspec,
     infra,
     logic,
-    postgresql-libpq,
+    pqi,
+    pqi-native,
     resourcet,
     testcontainers,
     testcontainers-postgresql,

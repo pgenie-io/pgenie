@@ -32,9 +32,6 @@ jobs:
         with:
           ref: ${{ inputs.ref || github.sha }}
 
-      - name: Install libpq
-        run: sudo apt-get update && sudo apt-get install -y libpq-dev
-
       - name: Build
         id: build
         uses: ./.github/actions/build
@@ -60,9 +57,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Install libpq
-        run: sudo apt-get update && sudo apt-get install -y libpq5
-
       - name: Download artifact
         uses: actions/download-artifact@v8
         with:
@@ -84,9 +78,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-
-      - name: Install libpq
-        run: sudo apt-get update && sudo apt-get install -y libpq5
 
       - name: Download artifact
         uses: actions/download-artifact@v8
@@ -134,9 +125,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-
-      - name: Install libpq
-        run: sudo apt-get update && sudo apt-get install -y libpq5
 
       - name: Download artifact
         uses: actions/download-artifact@v8

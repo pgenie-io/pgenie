@@ -44,32 +44,6 @@ jobs:
         if: inputs.fast != true
         uses: docker/setup-docker-action@v5
 
-      - name: Install libpq
-        run: brew install libpq
-
-      # libpq from Homebrew is keg-only and not in the default search paths,
-      # so we tell cabal and postgresql-libpq where to find the headers and
-      # library.  We also embed the Homebrew rpath into the pgenie executable
-      # so that the distributed binary finds libpq without extra environment
-      # variables – Homebrew distributions declare libpq as a dependency and
-      # install it at this standard location.
-      - name: Configure cabal for Homebrew libpq
-        shell: bash
-        run: |
-          # libpq is keg-only; make pg_config and pkg-config metadata visible
-          # to the postgresql-libpq build (it uses autoconf to find PostgreSQL).
-          echo "/usr/local/opt/libpq/bin" >> $GITHUB_PATH
-          echo "PKG_CONFIG_PATH=/usr/local/opt/libpq/lib/pkgconfig" >> $GITHUB_ENV
-
-          cat >> cabal.project.local << 'EOF'
-          package postgresql-libpq
-            extra-include-dirs: /usr/local/opt/libpq/include
-            extra-lib-dirs: /usr/local/opt/libpq/lib
-          package pgenie
-            extra-lib-dirs: /usr/local/opt/libpq/lib
-            ghc-options: -optl-Wl,-rpath,/usr/local/opt/libpq/lib
-          EOF
-
       - name: Build and test
         id: build
         uses: ./.github/actions/build
@@ -95,9 +69,6 @@ jobs:
     runs-on: macos-15-intel
 
     steps:
-      - name: Install libpq
-        run: brew install libpq
-
       - name: Download artifact
         uses: actions/download-artifact@v8
         with:
@@ -123,9 +94,6 @@ jobs:
 
       - name: Set up Docker
         uses: docker/setup-docker-action@v5
-
-      - name: Install libpq
-        run: brew install libpq
 
       - name: Download artifact
         uses: actions/download-artifact@v8
@@ -158,9 +126,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-
-      - name: Install libpq
-        run: brew install libpq
 
       - name: Install and start PostgreSQL
         run: |

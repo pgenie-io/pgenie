@@ -6,7 +6,7 @@ module Logic.Domain.SyntaxAnalyser.AstInterpreter
 where
 
 import Logic.Domain.SyntaxAnalyser.Data
-import PostgresqlSyntax.Ast qualified as Ast
+import PostgresqlSyntax qualified as Ast
 import Utils.Prelude
 
 preparableStmtQuerySyntaxAnalysis :: Ast.PreparableStmt -> Either Text QuerySyntaxAnalysis
@@ -37,8 +37,8 @@ returningClauseRowAmount =
   maybe (SpecificRowAmount 0) (const AnyRowAmount)
 
 selectStmtQuerySyntaxAnalysis = \case
-  Left selectNoParens -> selectNoParensQuerySyntaxAnalysis selectNoParens
-  Right selectWithParens -> selectWithParensQuerySyntaxAnalysis selectWithParens
+  Ast.NoParensSelectStmt selectNoParens -> selectNoParensQuerySyntaxAnalysis selectNoParens
+  Ast.WithParensSelectStmt selectWithParens -> selectWithParensQuerySyntaxAnalysis selectWithParens
 
 selectWithParensQuerySyntaxAnalysis = \case
   Ast.NoParensSelectWithParens selectNoParens -> selectNoParensQuerySyntaxAnalysis selectNoParens
@@ -54,9 +54,9 @@ selectNoParensQuerySyntaxAnalysis (Ast.SelectNoParens _ selectClause _ selectLim
     pure $ QuerySyntaxAnalysis False rowAmount
 
 selectClauseRowAmount = \case
-  Left simpleSelect ->
+  Ast.SimpleSelectSelectClause simpleSelect ->
     pure $ simpleSelectRowAmount simpleSelect
-  Right selectWithParens -> do
+  Ast.WithParensSelectClause selectWithParens -> do
     QuerySyntaxAnalysis _ rowAmount <- selectWithParensQuerySyntaxAnalysis selectWithParens
     pure rowAmount
 
@@ -70,8 +70,8 @@ simpleSelectRowAmount = \case
   _ ->
     AnyRowAmount
 
-valuesClauseRowAmount =
-  SpecificRowAmount . length
+valuesClauseRowAmount (Ast.ValuesClause exprLists) =
+  SpecificRowAmount (length exprLists)
 
 insertRestRowAmount = \case
   Ast.SelectInsertRest _ _ selectStmt -> do
@@ -159,7 +159,7 @@ cExprInt = \case
   _ -> Nothing
 
 aExprConstInt = \case
-  Ast.IAexprConst int -> Just (fromIntegral int)
+  Ast.IAexprConst (Ast.Iconst int) -> Just (fromIntegral int)
   _ -> Nothing
 
 selectFetchFirstValueInt = \case

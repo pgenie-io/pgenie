@@ -6,13 +6,13 @@ where
 import Data.Attoparsec.ByteString.Char8 qualified as AttoparsecBs
 import Data.Text qualified as Text
 import Data.Vector qualified as Vector
-import Database.PostgreSQL.LibPQ qualified as Pq
 import Hasql.Errors qualified
 import Hasql.Session qualified
 import HasqlDev qualified
 import Infra.Adapters.Analyser.Sessions.Algebras.Procedure
 import Infra.Adapters.Analyser.Sessions.Domain
 import Infra.Adapters.Analyser.Sessions.Procedures.ResolveParamNullabilities.DefaultTextualValue qualified as DefaultTextualValue
+import Pqi qualified as Pqi
 import SyntacticClass qualified as Syntactic
 import Utils.Prelude
 
@@ -112,30 +112,30 @@ instance IsProcedure ResolveParamNullabilities where
         Just code -> code /= "23502" && Text.isPrefixOf "23" code
         Nothing -> False
 
-      executeAttempt :: [Maybe (Pq.Oid, ByteString, Pq.Format)] -> Hasql.Session.Session ()
+      executeAttempt :: [Maybe (Word32, ByteString, Pqi.Format)] -> Hasql.Session.Session ()
       executeAttempt parameterValues =
         Hasql.Session.onLibpqConnection \connection -> do
-          result <- Pq.execParams connection (encodeUtf8 params.query) parameterValues Pq.Text
+          result <- connection.execParams (encodeUtf8 params.query) parameterValues Pqi.Text
           case result of
-            Nothing -> pure (Left (Hasql.Errors.DriverSessionError "libpq execParams returned Nothing"), connection)
+            Nothing -> pure (Left (Hasql.Errors.DriverSessionError "execParams returned Nothing"), connection)
             Just result -> do
-              status <- Pq.resultStatus result
+              status <- result.resultStatus
               case status of
-                Pq.CommandOk -> pure (Right (), connection)
-                Pq.EmptyQuery -> pure (Right (), connection)
-                Pq.TuplesOk -> pure (Right (), connection)
-                Pq.SingleTuple -> pure (Right (), connection)
+                Pqi.CommandOk -> pure (Right (), connection)
+                Pqi.EmptyQuery -> pure (Right (), connection)
+                Pqi.TuplesOk -> pure (Right (), connection)
+                Pqi.SingleTuple -> pure (Right (), connection)
                 _ -> do
                   sessionError <- readSessionError result
                   pure (Left sessionError, connection)
 
-      readSessionError :: Pq.Result -> IO Hasql.Errors.SessionError
+      readSessionError :: Pqi.Result -> IO Hasql.Errors.SessionError
       readSessionError result = do
-        code <- foldMap decodeUtf8Lenient <$> Pq.resultErrorField result Pq.DiagSqlstate
-        message <- foldMap decodeUtf8Lenient <$> Pq.resultErrorField result Pq.DiagMessagePrimary
-        detail <- fmap decodeUtf8Lenient <$> Pq.resultErrorField result Pq.DiagMessageDetail
-        hint <- fmap decodeUtf8Lenient <$> Pq.resultErrorField result Pq.DiagMessageHint
-        position <- mapMaybe parseInt <$> Pq.resultErrorField result Pq.DiagStatementPosition
+        code <- foldMap decodeUtf8Lenient <$> result.resultErrorField Pqi.DiagSqlstate
+        message <- foldMap decodeUtf8Lenient <$> result.resultErrorField Pqi.DiagMessagePrimary
+        detail <- fmap decodeUtf8Lenient <$> result.resultErrorField Pqi.DiagMessageDetail
+        hint <- fmap decodeUtf8Lenient <$> result.resultErrorField Pqi.DiagMessageHint
+        position <- mapMaybe parseInt <$> result.resultErrorField Pqi.DiagStatementPosition
         pure
           ( Hasql.Errors.StatementSessionError
               0
@@ -152,13 +152,13 @@ instance IsProcedure ResolveParamNullabilities where
               & AttoparsecBs.parseOnly (AttoparsecBs.decimal <* AttoparsecBs.endOfInput)
               & either (const Nothing) Just
 
-      toLibpqParameters :: [Bool] -> [ByteString] -> [Maybe (Pq.Oid, ByteString, Pq.Format)]
+      toLibpqParameters :: [Bool] -> [ByteString] -> [Maybe (Word32, ByteString, Pqi.Format)]
       toLibpqParameters nullabilities parameterBytes =
         zipWith
           ( \isNullable parameterByte ->
               if isNullable
                 then Nothing
-                else Just (Pq.invalidOid, parameterByte, Pq.Text)
+                else Just (0, parameterByte, Pqi.Text)
           )
           nullabilities
           parameterBytes

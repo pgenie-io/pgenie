@@ -1,8 +1,8 @@
 name: E2E Live PostgreSQL Mode
 description: >
   Run e2e scenarios against a live running PostgreSQL instance. The calling job
-  must have checked out the repository and have PostgreSQL running and libpq
-  available before invoking this action.
+  must have checked out the repository and have PostgreSQL running before
+  invoking this action.
 
 inputs:
   exe:

@@ -1,8 +1,8 @@
 name: E2E Docker Mode
 description: >
   Run e2e scenarios against a Docker-managed PostgreSQL instance. The calling
-  job must have checked out the repository and have libpq and Docker available
-  before invoking this action.
+  job must have checked out the repository and have Docker available before
+  invoking this action.
 
 inputs:
   exe:

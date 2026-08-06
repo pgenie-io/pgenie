@@ -25,7 +25,6 @@ Pre-built binaries are available for common platforms. See the **[Installation G
 #### Prerequisites
 
 - **Docker** *(optional)* — Required only when `--database-url` is **not** provided. pGenie can spin up a temporary PostgreSQL container automatically, but you can skip Docker entirely by pointing it at a running server with `--database-url`.
-- **libpq** — Required for building the Haskell bindings to PostgreSQL. On Debian/Ubuntu, install with `sudo apt-get install libpq-dev`, on macOS with `brew install libpq`.
 
 #### Using Stack
 

@@ -19,19 +19,6 @@ import HasqlDev qualified
 import TextBuilder qualified
 import Utils.Prelude
 
--- | Lift session-running through the transformer stack that 'runProcedure'
--- is instantiated at (see 'Infra.Adapters.Analyser.Sessions.inferTypes').
--- Upstream @hasql-dev@ used to provide these generically; it now only
--- defines the base 'HasqlDev.Session' instance.
-instance (HasqlDev.RunsSession m) => HasqlDev.RunsSession (ReaderT r m) where
-  runSession session = ReaderT \_ -> HasqlDev.runSession session
-
-instance (HasqlDev.RunsSession m) => HasqlDev.RunsSession (ExceptT e m) where
-  runSession session = ExceptT (fmap Right (HasqlDev.runSession session))
-
-instance (HasqlDev.RunsSession m, Monoid w) => HasqlDev.RunsSession (WriterT w m) where
-  runSession session = WriterT (fmap (,mempty) (HasqlDev.runSession session))
-
 -- |
 -- A unit of query-analysis work, parameterised by its input.
 --

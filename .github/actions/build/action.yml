@@ -84,7 +84,12 @@ runs:
 
     - name: Install dependencies
       shell: bash
-      run: cabal build all --only-dependencies --enable-tests -j +RTS -A128m -n2m -N -RTS
+      run: |
+        if [ "$RUNNER_OS" = "Windows" ]; then
+          cabal build all --only-dependencies --enable-tests -j1 +RTS -A128m -n2m -N1 -RTS
+        else
+          cabal build all --only-dependencies --enable-tests -j +RTS -A128m -n2m -N -RTS
+        fi
 
     - name: Save dependencies cache
       uses: actions/cache/save@v5

@@ -6,8 +6,8 @@ import Data.Aeson qualified as Aeson
 import Data.Aeson.QQ.Simple (aesonQQ)
 import GenContractV5.Contract qualified as Contract
 import GenContractV5.Fixtures qualified as Fixtures
-import Test.Hspec
 import Prelude
+import Test.Hspec
 
 spec :: Spec
 spec = do

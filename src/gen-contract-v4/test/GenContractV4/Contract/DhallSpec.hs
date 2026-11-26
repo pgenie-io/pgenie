@@ -8,8 +8,8 @@ import Dhall qualified
 import Dhall.Core qualified
 import Dhall.Map qualified
 import GenContractV4.Contract qualified as Contract
-import Test.Hspec
 import Prelude
+import Test.Hspec
 
 spec :: Spec
 spec = do

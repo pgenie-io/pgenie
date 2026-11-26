@@ -3,8 +3,8 @@ module GenContractVersioningSpec (spec) where
 import Dhall qualified
 import GenContractVersioning (Codec (..), ContractVersion (..), DispatchError (..), codecByVersion)
 import Mock.MockV3 (MockV3)
-import Test.Hspec
 import Prelude
+import Test.Hspec
 
 spec :: Spec
 spec = do

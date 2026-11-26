@@ -8,10 +8,10 @@ import Data.Aeson.QQ.Simple (aesonQQ)
 import Data.Text.IO qualified as Text
 import Gen qualified
 import GenContractV5.Fixtures qualified as Fixtures
+import Prelude
 import System.Exit qualified as Exit
 import Test.Hspec
 import Test.Report qualified as Report
-import Prelude
 
 spec :: Spec
 spec = do

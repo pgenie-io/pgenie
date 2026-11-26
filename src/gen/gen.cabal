@@ -49,8 +49,8 @@ library
     Gen
 
   other-modules:
-    Gen.Contract
     Gen.Bundle
+    Gen.Contract
     Gen.Dhall.ExprViews
     Gen.Load
     Gen.Location

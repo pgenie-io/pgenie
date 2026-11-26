@@ -35,7 +35,6 @@ test-suite postgresql-script-splitter-test
   type: exitcode-stdio-1.0
   hs-source-dirs: test
   main-is: Main.hs
-
   build-depends:
     base,
     hspec,

@@ -3,9 +3,9 @@ module GenContractV5.Contract.ValueSpec (spec) where
 import GenContractV4.Contract qualified as V4
 import GenContractV5.Contract qualified as V5
 import GenContractV5.Contract.Value qualified as V5.Value
+import Prelude
 import Test.Hspec
 import Test.QuickCheck
-import Prelude
 
 spec :: Spec
 spec = do

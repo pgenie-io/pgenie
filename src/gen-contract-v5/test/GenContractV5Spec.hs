@@ -4,8 +4,8 @@ import GenContractV4.Contract qualified as V4
 import GenContractV5 qualified as V5
 import GenContractV5.Fixtures qualified as Fixtures
 import GenContractVersioning
-import Test.Hspec
 import Prelude
+import Test.Hspec
 
 spec :: Spec
 spec = do

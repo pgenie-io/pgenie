@@ -1,8 +1,8 @@
 module Test.Report (toYamlText) where
 
 import Gen qualified
-import TextBuilder qualified
 import Prelude
+import TextBuilder qualified
 
 -- | Render a diagnostic report as YAML, labelling it with the given severity
 -- (e.g. \"Error\", \"Warning\") for display in test output.

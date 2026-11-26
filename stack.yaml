@@ -14,8 +14,13 @@ packages:
   - src/ui
 allow-newer: true
 allow-newer-deps:
+  - aeson
   - aeson-optics
   - dhall-json
+  - hasql-th
+  - hspec-core
+  - pqi-native
+  - quickcheck-instances
   - testcontainers
 extra-deps:
   - {github: nikita-volkov/dhall-haskell, commit: 2331f0e29582c0580728110912548f06f406c469, subdirs: [dhall]}
@@ -25,14 +30,15 @@ extra-deps:
   - {github: pgenie-io/gen-sdk, commit: v0.11.0, subdirs: [haskell]}
   - {github: nikita-volkov/testcontainers-hs, commit: 99f6a7e2049546e1115afd60cc5615556d4f16ac}
   - {github: nikita-volkov/testcontainers-postgresql, commit: 9687b5593821c6c9b0b49165fde4a662569ae074}
+  - QuickCheck-2.19.0.0@sha256:8f8602ba510e19558ca8eb7eabf5830981068504d93dbac4525ecb669f178407,8728
   - aeson-optics-1.2.1
   - algebraic-path-0.1.0.1
-  - crypton-2.0.1@sha256:3a8bd84d0af9f2d3cd14c46f3560c4f8759123ffcb011fcd8ca57eb409aa5e10,23002
+  - crypton-2.2.0
   - crypton-connection-0.4.6
-  - crypton-x509-1.9.2
-  - crypton-x509-store-1.9.0
-  - crypton-x509-system-1.9.0
-  - crypton-x509-validation-1.9.1
+  - crypton-x509-1.10.0
+  - crypton-x509-store-1.10.0
+  - crypton-x509-system-1.10.0
+  - crypton-x509-validation-1.10.0
   - dhall-json-1.7.12
   - fx-0.11.2
   - hasql-1.10.3.2
@@ -40,14 +46,16 @@ extra-deps:
   - hasql-pool-1.4.2
   - hasql-th-0.5
   - hasql-transaction-1.2.2
-  - hpke-0.2.1
+  - hpke-0.3.0@sha256:0559deefe454e45b4f9651856f3c0a553a285ec1ecdca13f336e0b165e408e83,1977
   - http-client-tls-0.4.0
   - lawful-conversions-0.4.0
   - mlkem-0.2.3.0@sha256:302c52d7c880efdc567d812e2e7490dc08a85e155daaa9c12d157d997c8568d2,4821
   - postgresql-binary-0.15.0.1
+  - postgresql-syntax-0.5.0.3
   - pqi-1.1.0.2@sha256:fbce7865a545cc640cbc0273f9066180e1f37ef3f31d84f9adcf510e1a012f16,2730
   - pqi-native-1.0.1.17@sha256:17962c95822ab073ae3c320b2a32df5f3c0a5f0d599d5eabb707af152964f42a,4349
   - ptr-peeker-0.2.0.1@sha256:09e890fa44e9c065c60e20096501fede5f6ac33e9bb3eaa74b9031edbf024af1,3207
+  - quickcheck-instances-0.4
   - text-builder-lawful-conversions-0.1.4.1
   - text-builder-time-0.1
-  - tls-2.4.6
+  - tls-2.4.11

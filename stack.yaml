@@ -17,7 +17,6 @@ allow-newer-deps:
   - aeson
   - aeson-optics
   - dhall-json
-  - hasql-th
   - hspec-core
   - pqi-native
   - quickcheck-instances
@@ -44,7 +43,7 @@ extra-deps:
   - hasql-1.10.3.2
   - hasql-mapping-0.1
   - hasql-pool-1.4.2
-  - hasql-th-0.5
+  - hasql-th-0.5.1.1
   - hasql-transaction-1.2.2
   - hpke-0.3.0@sha256:0559deefe454e45b4f9651856f3c0a553a285ec1ecdca13f336e0b165e408e83,1977
   - http-client-tls-0.4.0

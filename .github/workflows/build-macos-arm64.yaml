@@ -25,7 +25,7 @@ env:
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-15
 
     steps:
       - uses: actions/checkout@v6
@@ -54,7 +54,7 @@ jobs:
 
   e2e-sanity-check:
     needs: build
-    runs-on: macos-14
+    runs-on: macos-15
 
     steps:
       - name: Download artifact
@@ -74,7 +74,7 @@ jobs:
 
   e2e-running-server-mode:
     needs: build
-    runs-on: macos-14
+    runs-on: macos-15
 
     env:
       DATABASE_URL: "host=localhost port=5432 user=postgres"

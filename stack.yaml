@@ -15,7 +15,12 @@ packages:
 allow-newer: true
 allow-newer-deps:
   - aeson-optics
+  - crypton-x509
+  - crypton-x509-validation
   - dhall-json
+  - hpke
+  - http-client-tls
+  - testcontainers
 extra-deps:
   - {github: nikita-volkov/dhall-haskell, commit: 2331f0e29582c0580728110912548f06f406c469, subdirs: [dhall]}
   - {github: nikita-volkov/hasql-dev, commit: 76d8faaa706872e0fe9b1036aa011edd2eb9d0ed}
@@ -26,6 +31,7 @@ extra-deps:
   - {github: nikita-volkov/testcontainers-postgresql, commit: 9687b5593821c6c9b0b49165fde4a662569ae074}
   - aeson-optics-1.2.1
   - algebraic-path-0.1.0.1
+  - crypton-2.0.1@sha256:3a8bd84d0af9f2d3cd14c46f3560c4f8759123ffcb011fcd8ca57eb409aa5e10,23002
   - dhall-json-1.7.12
   - fx-0.11.2
   - hasql-1.10.3.2
@@ -35,5 +41,8 @@ extra-deps:
   - hasql-transaction-1.2.2
   - lawful-conversions-0.4.0
   - postgresql-binary-0.15.0.1
+  - pqi-1.1.0.2@sha256:fbce7865a545cc640cbc0273f9066180e1f37ef3f31d84f9adcf510e1a012f16,2730
+  - pqi-native-1.0.1.17@sha256:17962c95822ab073ae3c320b2a32df5f3c0a5f0d599d5eabb707af152964f42a,4349
+  - ptr-peeker-0.2.0.1@sha256:09e890fa44e9c065c60e20096501fede5f6ac33e9bb3eaa74b9031edbf024af1,3207
   - text-builder-lawful-conversions-0.1.4.1
   - text-builder-time-0.1

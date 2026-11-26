@@ -52,7 +52,7 @@ stack install
 git clone https://github.com/pgenie-io/pgenie.git
 cd pgenie
 cabal update
-cabal install
+cabal install --install-method=copy pgn
 ```
 
 ## Using a Running PostgreSQL Server

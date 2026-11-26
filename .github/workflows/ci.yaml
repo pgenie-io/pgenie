@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [master, main, fix-macos-arm64-ci]
+    branches: [master, main]
   pull_request:
 
 # Cancel superseded runs for the same branch / PR.
